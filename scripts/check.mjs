@@ -61,4 +61,13 @@ assert(worker.includes("async function measureKvStorage"), "Cloudflare KV byte m
 assert(worker.includes("async function getGithubRepoStorage"), "GitHub repository storage lookup missing");
 assert(worker.includes("storageLimitBytes: 1073741824"), "Firebase 1 GiB storage limit missing");
 assert(worker.includes("storageLimitBytes: 1000000000"), "Cloudflare 1 GB storage limit missing");
-console.log("Project structure, syntax, persistence selectors, calendar, and auto-sync checks OK");
+const workflow = read(".github/workflows/deploy.yml");
+const readme = read("README.md");
+assert(workflow.includes("release-backup:"), "Automatic Release backup job missing");
+assert(workflow.includes("git archive --format=zip"), "Release source ZIP step missing");
+assert(workflow.includes("Keep only newest 5 Releases"), "Release retention step missing");
+assert(workflow.includes('gh release delete "$TAG" --cleanup-tag -y'), "Old Release cleanup missing");
+assert(readme.includes("Release backup tự động — chỉ giữ 5 bản gần nhất"), "README Release backup guide missing");
+assert(readme.includes("Release KHÔNG backup những gì?"), "README data-backup warning missing");
+assert(readme.includes("Cách quay lại bản cũ"), "README rollback guide missing");
+console.log("Project structure, syntax, persistence, calendar, storage, Release backup, README, and auto-sync checks OK");

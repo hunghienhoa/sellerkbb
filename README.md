@@ -1,127 +1,441 @@
-# sellerkbb — TikTok LIVE Monthly Report
+<div align="center">
 
-Phiên bản: **1.0.0**
+# 🌸 SellerKBB
 
-Ứng dụng báo cáo TikTok Shop LIVE dùng:
+### Báo cáo TikTok LIVE · KPI nhân sự · Tự đồng bộ 24/24
 
-- **Cloudflare Worker**: host web + backend TikTok OAuth/API.
-- **Firebase Authentication**: đăng nhập Google.
-- **Cloud Firestore**: tài khoản, phân quyền, phiên LIVE, gắn Host/Operator, KPI.
-- **GitHub**: mã nguồn và lịch sử cập nhật; mỗi lần push `main` có thể deploy Cloudflare/Firebase qua GitHub Actions.
+**Phiên bản hiện tại: v1.10.0**
 
-## Tính năng
+[![GitHub Release](https://img.shields.io/github/v/release/hunghienhoa/sellerkbb?label=Release)](https://github.com/hunghienhoa/sellerkbb/releases)
+[![GitHub Actions](https://img.shields.io/github/actions/workflow/status/hunghienhoa/sellerkbb/deploy.yml?branch=main&label=Ki%E1%BB%83m%20tra%20%26%20Backup)](https://github.com/hunghienhoa/sellerkbb/actions)
 
-- Google Sign-In qua Firebase.
-- Người dùng đầu tiên bootstrap thành `admin`; người dùng tiếp theo ở trạng thái `pending`.
-- Admin duyệt tài khoản, chọn vai trò `Host Livestream`, `Nhân viên vận hành livestream`, `Quản trị viên` và chọn quyền đọc LIVE/KPI.
-- Role Host/Operator không có menu TikTok API.
-- Đồng bộ TikTok Shop LIVE từ `GET /analytics/202509/shop_lives/performance`.
-- Lưu GMV ghi nhận lần đầu và GMV hiện tại/final ở lần sync sau.
-- Gắn Host + Operator cho từng phiên live.
-- KPI: Host 0.3%, Operator 0.1% trên GMV cuối kỳ.
-- Pair hỗ trợ: `Thảo My ↔ Hùng Bắc Giang`, `Dung/Tâm ↔ Hùng Hiền Hòa`.
-- Lọc theo tháng, xuất CSV.
+**Website:** https://sellerkbb.doanhsokpis.workers.dev/
 
-## 1. Firebase
+**Bản xem thử:** https://sellerkbb.doanhsokpis.workers.dev/preview
 
-Tạo Firebase project, bật:
+</div>
 
-1. Authentication → Sign-in method → Google.
-2. Firestore Database.
-3. Web App để lấy config: apiKey, authDomain, projectId, storageBucket, messagingSenderId, appId.
-4. Deploy rules/indexes trong thư mục `firebase/`.
+---
 
-**Authorized domains** của Firebase Auth phải có domain `*.workers.dev` thực tế và domain riêng nếu dùng.
+## 👋 README này dành cho ai?
 
-## 2. TikTok Shop Partner Center
+README này được viết để **người không phải dân IT vẫn có thể quản lý SellerKBB**.
 
-Ứng dụng cần tối thiểu scope:
+Bạn không cần hiểu hết code. Chỉ cần nhớ 4 nơi chính:
 
-- `data.shop_analytics.public.read` — TikTok Shop Analytics.
-- `seller.authorization.info` / quyền authorization tương ứng để lấy shop cipher.
+| Nơi | Dùng để làm gì? | Có nên tự sửa không? |
+|---|---|---|
+| **GitHub** | Giữ mã nguồn (SRC), lịch sử thay đổi và Release backup | Không sửa code trực tiếp nếu không chắc |
+| **Cloudflare Worker** | Chạy website + backend + tự đồng bộ TikTok | Chỉ cấu hình theo hướng dẫn |
+| **Firebase** | Đăng nhập Google, tài khoản, phân quyền, dữ liệu nghiệp vụ | Không xóa collection thủ công |
+| **TikTok Shop API** | Cung cấp số liệu LIVE | Không chia sẻ App Secret / token |
 
-Khuyến nghị thêm:
+> **SRC là gì?** SRC = source code = toàn bộ mã nguồn để tạo ra website SellerKBB. Nếu website bị sửa lỗi, GitHub Release giúp quay lại SRC của bản trước.
 
-- `seller.finance.info` nếu cần đối soát refunds/settlement chi tiết.
-- `seller.order.info` nếu cần đối soát trạng thái đơn.
+---
 
-Cấu hình Redirect URL trong TikTok Partner Center:
+## ✨ SellerKBB đang làm gì?
 
-`https://<worker-domain>/api/tiktok/oauth/callback`
+- Đăng nhập bằng Google/Firebase.
+- Tài khoản mới phải chờ Admin duyệt.
+- Admin chọn vai trò: **Host Livestream / Livestream operator / Admin**.
+- Host và Operator không nhìn thấy phần TikTok API.
+- TikTok LIVE tự đồng bộ **mỗi giờ, chạy 24/24**.
+- Số liệu cũ được đối soát lại để cập nhật hủy/hoàn.
+- Phiên LIVE mới **không tự chọn Host/Operator**; Admin chọn thủ công.
+- KPI mặc định:
+  - Host Livestream: **0,3% GMV cuối kỳ**.
+  - Livestream operator: **0,1% GMV cuối kỳ**.
+- **Ngày Campaign/Mega Live** có thể bật chế độ KPI thủ công; Host/Operator được để trống và phiên đó không cộng KPI tự động.
+- Bộ lọc: **Hôm nay / 7 ngày / 30 Ngày / Chọn ngày**.
+- Có trang Xuất file riêng.
+- Lưu dữ liệu tối đa **180 ngày (6 tháng)** theo cấu hình.
+- Có trang **Lưu trữ & tự dọn** theo dõi GitHub / Firebase / Cloudflare.
+- Hỗ trợ PC và điện thoại.
 
-Lấy các giá trị:
+---
 
-- `TIKTOK_APP_KEY`
-- `TIKTOK_APP_SECRET`
-- `TIKTOK_SERVICE_ID`
-- Seller authorization URL theo region (`services.{region}.tiktokshop.com/open/authorize`).
+## 🧭 Cách sử dụng hằng ngày
 
-## 3. Cloudflare bindings
+### 1. Mở website
 
-Worker vars:
+Vào website SellerKBB. Mặc định hệ thống luôn chọn **Hôm nay**.
 
-- `FIREBASE_API_KEY`
-- `FIREBASE_AUTH_DOMAIN`
-- `FIREBASE_PROJECT_ID`
-- `FIREBASE_STORAGE_BUCKET`
-- `FIREBASE_MESSAGING_SENDER_ID`
-- `FIREBASE_APP_ID`
-- `TIKTOK_APP_KEY`
-- `TIKTOK_SERVICE_ID`
-- `TIKTOK_SELLER_AUTH_URL`
+### 2. Kiểm tra Tổng quan
 
-Worker secret:
+- **Hôm nay:** chỉ xem các phiên của hôm nay.
+- **7 ngày:** tính từ hôm nay lùi 7 ngày.
+- **30 Ngày:** tổng số liệu tính đủ 30 ngày; danh sách trên Tổng quan chỉ hiện 7 ngày gần nhất để gọn.
+- Bấm **Xem thêm** ở Tổng quan để chuyển sang **Phiên LIVE** và giữ nguyên bộ lọc.
+- **Chọn ngày:** bấm lịch → chọn Từ ngày/Đến ngày → **Áp dụng**. Lịch sẽ tự đóng.
 
-- `TIKTOK_APP_SECRET`
+### 3. Gắn người cho phiên LIVE
 
-KV binding:
+Trong **Phiên LIVE**:
 
-- binding: `TIKTOK_KV`
-- dùng để lưu seller access/refresh token và OAuth state.
+1. Chọn Host.
+2. Chọn Livestream operator.
+3. Bấm **Lưu**.
+4. Reload lại trang vẫn phải giữ đúng người đã lưu.
 
-## 4. Build
+Phiên LIVE tự đồng bộ mới luôn để Host/Operator **trống** để tránh tính nhầm KPI.
+
+### 4. Campaign/Mega Live
+
+Nếu một phiên kéo dài nhiều giờ và nhiều người thay ca:
+
+1. Tích **Ngày Campaign/Mega Live · tính KPI thủ công**.
+2. SellerKBB tự xóa lựa chọn Host/Operator của phiên đó.
+3. Bấm **Lưu**.
+4. Phiên vẫn xuất hiện trong doanh thu/báo cáo nhưng không cộng KPI tự động.
+
+### 5. Xem KPI
+
+Trang **KPI nhân sự** lấy GMV cuối kỳ của các phiên hợp lệ để tính:
+
+```text
+Host KPI       = GMV cuối kỳ × 0,3%
+Operator KPI   = GMV cuối kỳ × 0,1%
+```
+
+### 6. Xuất file
+
+Vào tab **Xuất file**. File xuất dùng đúng khoảng thời gian đang chọn. SellerKBB không đưa Session ID TikTok ra CSV.
+
+---
+
+## 🏗️ SellerKBB hoạt động như thế nào?
+
+```mermaid
+flowchart LR
+    TT[TikTok Shop Seller API] --> CF[Cloudflare Worker]
+    CF --> WEB[SellerKBB Web]
+    WEB --> FB[Firebase Auth + Firestore]
+    GH[GitHub SRC] --> ACT[GitHub Actions]
+    ACT --> CF
+    ACT --> FB
+    ACT --> REL[GitHub Releases - 5 bản gần nhất]
+```
+
+Hiểu đơn giản:
+
+1. **TikTok** cung cấp dữ liệu LIVE.
+2. **Cloudflare** lấy dữ liệu và chạy website.
+3. **Firebase** giữ tài khoản/phân quyền/thông tin gắn Host-Operator.
+4. **GitHub** giữ mã nguồn.
+5. **GitHub Releases** là các điểm khôi phục SRC.
+
+---
+
+## 📁 Các file/thư mục quan trọng trong SRC
+
+| Đường dẫn | Ý nghĩa |
+|---|---|
+| `public/index.html` | Giao diện web + phần lớn logic phía trình duyệt |
+| `worker/api-template.js` | Backend Cloudflare, TikTok API, token, cron, maintenance |
+| `firebase/firestore.rules` | Quyền đọc/ghi Firestore |
+| `firebase/firestore.indexes.json` | Index Firestore |
+| `.github/workflows/deploy.yml` | Test, deploy và tự tạo Release backup |
+| `scripts/check.mjs` | Kiểm tra source trước deploy |
+| `scripts/ui-browser-test.mjs` | Test thật bằng Chromium cho PC + mobile |
+| `scripts/build-worker.mjs` | Ghép giao diện vào Worker để deploy |
+| `wrangler.toml` | Cấu hình Cloudflare Worker/KV/Cron |
+| `VERSION` | Version chuẩn của SellerKBB |
+| `package.json` | Version + lệnh build/check |
+| `.env.example` | Mẫu biến môi trường; không chứa secret thật |
+
+### Không được đưa lên GitHub
+
+- TikTok App Secret.
+- TikTok Access Token / Refresh Token.
+- Firebase Service Account JSON.
+- Cloudflare API Token.
+- Mật khẩu hoặc cookie đăng nhập.
+
+---
+
+## 🔐 Phân quyền tài khoản
+
+### Admin
+
+- Duyệt tài khoản.
+- Chọn vai trò/quyền xem.
+- Gắn Host/Operator.
+- Bật Campaign/Mega thủ công.
+- Xem TikTok/API.
+- Xem Lưu trữ & tự dọn.
+
+### Host Livestream / Livestream operator
+
+- Chỉ xem phần được Admin cấp quyền.
+- Không được thấy TikTok API/secret.
+
+---
+
+## 🔄 TikTok tự đồng bộ 24/24
+
+Cloudflare Cron hiện dùng:
+
+```text
+0 * * * *    → mỗi giờ: kiểm tra token + đồng bộ LIVE gần đây
+15 3 * * *   → mỗi ngày: đối soát 30 ngày + dọn KV
+```
+
+Access Token có thể hết hạn nhanh. Backend dùng **Refresh Token** để xin Access Token mới trước khi hết hạn. Nếu TikTok thu hồi quyền hoặc Refresh Token hết hiệu lực thì mới phải cấp quyền lại.
+
+---
+
+## 💾 Lưu trữ & tự dọn
+
+Trang Admin **Lưu trữ & tự dọn** hiển thị:
+
+- **GitHub:** dung lượng repository so với ngưỡng khuyến nghị.
+- **Firebase:** ước tính dữ liệu SellerKBB trong Firestore.
+- **Cloudflare:** dung lượng Workers KV đo được.
+- % sử dụng và thanh tiến trình.
+- Số phiên LIVE đang quản lý.
+- Mức áp lực dọn dữ liệu.
+- Số key KV và lần kiểm tra gần nhất.
+
+Giới hạn giữ dữ liệu báo cáo tối đa **180 ngày**.
+
+> SellerKBB không tự xóa SRC GitHub, tài khoản người dùng hoặc TikTok token được bảo vệ.
+
+---
+
+## 📦 Release backup tự động — chỉ giữ 5 bản gần nhất
+
+Từ **v1.10.0**, sau khi source qua kiểm tra thành công, GitHub Actions tự:
+
+1. Kiểm tra `VERSION`, `package.json`, `wrangler.toml` và version giao diện phải khớp nhau.
+2. Chạy kiểm tra source.
+3. Chạy Chromium smoke test cho **PC + mobile**.
+4. Build Worker.
+5. Deploy Cloudflare/Firebase nếu GitHub Secrets đã được cấu hình.
+6. Tạo/cập nhật Release `vX.Y.Z`.
+7. Đính kèm `sellerkbb-vX.Y.Z-src.zip`.
+8. Giữ đúng **5 Release mới nhất tính cả bản vừa tạo**.
+9. Tự xóa Release/tag từ bản thứ 6 trở về trước.
+
+### Release backup được những gì?
+
+✅ Mã nguồn/SRC đúng của phiên bản đó.
+
+✅ Workflow, Firebase rules, giao diện, backend, test.
+
+✅ Có thể dùng để quay lại bản web cũ.
+
+### Release KHÔNG backup những gì?
+
+❌ Dữ liệu Firestore đang chạy.
+
+❌ Dữ liệu Cloudflare KV thực tế.
+
+❌ TikTok token.
+
+❌ Firebase/Cloudflare secret.
+
+> Vì vậy “khôi phục Release” nghĩa là **khôi phục phiên bản phần mềm**, không phải phục hồi dữ liệu nghiệp vụ đã bị xóa.
+
+---
+
+## ⏪ Cách quay lại bản cũ nếu bản mới bị lỗi
+
+### Cách dễ nhất khi bạn dùng AI
+
+1. Mở: https://github.com/hunghienhoa/sellerkbb/releases
+2. Chọn một trong **5 Release gần nhất** mà bạn biết đang chạy tốt.
+3. Copy link Release.
+4. Gửi cho AI câu này:
+
+> Khôi phục SellerKBB về đúng Release này: [DÁN LINK]. Không làm mất dữ liệu Firebase/TikTok. Sau khi khôi phục hãy chạy test PC/mobile, deploy Cloudflare rồi xác nhận version đang chạy.
+
+AI có thể đọc tag/Release và đưa branch `main` trở lại source tương ứng.
+
+### Nếu chỉ muốn tải bản backup về máy
+
+Trong Release → **Assets** → tải:
+
+```text
+sellerkbb-vX.Y.Z-src.zip
+```
+
+Giữ file ZIP đó ở máy nếu muốn có thêm một bản backup cá nhân.
+
+---
+
+## 🚀 Quy trình cập nhật một phiên bản an toàn
+
+Mỗi lần nhờ AI sửa, nên yêu cầu đúng quy trình:
+
+1. Đọc source hiện tại từ GitHub.
+2. Chỉ sửa đúng yêu cầu.
+3. Không ghi secret vào source.
+4. Bump version.
+5. Chạy `npm run check`.
+6. Chạy Chromium test PC/mobile.
+7. Chỉ deploy khi test PASS.
+8. Kiểm tra Worker sau deploy.
+9. GitHub Actions tự tạo Release backup.
+10. Đảm bảo danh sách Releases chỉ còn 5 bản gần nhất.
+
+### Mẫu câu bạn có thể gửi cho AI
+
+> Hãy sửa SellerKBB theo yêu cầu dưới đây. Đọc source hiện tại trên GitHub trước khi sửa. Sau khi sửa phải test PC và mobile, không deploy nếu test fail. Không làm mất dữ liệu Firebase/Cloudflare/TikTok. Bump version, deploy bản đã test và kiểm tra Release backup tự động chỉ giữ 5 bản gần nhất.
+
+---
+
+## 🧪 Kiểm tra source
+
+Các lệnh dành cho AI/developer:
 
 ```bash
 npm run check
+npm install --no-save puppeteer-core
+node scripts/ui-browser-test.mjs
 npm run build
 ```
 
-Sau build, file deploy là `dist/worker.mjs`.
+File Worker sau build:
 
-## 5. Quy trình dữ liệu
+```text
+dist/worker.mjs
+```
 
-GitHub là nguồn mã. Firebase **không pull source code từ GitHub để chạy**; thay vào đó GitHub Actions deploy rules/indexes vào Firebase và deploy Worker lên Cloudflare. Firestore là nơi lưu dữ liệu nghiệp vụ.
+Không commit `dist/` nếu workflow đang tự build.
 
-Flow dữ liệu:
+---
 
-TikTok Shop API → Cloudflare Worker → trình duyệt admin → Firestore → dashboard/KPI.
+## 🔥 Cấu hình Firebase lần đầu
 
-## 6. Nâng cấp phiên bản
+1. Tạo Firebase Project.
+2. Bật **Authentication → Google**.
+3. Tạo **Firestore Database**.
+4. Tạo **Web App** và lấy các giá trị:
 
-Không tạo project mới. Mỗi lần cập nhật:
+```text
+FIREBASE_API_KEY
+FIREBASE_AUTH_DOMAIN
+FIREBASE_PROJECT_ID
+FIREBASE_STORAGE_BUCKET
+FIREBASE_MESSAGING_SENDER_ID
+FIREBASE_APP_ID
+```
 
-1. Sửa trên repo `hunghienhoa/sellerkbb`.
-2. Tăng `VERSION` và `package.json`.
-3. Commit lên `main`.
-4. Deploy bản mới từ lịch sử cũ.
-5. Xuất `.zip` snapshot tương ứng để lưu trữ.
+5. Thêm domain Worker vào **Authorized domains** của Firebase Auth.
+6. Deploy `firebase/firestore.rules` và `firebase/firestore.indexes.json`.
 
+### GitHub Actions Secrets cho Firebase
 
-## v1.5.0 — Free-plan safe mode
+```text
+FIREBASE_SERVICE_ACCOUNT
+FIREBASE_PROJECT_ID
+```
 
-- Firestore free-plan strategy: no paid TTL deletion. SellerKBB reads only the configured retention window (maximum 180 days) and deletes expired LIVE documents in bounded batches.
-- Default safety limits: 180-day retention, 600 MB application soft limit, 12,000 LIVE-session soft limit, emergency cleanup at 85%.
-- Cloudflare KV maintenance runs once daily to minimize Free-plan operations.
-- TikTok access tokens are checked every 2 hours and proactively refreshed from the stored refresh token before expiry.
-- There is no disconnect action in the SellerKBB UI/API. Reauthorization is only needed if TikTok revokes authorization or the refresh token itself expires.
-- Source code and GitHub files are never part of automated cleanup.
+`FIREBASE_SERVICE_ACCOUNT` phải để ở GitHub Secrets, tuyệt đối không commit vào repo.
 
+---
 
-## v1.6.0 — 24/7 auto-sync + unified UI
+## ☁️ Cấu hình Cloudflare lần đầu
 
-- TikTok LIVE data sync is fully automatic. There is no manual sync button or sync date picker.
-- Hourly Cron refreshes the TikTok token when necessary and pulls the latest LIVE performance window.
-- Daily reconciliation refreshes the previous 30 days to catch late metric changes.
-- Auto-synced TikTok metrics are kept in a rolling Cloudflare KV cache for the configured retention window (maximum 180 days).
-- Firestore remains the source for user roles, Host/Operator assignments and manual KPI flags; the UI merges those fields with the auto-sync cache.
-- The interface now uses one SVG icon system and a flatter connected layout with fewer nested rounded cards.
+Worker cần:
+
+- KV binding tên **`TIKTOK_KV`**.
+- Cron hourly + daily reconciliation.
+- Các Firebase vars.
+- TikTok vars/secrets.
+
+### GitHub Actions Secrets cho Cloudflare
+
+```text
+CLOUDFLARE_API_TOKEN
+CLOUDFLARE_ACCOUNT_ID
+```
+
+Nếu 2 secret này chưa có, GitHub Actions vẫn chạy test/build nhưng sẽ bỏ qua bước deploy Cloudflare.
+
+---
+
+## 🎵 Cấu hình TikTok Shop API
+
+Các thông tin cần có:
+
+```text
+TIKTOK_APP_KEY
+TIKTOK_APP_SECRET      ← SECRET, không đưa lên GitHub
+TIKTOK_SERVICE_ID
+TIKTOK_SELLER_AUTH_URL
+```
+
+Redirect URL:
+
+```text
+https://<worker-domain>/api/tiktok/oauth/callback
+```
+
+Quyền tối thiểu phải phù hợp với TikTok Shop Analytics/LIVE API đang dùng. Khi TikTok thay API/scope, cần kiểm tra tài liệu Partner Center hiện hành trước khi đổi.
+
+---
+
+## 🛠️ Khi có lỗi, kiểm tra theo thứ tự này
+
+### Web mở được nhưng không có dữ liệu TikTok
+
+1. Vào Admin → **TikTok / API**.
+2. Xem trạng thái kết nối.
+3. Kiểm tra lần đồng bộ gần nhất.
+4. Nếu Refresh Token mất hiệu lực thì cấp quyền TikTok lại.
+
+### Đăng nhập Google lỗi
+
+1. Kiểm tra Firebase Authentication đã bật Google.
+2. Kiểm tra domain Worker đã nằm trong Authorized domains.
+3. Kiểm tra Firebase web config.
+
+### Lưu Host/Operator rồi reload bị mất
+
+- Không sửa Firestore rules thủ công.
+- Chạy browser test desktop/mobile.
+- Kiểm tra đúng Admin đang đăng nhập và Firestore write không bị từ chối.
+
+### Bản mới lỗi giao diện
+
+- Không sửa chồng thêm khi chưa rõ nguyên nhân.
+- Vào **Releases** và quay lại một bản đã chạy tốt.
+
+---
+
+## 🛡️ Nguyên tắc an toàn của dự án
+
+- **GitHub `main` là nguồn SRC chính.**
+- Không xóa repo để “dọn dung lượng”.
+- Không đưa secret/token vào commit, README, issue hay ảnh chụp.
+- Không tự chia GMV Campaign/Mega theo thời gian nếu không có GMV từng ca.
+- Không hiển thị TikTok LIVE Session ID ra giao diện/CSV.
+- Khi sửa chức năng lưu dữ liệu phải test cả desktop và mobile.
+- Bản mới chỉ được coi là hoàn thành khi source check + browser smoke test PASS.
+
+---
+
+## 📌 Version
+
+Version phải đồng bộ ở:
+
+```text
+VERSION
+package.json
+wrangler.toml
+public/index.html
+```
+
+Workflow Release sẽ tự chặn nếu các version này không khớp.
+
+---
+
+<div align="center">
+
+**SellerKBB · quản lý bằng GitHub + Cloudflare + Firebase + TikTok Shop API**
+
+Khi không chắc phải sửa gì, hãy giữ nguyên Release gần nhất đang chạy tốt và nhờ AI kiểm tra trước.
+
+</div>

@@ -1,9 +1,13 @@
-name: Deploy sellerkbb
+name: Deploy & Backup SellerKBB
 
 on:
   push:
     branches: [main]
   workflow_dispatch:
+
+concurrency:
+  group: sellerkbb-main
+  cancel-in-progress: true
 
 jobs:
   deploy-cloudflare:
@@ -70,3 +74,98 @@ jobs:
         run: |
           npm install -g firebase-tools
           firebase deploy --project "${{ secrets.FIREBASE_PROJECT_ID }}" --only firestore:rules,firestore:indexes
+
+  release-backup:
+    name: Release source backup
+    needs: [deploy-cloudflare, deploy-firestore]
+    if: ${{ always() && needs.deploy-cloudflare.result == 'success' && needs.deploy-firestore.result == 'success' }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout completed source
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Validate version consistency
+        id: version
+        shell: bash
+        run: |
+          set -euo pipefail
+          VERSION="$(tr -d '[:space:]' < VERSION)"
+          PACKAGE_VERSION="$(node -e "console.log(JSON.parse(require('fs').readFileSync('package.json','utf8')).version)")"
+          WRANGLER_VERSION="$(sed -n 's/^APP_VERSION = "\(.*\)"/\1/p' wrangler.toml)"
+          test -n "$VERSION"
+          test "$VERSION" = "$PACKAGE_VERSION"
+          test "$VERSION" = "$WRANGLER_VERSION"
+          grep -Fq "version:'${VERSION}-preview'" public/index.html
+          grep -Fq ">v${VERSION}</span>" public/index.html
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "tag=v$VERSION" >> "$GITHUB_OUTPUT"
+
+      - name: Build source ZIP
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          git archive --format=zip --output="sellerkbb-v${VERSION}-src.zip" HEAD
+
+      - name: Write friendly release notes
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          cat > release-notes.md <<EOF
+          # SellerKBB v${VERSION}
+
+          Đây là bản backup mã nguồn tự động sau khi kiểm tra hoàn tất.
+
+          **Trong Release này có:**
+          - Source code đúng theo commit: `${GITHUB_SHA}`
+          - File `sellerkbb-v${VERSION}-src.zip` để tải về lưu hoặc khôi phục
+          - Source ZIP/TAR mặc định do GitHub tạo
+
+          **Lưu ý:** Release chỉ backup **mã nguồn/SRC**. Release không chứa dữ liệu Firestore, dữ liệu Cloudflare KV đang chạy, TikTok token, Firebase service account hoặc các secret.
+
+          **Khôi phục đơn giản:** vào Releases → chọn version cần quay lại → đưa link Release đó cho AI và yêu cầu `Khôi phục SellerKBB về đúng Release này, kiểm tra PC/mobile rồi deploy lại`.
+          EOF
+
+      - name: Create or refresh Release for this version
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ steps.version.outputs.version }}
+          TAG: ${{ steps.version.outputs.tag }}
+        run: |
+          set -euo pipefail
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            echo "Release $TAG already exists; refreshing it to the newest completed commit."
+            gh release delete "$TAG" --cleanup-tag -y
+          fi
+          gh release create "$TAG" "sellerkbb-v${VERSION}-src.zip" \
+            --target "$GITHUB_SHA" \
+            --title "SellerKBB $TAG" \
+            --notes-file release-notes.md \
+            --latest
+
+      - name: Keep only newest 5 Releases
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          mapfile -t RELEASE_TAGS < <(gh api "repos/$GITHUB_REPOSITORY/releases?per_page=100" --jq '.[].tag_name')
+          echo "Current releases: ${#RELEASE_TAGS[@]}"
+          if [ "${#RELEASE_TAGS[@]}" -gt 5 ]; then
+            for TAG in "${RELEASE_TAGS[@]:5}"; do
+              echo "Removing old backup Release: $TAG"
+              gh release delete "$TAG" --cleanup-tag -y || true
+            done
+          fi
+
+      - name: Release summary
+        env:
+          TAG: ${{ steps.version.outputs.tag }}
+        run: |
+          echo "### ✅ SellerKBB backup completed" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Release: **$TAG**" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Source ZIP attached" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Retention: **5 newest Releases**" >> "$GITHUB_STEP_SUMMARY"
