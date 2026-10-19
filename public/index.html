@@ -1582,14 +1582,168 @@ tbody tr:hover td{background:#fcfafb}
   .approved-user-meta{justify-items:start;width:100%;padding-left:47px}
 }
 
+
+/* v1.12 lavender pastel theme + grouped navigation */
+:root{
+  --bg:#f6f4fb;
+  --bg-soft:#f2eef9;
+  --surface:#ffffff;
+  --surface-soft:#faf8ff;
+  --surface-strong:#eee7f8;
+  --line:#e3dced;
+  --line-strong:#d2c5e6;
+  --text:#3e344c;
+  --muted:#7b7088;
+  --accent:#a88bd7;
+  --accent-strong:#8262b8;
+  --accent-soft:#eee7fa;
+  --shadow-sm:0 1px 4px rgba(86,66,116,.06);
+  --shadow-md:0 10px 28px rgba(86,66,116,.09);
+}
+html,body{background:var(--bg)}
+body{
+  color:var(--text);
+  background:
+    radial-gradient(circle at 88% -12%,rgba(190,171,228,.25),transparent 30%),
+    radial-gradient(circle at 4% 10%,rgba(224,215,244,.24),transparent 24%),
+    linear-gradient(180deg,#faf9fd 0,#f6f4fb 55%,#f4f1f9 100%);
+}
+.brand-lockup{
+  display:flex;
+  align-items:center;
+  gap:0;
+  color:#514267;
+  font-size:24px;
+  font-weight:850;
+  line-height:1;
+  letter-spacing:-.045em;
+  white-space:nowrap;
+}
+.brand-lockup .brand-seller{font-weight:750}
+.brand-lockup b{color:var(--accent-strong);font-weight:950}
+.brand-lockup .brand-live{
+  margin-left:7px;
+  padding:4px 6px;
+  border:1px solid #ddd1ef;
+  border-radius:6px;
+  background:#f3eefb;
+  color:#76608f;
+  font-size:9px;
+  font-weight:850;
+  letter-spacing:.08em;
+}
+.boot-card{border-color:var(--line);background:rgba(255,255,255,.96)}
+.sidebar{
+  border-right-color:var(--line);
+  background:rgba(249,247,253,.96);
+}
+.side-brand{padding:9px 10px 23px}
+.nav{display:grid;gap:18px}
+.nav-group{display:grid;gap:5px}
+.nav-group-title{
+  padding:0 11px;
+  color:#9a8daa;
+  font-size:9px;
+  line-height:1.3;
+  font-weight:800;
+  letter-spacing:.1em;
+  text-transform:uppercase;
+}
+.nav-group-items{display:grid;gap:4px}
+.nav button{color:#746a80}
+.nav button:hover{background:#f5f1fb;color:#554567}
+.nav button.active{
+  background:#eee7f7;
+  color:#7654a6;
+}
+.nav button.active::before{background:var(--accent-strong)}
+.topbar{
+  border-bottom-color:rgba(220,211,233,.85);
+  background:rgba(249,248,252,.91);
+}
+.page-title{color:#40354f}
+.section.active{
+  border-color:var(--line);
+  background:rgba(255,255,255,.91);
+  box-shadow:0 1px 3px rgba(79,61,103,.025);
+}
+.card h3,.export-row b,.api-hero-copy h3{color:#493d59}
+.metric-card{
+  border-color:#e9e2f1;
+  background:linear-gradient(145deg,#fff 0,#faf8fe 100%);
+}
+.metric-icon,.export-icon,.api-hero-icon,.storage-provider-icon{
+  background:var(--accent-soft);
+  color:#8061b1;
+}
+.metric-copy>strong,.stat-value,.money{color:#594472}
+.range-tabs{border-color:var(--line);background:#f4f1f8}
+.range-btn{color:#746a80}
+.range-btn:hover{background:#fff;color:#594b69}
+.range-btn.active{background:#fff;color:#7957a8;box-shadow:0 1px 4px rgba(86,66,116,.09)}
+.custom-range{background:#f8f6fc}
+.date-pick.active{border-color:#bda8df;box-shadow:0 0 0 3px rgba(150,119,200,.11)}
+.calendar-nav{background:#f7f4fb;color:#705d88}
+.calendar-nav:hover{background:#f0eafb}
+.calendar-day:hover,.calendar-day.in-range{background:#f1ebfa}
+.pill,.tag{border-color:#ded3ee;background:var(--accent-soft);color:#72568f}
+.tag.admin{border-color:#d8c9ef;background:#f2ecfb;color:#684d91}
+.tag.operator{border-color:#d7d6ef;background:#f1f0fb;color:#5d598d}
+.tag.host{border-color:#e1d6f0;background:#f7f2fc;color:#7c5e99}
+.btn{color:#51455f}
+.btn:hover{border-color:#cfc0e4;background:#fbf9fe}
+.btn.primary{border-color:var(--accent-strong);background:var(--accent-strong);color:#fff}
+.btn.primary:hover{border-color:#7354a8;background:#7354a8}
+.btn::after,.nav button::after,.page-btn::after,.range-btn::after,.menu-toggle::after{background:rgba(130,98,184,.18)}
+th{background:#f7f4fb;color:#71677d}
+tbody tr:hover td{background:#fbf9fe}
+.pair-card b,.status-item b,.api-foot b,.sync-status b,.live-time-cell b,.mobile-live-time b{color:#554663}
+.status-item{color:#7b5aa3}
+.eyebrow,.heading-with-icon .ui-icon,.data-note .ui-icon,.mobile-live-time .ui-icon{color:#8061b1}
+.toggle-row{border-left-color:#c9b7e1;background:#f8f6fc}
+.storage-quota-card{background:linear-gradient(145deg,#fff 0,#faf8fe 100%)}
+.storage-quota-head>strong,.storage-usage-line b{color:#58456b}
+.storage-quota-foot>span{color:#76549c}
+.storage-progress{background:#eee9f5}
+.storage-progress i{background:linear-gradient(90deg,#b69add,#8666bd)}
+.account-trigger:hover{background:#f5f1fa}
+.account-trigger.open{background:#eee8f7;border-top-color:#d6cae5}
+.account-chevron{color:#88789a}
+.user-list-avatar{border-color:#ded3eb}
+.account-popover{border-color:var(--line);box-shadow:0 16px 40px rgba(75,57,99,.14)}
+.mobile-menu-overlay{background:rgba(58,45,76,.27)}
+@media(max-width:1100px) and (min-width:701px){
+  .nav{gap:12px}
+  .nav-group{gap:0}
+  .nav-group-title{display:none}
+  .side-brand{text-align:center;padding-left:0;padding-right:0}
+  .side-brand .brand-lockup{justify-content:center}
+  .side-brand .brand-seller,.side-brand .brand-live{display:none!important}
+  .side-brand .brand-lockup b{font-size:18px}
+}
+@media(max-width:700px){
+  body{background:#f7f5fb}
+  .topbar{background:rgba(250,249,253,.95)}
+  .sidebar{
+    background:rgba(249,247,253,.995)!important;
+    box-shadow:18px 0 42px rgba(75,57,99,.16)!important;
+  }
+  .side-brand .brand-seller,.side-brand .brand-live{display:inline-flex!important}
+  .nav{gap:17px!important}
+  .nav-group{gap:6px}
+  .nav-group-title{display:block!important;padding:0 12px}
+  .nav-group-items{display:grid!important;gap:4px!important}
+  .section.active{background:#fff;border-color:var(--line)}
+}
+
 </style>
 </head>
 <body>
-  <div id="boot" class="boot"><div class="boot-card"><div class="brand">Seller<b>KBB</b></div><p class="sub" id="bootText">Đang kiểm tra cấu hình hệ thống…</p><div id="bootActions" class="row"></div></div></div>
+  <div id="boot" class="boot"><div class="boot-card"><div class="brand brand-lockup"><span class="brand-seller">Seller</span><b>KBB</b><span class="brand-live">LIVE</span></div><p class="sub" id="bootText">Đang kiểm tra cấu hình hệ thống…</p><div id="bootActions" class="row"></div></div></div>
   <div id="app" class="hidden">
     <div id="mobileMenuOverlay" class="mobile-menu-overlay" aria-hidden="true"></div>
     <aside class="sidebar" id="sidebar">
-      <div class="side-brand"><div class="brand">S<b>KBB</b> <span>LIVE</span></div></div>
+      <div class="side-brand"><div class="brand brand-lockup"><span class="brand-seller">Seller</span><b>KBB</b><span class="brand-live">LIVE</span></div></div>
       <nav class="nav" id="nav"></nav>
       <div class="side-bottom">
         <button id="userMenuBtn" class="userbox account-trigger row" type="button" aria-expanded="false" aria-controls="accountPopover">
@@ -1601,7 +1755,7 @@ tbody tr:hover td{background:#fcfafb}
       </div>
     </aside>
     <main class="main">
-      <header class="topbar"><div class="topbar-title-wrap"><button id="menuToggle" class="menu-toggle" type="button" aria-label="Mở menu" aria-expanded="false">☰</button><div><h1 id="pageTitle" class="page-title">Tổng quan</h1><div id="pageSub" class="tiny"></div></div></div><div class="row"><span id="syncBadge" class="pill">v1.11.0</span></div></header>
+      <header class="topbar"><div class="topbar-title-wrap"><button id="menuToggle" class="menu-toggle" type="button" aria-label="Mở menu" aria-expanded="false">☰</button><div><h1 id="pageTitle" class="page-title">Tổng quan</h1><div id="pageSub" class="tiny"></div></div></div><div class="row"><span id="syncBadge" class="pill">v1.12.0</span></div></header>
       <div class="content">
         <section id="section-dashboard" class="section active"></section>
         <section id="section-live" class="section"></section>
@@ -1887,7 +2041,7 @@ tbody tr:hover td{background:#fcfafb}
 
     function previewTs(iso){ return {toDate:()=>new Date(iso)}; }
     function enterPreview(){
-      state.config={version:'1.11.0-preview',tiktokConfigured:true};
+      state.config={version:'1.12.0-preview',tiktokConfigured:true};
       state.user={uid:'preview-admin',email:'admin@sellerkbb.demo',displayName:'Quản trị viên Demo',photoURL:avatarFallbackData('Quản trị viên Demo')};
       state.profile={role:'admin',status:'approved',displayName:'Quản trị viên Demo',photoURL:state.user.photoURL,permissions:['live.read','kpi.read']};
       state.maintenance={settings:{retentionDays:180,autoCleanup:true,emergencyPercent:85,firestoreSoftLimitMb:600,firestoreMaxSessions:12000,kvSoftKeyLimit:5000},github:{usedBytes:124000,limitBytes:10000000000,available:true},cloudflare:{keyCount:5,lastRun:{ranAt:new Date().toISOString(),deleted:0},usedBytes:428000,storageLimitBytes:1000000000,storageComplete:true},firebase:{freePlanMode:true,ttlEnabled:false,ttlRecommended:false,storageLimitBytes:1073741824}};
@@ -2217,8 +2371,26 @@ tbody tr:hover td{background:#fcfafb}
     }
 
     function renderNav(){
-      const items=[{id:'dashboard',icon:'home',label:'Tổng quan',show:true},{id:'live',icon:'live',label:'Phiên LIVE',show:can('live.read')},{id:'kpi',icon:'kpi',label:'KPI nhân sự',show:can('kpi.read')},{id:'export',icon:'export',label:'Xuất file',show:can('live.read')||can('kpi.read')},{id:'users',icon:'users',label:'Tài khoản',show:isAdmin()},{id:'tiktok',icon:'plug',label:'TikTok / API',show:isAdmin()},{id:'storage',icon:'database',label:'Lưu trữ',show:isAdmin()}].filter(x=>x.show);
-      $('#nav').innerHTML=items.map(x=>`<button data-section="${x.id}" class="${state.section===x.id?'active':''}"><span class="nav-icon">${icon(x.icon,18)}</span><span>${x.label}</span></button>`).join('');
+      const groups=[
+        {label:'Báo cáo',items:[
+          {id:'dashboard',icon:'home',label:'Tổng quan',show:true},
+          {id:'live',icon:'live',label:'Phiên LIVE',show:can('live.read')},
+          {id:'kpi',icon:'kpi',label:'KPI nhân sự',show:can('kpi.read')}
+        ]},
+        {label:'Công cụ',items:[
+          {id:'export',icon:'export',label:'Xuất file',show:can('live.read')||can('kpi.read')}
+        ]},
+        {label:'Quản trị',items:[
+          {id:'users',icon:'users',label:'Tài khoản',show:isAdmin()},
+          {id:'tiktok',icon:'plug',label:'TikTok / API',show:isAdmin()},
+          {id:'storage',icon:'database',label:'Lưu trữ',show:isAdmin()}
+        ]}
+      ];
+      $('#nav').innerHTML=groups.map(group=>{
+        const items=group.items.filter(x=>x.show);
+        if(!items.length)return '';
+        return `<div class="nav-group"><div class="nav-group-title">${group.label}</div><div class="nav-group-items">${items.map(x=>`<button data-section="${x.id}" class="${state.section===x.id?'active':''}"><span class="nav-icon">${icon(x.icon,18)}</span><span>${x.label}</span></button>`).join('')}</div></div>`;
+      }).join('');
       $('#nav').querySelectorAll('button').forEach(b=>b.onclick=()=>switchSection(b.dataset.section));
     }
 
@@ -2481,7 +2653,9 @@ tbody tr:hover td{background:#fcfafb}
 
     function renderUsers(){
       if(!isAdmin()){ $('#section-users').innerHTML='';return; }
-      const pending=state.users.filter(u=>u.status==='pending'); const approved=state.users.filter(u=>u.status==='approved');
+      const pending=state.users.filter(u=>u.status==='pending');
+      const roleOrder={admin:0,operator:1,host:2};
+      const approved=state.users.filter(u=>u.status==='approved').sort((a,b)=>(roleOrder[a.role]??9)-(roleOrder[b.role]??9)||String(a.displayName||a.email||'').localeCompare(String(b.displayName||b.email||''),'vi'));
       $('#section-users').innerHTML=`<div class="card"><h3 class="heading-with-icon">${icon('users',18)} Tài khoản chờ duyệt <span class="pill warn">${pending.length}</span></h3>${pending.length?pending.map(userApprovalCard).join(''):'<div class="empty">Không có tài khoản đang chờ.</div>'}</div><div class="card"><h3 class="heading-with-icon">${icon('shield',18)} Tài khoản đã duyệt</h3>${approved.map(userApprovedRow).join('')}</div>`;
       document.querySelectorAll('[data-approve]').forEach(b=>b.onclick=()=>approveUser(b.dataset.approve));
     }

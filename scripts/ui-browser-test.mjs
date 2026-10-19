@@ -37,6 +37,10 @@ try {
   await page.waitForSelector("#app:not(.hidden)",{timeout:30000});
 
   assert((await page.$eval('#userAvatar',e=>e.getAttribute('src')||'')).length>0,"Sidebar Google avatar is missing");
+  const navGroups=await page.$eval('#nav .nav-group-title',els=>els.map(e=>e.textContent.trim()));
+  assert(navGroups.join('|')==='Báo cáo|Công cụ|Quản trị',"Sidebar groups are not ordered correctly");
+  assert(await page.$eval('.side-brand .brand-lockup',e=>e.textContent.replace(/\s+/g,'').includes('SellerKBBLIVE')),"SellerKBB LIVE brand lockup is incorrect");
+  assert(await page.$eval('html',e=>getComputedStyle(e).getPropertyValue('--accent').trim())==='#a88bd7',"Pastel purple theme accent is not active");
   await page.click('#userMenuBtn');
   assert(!(await page.$eval('#accountPopover',e=>e.classList.contains('hidden'))),"Account popover did not open");
   assert(await page.$eval('#accountPopover',e=>e.textContent.includes('admin@sellerkbb.demo')&&e.textContent.includes('Quản trị viên')&&e.textContent.includes('Đã duyệt')&&e.textContent.includes('Toàn quyền quản trị')),"Account popover basic information missing");
@@ -112,7 +116,11 @@ try {
   await page.click('#saveMaintenance');
   await sleep(100);
   await page.click('[data-section="users"]');
-  assert((await page.$$eval('#section-users .user-list-avatar',els=>els.length))>=6,"User account avatars are missing from the Users page");
+  assert((await page.$eval('#section-users .user-list-avatar',els=>els.length))>=6,"User account avatars are missing from the Users page");
+  const approvedRoles=await page.$eval('#section-users .approved-user-row .tag',els=>els.map(e=>e.textContent.trim()));
+  const roleRank={'Quản trị viên':0,'Nhân viên vận hành livestream':1,'Host Livestream':2};
+  assert(approvedRoles[0]==='Quản trị viên',"Approved accounts must start with administrators");
+  assert(approvedRoles.every((role,i)=>i===0||(roleRank[approvedRoles[i-1]]??9)<=(roleRank[role]??9)),"Approved accounts are not sorted Admin → Operator → Host");
   await page.select('[data-role="pending-01"]','operator');
   await page.click('[data-approve="pending-01"]');
   await sleep(100);
@@ -129,6 +137,8 @@ try {
   await page.click('#menuToggle');
   await page.waitForFunction(()=>document.querySelector('#sidebar')?.classList.contains('open'));
   await sleep(300);
+  const mobileNavGroups=await page.$eval('#nav .nav-group-title',els=>els.map(e=>e.textContent.trim()));
+  assert(mobileNavGroups.join('|')==='Báo cáo|Công cụ|Quản trị',"Mobile sidebar groups are missing");
   await page.click('#userMenuBtn');
   assert(!(await page.$eval('#accountPopover',e=>e.classList.contains('hidden'))),"Mobile account popover did not open");
   assert(await page.$('#accountLogoutBtn')!==null,"Mobile account logout button missing");

@@ -79,4 +79,12 @@ assert(html.includes("userIdentityHtml(userDisplayRecord(r.uid,r.name),false)"),
 assert(html.includes('id="accountLogoutBtn"'), "Account popover logout missing");
 assert(!html.includes('id="logoutBtn"'), "Legacy topbar logout button should be removed");
 assert(readme.includes("Hồ sơ Google & đăng xuất"), "README Google profile/logout guide missing");
-console.log("Project structure, syntax, persistence, calendar, storage, Google profiles, Release backup, README, and auto-sync checks OK");
+assert(html.includes("v1.12 lavender pastel theme + grouped navigation"), "Lavender theme override missing");
+assert(html.includes("--accent:#a88bd7"), "Pastel purple accent missing");
+assert(html.includes("nav-group-title"), "Grouped navigation labels missing");
+assert(html.includes("{label:'Báo cáo'"), "Báo cáo navigation group missing");
+assert(html.includes("{label:'Công cụ'"), "Công cụ navigation group missing");
+assert(html.includes("{label:'Quản trị'"), "Quản trị navigation group missing");
+assert(html.includes("brand-seller"), "SellerKBB brand lockup missing");
+assert(html.includes("const roleOrder={admin:0,operator:1,host:2};"), "Approved-account authority sorting missing");
+console.log("Project structure, syntax, persistence, calendar, storage, Google profiles, grouped lavender UI, Release backup, README, and auto-sync checks OK");

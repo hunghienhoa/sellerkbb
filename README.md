@@ -4,7 +4,7 @@
 
 ### Báo cáo TikTok LIVE · KPI nhân sự · Tự đồng bộ 24/24
 
-**Phiên bản hiện tại: v1.11.0**
+**Phiên bản hiện tại: v1.12.0**
 
 [![GitHub Release](https://img.shields.io/github/v/release/hunghienhoa/sellerkbb?label=Release)](https://github.com/hunghienhoa/sellerkbb/releases)
 [![GitHub Actions](https://img.shields.io/github/actions/workflow/status/hunghienhoa/sellerkbb/deploy.yml?branch=main&label=Ki%E1%BB%83m%20tra%20%26%20Backup)](https://github.com/hunghienhoa/sellerkbb/actions)
@@ -52,6 +52,7 @@ Bạn không cần hiểu hết code. Chỉ cần nhớ 4 nơi chính:
 - Lưu dữ liệu tối đa **180 ngày (6 tháng)** theo cấu hình.
 - Có trang **Lưu trữ & tự dọn** theo dõi GitHub / Firebase / Cloudflare.
 - Hỗ trợ PC và điện thoại.
+- Giao diện **tím pastel**, sidebar chia rõ **Báo cáo / Công cụ / Quản trị**.
 
 ---
 
