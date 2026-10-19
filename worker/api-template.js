@@ -7,6 +7,7 @@ const MAINTENANCE_SETTINGS_KEY = "maintenance:settings";
 const MAINTENANCE_LAST_RUN_KEY = "maintenance:last_run";
 const AUTO_SYNC_DATA_KEY = "autosync:rolling";
 const AUTO_SYNC_STATUS_KEY = "autosync:status";
+const GITHUB_REPO_CACHE_KEY = "maintenance:github_repo";
 const DEFAULT_MAINTENANCE = {
   retentionDays: 180,
   autoCleanup: true,
@@ -47,11 +48,66 @@ async function listAllKvKeys(env) {
 }
 
 function isProtectedKvKey(name) {
-  return name === "seller_token" || name === MAINTENANCE_SETTINGS_KEY || name === AUTO_SYNC_DATA_KEY || name === AUTO_SYNC_STATUS_KEY;
+  return name === "seller_token" || name === MAINTENANCE_SETTINGS_KEY || name === AUTO_SYNC_DATA_KEY || name === AUTO_SYNC_STATUS_KEY || name === GITHUB_REPO_CACHE_KEY;
 }
 
 function isExpendableKvKey(name) {
   return name.startsWith("oauth_state:") || name.startsWith("cache:") || name.startsWith("maintenance_log:") || name === MAINTENANCE_LAST_RUN_KEY;
+}
+
+async function measureKvStorage(env, keys = []) {
+  if (!env.TIKTOK_KV) return { usedBytes: 0, measuredKeys: 0, totalKeys: 0, complete: true };
+  const maxMeasure = 50;
+  const selected = keys.slice(0, maxMeasure);
+  const encoder = new TextEncoder();
+  let usedBytes = 0;
+  for (const key of selected) {
+    try {
+      const value = await env.TIKTOK_KV.get(key.name);
+      usedBytes += encoder.encode(String(key.name || "")).byteLength;
+      if (value != null) usedBytes += encoder.encode(value).byteLength;
+    } catch {}
+  }
+  return { usedBytes, measuredKeys: selected.length, totalKeys: keys.length, complete: keys.length <= maxMeasure };
+}
+
+async function getGithubRepoStorage(env) {
+  const limitBytes = 10 * 1000 * 1000 * 1000;
+  const fallback = { usedBytes: 0, limitBytes, recommended: true, available: false, source: "github_api" };
+  let cached = null;
+  if (env.TIKTOK_KV) {
+    try {
+      const raw = await env.TIKTOK_KV.get(GITHUB_REPO_CACHE_KEY);
+      cached = raw ? JSON.parse(raw) : null;
+      if (cached?.fetchedAt && Date.now() - new Date(cached.fetchedAt).getTime() < 21600000) {
+        return { ...fallback, ...cached, limitBytes, available: true };
+      }
+    } catch {}
+  }
+  try {
+    const res = await fetch("https://api.github.com/repos/hunghienhoa/sellerkbb", {
+      headers: {
+        "accept": "application/vnd.github+json",
+        "user-agent": "SellerKBB-Storage-Monitor/1.0"
+      }
+    });
+    if (!res.ok) throw new Error("github_http_" + res.status);
+    const data = await res.json();
+    const result = {
+      usedBytes: Math.max(0, Number(data.size || 0)) * 1024,
+      limitBytes,
+      recommended: true,
+      available: true,
+      source: "github_api",
+      fetchedAt: new Date().toISOString()
+    };
+    if (env.TIKTOK_KV) {
+      await env.TIKTOK_KV.put(GITHUB_REPO_CACHE_KEY, JSON.stringify(result), { expirationTtl: 86400 });
+    }
+    return result;
+  } catch {
+    return cached ? { ...fallback, ...cached, limitBytes, available: true } : fallback;
+  }
 }
 
 async function runKvMaintenance(env, reason = "scheduled") {
@@ -69,7 +125,8 @@ async function runKvMaintenance(env, reason = "scheduled") {
       deleted++;
     }
   }
-  const status = { ok: true, reason, ranAt: new Date().toISOString(), keyCount: keys.length, deleted, settings };
+  const storage = await measureKvStorage(env, keys);
+  const status = { ok: true, reason, ranAt: new Date().toISOString(), keyCount: keys.length, deleted, storage, settings };
   await env.TIKTOK_KV.put(MAINTENANCE_LAST_RUN_KEY, JSON.stringify(status), { expirationTtl: 2592000 });
   return status;
 }
@@ -480,7 +537,29 @@ async function handleApi(request, env) {
       const keys = await listAllKvKeys(env);
       const lastRaw = env.TIKTOK_KV ? await env.TIKTOK_KV.get(MAINTENANCE_LAST_RUN_KEY) : null;
       let lastRun = null; try { lastRun = lastRaw ? JSON.parse(lastRaw) : null; } catch {}
-      return json({ ok: true, settings, cloudflare: { keyCount: keys.length, lastRun }, firebase: { freePlanMode: true, ttlEnabled: false, ttlRecommended: false } });
+      const [storage, github] = await Promise.all([
+        measureKvStorage(env, keys),
+        getGithubRepoStorage(env)
+      ]);
+      return json({
+        ok: true,
+        settings,
+        github,
+        cloudflare: {
+          keyCount: keys.length,
+          lastRun,
+          usedBytes: storage.usedBytes,
+          storageMeasuredKeys: storage.measuredKeys,
+          storageComplete: storage.complete,
+          storageLimitBytes: 1000000000
+        },
+        firebase: {
+          freePlanMode: true,
+          ttlEnabled: false,
+          ttlRecommended: false,
+          storageLimitBytes: 1073741824
+        }
+      });
     }
     if (request.method === "POST") {
       const body = await request.json().catch(() => ({}));
