@@ -108,7 +108,7 @@ try {
 
   await page.click('[data-section="kpi"]');
   await page.click('#section-kpi [data-range-mode="30d"]');
-  assert((await page.$('#section-kpi [data-manual-session]')).length>=1,"Manual KPI session section missing");
+  assert((await page.$$('#section-kpi [data-manual-session]')).length>=1,"Manual KPI session section missing");
   const manualCard='#section-kpi [data-manual-session]:first-of-type';
   assert(await page.$eval(manualCard,e=>e.textContent.includes('không tự chia GMV tổng')),"Manual KPI no-equal-split notice missing");
   await page.select(manualCard+' [data-manual-person]','thao-my');
