@@ -120,6 +120,9 @@ assert(!html.includes('id="usersQuickBtn"'), "Legacy internal Users quick button
 const sidebarClose=html.indexOf("</aside>");
 assert(html.indexOf('id="usersDockBtn"')>sidebarClose, "Users dock button must be outside the sidebar");
 assert(html.includes(".sidebar.open + .users-dock-btn"), "Mobile Users dock must follow the open sidebar");
+assert(html.includes("function positionUsersDock()"), "Users dock geometry helper missing");
+assert(html.includes("sideRect.right+8"), "Users dock must anchor to the sidebar right edge");
+assert(html.includes("avatarRect.top+avatarRect.height/2"), "Users dock must align to avatar center");
 assert(readme.includes(`Cập nhật mới nhất — v${version}`), "README latest-update section must match VERSION");
 assert(workflow.includes("Tính năng/cập nhật trong bản này"), "Release changelog heading missing");
 assert(workflow.includes("Write release notes from README"), "README-driven Release notes step missing");

@@ -2258,6 +2258,17 @@ tbody tr:hover td{background:#fbf9fe}
       await setDoc(uref,{uid:user.uid,email:user.email||'',displayName:user.displayName||user.email||'',photoURL:user.photoURL||'',role:'pending',status:'pending',permissions:[],createdAt:serverTimestamp(),lastLoginAt:serverTimestamp(),updatedAt:serverTimestamp()});
     }
 
+    function positionUsersDock(){
+      const dock=$('#usersDockBtn'), sidebar=$('#sidebar'), avatar=$('#userAvatar');
+      if(!dock||!sidebar||!avatar||dock.classList.contains('hidden'))return;
+      const sideRect=sidebar.getBoundingClientRect();
+      const avatarRect=avatar.getBoundingClientRect();
+      const dockHeight=dock.getBoundingClientRect().height||42;
+      dock.style.left=Math.round(sideRect.right+8)+'px';
+      dock.style.top=Math.round(avatarRect.top+avatarRect.height/2-dockHeight/2)+'px';
+      dock.style.bottom='auto';
+    }
+
     function setMobileMenu(open){
       const sidebar=$('#sidebar'), overlay=$('#mobileMenuOverlay'), toggle=$('#menuToggle');
       if(!sidebar||!overlay||!toggle)return;
@@ -2266,6 +2277,8 @@ tbody tr:hover td{background:#fbf9fe}
       toggle.setAttribute('aria-expanded',String(open));
       toggle.setAttribute('aria-label',open?'Đóng menu':'Mở menu');
       document.body.classList.toggle('menu-open',open);
+      requestAnimationFrame(positionUsersDock);
+      if(open)setTimeout(positionUsersDock,280);
     }
 
     function showToast(message){
@@ -2408,6 +2421,12 @@ tbody tr:hover td{background:#fbf9fe}
       if(usersDock){
         usersDock.classList.toggle('hidden',!isAdmin());
         usersDock.onclick=e=>{ e.stopPropagation(); switchSection('users'); };
+        if(document.documentElement.dataset.usersDockBound!=='1'){
+          document.documentElement.dataset.usersDockBound='1';
+          window.addEventListener('resize',positionUsersDock);
+          $('#sidebar')?.addEventListener('scroll',positionUsersDock,{passive:true});
+        }
+        requestAnimationFrame(positionUsersDock);
       }
       $('#syncBadge').textContent=`v${state.config.version||'1.0.0'}`;
     }
