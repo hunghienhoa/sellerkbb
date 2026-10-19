@@ -113,12 +113,12 @@ assert(html.includes("renderKpi(); renderManualKpi();"), "renderAll must render 
 const toolsGroup=html.slice(html.indexOf("{label:'Công cụ'"),html.indexOf("{label:'Quản trị'"));
 assert(toolsGroup.includes("id:'export'")&&toolsGroup.includes("id:'manual-kpi'"), "Export and manual KPI must share Công cụ group");
 const adminGroup=html.slice(html.indexOf("{label:'Quản trị'"),html.indexOf("];",html.indexOf("{label:'Quản trị'")));
-assert(!adminGroup.includes("id:'users'"), "Users must be outside Quản trị nav group");
-assert(html.includes('id="usersQuickBtn"'), "External Users quick button missing");
-assert(html.includes(".side-account-row{display:flex;"), "Users/account row must stay on one line");
-assert(!html.includes(".side-account-row{grid-template-columns:1fr}"), "Users button must not drop below account row on tablet");
+assert(adminGroup.includes("id:'users'"), "Duyệt tài khoản must stay inside Quản trị nav group");
+assert(adminGroup.includes("label:'Duyệt tài khoản'"), "Duyệt tài khoản nav label missing");
+assert(!html.includes('id="usersQuickBtn"'), "External Users quick button must be removed");
+assert(!html.includes("side-account-row"), "Legacy external Users account-row layout must be removed");
 assert(readme.includes(`Cập nhật mới nhất — v${version}`), "README latest-update section must match VERSION");
 assert(workflow.includes("Tính năng/cập nhật trong bản này"), "Release changelog heading missing");
 assert(workflow.includes("Write release notes from README"), "README-driven Release notes step missing");
 assert(workflow.includes('Cập nhật mới nhất — v" ver'), "Release notes must read the matching README version section");
-console.log("Project structure, syntax, persistence, calendar, storage, Google profiles, grouped lavender UI, tool-group manual KPI, external Users shortcut, descriptive Releases, README, and auto-sync checks OK");
+console.log("Project structure, syntax, persistence, calendar, storage, Google profiles, grouped lavender UI, tool-group manual KPI, admin Users navigation, descriptive Releases, README, and auto-sync checks OK");
