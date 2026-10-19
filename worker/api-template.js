@@ -9,9 +9,9 @@ const DEFAULT_MAINTENANCE = {
   retentionDays: 180,
   autoCleanup: true,
   emergencyPercent: 85,
-  firestoreSoftLimitMb: 512,
-  firestoreMaxSessions: 20000,
-  kvSoftKeyLimit: 8000
+  firestoreSoftLimitMb: 600,
+  firestoreMaxSessions: 12000,
+  kvSoftKeyLimit: 5000
 };
 
 function normalizeMaintenance(input = {}) {
@@ -19,9 +19,9 @@ function normalizeMaintenance(input = {}) {
   n.retentionDays = Math.min(180, Math.max(30, Number(n.retentionDays) || 180));
   n.autoCleanup = n.autoCleanup !== false;
   n.emergencyPercent = Math.min(95, Math.max(70, Number(n.emergencyPercent) || 85));
-  n.firestoreSoftLimitMb = Math.min(100000, Math.max(50, Number(n.firestoreSoftLimitMb) || 512));
-  n.firestoreMaxSessions = Math.min(1000000, Math.max(500, Number(n.firestoreMaxSessions) || 20000));
-  n.kvSoftKeyLimit = Math.min(1000000, Math.max(100, Number(n.kvSoftKeyLimit) || 8000));
+  n.firestoreSoftLimitMb = Math.min(900, Math.max(100, Number(n.firestoreSoftLimitMb) || 600));
+  n.firestoreMaxSessions = Math.min(50000, Math.max(500, Number(n.firestoreMaxSessions) || 12000));
+  n.kvSoftKeyLimit = Math.min(50000, Math.max(100, Number(n.kvSoftKeyLimit) || 5000));
   return n;
 }
 
@@ -199,7 +199,7 @@ async function tiktokCall(env, token, path, query = {}, method = "GET", bodyObj 
   return { httpStatus: res.status, payload };
 }
 
-async function refreshTikTokToken(env, current) {
+async function refreshTikTokToken(env, current, reason = "expiry") {
   if (!current?.refresh_token) return current;
   const url = new URL(TIKTOK_TOKEN_HOST + "/api/v2/token/refresh");
   url.searchParams.set("app_key", env.TIKTOK_APP_KEY);
@@ -209,21 +209,51 @@ async function refreshTikTokToken(env, current) {
   const res = await fetch(url);
   const payload = await res.json();
   if (payload.code !== 0 || !payload.data?.access_token) throw new Error(payload.message || "TikTok token refresh failed");
-  const next = { ...current, ...payload.data, refreshed_at: Date.now() };
+  const next = { ...current, ...payload.data, refreshed_at: Date.now(), refresh_reason: reason };
   await env.TIKTOK_KV.put("seller_token", JSON.stringify(next));
   return next;
 }
 
-async function getTikTokToken(env) {
+function tokenExpirySeconds(token) {
+  const raw = Number(token?.access_token_expire_in || token?.access_token_expire_at || 0);
+  if (!raw) return 0;
+  // TikTok Shop currently returns Unix epoch seconds. Keep a compatibility fallback
+  // if a future response ever returns a relative duration instead.
+  return raw > 1000000000 ? raw : Math.floor(Date.now() / 1000) + raw;
+}
+
+function refreshTokenExpirySeconds(token) {
+  const raw = Number(token?.refresh_token_expire_in || token?.refresh_token_expire_at || 0);
+  if (!raw) return 0;
+  return raw > 1000000000 ? raw : Math.floor(Date.now() / 1000) + raw;
+}
+
+async function getStoredTikTokToken(env) {
   if (!env.TIKTOK_KV) return null;
   const raw = await env.TIKTOK_KV.get("seller_token");
   if (!raw) return null;
-  const token = JSON.parse(raw);
-  const expireAt = Number(token.access_token_expire_in || token.access_token_expire_at || 0);
-  if (expireAt && expireAt < Math.floor(Date.now() / 1000) + 300) {
-    try { return await refreshTikTokToken(env, token); } catch { return token; }
+  try { return JSON.parse(raw); } catch { return null; }
+}
+
+async function refreshTikTokTokenIfNeeded(env, thresholdSeconds = 7200, reason = "proactive") {
+  const token = await getStoredTikTokToken(env);
+  if (!token?.access_token) return { token, refreshed: false, connected: false };
+  const expireAt = tokenExpirySeconds(token);
+  const now = Math.floor(Date.now() / 1000);
+  if (expireAt && expireAt <= now + thresholdSeconds) {
+    const next = await refreshTikTokToken(env, token, reason);
+    return { token: next, refreshed: true, connected: true };
   }
-  return token;
+  return { token, refreshed: false, connected: true };
+}
+
+async function getTikTokToken(env) {
+  try {
+    const result = await refreshTikTokTokenIfNeeded(env, 7200, "api_request");
+    return result.token;
+  } catch {
+    return await getStoredTikTokToken(env);
+  }
 }
 
 async function getAuthorizedShops(env, accessToken) {
@@ -346,7 +376,7 @@ async function handleApi(request, env) {
       const keys = await listAllKvKeys(env);
       const lastRaw = env.TIKTOK_KV ? await env.TIKTOK_KV.get(MAINTENANCE_LAST_RUN_KEY) : null;
       let lastRun = null; try { lastRun = lastRaw ? JSON.parse(lastRaw) : null; } catch {}
-      return json({ ok: true, settings, cloudflare: { keyCount: keys.length, lastRun }, firebase: { ttlField: "expiresAt", ttlPolicyMustBeEnabled: true } });
+      return json({ ok: true, settings, cloudflare: { keyCount: keys.length, lastRun }, firebase: { freePlanMode: true, ttlEnabled: false, ttlRecommended: false } });
     }
     if (request.method === "POST") {
       const body = await request.json().catch(() => ({}));
@@ -364,16 +394,20 @@ async function handleApi(request, env) {
   if (url.pathname === "/api/tiktok/status") {
     await requireAdmin(request, env);
     const token = await getTikTokToken(env);
-    return json({ configured: publicConfig(env).tiktokConfigured, connected: Boolean(token?.access_token), grantedScopes: token?.granted_scopes || [] });
+    const accessExpiresAt = tokenExpirySeconds(token);
+    const refreshExpiresAt = refreshTokenExpirySeconds(token);
+    return json({
+      configured: publicConfig(env).tiktokConfigured,
+      connected: Boolean(token?.access_token),
+      autoRefresh: Boolean(token?.refresh_token),
+      accessTokenExpiresAt: accessExpiresAt || null,
+      refreshTokenExpiresAt: refreshExpiresAt || null,
+      lastRefreshedAt: token?.refreshed_at || null,
+      grantedScopes: token?.granted_scopes || []
+    });
   }
 
   if (url.pathname === "/api/tiktok/oauth/start" && request.method === "POST") return handleOAuthStart(request, env);
-
-  if (url.pathname === "/api/tiktok/disconnect" && request.method === "POST") {
-    await requireAdmin(request, env);
-    if (env.TIKTOK_KV) await env.TIKTOK_KV.delete("seller_token");
-    return json({ ok: true });
-  }
 
   if (url.pathname === "/api/tiktok/sync" && request.method === "POST") {
     await requireAdmin(request, env);
@@ -396,7 +430,14 @@ async function handleApi(request, env) {
 
 export default {
   async scheduled(controller, env, ctx) {
-    ctx.waitUntil(runKvMaintenance(env, "cron"));
+    if (controller.cron === "0 */2 * * *") {
+      ctx.waitUntil(refreshTikTokTokenIfNeeded(env, 7200, "cron").catch(() => null));
+      return;
+    }
+    if (controller.cron === "15 3 * * *") {
+      ctx.waitUntil(runKvMaintenance(env, "daily_free_plan"));
+      return;
+    }
   },
   async fetch(request, env) {
     const url = new URL(request.url);
