@@ -1880,8 +1880,8 @@ tbody tr:hover td{background:#fcfafb}
       const count=state.sessions.length;
       const cutoff=Date.now()-Number(settings.retentionDays||180)*86400000;
       const expired=state.sessions.filter(s=>(s.startTime?.toDate?.()?.getTime?.()||0)<cutoff).length;
-      const countPct=Math.min(999,Math.round(count/Math.max(1,Number(settings.firestoreMaxSessions||20000))*100));
-      const mbPct=Math.min(999,Math.round(totalMb/Math.max(1,Number(settings.firestoreSoftLimitMb||512))*100));
+      const countPct=Math.min(999,Math.round(count/Math.max(1,Number(settings.firestoreMaxSessions||12000))*100));
+      const mbPct=Math.min(999,Math.round(totalMb/Math.max(1,Number(settings.firestoreSoftLimitMb||600))*100));
       return {count,totalMb,expired,countPct,mbPct,pressure:Math.max(countPct,mbPct)};
     }
 
