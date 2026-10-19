@@ -775,7 +775,7 @@ tbody tr:hover td{background:#fffafd}
       <div class="side-bottom"><div class="userbox row"><img id="userAvatar" class="avatar" alt=""><div class="usertext" style="min-width:0"><div id="userName" style="font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis"></div><div id="userRole" class="tiny"></div></div></div></div>
     </aside>
     <main class="main">
-      <header class="topbar"><div class="topbar-title-wrap"><button id="menuToggle" class="menu-toggle" type="button" aria-label="Mở menu" aria-expanded="false">☰</button><div><h1 id="pageTitle" class="page-title">Tổng quan</h1><div id="pageSub" class="tiny"></div></div></div><div class="row"><span id="syncBadge" class="pill">v1.4.0</span><button id="logoutBtn" class="btn ghost small">Đăng xuất</button></div></header>
+      <header class="topbar"><div class="topbar-title-wrap"><button id="menuToggle" class="menu-toggle" type="button" aria-label="Mở menu" aria-expanded="false">☰</button><div><h1 id="pageTitle" class="page-title">Tổng quan</h1><div id="pageSub" class="tiny"></div></div></div><div class="row"><span id="syncBadge" class="pill">v1.5.0</span><button id="logoutBtn" class="btn ghost small">Đăng xuất</button></div></header>
       <div class="content">
         <section id="section-dashboard" class="section active"></section>
         <section id="section-live" class="section"></section>
@@ -791,7 +791,7 @@ tbody tr:hover td{background:#fffafd}
     const FIREBASE_VERSION = "12.19.0";
     const { initializeApp } = await import(`https://www.gstatic.com/firebasejs/${FIREBASE_VERSION}/firebase-app.js`);
     const { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } = await import(`https://www.gstatic.com/firebasejs/${FIREBASE_VERSION}/firebase-auth.js`);
-    const { getFirestore, doc, getDoc, setDoc, updateDoc, getDocs, collection, query, orderBy, where, writeBatch, serverTimestamp, Timestamp } = await import(`https://www.gstatic.com/firebasejs/${FIREBASE_VERSION}/firebase-firestore.js`);
+    const { getFirestore, doc, getDoc, setDoc, updateDoc, getDocs, collection, query, orderBy, where, limit, writeBatch, serverTimestamp, Timestamp } = await import(`https://www.gstatic.com/firebasejs/${FIREBASE_VERSION}/firebase-firestore.js`);
 
     const $ = (s) => document.querySelector(s);
     const esc = (v="") => String(v).replace(/[&<>'"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;","'":"&#39;",'"':"&quot;"}[c]));
@@ -898,14 +898,14 @@ tbody tr:hover td{background:#fffafd}
     const PREVIEW = location.pathname === '/preview' || new URLSearchParams(location.search).get('preview') === '1';
 
     const LIVE_PAGE_SIZE = 20;
-    const state = { config:null, auth:null, db:null, user:null, profile:null, sessions:[], users:[], section:'dashboard', livePage:1, rangeMode:'30d', customStart:'', customEnd:'', maintenance:{settings:{retentionDays:180,autoCleanup:true,emergencyPercent:85,firestoreSoftLimitMb:512,firestoreMaxSessions:20000,kvSoftKeyLimit:8000},cloudflare:{keyCount:0,lastRun:null},firebase:{ttlField:'expiresAt',ttlPolicyMustBeEnabled:true}} };
+    const state = { config:null, auth:null, db:null, user:null, profile:null, sessions:[], users:[], section:'dashboard', livePage:1, rangeMode:'30d', customStart:'', customEnd:'', maintenance:{settings:{retentionDays:180,autoCleanup:true,emergencyPercent:85,firestoreSoftLimitMb:600,firestoreMaxSessions:12000,kvSoftKeyLimit:5000},cloudflare:{keyCount:0,lastRun:null},firebase:{freePlanMode:true,ttlEnabled:false,ttlRecommended:false}} };
 
     function previewTs(iso){ return {toDate:()=>new Date(iso)}; }
     function enterPreview(){
-      state.config={version:'1.4.0-preview',tiktokConfigured:true};
+      state.config={version:'1.5.0-preview',tiktokConfigured:true};
       state.user={uid:'preview-admin',email:'admin@sellerkbb.demo',displayName:'Quản trị viên Demo',photoURL:''};
       state.profile={role:'admin',status:'approved',displayName:'Quản trị viên Demo',permissions:['live.read','kpi.read']};
-      state.maintenance={settings:{retentionDays:180,autoCleanup:true,emergencyPercent:85,firestoreSoftLimitMb:512,firestoreMaxSessions:20000,kvSoftKeyLimit:8000},cloudflare:{keyCount:4,lastRun:{ranAt:new Date().toISOString(),deleted:0}},firebase:{ttlField:'expiresAt',ttlPolicyMustBeEnabled:true}};
+      state.maintenance={settings:{retentionDays:180,autoCleanup:true,emergencyPercent:85,firestoreSoftLimitMb:600,firestoreMaxSessions:12000,kvSoftKeyLimit:5000},cloudflare:{keyCount:4,lastRun:{ranAt:new Date().toISOString(),deleted:0}},firebase:{freePlanMode:true,ttlEnabled:false,ttlRecommended:false}};
       state.users=[
         {id:'thao-my',displayName:'Thảo My',email:'thaomy@sellerkbb.demo',role:'host',status:'approved',permissions:['live.read','kpi.read']},
         {id:'hung-bg',displayName:'Hùng Bắc Giang',email:'hungbg@sellerkbb.demo',role:'operator',status:'approved',permissions:['live.read','kpi.read']},
@@ -984,7 +984,17 @@ tbody tr:hover td{background:#fffafd}
       if(state.profile?.status!=='approved'){
         showBoot(`<b>Tài khoản chưa được phép truy cập.</b>`, `<button id="logoutBlocked" class="btn ghost">Đăng xuất</button>`); $('#logoutBlocked').onclick=()=>signOut(state.auth); return;
       }
-      showApp(); bindShell(); await loadData(); if(isAdmin()){ const cleaned=await cleanupFirestoreData(true); if(cleaned>0) await loadData(); } renderAll();
+      showApp(); bindShell(); await loadData();
+      if(isAdmin()){
+        const key='sellerkbb:last-free-cleanup';
+        const last=Number(localStorage.getItem(key)||0);
+        if(Date.now()-last>86400000){
+          const cleaned=await cleanupFirestoreData(true);
+          localStorage.setItem(key,String(Date.now()));
+          if(cleaned>0) await loadData();
+        }
+      }
+      renderAll();
     }
 
     async function ensureProfile(user){
@@ -1055,13 +1065,23 @@ tbody tr:hover td{background:#fffafd}
 
     async function loadData(){
       state.sessions=[]; state.users=[];
+      if(isAdmin()&&!PREVIEW){
+        try{
+          const m=await api('/api/maintenance/settings');
+          state.maintenance={...state.maintenance,...m,settings:{...state.maintenance.settings,...(m.settings||{})}};
+        }catch(e){ console.warn('maintenance settings',e); }
+      }
       if(can('live.read')||can('kpi.read')){
-        const q=query(collection(state.db,'liveSessions'),orderBy('startTime','desc'));
-        const snap=await getDocs(q); state.sessions=snap.docs.map(d=>({id:d.id,...d.data()}));
+        const days=Math.min(180,Number(state.maintenance.settings.retentionDays||180));
+        const cutoff=Timestamp.fromMillis(Date.now()-days*86400000);
+        const maxDocs=Math.min(12000,Number(state.maintenance.settings.firestoreMaxSessions||12000));
+        const q=query(collection(state.db,'liveSessions'),where('startTime','>=',cutoff),orderBy('startTime','desc'),limit(maxDocs));
+        const snap=await getDocs(q);
+        state.sessions=snap.docs.map(d=>({id:d.id,...d.data()}));
       }
       if(isAdmin()){
-        const us=await getDocs(collection(state.db,'users')); state.users=us.docs.map(d=>({id:d.id,...d.data()}));
-        if(!PREVIEW){ try{ const m=await api('/api/maintenance/settings'); state.maintenance={...state.maintenance,...m,settings:{...state.maintenance.settings,...(m.settings||{})}}; }catch(e){ console.warn('maintenance settings',e); } }
+        const us=await getDocs(collection(state.db,'users'));
+        state.users=us.docs.map(d=>({id:d.id,...d.data()}));
       }
     }
 
@@ -1171,7 +1191,7 @@ tbody tr:hover td{background:#fffafd}
               recordedGmvAmount:oldData?.recordedGmvAmount ?? amount,recordedItemsSold:oldData?.recordedItemsSold ?? Number(s.itemsSold||0),
               currentGmvAmount:amount,finalGmvAmount:amount,currentItemsSold:Number(s.itemsSold||0),skuOrders:Number(s.skuOrders||0),customers:Number(s.customers||0),
               hostUid:oldData?.hostUid||'',hostName:oldData?.hostName||'',operatorUid:oldData?.operatorUid||'',operatorName:oldData?.operatorName||'',
-              source:'tiktok',rawSummary:s.raw||{},expiresAt:Timestamp.fromMillis((s.startTimeSeconds + Number(state.maintenance.settings.retentionDays||180)*86400)*1000),firstSyncedAt:oldData?.firstSyncedAt||serverTimestamp(),lastSyncedAt:serverTimestamp(),updatedAt:serverTimestamp()
+              source:'tiktok',rawSummary:s.raw||{},firstSyncedAt:oldData?.firstSyncedAt||serverTimestamp(),lastSyncedAt:serverTimestamp(),updatedAt:serverTimestamp()
             },{merge:true}); count++;
           }
           await batch.commit();
@@ -1247,14 +1267,18 @@ tbody tr:hover td{background:#fffafd}
       const retention=Number(settings.retentionDays||180);
       const cutoff=Date.now()-retention*86400000;
       const sorted=[...state.sessions].sort((a,b)=>(a.startTime?.toDate?.()?.getTime?.()||0)-(b.startTime?.toDate?.()?.getTime?.()||0));
-      const deleteIds=new Set(sorted.filter(s=>(s.startTime?.toDate?.()?.getTime?.()||0)<cutoff).map(s=>s.id));
+      const deleteIds=new Set();
+      // Free-plan cleanup: read at most 300 expired docs per run, then delete them in one batch.
+      const staleQuery=query(collection(state.db,'liveSessions'),where('startTime','<',Timestamp.fromMillis(cutoff)),orderBy('startTime','asc'),limit(300));
+      const staleSnap=await getDocs(staleQuery);
+      staleSnap.docs.forEach(d=>deleteIds.add(d.id));
       const stats=maintenanceStats();
       const threshold=Number(settings.emergencyPercent||85);
       if(settings.autoCleanup!==false && (stats.countPct>=threshold || stats.mbPct>=threshold)){
         let remainingCount=stats.count-deleteIds.size;
         let remainingBytes=stats.totalMb;
-        const targetCount=Math.floor(Number(settings.firestoreMaxSessions||20000)*.70);
-        const targetMb=Number(settings.firestoreSoftLimitMb||512)*.70;
+        const targetCount=Math.floor(Number(settings.firestoreMaxSessions||12000)*.70);
+        const targetMb=Number(settings.firestoreSoftLimitMb||600)*.70;
         for(const item of sorted){
           if(deleteIds.has(item.id)) continue;
           if(remainingCount<=targetCount && remainingBytes<=targetMb) break;
@@ -1271,23 +1295,6 @@ tbody tr:hover td{background:#fffafd}
         await batch.commit();
       }
       return ids.length;
-    }
-
-    async function backfillExpiry(){
-      if(PREVIEW){ showToast('Preview: đã mô phỏng áp dụng hạn lưu cho dữ liệu'); return 0; }
-      const days=Number(state.maintenance.settings.retentionDays||180);
-      let updated=0;
-      for(let i=0;i<state.sessions.length;i+=300){
-        const batch=writeBatch(state.db);
-        for(const item of state.sessions.slice(i,i+300)){
-          const d=item.startTime?.toDate?.();
-          if(!d)continue;
-          batch.update(doc(state.db,'liveSessions',item.id),{expiresAt:Timestamp.fromMillis(d.getTime()+days*86400000),updatedAt:serverTimestamp()});
-          updated++;
-        }
-        await batch.commit();
-      }
-      return updated;
     }
 
     function renderStorage(){
@@ -1308,24 +1315,24 @@ tbody tr:hover td{background:#fffafd}
           <div class="settings-grid">
             <label><span class="tiny">Thời gian lưu dữ liệu LIVE</span><select id="retentionDays" class="input"><option value="30">30 ngày</option><option value="60">60 ngày</option><option value="90">90 ngày</option><option value="120">120 ngày</option><option value="150">150 ngày</option><option value="180">180 ngày (6 tháng)</option></select></label>
             <label><span class="tiny">Ngưỡng bắt đầu dọn khẩn cấp</span><select id="emergencyPercent" class="input"><option value="75">75%</option><option value="80">80%</option><option value="85">85% (khuyến nghị)</option><option value="90">90%</option></select></label>
-            <label><span class="tiny">Ngưỡng Firestore của ứng dụng</span><div class="input-unit"><input id="firestoreSoftLimitMb" class="input" type="number" min="50" max="100000" value="${m.firestoreSoftLimitMb}"><span>MB</span></div></label>
-            <label><span class="tiny">Số phiên LIVE tối đa trước khi dọn</span><input id="firestoreMaxSessions" class="input" type="number" min="500" max="1000000" value="${m.firestoreMaxSessions}"></label>
-            <label><span class="tiny">Ngưỡng số khóa Cloudflare KV</span><input id="kvSoftKeyLimit" class="input" type="number" min="100" max="1000000" value="${m.kvSoftKeyLimit}"></label>
+            <label><span class="tiny">Ngưỡng Firestore của ứng dụng</span><div class="input-unit"><input id="firestoreSoftLimitMb" class="input" type="number" min="100" max="900" value="${m.firestoreSoftLimitMb}"><span>MB</span></div></label>
+            <label><span class="tiny">Số phiên LIVE tối đa trước khi dọn</span><input id="firestoreMaxSessions" class="input" type="number" min="500" max="50000" value="${m.firestoreMaxSessions}"></label>
+            <label><span class="tiny">Ngưỡng số khóa Cloudflare KV</span><input id="kvSoftKeyLimit" class="input" type="number" min="100" max="50000" value="${m.kvSoftKeyLimit}"></label>
             <label class="toggle-row"><input id="autoCleanup" type="checkbox" ${m.autoCleanup!==false?'checked':''}><span><b>Tự động dọn khi chạm ngưỡng</b><small>Ưu tiên xóa dữ liệu cũ nhất; không xóa source hoặc khóa được bảo vệ.</small></span></label>
           </div>
           <div class="row storage-actions"><button id="saveMaintenance" class="btn primary">Lưu và áp dụng</button><button id="cleanupNow" class="btn">Dọn dữ liệu ngay</button><button id="runKvCleanup" class="btn">Kiểm tra Cloudflare ngay</button></div>
         </div>
 
-        <div class="card">
-          <h3>Firebase TTL</h3>
-          <div class="notice warn"><b>Cần bật một lần trong Firebase/Google Cloud:</b> Collection group <b>liveSessions</b>, TTL field <b>expiresAt</b>. Website đã tự ghi trường này cho phiên LIVE mới và nút “Lưu và áp dụng” sẽ cập nhật dữ liệu hiện có.</div>
-          <div class="sub" style="margin-top:10px">Sau khi TTL được bật, Firestore sẽ tự dọn tài liệu hết hạn ở phía nền. Việc xóa TTL không phải tức thời; hệ thống cũng có lớp dọn khẩn cấp khi đồng bộ dữ liệu để giảm rủi ro chạm ngưỡng.</div>
+        <div class="card free-plan-note">
+          <h3>Chế độ Firebase Free</h3>
+          <div class="notice ok"><b>Không dùng Firestore TTL trả phí.</b> SellerKBB chỉ đọc tối đa dữ liệu trong thời gian lưu và tự dọn tối đa 300 phiên quá hạn mỗi lượt khi Admin đăng nhập, đồng bộ hoặc bấm dọn thủ công.</div>
+          <div class="sub" style="margin-top:10px">Cách này ưu tiên giữ trong quota Free và tránh tạo lượng đọc/ghi/xóa lớn bất ngờ.</div>
         </div>
 
         <div class="card">
           <h3>Gợi ý cài đặt</h3>
           <div class="recommend-list">
-            <div><b>Khuyến nghị hiện tại</b><span>180 ngày · dọn ở 85% · Cron Cloudflare mỗi 6 giờ</span></div>
+            <div><b>Khuyến nghị hiện tại</b><span>180 ngày · dọn ở 85% · gia hạn TikTok mỗi 2 giờ · dọn KV 1 lần/ngày</span></div>
             <div><b>Nếu dữ liệu tăng rất nhanh</b><span>Giữ 120–150 ngày hoặc hạ ngưỡng khẩn cấp xuống 80%.</span></div>
             <div><b>Nếu muốn ưu tiên lịch sử</b><span>Giữ 180 ngày và nâng ngưỡng ứng dụng; không được vượt quá 180 ngày.</span></div>
           </div>
@@ -1354,10 +1361,9 @@ tbody tr:hover td{background:#fffafd}
       }
       const saved=await api('/api/maintenance/settings',{method:'POST',body:JSON.stringify(next)});
       state.maintenance.settings={...state.maintenance.settings,...saved.settings};
-      const updated=await backfillExpiry();
       const deleted=await cleanupFirestoreData(false);
       await loadData();
-      showToast(`Đã áp dụng: ${updated} phiên cập nhật hạn lưu, ${deleted} phiên được dọn`);
+      showToast(deleted?`Đã lưu cài đặt và dọn ${deleted} phiên cũ`:'Đã lưu cài đặt');
       renderAll();
     }
 
