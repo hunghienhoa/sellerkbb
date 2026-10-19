@@ -510,18 +510,122 @@
       .nav button{min-height:50px}
     }
 
+
+    /* v1.2.0 mobile left drawer navigation */
+    .menu-toggle{display:none}
+    .mobile-menu-overlay{display:none}
+    .topbar-title-wrap{display:flex;align-items:center;gap:12px;min-width:0}
+
+    @media(max-width:700px){
+      #app{padding-bottom:0}
+      .menu-toggle{
+        display:grid;
+        place-items:center;
+        width:40px;
+        height:40px;
+        min-width:40px;
+        border:1px solid var(--line);
+        border-radius:11px;
+        background:#fff;
+        color:#70465a;
+        font-size:21px;
+        line-height:1;
+        cursor:pointer;
+        box-shadow:0 4px 14px rgba(156,91,124,.08)
+      }
+      .topbar{align-items:center}
+      .topbar-title-wrap{gap:10px}
+      .topbar-title-wrap>div{min-width:0}
+      .mobile-menu-overlay{
+        display:block;
+        position:fixed;
+        inset:0;
+        z-index:39;
+        background:rgba(69,42,56,.26);
+        backdrop-filter:blur(2px);
+        opacity:0;
+        visibility:hidden;
+        pointer-events:none;
+        transition:opacity .22s ease,visibility .22s ease
+      }
+      .mobile-menu-overlay.open{
+        opacity:1;
+        visibility:visible;
+        pointer-events:auto
+      }
+      .sidebar{
+        position:fixed!important;
+        z-index:40!important;
+        top:0!important;
+        bottom:0!important;
+        left:0!important;
+        right:auto!important;
+        width:min(82vw,300px)!important;
+        height:100dvh!important;
+        padding:calc(18px + env(safe-area-inset-top)) 16px calc(18px + env(safe-area-inset-bottom))!important;
+        border:0!important;
+        border-right:1px solid var(--line)!important;
+        border-radius:0 20px 20px 0!important;
+        background:rgba(255,249,252,.99)!important;
+        box-shadow:18px 0 42px rgba(106,62,84,.16)!important;
+        transform:translateX(-105%);
+        transition:transform .24s ease;
+        overflow-y:auto;
+      }
+      .sidebar.open{transform:translateX(0)}
+      .side-brand{
+        display:block!important;
+        padding:4px 8px 18px!important
+      }
+      .side-brand .brand span{display:inline!important}
+      .nav{
+        display:grid!important;
+        gap:7px!important;
+        overflow:visible!important;
+        margin:0!important;
+        max-width:none!important
+      }
+      .nav button{
+        width:100%!important;
+        min-width:0!important;
+        min-height:46px!important;
+        padding:10px 12px!important;
+        flex-direction:row!important;
+        justify-content:flex-start!important;
+        text-align:left!important;
+        gap:10px!important;
+        border-radius:12px!important;
+        font-size:13px!important;
+      }
+      .nav button span:not(.nav-icon){display:inline!important}
+      .nav-icon{
+        width:24px!important;
+        height:auto!important;
+        font-size:17px!important
+      }
+      .side-bottom{
+        display:block!important;
+        position:static!important;
+        margin-top:24px;
+      }
+      .side-bottom .usertext{display:block!important}
+      .userbox{justify-content:flex-start!important}
+      body.menu-open{overflow:hidden}
+    }
+
   </style>
 </head>
 <body>
   <div id="boot" class="boot"><div class="boot-card"><div class="brand">Seller<b>KBB</b></div><p class="sub" id="bootText">Đang kiểm tra cấu hình hệ thống…</p><div id="bootActions" class="row"></div></div></div>
   <div id="app" class="hidden">
-    <aside class="sidebar">
+    <div id="mobileMenuOverlay" class="mobile-menu-overlay" aria-hidden="true"></div>
+    <aside class="sidebar" id="sidebar">
       <div class="side-brand"><div class="brand">S<b>KBB</b> <span>LIVE</span></div></div>
       <nav class="nav" id="nav"></nav>
       <div class="side-bottom"><div class="userbox row"><img id="userAvatar" class="avatar" alt=""><div class="usertext" style="min-width:0"><div id="userName" style="font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis"></div><div id="userRole" class="tiny"></div></div></div></div>
     </aside>
     <main class="main">
-      <header class="topbar"><div><h1 id="pageTitle" class="page-title">Tổng quan</h1><div id="pageSub" class="tiny"></div></div><div class="row"><span id="syncBadge" class="pill">v1.1.9</span><button id="logoutBtn" class="btn ghost small">Đăng xuất</button></div></header>
+      <header class="topbar"><div class="topbar-title-wrap"><button id="menuToggle" class="menu-toggle" type="button" aria-label="Mở menu" aria-expanded="false">☰</button><div><h1 id="pageTitle" class="page-title">Tổng quan</h1><div id="pageSub" class="tiny"></div></div></div><div class="row"><span id="syncBadge" class="pill">v1.2.0</span><button id="logoutBtn" class="btn ghost small">Đăng xuất</button></div></header>
       <div class="content">
         <section id="section-dashboard" class="section active"></section>
         <section id="section-live" class="section"></section>
@@ -586,7 +690,7 @@
 
     function previewTs(iso){ return {toDate:()=>new Date(iso)}; }
     function enterPreview(){
-      state.config={version:'1.1.9-preview',tiktokConfigured:true};
+      state.config={version:'1.2.0-preview',tiktokConfigured:true};
       state.user={uid:'preview-admin',email:'admin@sellerkbb.demo',displayName:'Quản trị viên Demo',photoURL:''};
       state.profile={role:'admin',status:'approved',displayName:'Quản trị viên Demo',permissions:['live.read','kpi.read']};
       state.users=[
@@ -685,7 +789,20 @@
       await setDoc(uref,{uid:user.uid,email:user.email||'',displayName:user.displayName||user.email||'',photoURL:user.photoURL||'',role:'pending',status:'pending',permissions:[],createdAt:serverTimestamp(),lastLoginAt:serverTimestamp(),updatedAt:serverTimestamp()});
     }
 
+    function setMobileMenu(open){
+      const sidebar=$('#sidebar'), overlay=$('#mobileMenuOverlay'), toggle=$('#menuToggle');
+      if(!sidebar||!overlay||!toggle)return;
+      sidebar.classList.toggle('open',open);
+      overlay.classList.toggle('open',open);
+      toggle.setAttribute('aria-expanded',String(open));
+      toggle.setAttribute('aria-label',open?'Đóng menu':'Mở menu');
+      document.body.classList.toggle('menu-open',open);
+    }
+
     function bindShell(){
+      $('#menuToggle').onclick=()=>setMobileMenu(!$('#sidebar').classList.contains('open'));
+      $('#mobileMenuOverlay').onclick=()=>setMobileMenu(false);
+      document.addEventListener('keydown',e=>{ if(e.key==='Escape') setMobileMenu(false); });
       $('#logoutBtn').onclick=()=>{ if(PREVIEW) location.href='/'; else signOut(state.auth); };
       $('#logoutBtn').textContent=PREVIEW?'Thoát Preview':'Đăng xuất';
       $('#userAvatar').src=state.user.photoURL||'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64"><rect width="64" height="64" fill="%23223044"/></svg>';
@@ -711,7 +828,7 @@
       $('#nav').querySelectorAll('button').forEach(b=>b.onclick=()=>switchSection(b.dataset.section));
     }
 
-    function switchSection(id){ state.section=id; document.querySelectorAll('.section').forEach(s=>s.classList.remove('active')); $(`#section-${id}`).classList.add('active'); renderNav(); const meta={dashboard:['Tổng quan','Báo cáo LIVE & KPI'],live:['Phiên LIVE','Gắn Host/Operator cho từng phiên'],kpi:['KPI nhân sự','Host 0,3% · Operator 0,1%'],users:['Duyệt tài khoản','Phân vai trò và nội dung được phép xem'],tiktok:['Kết nối TikTok Shop','Chỉ quản trị viên nhìn thấy phần này']}[id]; $('#pageTitle').textContent=meta[0]; $('#pageSub').textContent=meta[1]; }
+    function switchSection(id){ state.section=id; setMobileMenu(false); document.querySelectorAll('.section').forEach(s=>s.classList.remove('active')); $(`#section-${id}`).classList.add('active'); renderNav(); const meta={dashboard:['Tổng quan','Báo cáo LIVE & KPI'],live:['Phiên LIVE','Gắn Host/Operator cho từng phiên'],kpi:['KPI nhân sự','Host 0,3% · Operator 0,1%'],users:['Duyệt tài khoản','Phân vai trò và nội dung được phép xem'],tiktok:['Kết nối TikTok Shop','Chỉ quản trị viên nhìn thấy phần này']}[id]; $('#pageTitle').textContent=meta[0]; $('#pageSub').textContent=meta[1]; }
 
     function sessionsForMonth(){ const [y,m]=state.month.split('-').map(Number); return state.sessions.filter(s=>{const d=s.startTime?.toDate?.()||new Date(0);return d.getFullYear()===y&&d.getMonth()===m-1}); }
     function finalGmv(s){ return Number(s.finalGmvAmount ?? s.currentGmvAmount ?? s.recordedGmvAmount ?? 0); }
