@@ -520,6 +520,16 @@ async function handleApi(request, env) {
 
   if (url.pathname === "/api/tiktok/oauth/start" && request.method === "POST") return handleOAuthStart(request, env);
 
+  if (url.pathname === "/api/tiktok/autosync/status" && request.method === "GET") {
+    await requireReportAccess(request, env);
+    let autoSync = null;
+    if (env.TIKTOK_KV) {
+      const raw = await env.TIKTOK_KV.get(AUTO_SYNC_STATUS_KEY);
+      try { autoSync = raw ? JSON.parse(raw) : null; } catch {}
+    }
+    return json({ ok: true, autoSync });
+  }
+
   if (url.pathname === "/api/tiktok/autosync/sessions" && request.method === "GET") {
     await requireReportAccess(request, env);
     return json({ ok: true, sessions: await getAutoSyncData(env) });
