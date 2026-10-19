@@ -38,7 +38,7 @@ assert(html.includes("Dữ liệu Tiktok được đồng bộ lúc:"), "Sync st
 assert(html.includes("function liveEndTime(s)"), "LIVE end-time helper missing");
 assert(html.includes("Thời gian phiên LIVE"), "Desktop LIVE time header missing");
 assert(html.includes("fmtLiveTimeRange(s)"), "Compact LIVE time range formatter missing");
-assert(html.includes("live-time-cell"><b>${fmtLiveTimeRange(s)}</b>"), "Desktop compact LIVE time missing");
+assert(html.includes('live-time-cell"><b>${fmtLiveTimeRange(s)}</b>'), "Desktop compact LIVE time missing");
 assert(worker.includes('"/api/tiktok/autosync/status"'), "Auto-sync status endpoint missing");
 assert(worker.includes('"/api/tiktok/autosync/sessions"'), "Auto-sync sessions endpoint missing");
 console.log("Project structure, syntax, persistence selectors, calendar, and auto-sync checks OK");
