@@ -1,0 +1,13 @@
+{
+  "indexes": [
+    {
+      "collectionGroup": "liveSessions",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "startTime", "order": "DESCENDING" },
+        { "fieldPath": "channelUsername", "order": "ASCENDING" }
+      ]
+    }
+  ],
+  "fieldOverrides": []
+}
