@@ -105,6 +105,7 @@ try {
   console.log("mobile before save",mobileId,await page.$eval(mobileCard+' select[data-person="host"]',e=>e.value),await page.$eval(mobileCard+' select[data-person="operator"]',e=>e.value));
   await page.click(mobileCard+' [data-save-session]');
   await sleep(150);
+  console.log("save debug",await page.evaluate(()=>window.__sellerKbbSaveDebug||null));
   console.log("preview state after mobile save",await page.evaluate(()=>localStorage.getItem('sellerkbb:preview-state:v1')));
   await page.reload({waitUntil:"domcontentloaded"});
   await page.waitForSelector("#app:not(.hidden)",{timeout:30000});
