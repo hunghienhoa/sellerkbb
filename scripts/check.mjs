@@ -70,4 +70,13 @@ assert(workflow.includes('gh release delete "$TAG" --cleanup-tag -y'), "Old Rele
 assert(readme.includes("Release backup tự động — chỉ giữ 5 bản gần nhất"), "README Release backup guide missing");
 assert(readme.includes("Release KHÔNG backup những gì?"), "README data-backup warning missing");
 assert(readme.includes("Cách quay lại bản cũ"), "README rollback guide missing");
-console.log("Project structure, syntax, persistence, calendar, storage, Release backup, README, and auto-sync checks OK");
+assert(html.includes('id="userMenuBtn"'), "Clickable account profile trigger missing");
+assert(html.includes('id="accountPopover"'), "Account information popover missing");
+assert(html.includes("function avatarSrc(user={})"), "Google avatar helper missing");
+assert(html.includes("state.user.photoURL||state.profile.photoURL"), "Current Google photoURL wiring missing");
+assert(html.includes("userIdentityHtml(u,true)"), "User-list avatar identity missing");
+assert(html.includes("userIdentityHtml(userDisplayRecord(r.uid,r.name),false)"), "KPI avatar identity missing");
+assert(html.includes('id="accountLogoutBtn"'), "Account popover logout missing");
+assert(!html.includes('id="logoutBtn"'), "Legacy topbar logout button should be removed");
+assert(readme.includes("Hồ sơ Google & đăng xuất"), "README Google profile/logout guide missing");
+console.log("Project structure, syntax, persistence, calendar, storage, Google profiles, Release backup, README, and auto-sync checks OK");

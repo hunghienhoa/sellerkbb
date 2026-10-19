@@ -36,6 +36,14 @@ try {
   await page.reload({waitUntil:"domcontentloaded"});
   await page.waitForSelector("#app:not(.hidden)",{timeout:30000});
 
+  assert((await page.$eval('#userAvatar',e=>e.getAttribute('src')||'')).length>0,"Sidebar Google avatar is missing");
+  await page.click('#userMenuBtn');
+  assert(!(await page.$eval('#accountPopover',e=>e.classList.contains('hidden'))),"Account popover did not open");
+  assert(await page.$eval('#accountPopover',e=>e.textContent.includes('admin@sellerkbb.demo')&&e.textContent.includes('Quản trị viên')&&e.textContent.includes('Đã duyệt')&&e.textContent.includes('Toàn quyền quản trị')),"Account popover basic information missing");
+  assert(await page.$('#accountLogoutBtn')!==null,"Account logout button missing");
+  await page.click('#userMenuBtn');
+  assert(await page.$eval('#accountPopover',e=>e.classList.contains('hidden')),"Account popover did not close");
+
   assert(await page.$eval('#section-dashboard [data-range-mode="today"]',e=>e.classList.contains('active')),"Dashboard must default to Today");
   await page.click('#section-dashboard [data-range-mode="7d"]');
   assert(await page.$eval('#section-dashboard [data-range-mode="7d"]',e=>e.classList.contains('active')),"7-day filter did not activate");
@@ -104,6 +112,7 @@ try {
   await page.click('#saveMaintenance');
   await sleep(100);
   await page.click('[data-section="users"]');
+  assert((await page.$('#section-users .user-list-avatar')).length>=6,"User account avatars are missing from the Users page");
   await page.select('[data-role="pending-01"]','operator');
   await page.click('[data-approve="pending-01"]');
   await sleep(100);
@@ -120,6 +129,10 @@ try {
   await page.click('#menuToggle');
   await page.waitForFunction(()=>document.querySelector('#sidebar')?.classList.contains('open'));
   await sleep(300);
+  await page.click('#userMenuBtn');
+  assert(!(await page.$eval('#accountPopover',e=>e.classList.contains('hidden'))),"Mobile account popover did not open");
+  assert(await page.$('#accountLogoutBtn')!==null,"Mobile account logout button missing");
+  await page.click('#userMenuBtn');
   await page.$eval('#nav [data-section="live"]',e=>e.click());
   await page.waitForFunction(()=>!document.querySelector('#sidebar')?.classList.contains('open'));
   await sleep(320);

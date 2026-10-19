@@ -4,7 +4,7 @@
 
 ### Báo cáo TikTok LIVE · KPI nhân sự · Tự đồng bộ 24/24
 
-**Phiên bản hiện tại: v1.10.0**
+**Phiên bản hiện tại: v1.11.0**
 
 [![GitHub Release](https://img.shields.io/github/v/release/hunghienhoa/sellerkbb?label=Release)](https://github.com/hunghienhoa/sellerkbb/releases)
 [![GitHub Actions](https://img.shields.io/github/actions/workflow/status/hunghienhoa/sellerkbb/deploy.yml?branch=main&label=Ki%E1%BB%83m%20tra%20%26%20Backup)](https://github.com/hunghienhoa/sellerkbb/actions)
@@ -101,6 +101,15 @@ Operator KPI   = GMV cuối kỳ × 0,1%
 ### 6. Xuất file
 
 Vào tab **Xuất file**. File xuất dùng đúng khoảng thời gian đang chọn. SellerKBB không đưa Session ID TikTok ra CSV.
+
+### 7. Hồ sơ Google & đăng xuất
+
+- SellerKBB dùng **ảnh đại diện Google/Gmail** của tài khoản đã đăng nhập.
+- Ảnh được lưu cùng hồ sơ người dùng trong Firestore để Admin nhận diện tài khoản ở trang **Tài khoản**.
+- Bấm khối **ảnh + tên + vai trò** ở cuối sidebar để mở thông tin tài khoản.
+- Bảng hồ sơ hiển thị: tên, Gmail, vai trò, trạng thái duyệt và quyền truy cập.
+- Nút **Đăng xuất** nằm trong bảng hồ sơ này.
+- Nếu Google không có ảnh hoặc ảnh không tải được, SellerKBB dùng avatar chữ cái dự phòng.
 
 ---
 
