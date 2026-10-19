@@ -169,7 +169,7 @@ try {
   await page.click('#menuToggle');
   await page.waitForFunction(()=>document.querySelector('#sidebar')?.classList.contains('open'));
   await sleep(300);
-  const mobileNavGroups=await page.$eval('#nav .nav-group-title',els=>els.map(e=>e.textContent.trim()));
+  const mobileNavGroups=await page.$$eval('#nav .nav-group-title',els=>els.map(e=>e.textContent.trim()));
   assert(mobileNavGroups.join('|')==='Báo cáo|Công cụ|Quản trị',"Mobile sidebar groups are missing");
   assert(await page.$('#nav [data-section="manual-kpi"]')!==null,"Mobile KPI thủ công tab missing");
   await page.click('#userMenuBtn');
