@@ -1263,6 +1263,13 @@ tbody tr:hover td{background:#fcfafb}
   .metrics-grid,.metrics-grid.metrics-3,.mobile-grid{grid-template-columns:1fr}
 }
 
+
+.heading-with-icon{display:flex;align-items:center;gap:8px}
+.heading-with-icon .ui-icon{color:#a7527a}
+.data-note{display:flex;align-items:center;gap:8px;color:#776a71;font-size:11.5px;padding:0 2px}
+.data-note .ui-icon{color:#a7527a}
+.storage-stat{display:flex!important;align-items:flex-start;gap:11px}
+.storage-stat .metric-icon{width:36px;height:36px}
 </style>
 </head>
 <body>
@@ -1671,6 +1678,7 @@ tbody tr:hover td{background:#fcfafb}
       const ss=sessionsForRange(), gmv=ss.reduce((a,s)=>a+finalGmv(s),0), items=ss.reduce((a,s)=>a+Number(s.currentItemsSold??s.recordedItemsSold??0),0), totalSec=ss.reduce((a,s)=>a+Number(s.durationSeconds||0),0), currency=ss.find(s=>s.currency)?.currency||'VND';
       $('#section-dashboard').innerHTML=`
         ${timeFilterHtml('dashboard')}
+        <div class="data-note">${icon('sync',16)}<span>Dữ liệu TikTok được tự đồng bộ mỗi giờ; số liệu báo cáo cập nhật tự động khi mở web.</span></div>
         <div class="metrics-grid">${metricCard('live','Phiên LIVE',ss.length)}${metricCard('money','GMV cuối kỳ',fmtMoney(gmv,currency))}${metricCard('box','Sản phẩm bán',new Intl.NumberFormat('vi-VN').format(items))}${metricCard('clock','Tổng thời lượng',fmtDuration(totalSec))}</div>
         <div class="card"><div class="row space"><h3>Phiên LIVE gần nhất trong khoảng thời gian</h3><span class="pill">GMV dùng KPI = GMV cuối kỳ</span></div>${renderLiveTable(ss.slice(0,8),false)}</div>`;
       bindTimeFilter('dashboard');
@@ -1682,7 +1690,7 @@ tbody tr:hover td{background:#fcfafb}
       const desktop=`<div class="table-wrap desktop-live-table"><table><thead><tr><th>Phiên / Kênh</th><th>Thời gian bắt đầu</th><th>Thời lượng phiên LIVE</th><th>GMV đã ghi nhận</th><th>Số món bán đã ghi nhận</th><th>GMV sau hoàn/hủy</th><th>Host</th><th>Vận hành</th>${editable?'<th></th>':''}</tr></thead><tbody>${rows.map(s=>`<tr>
         <td><b>${esc(s.title||'Phiên LIVE')}</b>${isManualKpi(s)?'<div><span class="pill warn">Ngày Campaign/Mega · tính thủ công</span></div>':''}<div class="tiny">@${esc(s.channelUsername||'—')} ${s.channelId?`· ID kênh ${esc(s.channelId)}`:''}</div></td>
         <td>${fmtDate(s.startTime)}</td><td>${fmtDuration(s.durationSeconds)}</td><td class="money">${fmtMoney(s.recordedGmvAmount,s.currency)}</td><td>${new Intl.NumberFormat('vi-VN').format(Number(s.currentItemsSold??s.recordedItemsSold??0))}</td><td class="money">${fmtMoney(finalGmv(s),s.currency)}</td>
-        <td>${editable?personSelect('host',s.id,s.hostUid,approvedHosts):esc(s.hostName||'—')}</td><td>${editable?personSelect('operator',s.id,s.operatorUid,operators):esc(s.operatorName||'—')}</td>${editable?`<td><label class="manual-kpi-check"><input type="checkbox" data-manual-kpi="${s.id}" ${isManualKpi(s)?'checked':''}> <span>Tính thủ công</span></label><button class="btn small" data-save-session="${s.id}">Lưu</button></td>`:''}
+        <td>${editable?personSelect('host',s.id,s.hostUid,approvedHosts):esc(s.hostName||'—')}</td><td>${editable?personSelect('operator',s.id,s.operatorUid,operators):esc(s.operatorName||'—')}</td>${editable?`<td><label class="manual-kpi-check"><input type="checkbox" data-manual-kpi="${s.id}" ${isManualKpi(s)?'checked':''}> <span>Tính thủ công</span></label><button class="btn small" data-save-session="${s.id}">${icon('check',14)} Lưu</button></td>`:''}
       </tr>`).join('')}</tbody></table></div>`;
       const mobile=`<div class="mobile-live-list">${rows.map(s=>`<article class="mobile-live-card">
         <div class="mobile-live-head"><div><div class="mobile-live-title">${esc(s.title||'Phiên LIVE')}</div>${isManualKpi(s)?'<span class="pill warn">Ngày Campaign/Mega · tính thủ công</span>':''}<div class="tiny">@${esc(s.channelUsername||'—')} · ${fmtDate(s.startTime)}</div></div><span class="pill">${fmtDuration(s.durationSeconds)}</span></div>
@@ -1691,7 +1699,7 @@ tbody tr:hover td{background:#fcfafb}
           <div class="mobile-field"><span class="tiny">GMV sau hoàn/hủy</span><strong>${fmtMoney(finalGmv(s),s.currency)}</strong></div>
           <div class="mobile-field"><span class="tiny">Số món bán đã ghi nhận</span><strong>${new Intl.NumberFormat('vi-VN').format(Number(s.currentItemsSold??s.recordedItemsSold??0))}</strong></div>
         </div>
-        ${editable?`<div class="mobile-assign"><label class="manual-kpi-check"><input type="checkbox" data-manual-kpi="${s.id}" ${isManualKpi(s)?'checked':''}> <span>Ngày Campaign/Mega Live · tính KPI thủ công</span></label><label><span class="tiny">Host Livestream</span>${personSelect('host',s.id,s.hostUid,approvedHosts)}</label><label><span class="tiny">Nhân viên vận hành</span>${personSelect('operator',s.id,s.operatorUid,operators)}</label><button class="btn primary" data-save-session="${s.id}">Lưu thiết lập</button></div>`:`<div class="mobile-assign">${isManualKpi(s)?'<div class="notice warn">Phiên này không cộng vào KPI tự động.</div>':`<div class="row space"><span class="tiny">Host</span><b>${esc(s.hostName||'—')}</b></div><div class="row space"><span class="tiny">Vận hành</span><b>${esc(s.operatorName||'—')}</b></div>`}</div>`}
+        ${editable?`<div class="mobile-assign"><label class="manual-kpi-check"><input type="checkbox" data-manual-kpi="${s.id}" ${isManualKpi(s)?'checked':''}> <span>Ngày Campaign/Mega Live · tính KPI thủ công</span></label><label><span class="tiny">Host Livestream</span>${personSelect('host',s.id,s.hostUid,approvedHosts)}</label><label><span class="tiny">Nhân viên vận hành</span>${personSelect('operator',s.id,s.operatorUid,operators)}</label><button class="btn primary" data-save-session="${s.id}">${icon('check',15)} Lưu thiết lập</button></div>`:`<div class="mobile-assign">${isManualKpi(s)?'<div class="notice warn">Phiên này không cộng vào KPI tự động.</div>':`<div class="row space"><span class="tiny">Host</span><b>${esc(s.hostName||'—')}</b></div><div class="row space"><span class="tiny">Vận hành</span><b>${esc(s.operatorName||'—')}</b></div>`}</div>`}
       </article>`).join('')}</div>`;
       return desktop+mobile;
     }
@@ -1848,11 +1856,11 @@ tbody tr:hover td{background:#fcfafb}
     function renderUsers(){
       if(!isAdmin()){ $('#section-users').innerHTML='';return; }
       const pending=state.users.filter(u=>u.status==='pending'); const approved=state.users.filter(u=>u.status==='approved');
-      $('#section-users').innerHTML=`<div class="card"><h3>Tài khoản chờ duyệt <span class="pill warn">${pending.length}</span></h3>${pending.length?pending.map(userApprovalCard).join(''):'<div class="empty">Không có tài khoản đang chờ.</div>'}</div><div class="card" style="margin-top:14px"><h3>Tài khoản đã duyệt</h3>${approved.map(userApprovedRow).join('')}</div>`;
+      $('#section-users').innerHTML=`<div class="card"><h3 class="heading-with-icon">${icon('users',18)} Tài khoản chờ duyệt <span class="pill warn">${pending.length}</span></h3>${pending.length?pending.map(userApprovalCard).join(''):'<div class="empty">Không có tài khoản đang chờ.</div>'}</div><div class="card"><h3 class="heading-with-icon">${icon('shield',18)} Tài khoản đã duyệt</h3>${approved.map(userApprovedRow).join('')}</div>`;
       document.querySelectorAll('[data-approve]').forEach(b=>b.onclick=()=>approveUser(b.dataset.approve));
     }
 
-    function userApprovalCard(u){return `<div class="approval-item"><div class="row space"><div><b>${esc(u.displayName||u.email)}</b><div class="tiny">${esc(u.email||'')}</div></div><span class="pill warn">Chờ duyệt</span></div><div class="form-grid" style="margin-top:16px"><label><div class="tiny">Vai trò</div><select class="input" style="width:100%" data-role="${u.id}"><option value="host">Host Livestream</option><option value="operator">Nhân viên vận hành livestream</option><option value="admin">Quản trị viên</option></select></label><div><div class="tiny">Nội dung được phép xem</div><label class="checkline"><input type="checkbox" data-perm="live.read" data-uid="${u.id}" checked> Phiên LIVE</label><label class="checkline"><input type="checkbox" data-perm="kpi.read" data-uid="${u.id}" checked> KPI cá nhân / báo cáo</label></div></div><div class="row" style="margin-top:16px"><button class="btn primary" data-approve="${u.id}">Duyệt tài khoản</button></div></div>`;}
+    function userApprovalCard(u){return `<div class="approval-item"><div class="row space"><div><b>${esc(u.displayName||u.email)}</b><div class="tiny">${esc(u.email||'')}</div></div><span class="pill warn">Chờ duyệt</span></div><div class="form-grid" style="margin-top:16px"><label><div class="tiny">Vai trò</div><select class="input" style="width:100%" data-role="${u.id}"><option value="host">Host Livestream</option><option value="operator">Nhân viên vận hành livestream</option><option value="admin">Quản trị viên</option></select></label><div><div class="tiny">Nội dung được phép xem</div><label class="checkline"><input type="checkbox" data-perm="live.read" data-uid="${u.id}" checked> Phiên LIVE</label><label class="checkline"><input type="checkbox" data-perm="kpi.read" data-uid="${u.id}" checked> KPI cá nhân / báo cáo</label></div></div><div class="row" style="margin-top:16px"><button class="btn primary" data-approve="${u.id}">${icon('check',15)} Duyệt tài khoản</button></div></div>`;}
     function userApprovedRow(u){return `<div class="row space approved-user-row"><div><b>${esc(u.displayName||u.email)}</b><div class="tiny">${esc(u.email||'')} · ${(u.permissions||[]).join(', ')||'full/admin'}</div></div><span class="tag ${u.role}">${roleLabel(u.role)}</span></div>`;}
     async function approveUser(uid){ const role=document.querySelector(`[data-role="${CSS.escape(uid)}"]`).value; const permissions=[...document.querySelectorAll(`[data-uid="${CSS.escape(uid)}"][data-perm]:checked`)].map(x=>x.dataset.perm); if(role==='admin'){permissions.splice(0,permissions.length,'live.read','kpi.read')} if(PREVIEW){ const u=state.users.find(x=>x.id===uid); Object.assign(u,{role,status:'approved',permissions}); showToast('Đã duyệt tài khoản'); renderAll(); return; } await updateDoc(doc(state.db,'users',uid),{role,status:'approved',permissions,approvedAt:serverTimestamp(),approvedBy:state.user.uid,updatedAt:serverTimestamp()}); showToast('Đã duyệt tài khoản'); await loadData(); renderAll(); }
 
@@ -1929,13 +1937,13 @@ tbody tr:hover td{background:#fcfafb}
       const pressureClass=st.pressure>=Number(m.emergencyPercent||85)?'bad':st.pressure>=70?'warn':'ok';
       $('#section-storage').innerHTML=`
         <div class="grid storage-stats">
-          <div class="card"><div class="stat-label">Dữ liệu LIVE đang lưu</div><div class="stat-value">${new Intl.NumberFormat('vi-VN').format(st.count)} phiên</div><div class="tiny">Ước lượng ứng dụng: ${st.totalMb.toFixed(2).replace('.',',')} MB</div></div>
-          <div class="card"><div class="stat-label">Mức sử dụng so với ngưỡng ứng dụng</div><div class="stat-value">${st.pressure}%</div><div class="pill ${pressureClass}">${st.pressure>=Number(m.emergencyPercent||85)?'Cần dọn':'Trong vùng an toàn'}</div></div>
-          <div class="card"><div class="stat-label">Cloudflare KV</div><div class="stat-value">${new Intl.NumberFormat('vi-VN').format(cf.keyCount||0)} khóa</div><div class="tiny">Lần dọn gần nhất: ${last}</div></div>
+          <div class="card storage-stat"><div class="metric-icon">${icon('live',19)}</div><div><div class="stat-label">Dữ liệu LIVE đang lưu</div><div class="stat-value">${new Intl.NumberFormat('vi-VN').format(st.count)} phiên</div><div class="tiny">Ước lượng ứng dụng: ${st.totalMb.toFixed(2).replace('.',',')} MB</div></div></div>
+          <div class="card storage-stat"><div class="metric-icon">${icon('shield',19)}</div><div><div class="stat-label">Mức sử dụng so với ngưỡng ứng dụng</div><div class="stat-value">${st.pressure}%</div><div class="pill ${pressureClass}">${st.pressure>=Number(m.emergencyPercent||85)?'Cần dọn':'Trong vùng an toàn'}</div></div></div>
+          <div class="card storage-stat"><div class="metric-icon">${icon('database',19)}</div><div><div class="stat-label">Cloudflare KV</div><div class="stat-value">${new Intl.NumberFormat('vi-VN').format(cf.keyCount||0)} khóa</div><div class="tiny">Lần dọn gần nhất: ${last}</div></div></div>
         </div>
 
         <div class="card">
-          <div class="row space"><div><h3>Cài đặt tự động dọn dữ liệu</h3><div class="sub">Chỉ áp dụng cho dữ liệu báo cáo và cache. Source website, GitHub, tài khoản người dùng và token TikTok được bảo vệ.</div></div><span class="pill ok">Tối đa 6 tháng</span></div>
+          <div class="row space"><div><h3 class="heading-with-icon">${icon('settings',18)} Cài đặt tự động dọn dữ liệu</h3><div class="sub">Chỉ áp dụng cho dữ liệu báo cáo và cache. Source website, GitHub, tài khoản người dùng và token TikTok được bảo vệ.</div></div><span class="pill ok">Tối đa 6 tháng</span></div>
           <div class="settings-grid">
             <label><span class="tiny">Thời gian lưu dữ liệu LIVE</span><select id="retentionDays" class="input"><option value="30">30 ngày</option><option value="60">60 ngày</option><option value="90">90 ngày</option><option value="120">120 ngày</option><option value="150">150 ngày</option><option value="180">180 ngày (6 tháng)</option></select></label>
             <label><span class="tiny">Ngưỡng bắt đầu dọn khẩn cấp</span><select id="emergencyPercent" class="input"><option value="75">75%</option><option value="80">80%</option><option value="85">85% (khuyến nghị)</option><option value="90">90%</option></select></label>
@@ -1944,19 +1952,19 @@ tbody tr:hover td{background:#fcfafb}
             <label><span class="tiny">Ngưỡng số khóa Cloudflare KV</span><input id="kvSoftKeyLimit" class="input" type="number" min="100" max="50000" value="${m.kvSoftKeyLimit}"></label>
             <label class="toggle-row"><input id="autoCleanup" type="checkbox" ${m.autoCleanup!==false?'checked':''}><span><b>Tự động dọn khi chạm ngưỡng</b><small>Ưu tiên xóa dữ liệu cũ nhất; không xóa source hoặc khóa được bảo vệ.</small></span></label>
           </div>
-          <div class="row storage-actions"><button id="saveMaintenance" class="btn primary">Lưu và áp dụng</button><button id="cleanupNow" class="btn">Dọn dữ liệu ngay</button><button id="runKvCleanup" class="btn">Kiểm tra Cloudflare ngay</button></div>
+          <div class="row storage-actions"><button id="saveMaintenance" class="btn primary">${icon('check',15)} Lưu và áp dụng</button><button id="cleanupNow" class="btn">${icon('database',15)} Dọn dữ liệu ngay</button><button id="runKvCleanup" class="btn">${icon('shield',15)} Kiểm tra Cloudflare</button></div>
         </div>
 
         <div class="card free-plan-note">
-          <h3>Chế độ Firebase Free</h3>
-          <div class="notice ok"><b>Không dùng Firestore TTL trả phí.</b> SellerKBB chỉ đọc tối đa dữ liệu trong thời gian lưu và tự dọn tối đa 300 phiên quá hạn mỗi lượt khi Admin đăng nhập, đồng bộ hoặc bấm dọn thủ công.</div>
+          <h3 class="heading-with-icon">${icon('shield',18)} Chế độ Firebase Free</h3>
+          <div class="notice ok"><b>Không dùng Firestore TTL trả phí.</b> SellerKBB chỉ đọc tối đa dữ liệu trong thời gian lưu và tự dọn tối đa 300 phiên quá hạn mỗi lượt khi Admin đăng nhập hoặc bấm dọn thủ công.</div>
           <div class="sub" style="margin-top:10px">Cách này ưu tiên giữ trong quota Free và tránh tạo lượng đọc/ghi/xóa lớn bất ngờ.</div>
         </div>
 
         <div class="card">
-          <h3>Gợi ý cài đặt</h3>
+          <h3 class="heading-with-icon">${icon('settings',18)} Gợi ý cài đặt</h3>
           <div class="recommend-list">
-            <div><b>Khuyến nghị hiện tại</b><span>180 ngày · dọn ở 85% · kiểm tra TikTok mỗi 1 giờ · dọn KV 1 lần/ngày</span></div>
+            <div><b>Khuyến nghị hiện tại</b><span>180 ngày · dọn ở 85% · TikTok tự đồng bộ mỗi 1 giờ · dọn KV 1 lần/ngày</span></div>
             <div><b>Nếu dữ liệu tăng rất nhanh</b><span>Giữ 120–150 ngày hoặc hạ ngưỡng khẩn cấp xuống 80%.</span></div>
             <div><b>Nếu muốn ưu tiên lịch sử</b><span>Giữ 180 ngày và nâng ngưỡng ứng dụng; không được vượt quá 180 ngày.</span></div>
           </div>
