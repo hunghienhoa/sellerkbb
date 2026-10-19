@@ -15,6 +15,11 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
+      - run: npm run check
+      - name: Browser smoke test (desktop + mobile)
+        run: |
+          npm install --no-save puppeteer-core
+          node scripts/ui-browser-test.mjs
       - run: npm run build
       - name: Detect Cloudflare secrets
         id: cloudflare
