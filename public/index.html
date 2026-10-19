@@ -1445,6 +1445,87 @@ tbody tr:hover td{background:#fcfafb}
   .dashboard-more{margin-left:auto}
 }
 
+
+.storage-quota-grid{
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:12px;
+}
+.storage-quota-card{
+  min-width:0;
+  padding:16px;
+  border:1px solid var(--line);
+  border-radius:11px;
+  background:linear-gradient(145deg,#fff 0,#fcf8fa 100%);
+}
+.storage-quota-head{
+  display:grid;
+  grid-template-columns:40px minmax(0,1fr) auto;
+  align-items:center;
+  gap:10px;
+}
+.storage-provider-icon{
+  width:40px;height:40px;
+  display:grid;place-items:center;
+  border-radius:9px;
+  background:var(--accent-soft);
+  color:#a95079;
+}
+.storage-provider-copy{display:grid;gap:1px;min-width:0}
+.storage-provider-copy b{font-size:13px;color:#46333d}
+.storage-provider-copy span{font-size:10px;color:var(--muted)}
+.storage-quota-head>strong{font-size:17px;color:#5b3f4d;letter-spacing:-.02em}
+.storage-usage-line{display:flex;align-items:baseline;gap:5px;margin:14px 0 8px}
+.storage-usage-line b{font-size:19px;color:#4b3641;letter-spacing:-.025em}
+.storage-usage-line span{font-size:10.5px;color:var(--muted)}
+.storage-progress{
+  height:8px;
+  overflow:hidden;
+  border-radius:999px;
+  background:#f0e7eb;
+}
+.storage-progress i{
+  display:block;
+  height:100%;
+  border-radius:inherit;
+  background:linear-gradient(90deg,#dc79a7,#cb5f91);
+  transition:width .35s ease;
+}
+.storage-quota-foot{
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap:10px;
+  margin-top:8px;
+}
+.storage-quota-foot>span{font-size:10px;font-weight:800;color:#985071;white-space:nowrap}
+.storage-quota-foot small{color:#8a7b82;font-size:9.5px;line-height:1.4;text-align:right}
+.storage-health-row{
+  display:grid;
+  grid-template-columns:repeat(4,minmax(0,1fr));
+  border-top:1px solid var(--line);
+  border-bottom:1px solid var(--line);
+}
+.storage-health-row>div{display:grid;gap:3px;padding:11px 14px}
+.storage-health-row>div+div{border-left:1px solid var(--line)}
+.storage-health-row span{font-size:9.5px;color:var(--muted);font-weight:650}
+.storage-health-row b{font-size:11.5px;color:#4f3b45}
+.storage-health-row b.ok{color:var(--ok)}
+.storage-health-row b.warn{color:var(--warn)}
+.storage-health-row b.bad{color:var(--danger)}
+@media(max-width:1000px){
+  .storage-quota-grid{grid-template-columns:1fr}
+  .storage-health-row{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .storage-health-row>div:nth-child(3){border-left:0;border-top:1px solid var(--line)}
+  .storage-health-row>div:nth-child(4){border-top:1px solid var(--line)}
+}
+@media(max-width:520px){
+  .storage-health-row{grid-template-columns:1fr}
+  .storage-health-row>div+div{border-left:0;border-top:1px solid var(--line)}
+  .storage-quota-foot{display:grid}
+  .storage-quota-foot small{text-align:left}
+}
+
 </style>
 </head>
 <body>
@@ -1457,7 +1538,7 @@ tbody tr:hover td{background:#fcfafb}
       <div class="side-bottom"><div class="userbox row"><img id="userAvatar" class="avatar" alt=""><div class="usertext" style="min-width:0"><div id="userName" style="font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis"></div><div id="userRole" class="tiny"></div></div></div></div>
     </aside>
     <main class="main">
-      <header class="topbar"><div class="topbar-title-wrap"><button id="menuToggle" class="menu-toggle" type="button" aria-label="Mở menu" aria-expanded="false">☰</button><div><h1 id="pageTitle" class="page-title">Tổng quan</h1><div id="pageSub" class="tiny"></div></div></div><div class="row"><span id="syncBadge" class="pill">v1.8.2</span><button id="logoutBtn" class="btn ghost small">Đăng xuất</button></div></header>
+      <header class="topbar"><div class="topbar-title-wrap"><button id="menuToggle" class="menu-toggle" type="button" aria-label="Mở menu" aria-expanded="false">☰</button><div><h1 id="pageTitle" class="page-title">Tổng quan</h1><div id="pageSub" class="tiny"></div></div></div><div class="row"><span id="syncBadge" class="pill">v1.9.0</span><button id="logoutBtn" class="btn ghost small">Đăng xuất</button></div></header>
       <div class="content">
         <section id="section-dashboard" class="section active"></section>
         <section id="section-live" class="section"></section>
@@ -1671,7 +1752,7 @@ tbody tr:hover td{background:#fcfafb}
     const PREVIEW = location.pathname === '/preview' || new URLSearchParams(location.search).get('preview') === '1';
 
     const LIVE_PAGE_SIZE = 20;
-    const state = { config:null, auth:null, db:null, user:null, profile:null, sessions:[], users:[], section:'dashboard', livePage:1, rangeMode:'today', customStart:'', customEnd:'', customPickerScope:null, maintenance:{settings:{retentionDays:180,autoCleanup:true,emergencyPercent:85,firestoreSoftLimitMb:600,firestoreMaxSessions:12000,kvSoftKeyLimit:5000},cloudflare:{keyCount:0,lastRun:null},firebase:{freePlanMode:true,ttlEnabled:false,ttlRecommended:false}}, autoSyncStatus:null, autoSyncRefreshing:false, autoSyncWatcher:null, autoSyncVisibilityBound:false };
+    const state = { config:null, auth:null, db:null, user:null, profile:null, sessions:[], users:[], section:'dashboard', livePage:1, rangeMode:'today', customStart:'', customEnd:'', customPickerScope:null, maintenance:{settings:{retentionDays:180,autoCleanup:true,emergencyPercent:85,firestoreSoftLimitMb:600,firestoreMaxSessions:12000,kvSoftKeyLimit:5000},github:{usedBytes:0,limitBytes:10000000000,available:false},cloudflare:{keyCount:0,lastRun:null,usedBytes:0,storageLimitBytes:1000000000,storageComplete:true},firebase:{freePlanMode:true,ttlEnabled:false,ttlRecommended:false,storageLimitBytes:1073741824}}, autoSyncStatus:null, autoSyncRefreshing:false, autoSyncWatcher:null, autoSyncVisibilityBound:false };
 
     const PREVIEW_STATE_KEY='sellerkbb:preview-state:v1';
     function readPreviewState(){
@@ -1705,10 +1786,10 @@ tbody tr:hover td{background:#fcfafb}
 
     function previewTs(iso){ return {toDate:()=>new Date(iso)}; }
     function enterPreview(){
-      state.config={version:'1.8.2-preview',tiktokConfigured:true};
+      state.config={version:'1.9.0-preview',tiktokConfigured:true};
       state.user={uid:'preview-admin',email:'admin@sellerkbb.demo',displayName:'Quản trị viên Demo',photoURL:''};
       state.profile={role:'admin',status:'approved',displayName:'Quản trị viên Demo',permissions:['live.read','kpi.read']};
-      state.maintenance={settings:{retentionDays:180,autoCleanup:true,emergencyPercent:85,firestoreSoftLimitMb:600,firestoreMaxSessions:12000,kvSoftKeyLimit:5000},cloudflare:{keyCount:4,lastRun:{ranAt:new Date().toISOString(),deleted:0}},firebase:{freePlanMode:true,ttlEnabled:false,ttlRecommended:false}};
+      state.maintenance={settings:{retentionDays:180,autoCleanup:true,emergencyPercent:85,firestoreSoftLimitMb:600,firestoreMaxSessions:12000,kvSoftKeyLimit:5000},github:{usedBytes:124000,limitBytes:10000000000,available:true},cloudflare:{keyCount:5,lastRun:{ranAt:new Date().toISOString(),deleted:0},usedBytes:428000,storageLimitBytes:1000000000,storageComplete:true},firebase:{freePlanMode:true,ttlEnabled:false,ttlRecommended:false,storageLimitBytes:1073741824}};
       state.autoSyncStatus={ok:true,reason:'preview',finishedAt:new Date().toISOString(),cached:34};
       state.users=[
         {id:'thao-my',displayName:'Thảo My',email:'thaomy@sellerkbb.demo',role:'host',status:'approved',permissions:['live.read','kpi.read']},
@@ -2051,6 +2132,8 @@ tbody tr:hover td{background:#fcfafb}
         check:'<path d="m5 12 4 4L19 6"/>',
         link:'<path d="M10 13a5 5 0 0 0 7.5.5l2-2a5 5 0 0 0-7-7l-1.1 1"/><path d="M14 11a5 5 0 0 0-7.5-.5l-2 2a5 5 0 0 0 7 7l1.1-1"/>',
         file:'<path d="M6 2h8l4 4v16H6z"/><path d="M14 2v5h5"/><path d="M9 13h6M9 17h6"/>',
+        code:'<path d="m8 9-4 3 4 3"/><path d="m16 9 4 3-4 3"/><path d="m14 5-4 14"/>',
+        cloud:'<path d="M17.5 19H7a5 5 0 0 1-.7-9.95A6 6 0 0 1 17.6 7.5 4.5 4.5 0 0 1 17.5 19z"/>',
         shield:'<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10"/><path d="m9 12 2 2 4-4"/>',
         settings:'<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1-2.8 2.8-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.6v.2h-4v-.2a1.7 1.7 0 0 0-1-1.6 1.7 1.7 0 0 0-1.9.3l-.1.1L4.2 17l.1-.1a1.7 1.7 0 0 0 .3-1.9A1.7 1.7 0 0 0 3 14H2.8v-4H3a1.7 1.7 0 0 0 1.6-1 1.7 1.7 0 0 0-.3-1.9L4.2 7 7 4.2l.1.1a1.7 1.7 0 0 0 1.9.3A1.7 1.7 0 0 0 10 3V2.8h4V3a1.7 1.7 0 0 0 1 1.6 1.7 1.7 0 0 0 1.9-.3l.1-.1L19.8 7l-.1.1a1.7 1.7 0 0 0-.3 1.9 1.7 1.7 0 0 0 1.6 1h.2v4H21a1.7 1.7 0 0 0-1.6 1z"/>'
       };
@@ -2278,6 +2361,35 @@ tbody tr:hover td{background:#fcfafb}
       }catch{return 1800}
     }
 
+    function formatStorageBytes(bytes){
+      const n=Math.max(0,Number(bytes||0));
+      if(n<1024)return new Intl.NumberFormat('vi-VN').format(n)+' B';
+      if(n<1024*1024)return (n/1024).toLocaleString('vi-VN',{maximumFractionDigits:2})+' KB';
+      if(n<1024*1024*1024)return (n/1024/1024).toLocaleString('vi-VN',{maximumFractionDigits:2})+' MB';
+      return (n/1024/1024/1024).toLocaleString('vi-VN',{maximumFractionDigits:2})+' GB';
+    }
+
+    function storagePercent(used,limit){
+      if(!Number(limit))return 0;
+      return Math.max(0,Math.min(100,Number(used||0)/Number(limit)*100));
+    }
+
+    function storageQuotaCard({provider,iconName,usedBytes,limitBytes,note,estimate=false,available=true}){
+      const pct=storagePercent(usedBytes,limitBytes);
+      const pctText=pct<0.01&&usedBytes>0?'0,01':pct.toLocaleString('vi-VN',{minimumFractionDigits:pct>=1?1:2,maximumFractionDigits:2});
+      const width=usedBytes>0?Math.max(.7,pct):0;
+      return `<div class="storage-quota-card">
+        <div class="storage-quota-head">
+          <div class="storage-provider-icon">${icon(iconName,20)}</div>
+          <div class="storage-provider-copy"><b>${provider}</b><span>${estimate?'Ước tính':'Đang sử dụng'}</span></div>
+          <strong>${available?pctText+'%':'—'}</strong>
+        </div>
+        <div class="storage-usage-line"><b>${available?formatStorageBytes(usedBytes):'Chưa lấy được'}</b><span>/ ${formatStorageBytes(limitBytes)}</span></div>
+        <div class="storage-progress" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${available?pct.toFixed(2):'0'}"><i style="width:${available?width:0}%"></i></div>
+        <div class="storage-quota-foot"><span>${available?pctText+'% / 100%':'Không có dữ liệu'}</span><small>${note}</small></div>
+      </div>`;
+    }
+
     function maintenanceStats(){
       const settings=state.maintenance.settings;
       const totalBytes=state.sessions.reduce((a,s)=>a+estimateSessionBytes(s),0)*3;
@@ -2341,10 +2453,37 @@ tbody tr:hover td{background:#fcfafb}
       const last=cf.lastRun?.ranAt?fmtDate({toDate:()=>new Date(cf.lastRun.ranAt)}):'Chưa chạy';
       const pressureClass=st.pressure>=Number(m.emergencyPercent||85)?'bad':st.pressure>=70?'warn':'ok';
       $('#section-storage').innerHTML=`
-        <div class="grid storage-stats">
-          <div class="card storage-stat"><div class="metric-icon">${icon('live',19)}</div><div><div class="stat-label">Dữ liệu LIVE đang lưu</div><div class="stat-value">${new Intl.NumberFormat('vi-VN').format(st.count)} phiên</div><div class="tiny">Ước lượng ứng dụng: ${st.totalMb.toFixed(2).replace('.',',')} MB</div></div></div>
-          <div class="card storage-stat"><div class="metric-icon">${icon('shield',19)}</div><div><div class="stat-label">Mức sử dụng so với ngưỡng ứng dụng</div><div class="stat-value">${st.pressure}%</div><div class="pill ${pressureClass}">${st.pressure>=Number(m.emergencyPercent||85)?'Cần dọn':'Trong vùng an toàn'}</div></div></div>
-          <div class="card storage-stat"><div class="metric-icon">${icon('database',19)}</div><div><div class="stat-label">Cloudflare KV</div><div class="stat-value">${new Intl.NumberFormat('vi-VN').format(cf.keyCount||0)} khóa</div><div class="tiny">Lần dọn gần nhất: ${last}</div></div></div>
+        <div class="storage-quota-grid">
+          ${storageQuotaCard({
+            provider:'GitHub',
+            iconName:'code',
+            usedBytes:Number(state.maintenance.github?.usedBytes||0),
+            limitBytes:Number(state.maintenance.github?.limitBytes||10000000000),
+            available:state.maintenance.github?.available!==false,
+            note:'Dung lượng repository · 100% = ngưỡng khuyến nghị 10 GB của GitHub.'
+          })}
+          ${storageQuotaCard({
+            provider:'Firebase',
+            iconName:'database',
+            usedBytes:st.totalMb*1024*1024,
+            limitBytes:Number(state.maintenance.firebase?.storageLimitBytes||1073741824),
+            estimate:true,
+            note:'Ước tính dữ liệu SellerKBB trong Firestore · Free storage 1 GiB.'
+          })}
+          ${storageQuotaCard({
+            provider:'Cloudflare',
+            iconName:'cloud',
+            usedBytes:Number(cf.usedBytes||cf.lastRun?.storage?.usedBytes||0),
+            limitBytes:Number(cf.storageLimitBytes||1000000000),
+            estimate:cf.storageComplete===false,
+            note:(cf.storageComplete===false?'Đã đo tối đa 50 key · ':'')+'Workers KV Free storage 1 GB.'
+          })}
+        </div>
+        <div class="storage-health-row">
+          <div><span>Phiên LIVE đang quản lý</span><b>${new Intl.NumberFormat('vi-VN').format(st.count)} phiên</b></div>
+          <div><span>Áp lực dọn dữ liệu</span><b class="${pressureClass}">${st.pressure}%</b></div>
+          <div><span>Cloudflare KV</span><b>${new Intl.NumberFormat('vi-VN').format(cf.keyCount||0)} khóa</b></div>
+          <div><span>Kiểm tra KV gần nhất</span><b>${last}</b></div>
         </div>
 
         <div class="card">
@@ -2363,7 +2502,7 @@ tbody tr:hover td{background:#fcfafb}
         <div class="card free-plan-note">
           <h3 class="heading-with-icon">${icon('shield',18)} Chế độ Firebase Free</h3>
           <div class="notice ok"><b>Không dùng Firestore TTL trả phí.</b> SellerKBB chỉ đọc tối đa dữ liệu trong thời gian lưu và tự dọn tối đa 300 phiên quá hạn mỗi lượt khi Admin đăng nhập hoặc bấm dọn thủ công.</div>
-          <div class="sub" style="margin-top:10px">Cách này ưu tiên giữ trong quota Free và tránh tạo lượng đọc/ghi/xóa lớn bất ngờ.</div>
+          <div class="sub" style="margin-top:10px">Thanh Firebase phía trên là ước tính dữ liệu SellerKBB đang quản lý; số liệu Firestore thực tế có thể cao hơn do index và metadata. Cách này vẫn ưu tiên giữ trong quota Free và tránh tạo lượng đọc/ghi/xóa lớn bất ngờ.</div>
         </div>
 
         <div class="card">
