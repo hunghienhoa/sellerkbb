@@ -1851,7 +1851,7 @@ tbody tr:hover td{background:#fffafb}
 .manual-kpi-entry.readonly{grid-template-columns:repeat(2,minmax(0,1fr));align-items:center}
 .manual-kpi-entry.readonly>div{display:grid;gap:3px}
 .manual-kpi-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:10px}
-.manual-kpi-entry [data-manual-operator-kpi][readonly]{background:#fff5f8;color:#a45579;font-weight:750}
+.manual-kpi-entry [data-manual-host-kpi][readonly],.manual-kpi-entry [data-manual-operator-kpi][readonly]{background:#fff5f8;color:#a45579;font-weight:750}
 .manual-kpi-value{color:#7654a6!important;font-weight:750}
 @media(max-width:1050px){
   .metrics-grid.metrics-4{grid-template-columns:repeat(2,minmax(0,1fr))}
@@ -1909,7 +1909,7 @@ tbody tr:hover td{background:#fffafb}
       </div>
     </aside>
     <main class="main">
-      <header class="topbar"><div class="topbar-title-wrap"><button id="menuToggle" class="menu-toggle" type="button" aria-label="Mở menu" aria-expanded="false">☰</button><div><h1 id="pageTitle" class="page-title">Tổng quan</h1><div id="pageSub" class="tiny"></div></div></div><div class="row"><span id="syncBadge" class="pill">v1.21.0</span></div></header>
+      <header class="topbar"><div class="topbar-title-wrap"><button id="menuToggle" class="menu-toggle" type="button" aria-label="Mở menu" aria-expanded="false">☰</button><div><h1 id="pageTitle" class="page-title">Tổng quan</h1><div id="pageSub" class="tiny"></div></div></div><div class="row"><span id="syncBadge" class="pill">v1.22.0</span></div></header>
       <div class="content">
         <section id="section-dashboard" class="section active"></section>
         <section id="section-live" class="section"></section>
@@ -2244,7 +2244,7 @@ tbody tr:hover td{background:#fffafb}
 
     function previewTs(iso){ return {toDate:()=>new Date(iso)}; }
     function enterPreview(){
-      state.config={version:'1.21.0-preview',tiktokConfigured:true};
+      state.config={version:'1.22.0-preview',tiktokConfigured:true};
       state.user={uid:'preview-admin',email:'admin@sellerkbb.demo',displayName:'Quản trị viên Demo',photoURL:avatarFallbackData('Quản trị viên Demo')};
       state.profile={role:'admin',status:'approved',displayName:'Quản trị viên Demo',photoURL:state.user.photoURL,permissions:['live.read','kpi.read']};
       state.maintenance={settings:{retentionDays:180,autoCleanup:true,emergencyPercent:85,firestoreSoftLimitMb:600,firestoreMaxSessions:12000,kvSoftKeyLimit:5000},github:{usedBytes:124000,limitBytes:10000000000,available:true},cloudflare:{keyCount:5,lastRun:{ranAt:new Date().toISOString(),deleted:0},usedBytes:428000,storageLimitBytes:1000000000,storageComplete:true},firebase:{freePlanMode:true,ttlEnabled:false,ttlRecommended:false,storageLimitBytes:1073741824}};
@@ -2817,15 +2817,19 @@ tbody tr:hover td{background:#fffafb}
 
     function normalizedManualKpiEntries(session){
       return (Array.isArray(session?.manualKpiEntries)?session.manualKpiEntries:[])
-        .map((entry,index)=>({
-          uid:String(entry?.uid||''),
-          name:String(entry?.name||''),
-          role:entry?.role==='operator'?'operator':'host',
-          gmv:Math.max(0,Number(entry?.gmv||0)),
-          kpi:Math.max(0,Number(entry?.kpi||0)),
-          currency:String(entry?.currency||session?.currency||'VND'),
-          index
-        }))
+        .map((entry,index)=>{
+          const role=entry?.role==='operator'?'operator':'host';
+          const gmv=Math.max(0,Number(entry?.gmv||0));
+          return {
+            uid:String(entry?.uid||''),
+            name:String(entry?.name||''),
+            role,
+            gmv,
+            kpi:Math.round(gmv*(role==='operator'?.001:.003)),
+            currency:String(entry?.currency||session?.currency||'VND'),
+            index
+          };
+        })
         .filter(entry=>entry.uid||entry.name);
     }
 
@@ -2960,15 +2964,16 @@ tbody tr:hover td{background:#fffafb}
       const host=pair?.host||{uid:'',name:'',role:'host',gmv:0,kpi:0,currency:session.currency||'VND'};
       const operator=pair?.operator||{uid:'',name:'',role:'operator',gmv:host.gmv||0,kpi:Math.round(Number(host.gmv||0)*.001),currency:session.currency||'VND'};
       const gmv=Math.max(0,Number(host.gmv||operator.gmv||0));
+      const hostKpi=Math.round(gmv*.003);
       const operatorKpi=Math.round(gmv*.001);
 
       if(!editable){
         return `<div class="manual-kpi-entry readonly">
-          <div><span>Host Livestream</span>${host.uid||host.name?userIdentityHtml(userDisplayRecord(host.uid,host.name),true):'<b>—</b>'}</div>
-          <div><span>Nhân viên vận hành Livestream</span>${operator.uid||operator.name?userIdentityHtml(userDisplayRecord(operator.uid,operator.name),true):'<b>—</b>'}</div>
+          <div><span>Host Livestream</span>${host.uid||host.name?userIdentityHtml(staffDisplayRecord(host.uid,host.name),true):'<b>—</b>'}</div>
+          <div><span>Nhân viên vận hành Livestream</span>${operator.uid||operator.name?userIdentityHtml(staffDisplayRecord(operator.uid,operator.name),true):'<b>—</b>'}</div>
           <div><span>GMV sau hoàn/hủy của Host Livestream</span><b>${fmtMoney(gmv,session.currency)}</b></div>
-          <div><span>KPI thủ công của Host Livestream</span><b>${fmtMoney(host.kpi||0,session.currency)}</b></div>
-          <div><span>KPI của Nhân viên vận hành Livestream</span><b>${fmtMoney(operatorKpi,session.currency)}</b></div>
+          <div><span>KPI của Host Livestream (0,3%)</span><b>${fmtMoney(hostKpi,session.currency)}</b></div>
+          <div><span>KPI của Nhân viên vận hành Livestream (0,1%)</span><b>${fmtMoney(operatorKpi,session.currency)}</b></div>
         </div>`;
       }
 
@@ -2976,7 +2981,7 @@ tbody tr:hover td{background:#fffafb}
         <label><span>Host Livestream</span><select class="input" data-manual-host-person>${manualKpiPersonOptions('host',staffSelectionId('host',host.uid,host.name))}</select></label>
         <label><span>Nhân viên vận hành Livestream</span><select class="input" data-manual-operator-person>${manualKpiPersonOptions('operator',staffSelectionId('operator',operator.uid,operator.name))}</select></label>
         <label class="manual-host-gmv-field"><span>GMV sau hoàn/hủy của Host Livestream</span><input class="input" type="text" inputmode="numeric" autocomplete="off" data-manual-host-gmv value="${manualMoneyDisplay(gmv)}"></label>
-        <label class="manual-host-kpi-field"><span>KPI thủ công của Host Livestream</span><input class="input" type="text" inputmode="numeric" autocomplete="off" data-manual-host-kpi value="${manualMoneyDisplay(host.kpi||0)}"></label>
+        <label class="manual-host-kpi-field"><span>KPI của Host Livestream (0,3%)</span><input class="input" type="text" inputmode="numeric" data-manual-host-kpi value="${manualMoneyDisplay(hostKpi)}" readonly></label>
         <label class="manual-operator-kpi-field"><span>KPI của Nhân viên vận hành Livestream (0,1%)</span><input class="input" type="text" inputmode="numeric" data-manual-operator-kpi value="${manualMoneyDisplay(operatorKpi)}" readonly></label>
         <button class="btn small danger manual-entry-remove" type="button" data-manual-remove aria-label="Xóa nhóm người này">×</button>
       </div>`;
@@ -2987,22 +2992,20 @@ tbody tr:hover td{background:#fffafb}
       const hostKpiInput=row.querySelector('[data-manual-host-kpi]');
       const operatorKpiInput=row.querySelector('[data-manual-operator-kpi]');
 
-      const syncOperator=()=>{
+      const syncKpis=()=>{
         const gmv=manualMoneyNumber(gmvInput?.value);
+        setManualMoneyInput(hostKpiInput,Math.round(gmv*.003));
         setManualMoneyInput(operatorKpiInput,Math.round(gmv*.001));
+        if(hostKpiInput)hostKpiInput.readOnly=true;
+        if(operatorKpiInput)operatorKpiInput.readOnly=true;
       };
 
       setManualMoneyInput(gmvInput,manualMoneyNumber(gmvInput?.value));
-      setManualMoneyInput(hostKpiInput,manualMoneyNumber(hostKpiInput?.value));
-      syncOperator();
+      syncKpis();
 
       gmvInput?.addEventListener('input',()=>{
         setManualMoneyInput(gmvInput,manualMoneyNumber(gmvInput.value));
-        syncOperator();
-      });
-
-      hostKpiInput?.addEventListener('input',()=>{
-        setManualMoneyInput(hostKpiInput,manualMoneyNumber(hostKpiInput.value));
+        syncKpis();
       });
     }
 
@@ -3010,7 +3013,7 @@ tbody tr:hover td{background:#fffafb}
       const saved=normalizedManualKpiEntries(session);
       const pairs=manualKpiPairs(session);
       const rows=pairs.length?pairs:[{host:null,operator:null}];
-      const totalManual=saved.reduce((sum,e)=>sum+Number(e.kpi||0),0);
+      const totalManual=saved.reduce((sum,e)=>sum+Math.round(Number(e.gmv||0)*(e.role==='operator'?.001:.003)),0);
       const peopleCount=saved.filter(e=>e.uid||e.name).length;
       const status=peopleCount?'Đã nhập '+peopleCount+' người':'Chưa nhập';
       return `<div class="manual-kpi-session" data-manual-session="${session.id}">
@@ -3021,7 +3024,7 @@ tbody tr:hover td{background:#fffafb}
           </div>
           <div class="manual-kpi-total"><span>KPI thủ công đã nhập</span><b>${fmtMoney(totalManual,session.currency)}</b></div>
         </div>
-        <div class="manual-kpi-rule">${icon('shield',15)} <span>Chọn Host Livestream và Nhân viên vận hành Livestream riêng. Nhập GMV sau hoàn/hủy của Host; KPI Vận hành được tự tính = 0,1% GMV Host. Không bắt buộc đủ số người tham gia và SellerKBB không tự chia GMV tổng phiên.</span></div>
+        <div class="manual-kpi-rule">${icon('shield',15)} <span>Chọn Host Livestream và Nhân viên vận hành Livestream riêng. Nhập GMV sau hoàn/hủy của Host; KPI Host tự tính = 0,3% GMV và KPI Vận hành tự tính = 0,1% GMV Host. Không bắt buộc đủ số người tham gia và SellerKBB không tự chia GMV tổng phiên.</span></div>
         <div class="manual-kpi-entries">${rows.map((pair,index)=>manualKpiPairRow(session,pair,index,editable)).join('')}</div>
         ${editable?`<div class="manual-kpi-actions"><button class="btn" type="button" data-manual-add>${icon('users',15)} Thêm người</button><button class="btn primary" type="button" data-manual-save>${icon('check',15)} Lưu KPI thủ công</button></div>`:''}
       </div>`;
@@ -3034,7 +3037,7 @@ tbody tr:hover td{background:#fffafb}
         const hostUid=row.querySelector('[data-manual-host-person]')?.value||'';
         const operatorUid=row.querySelector('[data-manual-operator-person]')?.value||'';
         const gmv=manualMoneyNumber(row.querySelector('[data-manual-host-gmv]')?.value);
-        const hostKpi=manualMoneyNumber(row.querySelector('[data-manual-host-kpi]')?.value);
+        const hostKpi=Math.round(gmv*.003);
         const operatorKpi=Math.round(gmv*.001);
 
         if(!hostUid&&(gmv||hostKpi||operatorUid))throw new Error('Hãy chọn Host Livestream cho nhóm KPI đã nhập.');
@@ -3126,7 +3129,7 @@ tbody tr:hover td{background:#fffafb}
           ${metricCard('money','GMV cá nhân đã nhập',fmtMoney(totalManualGmv,currency))}
           ${metricCard('kpi','KPI thủ công đã nhập',fmtMoney(totalManualKpi,currency))}
         </div>
-        <div class="data-note">${icon('shield',16)}<span>Mỗi khung gồm Host Livestream + Nhân viên vận hành Livestream. Tiền tự định dạng VND; KPI Vận hành tự tính 0,1% từ GMV Host.</span></div>
+        <div class="data-note">${icon('shield',16)}<span>Mỗi khung gồm Host Livestream + Nhân viên vận hành Livestream. Tiền tự định dạng VND; KPI Host tự tính 0,3% và KPI Vận hành tự tính 0,1% từ GMV Host.</span></div>
         <div class="card manual-kpi-section">
           <div class="row space manual-kpi-section-head"><div><h3 class="heading-with-icon">${icon('settings',18)} Phiên cần tính KPI thủ công</h3><div class="sub">Phiên nào đã tích “Tính KPI thủ công” ở tab Phiên LIVE sẽ tự xuất hiện tại đây.</div></div><span class="pill">${manualSessions.length} phiên</span></div>
           ${manualSessions.length?`<div class="manual-kpi-session-list">${manualSessions.map(s=>manualKpiSessionCard(s,true)).join('')}</div>`:'<div class="empty">Không có phiên KPI thủ công trong khoảng thời gian này.</div>'}

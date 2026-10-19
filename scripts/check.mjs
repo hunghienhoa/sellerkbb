@@ -106,7 +106,11 @@ assert(html.includes('data-manual-operator-person'), "Operator Livestream select
 assert(html.includes("Host Livestream</span><select"), "Host Livestream label missing");
 assert(html.includes("Nhân viên vận hành Livestream</span><select"), "Operator Livestream label missing");
 assert(html.includes('data-manual-host-gmv'), "Host GMV field missing");
-assert(html.includes('data-manual-host-kpi'), "Host manual KPI field missing");
+assert(html.includes('data-manual-host-kpi'), "Host computed KPI field missing");
+assert(html.includes("KPI của Host Livestream (0,3%)"), "Host 0.3% KPI label missing");
+assert(html.includes("Math.round(gmv*.003)"), "Host 0.3% KPI calculation missing");
+assert(html.includes("setManualMoneyInput(hostKpiInput,Math.round(gmv*.003))"), "Host KPI live recalculation missing");
+assert(html.includes("if(hostKpiInput)hostKpiInput.readOnly=true"), "Host KPI must be read-only");
 assert(html.includes('data-manual-operator-kpi'), "Operator KPI field missing");
 assert(html.includes("KPI của Nhân viên vận hành Livestream (0,1%)"), "Operator KPI label missing");
 assert(html.includes("Math.round(gmv*.001)"), "Operator 0.1% KPI calculation missing");

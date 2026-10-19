@@ -131,15 +131,17 @@ try {
   await page.select(manualCard+' [data-manual-host-person]','staff-dung');
   await page.select(manualCard+' [data-manual-operator-person]','staff-hung-bg');
 
+  assert(await page.$eval(manualCard,e=>e.textContent.includes('KPI của Host Livestream (0,3%)')),"Host 0.3% KPI label is missing");
   await page.$eval(manualCard+' [data-manual-host-gmv]',e=>{e.value='10000';e.dispatchEvent(new Event('input',{bubbles:true}));});
   assert(await page.$eval(manualCard+' [data-manual-host-gmv]',e=>e.value)==='10.000đ',"Host GMV did not format 10000 as 10.000đ");
+  assert(await page.$eval(manualCard+' [data-manual-host-kpi]',e=>e.value)==='30đ',"Host KPI did not auto-calculate 0.3% from Host GMV");
+  assert(await page.$eval(manualCard+' [data-manual-host-kpi]',e=>e.readOnly),"Host KPI field must be read-only");
   assert(await page.$eval(manualCard+' [data-manual-operator-kpi]',e=>e.value)==='10đ',"Operator KPI did not auto-calculate 0.1% from Host GMV");
   assert(await page.$eval(manualCard+' [data-manual-operator-kpi]',e=>e.readOnly),"Operator KPI field must be read-only");
 
   await page.$eval(manualCard+' [data-manual-host-gmv]',e=>{e.value='1234000';e.dispatchEvent(new Event('input',{bubbles:true}));});
-  await page.$eval(manualCard+' [data-manual-host-kpi]',e=>{e.value='4321';e.dispatchEvent(new Event('input',{bubbles:true}));});
   assert(await page.$eval(manualCard+' [data-manual-host-gmv]',e=>e.value)==='1.234.000đ',"Formatted Host GMV is incorrect");
-  assert(await page.$eval(manualCard+' [data-manual-host-kpi]',e=>e.value)==='4.321đ',"Formatted Host manual KPI is incorrect");
+  assert(await page.$eval(manualCard+' [data-manual-host-kpi]',e=>e.value)==='3.702đ',"Host KPI 0.3% is incorrect");
   assert(await page.$eval(manualCard+' [data-manual-operator-kpi]',e=>e.value)==='1.234đ',"Operator KPI 0.1% is incorrect");
 
   await page.click(manualCard+' [data-manual-add]');
@@ -152,7 +154,7 @@ try {
   await sleep(150);
   await page.click('[data-section="kpi"]');
   await page.click('#section-kpi [data-range-mode="30d"]');
-  assert(await page.$eval('#section-kpi',e=>e.textContent.includes('4.321')),"Host manual KPI amount was not added to KPI nhân sự");
+  assert(await page.$eval('#section-kpi',e=>e.textContent.includes('3.702')),"Host 0.3% KPI was not added to KPI nhân sự");
   assert(await page.$eval('#section-kpi',e=>e.textContent.includes('1.234')),"Operator 0.1% KPI was not added to KPI nhân sự");
   assert(await page.$eval('#section-kpi',e=>e.textContent.includes('1.234.000')),"Manual Host GMV was not added to KPI nhân sự");
   assert(await page.$('#section-kpi [data-manual-save]')===null,"KPI nhân sự must not contain manual KPI save controls");
@@ -164,7 +166,7 @@ try {
   const savedManualCard='#section-manual-kpi [data-manual-session]:first-of-type';
   assert(await page.$eval(savedManualCard+' [data-manual-host-person]',e=>e.value)==='staff-dung',"Saved Host Livestream did not persist");
   assert(await page.$eval(savedManualCard+' [data-manual-operator-person]',e=>e.value)==='staff-hung-bg',"Saved Operator did not persist");
-  assert(await page.$eval(savedManualCard+' [data-manual-host-kpi]',e=>e.value)==='4.321đ',"Formatted Host KPI did not persist after reload");
+  assert(await page.$eval(savedManualCard+' [data-manual-host-kpi]',e=>e.value)==='3.702đ',"Computed Host KPI did not persist after reload");
   assert(await page.$eval(savedManualCard+' [data-manual-host-gmv]',e=>e.value)==='1.234.000đ',"Formatted Host GMV did not persist after reload");
   assert(await page.$eval(savedManualCard+' [data-manual-operator-kpi]',e=>e.value)==='1.234đ',"Operator auto KPI did not persist after reload");
 

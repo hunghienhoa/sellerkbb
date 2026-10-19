@@ -4,7 +4,7 @@
 
 ### Báo cáo TikTok LIVE · KPI nhân sự · Tự đồng bộ 24/24
 
-**Phiên bản hiện tại: v1.21.0**
+**Phiên bản hiện tại: v1.22.0**
 
 [![GitHub Release](https://img.shields.io/github/v/release/hunghienhoa/sellerkbb?label=Release)](https://github.com/hunghienhoa/sellerkbb/releases)
 [![GitHub Actions](https://img.shields.io/github/actions/workflow/status/hunghienhoa/sellerkbb/deploy.yml?branch=main&label=Ki%E1%BB%83m%20tra%20%26%20Backup)](https://github.com/hunghienhoa/sellerkbb/actions)
@@ -17,18 +17,16 @@
 
 ---
 
-## 🆕 Cập nhật mới nhất — v1.21.0
+## 🆕 Cập nhật mới nhất — v1.22.0
 
-- Bổ sung TAB riêng **Quản lý nhân sự** trong nhóm **Quản trị**, tách hoàn toàn khỏi **Quản lý tài khoản**.
-- **Tài khoản đăng nhập chỉ dùng để đăng nhập/xem theo quyền**, không còn là nguồn dữ liệu cho các ô chọn Host/Vận hành.
-- Tạo danh sách nhân sự dùng chung toàn hệ thống. Mặc định:
-  - **Host Livestream:** Thảo My, Dung, Tâm.
-  - **Nhân viên vận hành Livestream:** Hùng Bắc Giang, Hùng Hiền Hoà.
-- Tất cả dropdown Host/Vận hành ở **Phiên LIVE** và **KPI thủ công** đều lấy từ TAB **Quản lý nhân sự**.
-- TAB Quản lý nhân sự có thể **Thêm / Sửa / Xóa** nhân sự và đổi vai trò Host/Vận hành; thay đổi sẽ tự phản ánh vào các dropdown trên toàn hệ thống.
-- Danh sách nhân sự được lưu độc lập trong Firestore tại `settings/staffMembers`, tận dụng quyền Settings hiện có nên không phụ thuộc collection `users`.
-- KPI nhân sự hiển thị theo nhân sự đã gán, không tra ngược từ tài khoản đăng nhập.
-- Bản **preview/demo** và website được đồng bộ cùng source sau khi test đạt.
+- Sửa **KPI thủ công** để KPI Host không còn phải nhập tay.
+- **KPI của Host Livestream (0,3%)** tự tính ngay từ **GMV sau hoàn/hủy của Host Livestream**.
+- **KPI của Nhân viên vận hành Livestream (0,1%)** tiếp tục tự tính từ cùng GMV Host.
+- Khi thay đổi GMV Host, cả hai ô KPI **0,3%** và **0,1%** cập nhật ngay và đều ở trạng thái chỉ đọc để tránh sửa sai công thức.
+- Ví dụ GMV Host **1.000.000đ** → KPI Host **3.000đ**, KPI Vận hành **1.000đ**.
+- Dữ liệu KPI thủ công đã lưu từ các bản cũ cũng được tính lại theo đúng tỷ lệ 0,3% / 0,1% khi hiển thị và tổng hợp KPI nhân sự.
+- Giữ nguyên TAB **Quản lý nhân sự** độc lập với tài khoản đăng nhập.
+- Bản **preview/demo** và website được đồng bộ cùng source sau khi kiểm tra.
 - README và GitHub Release tiếp tục được cập nhật cùng phiên bản.
 
 ---
