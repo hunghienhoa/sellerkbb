@@ -109,7 +109,7 @@ try {
   assert(await page.$('#nav [data-section="manual-kpi"]')!==null,"Dedicated KPI thủ công nav tab missing");
   await page.click('[data-section="manual-kpi"]');
   await page.click('#section-manual-kpi [data-range-mode="30d"]');
-  assert((await page.$('#section-manual-kpi [data-manual-session]')).length>=1,"Manual KPI session section missing");
+  assert((await page.$$('#section-manual-kpi [data-manual-session]')).length>=1,"Manual KPI session section missing");
   assert(await page.$('#section-kpi [data-manual-session]')===null,"Manual KPI editor must not remain inside KPI nhân sự");
   const manualCard='#section-manual-kpi [data-manual-session]:first-of-type';
   assert(await page.$eval(manualCard,e=>e.textContent.includes('không tự chia GMV tổng')),"Manual KPI no-equal-split notice missing");
