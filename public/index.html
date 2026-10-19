@@ -1276,6 +1276,10 @@ tbody tr:hover td{background:#fcfafb}
 @media(max-width:700px){
   .action-toast{top:calc(env(safe-area-inset-top, 0px) + 10px);max-width:calc(100vw - 24px)}
 }
+.sync-status{min-height:22px}
+.sync-status b{color:#5b414e}
+.sync-status.is-refreshing .ui-icon{animation:sync-spin .75s linear infinite}
+@keyframes sync-spin{to{transform:rotate(360deg)}}
 </style>
 </head>
 <body>
@@ -1288,7 +1292,7 @@ tbody tr:hover td{background:#fcfafb}
       <div class="side-bottom"><div class="userbox row"><img id="userAvatar" class="avatar" alt=""><div class="usertext" style="min-width:0"><div id="userName" style="font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis"></div><div id="userRole" class="tiny"></div></div></div></div>
     </aside>
     <main class="main">
-      <header class="topbar"><div class="topbar-title-wrap"><button id="menuToggle" class="menu-toggle" type="button" aria-label="Mở menu" aria-expanded="false">☰</button><div><h1 id="pageTitle" class="page-title">Tổng quan</h1><div id="pageSub" class="tiny"></div></div></div><div class="row"><span id="syncBadge" class="pill">v1.6.1</span><button id="logoutBtn" class="btn ghost small">Đăng xuất</button></div></header>
+      <header class="topbar"><div class="topbar-title-wrap"><button id="menuToggle" class="menu-toggle" type="button" aria-label="Mở menu" aria-expanded="false">☰</button><div><h1 id="pageTitle" class="page-title">Tổng quan</h1><div id="pageSub" class="tiny"></div></div></div><div class="row"><span id="syncBadge" class="pill">v1.6.2</span><button id="logoutBtn" class="btn ghost small">Đăng xuất</button></div></header>
       <div class="content">
         <section id="section-dashboard" class="section active"></section>
         <section id="section-live" class="section"></section>
@@ -1412,14 +1416,15 @@ tbody tr:hover td{background:#fcfafb}
     const PREVIEW = location.pathname === '/preview' || new URLSearchParams(location.search).get('preview') === '1';
 
     const LIVE_PAGE_SIZE = 20;
-    const state = { config:null, auth:null, db:null, user:null, profile:null, sessions:[], users:[], section:'dashboard', livePage:1, rangeMode:'30d', customStart:'', customEnd:'', maintenance:{settings:{retentionDays:180,autoCleanup:true,emergencyPercent:85,firestoreSoftLimitMb:600,firestoreMaxSessions:12000,kvSoftKeyLimit:5000},cloudflare:{keyCount:0,lastRun:null},firebase:{freePlanMode:true,ttlEnabled:false,ttlRecommended:false}} };
+    const state = { config:null, auth:null, db:null, user:null, profile:null, sessions:[], users:[], section:'dashboard', livePage:1, rangeMode:'30d', customStart:'', customEnd:'', maintenance:{settings:{retentionDays:180,autoCleanup:true,emergencyPercent:85,firestoreSoftLimitMb:600,firestoreMaxSessions:12000,kvSoftKeyLimit:5000},cloudflare:{keyCount:0,lastRun:null},firebase:{freePlanMode:true,ttlEnabled:false,ttlRecommended:false}}, autoSyncStatus:null, autoSyncRefreshing:false, autoSyncWatcher:null, autoSyncVisibilityBound:false };
 
     function previewTs(iso){ return {toDate:()=>new Date(iso)}; }
     function enterPreview(){
-      state.config={version:'1.6.1-preview',tiktokConfigured:true};
+      state.config={version:'1.6.2-preview',tiktokConfigured:true};
       state.user={uid:'preview-admin',email:'admin@sellerkbb.demo',displayName:'Quản trị viên Demo',photoURL:''};
       state.profile={role:'admin',status:'approved',displayName:'Quản trị viên Demo',permissions:['live.read','kpi.read']};
       state.maintenance={settings:{retentionDays:180,autoCleanup:true,emergencyPercent:85,firestoreSoftLimitMb:600,firestoreMaxSessions:12000,kvSoftKeyLimit:5000},cloudflare:{keyCount:4,lastRun:{ranAt:new Date().toISOString(),deleted:0}},firebase:{freePlanMode:true,ttlEnabled:false,ttlRecommended:false}};
+      state.autoSyncStatus={ok:true,reason:'preview',finishedAt:new Date().toISOString(),cached:34};
       state.users=[
         {id:'thao-my',displayName:'Thảo My',email:'thaomy@sellerkbb.demo',role:'host',status:'approved',permissions:['live.read','kpi.read']},
         {id:'hung-bg',displayName:'Hùng Bắc Giang',email:'hungbg@sellerkbb.demo',role:'operator',status:'approved',permissions:['live.read','kpi.read']},
@@ -1445,7 +1450,7 @@ tbody tr:hover td{background:#fcfafb}
         const gmv=72000000+i*4200000, final=Math.round(gmv*(.91+(i%5)*.01)), items=420+i*37;
         state.sessions.push({id:`LIVE-202610-${String(i).padStart(3,'0')}`,liveId:`LIVE-202610-${String(i).padStart(3,'0')}`,title:`Phiên LIVE mẫu #${i}`,channelUsername:i%2?'sellerkbb_official':'sellerkbb_beauty',channelId:i%2?'743820194':'881003522',startTime:previewTs(`2026-10-${d}T12:30:00+07:00`),durationSeconds:7200+(i%4)*1800,recordedGmvAmount:gmv,recordedItemsSold:items,currentItemsSold:items,currentGmvAmount:final,finalGmvAmount:final,currency:'VND',hostUid:host[0],hostName:host[1],operatorUid:op[0],operatorName:op[1]});
       }
-      showApp(); bindShell(); renderAll();
+      showApp(); bindShell(); renderAll(); startAutoSyncWatcher();
       const bar=document.createElement('div');
       bar.style.cssText='position:fixed;left:50%;transform:translateX(-50%);bottom:18px;z-index:15;background:#f7c5dc;color:#653a50;padding:8px 12px;border:1px solid #edb4cf;border-radius:999px;font-weight:800;font-size:10px;box-shadow:0 8px 24px rgba(156,91,124,.16);white-space:nowrap';
       bar.textContent='PREVIEW MODE · Dữ liệu mẫu · Không ảnh hưởng hệ thống thật';
@@ -1508,7 +1513,7 @@ tbody tr:hover td{background:#fcfafb}
           if(cleaned>0) await loadData();
         }
       }
-      renderAll();
+      renderAll(); startAutoSyncWatcher();
     }
 
     async function ensureProfile(user){
@@ -1544,6 +1549,70 @@ tbody tr:hover td{background:#fcfafb}
       requestAnimationFrame(()=>el.classList.add('show'));
       clearTimeout(showToast.timer);
       showToast.timer=setTimeout(()=>el.classList.remove('show'),1800);
+    }
+
+    function fmtSyncMoment(iso){
+      if(!iso)return 'Chưa có lần đồng bộ';
+      const d=new Date(iso);
+      if(Number.isNaN(d.getTime()))return 'Chưa có lần đồng bộ';
+      const parts=new Intl.DateTimeFormat('vi-VN',{timeZone:'Asia/Ho_Chi_Minh',hour:'2-digit',minute:'2-digit',second:'2-digit',day:'2-digit',month:'2-digit',year:'numeric',hourCycle:'h23'}).formatToParts(d);
+      const get=t=>parts.find(x=>x.type===t)?.value||'00';
+      return get('hour')+' giờ '+get('minute')+' phút '+get('second')+' giây ngày '+get('day')+'/'+get('month')+'/'+get('year');
+    }
+
+    async function fetchAutoSyncStatus(){
+      if(PREVIEW)return state.autoSyncStatus;
+      try{
+        const result=await api('/api/tiktok/autosync/status');
+        return result.autoSync||null;
+      }catch(e){
+        console.warn('auto sync status',e);
+        return null;
+      }
+    }
+
+    async function refreshAllFromAutoSync(nextStatus){
+      state.autoSyncRefreshing=true;
+      state.autoSyncStatus=nextStatus||state.autoSyncStatus;
+      renderAll();
+      try{
+        await loadData();
+        state.autoSyncStatus=nextStatus||state.autoSyncStatus;
+      }finally{
+        state.autoSyncRefreshing=false;
+        renderAll();
+      }
+      showToast('Dữ liệu Tiktok vừa được cập nhật tự động');
+    }
+
+    async function checkAutoSyncUpdate(){
+      if(document.hidden)return;
+      if(PREVIEW){
+        const next={...(state.autoSyncStatus||{}),ok:true,reason:'preview',finishedAt:new Date().toISOString(),cached:state.sessions.length};
+        state.autoSyncRefreshing=true;
+        state.autoSyncStatus=next;
+        renderAll();
+        setTimeout(()=>{ state.autoSyncRefreshing=false; renderAll(); },650);
+        return;
+      }
+      const previous=state.autoSyncStatus?.finishedAt||'';
+      const next=await fetchAutoSyncStatus();
+      const stamp=next?.finishedAt||'';
+      if(stamp && stamp!==previous){
+        await refreshAllFromAutoSync(next);
+      }else if(next){
+        state.autoSyncStatus=next;
+        renderDashboard();
+      }
+    }
+
+    function startAutoSyncWatcher(){
+      if(state.autoSyncWatcher)clearInterval(state.autoSyncWatcher);
+      state.autoSyncWatcher=setInterval(checkAutoSyncUpdate,60000);
+      if(!state.autoSyncVisibilityBound){
+        state.autoSyncVisibilityBound=true;
+        document.addEventListener('visibilitychange',()=>{ if(!document.hidden) checkAutoSyncUpdate(); });
+      }
     }
 
     function bindInteractionEffects(){
@@ -1626,6 +1695,7 @@ tbody tr:hover td{background:#fcfafb}
         }catch(e){ console.warn('maintenance settings',e); }
       }
       if(can('live.read')||can('kpi.read')){
+        if(!PREVIEW){ const syncStatus=await fetchAutoSyncStatus(); if(syncStatus)state.autoSyncStatus=syncStatus; }
         const days=Math.min(180,Number(state.maintenance.settings.retentionDays||180));
         const cutoff=Timestamp.fromMillis(Date.now()-days*86400000);
         const maxDocs=Math.min(12000,Number(state.maintenance.settings.firestoreMaxSessions||12000));
@@ -1684,7 +1754,7 @@ tbody tr:hover td{background:#fcfafb}
       const ss=sessionsForRange(), gmv=ss.reduce((a,s)=>a+finalGmv(s),0), items=ss.reduce((a,s)=>a+Number(s.currentItemsSold??s.recordedItemsSold??0),0), totalSec=ss.reduce((a,s)=>a+Number(s.durationSeconds||0),0), currency=ss.find(s=>s.currency)?.currency||'VND';
       $('#section-dashboard').innerHTML=`
         ${timeFilterHtml('dashboard')}
-        <div class="data-note">${icon('sync',16)}<span>Dữ liệu TikTok được tự đồng bộ mỗi giờ; số liệu báo cáo cập nhật tự động khi mở web.</span></div>
+        <div class="data-note sync-status ${state.autoSyncRefreshing?'is-refreshing':''}">${icon('sync',16)}<span>Dữ liệu Tiktok được đồng bộ lúc: <b>${fmtSyncMoment(state.autoSyncStatus?.finishedAt)}</b></span></div>
         <div class="metrics-grid">${metricCard('live','Phiên LIVE',ss.length)}${metricCard('money','GMV cuối kỳ',fmtMoney(gmv,currency))}${metricCard('box','Sản phẩm bán',new Intl.NumberFormat('vi-VN').format(items))}${metricCard('clock','Tổng thời lượng',fmtDuration(totalSec))}</div>
         <div class="card"><div class="row space"><h3>Phiên LIVE gần nhất trong khoảng thời gian</h3><span class="pill">GMV dùng KPI = GMV cuối kỳ</span></div>${renderLiveTable(ss.slice(0,8),false)}</div>`;
       bindTimeFilter('dashboard');
