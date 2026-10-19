@@ -2,6 +2,7 @@ import fs from "node:fs";
 
 const root = new URL("../", import.meta.url);
 const read = file => fs.readFileSync(new URL(file, root), "utf8");
+const version = read("VERSION").trim();
 const required = ["public/index.html","worker/api-template.js","firebase/firestore.rules","firebase/firestore.indexes.json","wrangler.toml"];
 for (const file of required) {
   if (!fs.existsSync(new URL(file, root))) throw new Error("Missing " + file);
@@ -114,7 +115,9 @@ assert(toolsGroup.includes("id:'export'")&&toolsGroup.includes("id:'manual-kpi'"
 const adminGroup=html.slice(html.indexOf("{label:'Quản trị'"),html.indexOf("];",html.indexOf("{label:'Quản trị'")));
 assert(!adminGroup.includes("id:'users'"), "Users must be outside Quản trị nav group");
 assert(html.includes('id="usersQuickBtn"'), "External Users quick button missing");
-assert(readme.includes("Cập nhật mới nhất — v1.14.0"), "README latest-update section missing");
+assert(html.includes(".side-account-row{display:flex;"), "Users/account row must stay on one line");
+assert(!html.includes(".side-account-row{grid-template-columns:1fr}"), "Users button must not drop below account row on tablet");
+assert(readme.includes(`Cập nhật mới nhất — v${version}`), "README latest-update section must match VERSION");
 assert(workflow.includes("Tính năng/cập nhật trong bản này"), "Release changelog heading missing");
 assert(workflow.includes("Write release notes from README"), "README-driven Release notes step missing");
 assert(workflow.includes('Cập nhật mới nhất — v" ver'), "Release notes must read the matching README version section");

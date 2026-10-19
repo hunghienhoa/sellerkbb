@@ -1794,12 +1794,14 @@ tbody tr:hover td{background:#fbf9fe}
 }
 
 
-/* v1.14 navigation placement refinements */
-.side-account-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:7px;align-items:stretch}
-.side-account-row .account-trigger{min-width:0}
+/* v1.14.1 navigation placement refinements */
+.side-account-row{display:flex;gap:7px;align-items:center;flex-wrap:nowrap}
+.side-account-row .account-trigger{min-width:0;flex:1 1 auto}
 .users-quick-btn{
-  width:42px;min-width:42px;
+  width:42px;min-width:42px;min-height:56px;
   display:grid;place-items:center;
+  flex:0 0 42px;
+  align-self:center;
   padding:7px 5px;
   border:1px solid var(--line);
   border-radius:9px;
@@ -1809,12 +1811,16 @@ tbody tr:hover td{background:#fbf9fe}
 }
 .users-quick-btn:hover{background:#f2edf9;border-color:#d5c9e7}
 @media(max-width:1100px) and (min-width:701px){
-  .side-account-row{grid-template-columns:1fr}
-  .users-quick-btn{width:100%;min-width:0}
+  #app{grid-template-columns:104px minmax(0,1fr)}
+  .sidebar{padding-left:6px;padding-right:6px}
+  .side-bottom{left:6px;right:6px}
+  .side-account-row{gap:6px}
+  .side-account-row .account-trigger{width:44px;flex:0 0 44px;padding-left:4px;padding-right:4px}
+  .users-quick-btn{width:42px;min-width:42px;flex-basis:42px}
 }
 @media(max-width:700px){
-  .side-account-row{grid-template-columns:minmax(0,1fr) auto}
-  .users-quick-btn{width:42px;min-width:42px}
+  .side-account-row{gap:7px}
+  .users-quick-btn{width:42px;min-width:42px;flex-basis:42px}
 }
 
 </style>
@@ -1833,7 +1839,7 @@ tbody tr:hover td{background:#fbf9fe}
             <div class="usertext"><div id="userName"></div><div id="userRole" class="tiny"></div></div>
             <span class="account-chevron" aria-hidden="true">⌃</span>
           </button>
-          <button id="usersQuickBtn" class="users-quick-btn hidden" type="button" aria-label="Quản lý tài khoản" title="Tài khoản">
+          <button id="usersQuickBtn" class="users-quick-btn hidden" type="button" aria-label="Quản lý tài khoản" title="Users / Tài khoản">
             <svg class="ui-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
           </button>
         </div>
@@ -1841,7 +1847,7 @@ tbody tr:hover td{background:#fbf9fe}
       </div>
     </aside>
     <main class="main">
-      <header class="topbar"><div class="topbar-title-wrap"><button id="menuToggle" class="menu-toggle" type="button" aria-label="Mở menu" aria-expanded="false">☰</button><div><h1 id="pageTitle" class="page-title">Tổng quan</h1><div id="pageSub" class="tiny"></div></div></div><div class="row"><span id="syncBadge" class="pill">v1.14.0</span></div></header>
+      <header class="topbar"><div class="topbar-title-wrap"><button id="menuToggle" class="menu-toggle" type="button" aria-label="Mở menu" aria-expanded="false">☰</button><div><h1 id="pageTitle" class="page-title">Tổng quan</h1><div id="pageSub" class="tiny"></div></div></div><div class="row"><span id="syncBadge" class="pill">v1.14.1</span></div></header>
       <div class="content">
         <section id="section-dashboard" class="section active"></section>
         <section id="section-live" class="section"></section>
@@ -2128,7 +2134,7 @@ tbody tr:hover td{background:#fbf9fe}
 
     function previewTs(iso){ return {toDate:()=>new Date(iso)}; }
     function enterPreview(){
-      state.config={version:'1.14.0-preview',tiktokConfigured:true};
+      state.config={version:'1.14.1-preview',tiktokConfigured:true};
       state.user={uid:'preview-admin',email:'admin@sellerkbb.demo',displayName:'Quản trị viên Demo',photoURL:avatarFallbackData('Quản trị viên Demo')};
       state.profile={role:'admin',status:'approved',displayName:'Quản trị viên Demo',photoURL:state.user.photoURL,permissions:['live.read','kpi.read']};
       state.maintenance={settings:{retentionDays:180,autoCleanup:true,emergencyPercent:85,firestoreSoftLimitMb:600,firestoreMaxSessions:12000,kvSoftKeyLimit:5000},github:{usedBytes:124000,limitBytes:10000000000,available:true},cloudflare:{keyCount:5,lastRun:{ranAt:new Date().toISOString(),deleted:0},usedBytes:428000,storageLimitBytes:1000000000,storageComplete:true},firebase:{freePlanMode:true,ttlEnabled:false,ttlRecommended:false,storageLimitBytes:1073741824}};
