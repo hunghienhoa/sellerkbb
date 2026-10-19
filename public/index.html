@@ -796,7 +796,7 @@ td .manual-kpi-check+.btn{width:100%}
       <div class="side-bottom"><div class="userbox row"><img id="userAvatar" class="avatar" alt=""><div class="usertext" style="min-width:0"><div id="userName" style="font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis"></div><div id="userRole" class="tiny"></div></div></div></div>
     </aside>
     <main class="main">
-      <header class="topbar"><div class="topbar-title-wrap"><button id="menuToggle" class="menu-toggle" type="button" aria-label="Mở menu" aria-expanded="false">☰</button><div><h1 id="pageTitle" class="page-title">Tổng quan</h1><div id="pageSub" class="tiny"></div></div></div><div class="row"><span id="syncBadge" class="pill">v1.5.4</span><button id="logoutBtn" class="btn ghost small">Đăng xuất</button></div></header>
+      <header class="topbar"><div class="topbar-title-wrap"><button id="menuToggle" class="menu-toggle" type="button" aria-label="Mở menu" aria-expanded="false">☰</button><div><h1 id="pageTitle" class="page-title">Tổng quan</h1><div id="pageSub" class="tiny"></div></div></div><div class="row"><span id="syncBadge" class="pill">v1.5.5</span><button id="logoutBtn" class="btn ghost small">Đăng xuất</button></div></header>
       <div class="content">
         <section id="section-dashboard" class="section active"></section>
         <section id="section-live" class="section"></section>
@@ -923,7 +923,7 @@ td .manual-kpi-check+.btn{width:100%}
 
     function previewTs(iso){ return {toDate:()=>new Date(iso)}; }
     function enterPreview(){
-      state.config={version:'1.5.4-preview',tiktokConfigured:true};
+      state.config={version:'1.5.5-preview',tiktokConfigured:true};
       state.user={uid:'preview-admin',email:'admin@sellerkbb.demo',displayName:'Quản trị viên Demo',photoURL:''};
       state.profile={role:'admin',status:'approved',displayName:'Quản trị viên Demo',permissions:['live.read','kpi.read']};
       state.maintenance={settings:{retentionDays:180,autoCleanup:true,emergencyPercent:85,firestoreSoftLimitMb:600,firestoreMaxSessions:12000,kvSoftKeyLimit:5000},cloudflare:{keyCount:4,lastRun:{ranAt:new Date().toISOString(),deleted:0}},firebase:{freePlanMode:true,ttlEnabled:false,ttlRecommended:false}};
@@ -1141,7 +1141,7 @@ td .manual-kpi-check+.btn{width:100%}
           <div class="mobile-field"><span class="tiny">GMV sau hoàn/hủy</span><strong>${fmtMoney(finalGmv(s),s.currency)}</strong></div>
           <div class="mobile-field"><span class="tiny">Số món bán đã ghi nhận</span><strong>${new Intl.NumberFormat('vi-VN').format(Number(s.currentItemsSold??s.recordedItemsSold??0))}</strong></div>
         </div>
-        ${editable?`<div class="mobile-assign"><label class="manual-kpi-check"><input type="checkbox" data-manual-kpi="${s.id}" ${isManualKpi(s)?'checked':''}> <span>Ngày Ngày Campaign/Mega Live · tính KPI thủ công</span></label><label><span class="tiny">Host Livestream</span>${personSelect('host',s.id,s.hostUid,approvedHosts)}</label><label><span class="tiny">Nhân viên vận hành</span>${personSelect('operator',s.id,s.operatorUid,operators)}</label><button class="btn primary" data-save-session="${s.id}">Lưu thiết lập</button></div>`:`<div class="mobile-assign">${isManualKpi(s)?'<div class="notice warn">Phiên này không cộng vào KPI tự động.</div>':`<div class="row space"><span class="tiny">Host</span><b>${esc(s.hostName||'—')}</b></div><div class="row space"><span class="tiny">Vận hành</span><b>${esc(s.operatorName||'—')}</b></div>`}</div>`}
+        ${editable?`<div class="mobile-assign"><label class="manual-kpi-check"><input type="checkbox" data-manual-kpi="${s.id}" ${isManualKpi(s)?'checked':''}> <span>Ngày Campaign/Mega Live · tính KPI thủ công</span></label><label><span class="tiny">Host Livestream</span>${personSelect('host',s.id,s.hostUid,approvedHosts)}</label><label><span class="tiny">Nhân viên vận hành</span>${personSelect('operator',s.id,s.operatorUid,operators)}</label><button class="btn primary" data-save-session="${s.id}">Lưu thiết lập</button></div>`:`<div class="mobile-assign">${isManualKpi(s)?'<div class="notice warn">Phiên này không cộng vào KPI tự động.</div>':`<div class="row space"><span class="tiny">Host</span><b>${esc(s.hostName||'—')}</b></div><div class="row space"><span class="tiny">Vận hành</span><b>${esc(s.operatorName||'—')}</b></div>`}</div>`}
       </article>`).join('')}</div>`;
       return desktop+mobile;
     }
@@ -1255,7 +1255,7 @@ td .manual-kpi-check+.btn{width:100%}
         ${timeFilterHtml('kpi','<span class="pill">Host 0,3%</span><span class="pill">Vận hành 0,1%</span>')}
         <div class="kpi-pair"><div class="pair-card"><b>Thảo My + Hùng Bắc Giang</b><span class="tiny">Đi theo cặp — Host / Vận hành</span></div><div class="pair-card"><b>Dung hoặc Tâm + Hùng Hiền Hòa</b><span class="tiny">Đi theo cặp — Host / Vận hành</span></div></div>
         <div class="grid stats"><div class="card"><div class="stat-label">Nhân sự có KPI</div><div class="stat-value">${rows.length}</div></div><div class="card"><div class="stat-label">Tổng KPI</div><div class="stat-value">${fmtMoney(totalKpi,currency)}</div></div><div class="card"><div class="stat-label">Phiên tính thủ công</div><div class="stat-value">${manualSessions.length}</div></div></div>
-        ${manualSessions.length?`<div class="notice warn"><b>${manualSessions.length} phiên Ngày Ngày Campaign/Mega Live</b> đã được loại khỏi KPI tự động để bạn tính thủ công. GMV các phiên này vẫn giữ nguyên trong báo cáo LIVE/Tổng quan.</div>`:''}
+        ${manualSessions.length?`<div class="notice warn"><b>${manualSessions.length} phiên Ngày Campaign/Mega Live</b> đã được loại khỏi KPI tự động để bạn tính thủ công. GMV các phiên này vẫn giữ nguyên trong báo cáo LIVE/Tổng quan.</div>`:''}
         <div class="card">${rows.length?`<div class="table-wrap"><table style="min-width:700px"><thead><tr><th>Nhân sự</th><th>Vai trò</th><th>GMV gắn thẻ</th><th>Tỷ lệ</th><th>KPI</th></tr></thead><tbody>${rows.map(r=>`<tr><td><b>${esc(r.name||'Chưa đặt tên')}</b></td><td><span class="tag ${r.role}">${roleLabel(r.role)}</span></td><td class="money">${fmtMoney(r.gmv,r.currency)}</td><td>${(r.rate*100).toFixed(1).replace('.',',')}%</td><td class="money">${fmtMoney(r.kpi,r.currency)}</td></tr>`).join('')}</tbody></table></div>`:'<div class="empty">Chưa có phiên LIVE được gắn nhân sự trong tháng này.</div>'}</div>`;
       bindTimeFilter('kpi');
     }
