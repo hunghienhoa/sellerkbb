@@ -106,7 +106,7 @@ assert(html.includes('data-manual-add-role="operator"'), "Separate Operator add 
 assert(html.includes("syncOperatorsFromHost(card,amount)"), "Host GMV to Operator sync missing");
 assert(html.includes("Math.round(gmv*.001)"), "Operator 0.1% KPI calculation missing");
 assert(html.includes("KPI vận hành tự tính 0,1%"), "Operator auto-KPI label missing");
-assert(html.includes("KPI thủ công của cá nhân"), "Per-person manual KPI field missing");
+assert(html.includes("KPI thủ công của Host"), "Host manual KPI field missing");
 assert(html.includes("Không bắt buộc đủ số người tham gia"), "Manual KPI optional-person rule missing");
 assert(html.includes("SellerKBB không tự chia GMV tổng phiên"), "No-equal-split rule missing");
 assert(html.includes("manualKpiEntries:Array.isArray"), "Preview manual KPI persistence missing");

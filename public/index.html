@@ -2965,7 +2965,7 @@ tbody tr:hover td{background:#fffafb}
           </div>
           <div class="manual-kpi-total"><span>KPI thủ công đã nhập</span><b>${fmtMoney(totalManual,session.currency)}</b></div>
         </div>
-        <div class="manual-kpi-rule">${icon('shield',15)} <span>Nhập GMV sau hoàn/hủy của Host; nếu có Vận hành, SellerKBB tự lấy cùng GMV đó và tính KPI Vận hành = 0,1%. Host vẫn có thể nhập KPI thủ công riêng.</span></div>
+        <div class="manual-kpi-rule">${icon('shield',15)} <span>Không bắt buộc đủ số người tham gia và SellerKBB không tự chia GMV tổng phiên. Nhập GMV sau hoàn/hủy của Host; nếu có Vận hành, SellerKBB tự lấy cùng GMV đó và tính KPI Vận hành = 0,1%. Host vẫn có thể nhập KPI thủ công riêng.</span></div>
         <div class="manual-kpi-entries">${entries.map((entry,index)=>manualKpiEntryRow(session,entry,index,editable)).join('')}</div>
         ${editable?`<div class="manual-kpi-actions"><div class="manual-kpi-add-group"><button class="btn" type="button" data-manual-add-role="host">${icon('users',15)} Thêm Host riêng</button><button class="btn" type="button" data-manual-add-role="operator">${icon('users',15)} Thêm Vận hành riêng</button></div><button class="btn primary" type="button" data-manual-save>${icon('check',15)} Lưu KPI thủ công</button></div>`:''}
       </div>`;
