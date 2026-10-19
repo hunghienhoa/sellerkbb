@@ -641,7 +641,7 @@
       <div class="side-bottom"><div class="userbox row"><img id="userAvatar" class="avatar" alt=""><div class="usertext" style="min-width:0"><div id="userName" style="font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis"></div><div id="userRole" class="tiny"></div></div></div></div>
     </aside>
     <main class="main">
-      <header class="topbar"><div class="topbar-title-wrap"><button id="menuToggle" class="menu-toggle" type="button" aria-label="Mở menu" aria-expanded="false">☰</button><div><h1 id="pageTitle" class="page-title">Tổng quan</h1><div id="pageSub" class="tiny"></div></div></div><div class="row"><span id="syncBadge" class="pill">v1.2.1</span><button id="logoutBtn" class="btn ghost small">Đăng xuất</button></div></header>
+      <header class="topbar"><div class="topbar-title-wrap"><button id="menuToggle" class="menu-toggle" type="button" aria-label="Mở menu" aria-expanded="false">☰</button><div><h1 id="pageTitle" class="page-title">Tổng quan</h1><div id="pageSub" class="tiny"></div></div></div><div class="row"><span id="syncBadge" class="pill">v1.3.0</span><button id="logoutBtn" class="btn ghost small">Đăng xuất</button></div></header>
       <div class="content">
         <section id="section-dashboard" class="section active"></section>
         <section id="section-live" class="section"></section>
@@ -698,15 +698,95 @@
     };
     const monthBounds = (ym) => { const [y,m]=ym.split('-').map(Number); const start=new Date(y,m-1,1); const end=new Date(y,m,1); const iso=d=>`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; return {start:iso(start),end:iso(end)} };
     const roleLabel = r => ({admin:'Quản trị viên',host:'Host Livestream',operator:'Nhân viên vận hành livestream',pending:'Chờ duyệt'}[r]||r||'Chưa gán');
+    const pad2 = n => String(n).padStart(2,'0');
+    const localDateKey = d => `${d.getFullYear()}-${pad2(d.getMonth()+1)}-${pad2(d.getDate())}`;
+    const displayDateKey = key => {
+      const m=String(key||'').match(/^(\d{4})-(\d{2})-(\d{2})$/);
+      return m?`${m[3]}/${m[2]}/${m[1]}`:'';
+    };
+    const parseDisplayDate = value => {
+      const m=String(value||'').trim().match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+      if(!m)return null;
+      const day=Number(m[1]),month=Number(m[2]),year=Number(m[3]);
+      const d=new Date(year,month-1,day);
+      if(d.getFullYear()!==year||d.getMonth()!==month-1||d.getDate()!==day)return null;
+      d.setHours(0,0,0,0);
+      return d;
+    };
+    function selectedRange(){
+      const today=new Date(); today.setHours(0,0,0,0);
+      let start=new Date(today), endInclusive=new Date(today);
+      if(state.rangeMode==='7d') start.setDate(start.getDate()-6);
+      else if(state.rangeMode==='30d') start.setDate(start.getDate()-29);
+      else if(state.rangeMode==='custom'){
+        const a=state.customStart?new Date(state.customStart+'T00:00:00'):null;
+        const b=state.customEnd?new Date(state.customEnd+'T00:00:00'):null;
+        if(a&&!Number.isNaN(a.getTime())) start=a;
+        if(b&&!Number.isNaN(b.getTime())) endInclusive=b;
+        if(start>endInclusive){ const t=start; start=endInclusive; endInclusive=t; }
+      }
+      const endExclusive=new Date(endInclusive); endExclusive.setDate(endExclusive.getDate()+1);
+      const startKey=localDateKey(start), endKey=localDateKey(endInclusive);
+      const label=startKey===endKey?displayDateKey(startKey):`${displayDateKey(startKey)} – ${displayDateKey(endKey)}`;
+      return {start,endInclusive,endExclusive,startKey,endKey,label};
+    }
+    function sessionsForRange(){
+      const {start,endExclusive}=selectedRange();
+      return state.sessions.filter(s=>{
+        const d=s.startTime?.toDate?.()||new Date(0);
+        return d>=start&&d<endExclusive;
+      });
+    }
+    function timeFilterHtml(scope,actions=''){
+      const selected=selectedRange();
+      const opts=[['today','Hôm nay'],['7d','7 ngày'],['30d','30 ngày'],['custom','Chọn ngày']];
+      const custom=state.rangeMode==='custom'?`
+        <div class="custom-range">
+          <label class="range-field"><span>Từ ngày</span><input id="${scope}RangeStart" class="input date-text" inputmode="numeric" placeholder="DD/MM/YYYY" value="${displayDateKey(state.customStart)}"></label>
+          <span class="range-separator">đến</span>
+          <label class="range-field"><span>Đến ngày</span><input id="${scope}RangeEnd" class="input date-text" inputmode="numeric" placeholder="DD/MM/YYYY" value="${displayDateKey(state.customEnd)}"></label>
+          <button class="btn primary" data-apply-range="${scope}">Áp dụng</button>
+        </div>`:''; 
+      return `<div class="time-filter">
+        <div class="range-row">
+          <div class="range-tabs">${opts.map(([key,label])=>`<button class="range-btn ${state.rangeMode===key?'active':''}" data-range-mode="${key}">${label}</button>`).join('')}</div>
+          <div class="range-summary">${selected.label}</div>
+          ${actions?`<div class="range-actions">${actions}</div>`:''}
+        </div>
+        ${custom}
+      </div>`;
+    }
+    function bindTimeFilter(scope){
+      const section=$(`#section-${scope}`);
+      if(!section)return;
+      section.querySelectorAll('[data-range-mode]').forEach(btn=>btn.onclick=()=>{
+        const mode=btn.dataset.rangeMode;
+        state.rangeMode=mode;
+        if(mode==='custom'&&(!state.customStart||!state.customEnd)){
+          const today=new Date(); today.setHours(0,0,0,0);
+          const from=new Date(today); from.setDate(from.getDate()-6);
+          state.customStart=localDateKey(from); state.customEnd=localDateKey(today);
+        }
+        state.livePage=1; renderAll();
+      });
+      const apply=section.querySelector(`[data-apply-range="${scope}"]`);
+      if(apply) apply.onclick=()=>{
+        const a=parseDisplayDate(section.querySelector(`#${scope}RangeStart`)?.value);
+        const b=parseDisplayDate(section.querySelector(`#${scope}RangeEnd`)?.value);
+        if(!a||!b){ showToast('Ngày không hợp lệ. Hãy nhập theo dạng DD/MM/YYYY'); return; }
+        state.customStart=localDateKey(a); state.customEnd=localDateKey(b);
+        state.livePage=1; renderAll();
+      };
+    }
     const todayMonth = new Date().toISOString().slice(0,7);
     const PREVIEW = location.pathname === '/preview' || new URLSearchParams(location.search).get('preview') === '1';
 
     const LIVE_PAGE_SIZE = 20;
-    const state = { config:null, auth:null, db:null, user:null, profile:null, sessions:[], users:[], month:todayMonth, section:'dashboard', livePage:1 };
+    const state = { config:null, auth:null, db:null, user:null, profile:null, sessions:[], users:[], month:todayMonth, section:'dashboard', livePage:1, rangeMode:'30d', customStart:'', customEnd:'' };
 
     function previewTs(iso){ return {toDate:()=>new Date(iso)}; }
     function enterPreview(){
-      state.config={version:'1.2.1-preview',tiktokConfigured:true};
+      state.config={version:'1.3.0-preview',tiktokConfigured:true};
       state.user={uid:'preview-admin',email:'admin@sellerkbb.demo',displayName:'Quản trị viên Demo',photoURL:''};
       state.profile={role:'admin',status:'approved',displayName:'Quản trị viên Demo',permissions:['live.read','kpi.read']};
       state.users=[
@@ -875,16 +955,15 @@
 
     function switchSection(id){ state.section=id; setMobileMenu(false); document.querySelectorAll('.section').forEach(s=>s.classList.remove('active')); $(`#section-${id}`).classList.add('active'); renderNav(); const meta={dashboard:['Tổng quan','Báo cáo LIVE & KPI'],live:['Phiên LIVE','Gắn Host/Operator cho từng phiên'],kpi:['KPI nhân sự','Host 0,3% · Operator 0,1%'],users:['Duyệt tài khoản','Phân vai trò và nội dung được phép xem'],tiktok:['Kết nối TikTok Shop','Chỉ quản trị viên nhìn thấy phần này']}[id]; $('#pageTitle').textContent=meta[0]; $('#pageSub').textContent=meta[1]; }
 
-    function sessionsForMonth(){ const [y,m]=state.month.split('-').map(Number); return state.sessions.filter(s=>{const d=s.startTime?.toDate?.()||new Date(0);return d.getFullYear()===y&&d.getMonth()===m-1}); }
     function finalGmv(s){ return Number(s.finalGmvAmount ?? s.currentGmvAmount ?? s.recordedGmvAmount ?? 0); }
 
     function renderDashboard(){
-      const ss=sessionsForMonth(), gmv=ss.reduce((a,s)=>a+finalGmv(s),0), items=ss.reduce((a,s)=>a+Number(s.currentItemsSold??s.recordedItemsSold??0),0), totalSec=ss.reduce((a,s)=>a+Number(s.durationSeconds||0),0), currency=ss.find(s=>s.currency)?.currency||'VND';
+      const ss=sessionsForRange(), gmv=ss.reduce((a,s)=>a+finalGmv(s),0), items=ss.reduce((a,s)=>a+Number(s.currentItemsSold??s.recordedItemsSold??0),0), totalSec=ss.reduce((a,s)=>a+Number(s.durationSeconds||0),0), currency=ss.find(s=>s.currency)?.currency||'VND';
       $('#section-dashboard').innerHTML=`
-        <div class="toolbar"><label class="tiny" for="dashMonth">Tháng báo cáo</label>${monthPicker('dashMonth')}<span class="pill">${monthLabel(state.month)}</span></div>
+        ${timeFilterHtml('dashboard')}
         <div class="grid stats"><div class="card"><div class="stat-label">Phiên LIVE</div><div class="stat-value">${ss.length}</div></div><div class="card"><div class="stat-label">GMV cuối kỳ</div><div class="stat-value">${fmtMoney(gmv,currency)}</div></div><div class="card"><div class="stat-label">Sản phẩm bán</div><div class="stat-value">${new Intl.NumberFormat('vi-VN').format(items)}</div></div><div class="card"><div class="stat-label">Tổng thời lượng</div><div class="stat-value">${fmtDuration(totalSec)}</div></div></div>
-        <div class="card"><div class="row space"><h3>Phiên LIVE gần nhất trong tháng</h3><span class="pill">GMV dùng KPI = GMV cuối kỳ</span></div>${renderLiveTable(ss.slice(0,8),false)}</div>`;
-      $('#dashMonth').onchange=e=>{state.month=e.target.value;renderAll()};
+        <div class="card"><div class="row space"><h3>Phiên LIVE gần nhất trong khoảng thời gian</h3><span class="pill">GMV dùng KPI = GMV cuối kỳ</span></div>${renderLiveTable(ss.slice(0,8),false)}</div>`;
+      bindTimeFilter('dashboard');
     }
 
     function renderLiveTable(rows, editable){
@@ -910,7 +989,7 @@
 
     function renderLive(){
       if(!can('live.read')){ $('#section-live').innerHTML='<div class="notice bad">Bạn không có quyền xem dữ liệu LIVE.</div>';return; }
-      const ss=sessionsForMonth();
+      const ss=sessionsForRange();
       const totalPages=Math.max(1,Math.ceil(ss.length/LIVE_PAGE_SIZE));
       state.livePage=Math.min(Math.max(1,state.livePage),totalPages);
       const start=(state.livePage-1)*LIVE_PAGE_SIZE;
@@ -921,11 +1000,7 @@
         .reduce((arr,p,idx,list)=>{ if(idx&&p-list[idx-1]>1) arr.push('…'); arr.push(p); return arr; },[])
         .map(p=>p==='…'?'<span class="page-ellipsis">…</span>':`<button class="page-btn ${p===state.livePage?'active':''}" data-page="${p}">${p}</button>`).join('');
       $('#section-live').innerHTML=`
-        <div class="toolbar">
-          ${monthPicker('liveMonth')}
-          ${isAdmin()?'<button id="syncMonthBtn" class="btn primary">Đồng bộ tháng này từ TikTok</button>':''}
-          <button id="csvBtn" class="btn">Xuất CSV</button>
-        </div>
+        ${timeFilterHtml('live',`${isAdmin()?'<button id="syncMonthBtn" class="btn primary">Đồng bộ khoảng thời gian từ TikTok</button>':''}<button id="csvBtn" class="btn">Xuất CSV</button>`)}
         <div class="card live-list-card">${renderLiveTable(pageRows,isAdmin())}</div>
         <div class="pagination-wrap">
           <div class="pagination-info">Đang hiển thị từ phiên <b>${from}</b> đến phiên <b>${to}</b> trên tổng số <b>${ss.length}</b> phiên · Mỗi trang hiển thị 20 phiên</div>
@@ -935,7 +1010,7 @@
             <button class="page-btn nav-page" data-page="${state.livePage+1}" ${state.livePage>=totalPages?'disabled':''}>›</button>
           </div>
         </div>`;
-      $('#liveMonth').onchange=e=>{state.month=e.target.value;state.livePage=1;renderAll()};
+      bindTimeFilter('live');
       $('#csvBtn').onclick=()=>exportCsv(ss);
       document.querySelectorAll('[data-page]').forEach(b=>b.onclick=()=>{
         const p=Number(b.dataset.page); if(!p||p===state.livePage||p<1||p>totalPages)return;
@@ -965,7 +1040,7 @@
       if(PREVIEW){ alert('Preview Mode: đây là thao tác mô phỏng. Bản production sẽ đồng bộ dữ liệu thật từ TikTok Shop API.'); return; }
       const btn=$('#syncMonthBtn'); btn.disabled=true; btn.textContent='Đang đồng bộ…';
       try{
-        const {start,end}=monthBounds(state.month); const result=await api('/api/tiktok/sync',{method:'POST',body:JSON.stringify({startDate:start,endDate:end})});
+        const range=selectedRange(); const start=range.startKey, end=localDateKey(range.endExclusive); const result=await api('/api/tiktok/sync',{method:'POST',body:JSON.stringify({startDate:start,endDate:end})});
         const batchSize=300; let count=0;
         for(let i=0;i<result.sessions.length;i+=batchSize){
           const batch=writeBatch(state.db);
@@ -985,27 +1060,27 @@
         }
         alert(`Đã đồng bộ ${count} phiên LIVE.`); await loadData(); renderAll();
       }catch(e){ alert('Đồng bộ thất bại: '+e.message); }
-      finally{ if(btn){btn.disabled=false;btn.textContent='Đồng bộ tháng này từ TikTok';} }
+      finally{ if(btn){btn.disabled=false;btn.textContent='Đồng bộ khoảng thời gian từ TikTok';} }
     }
 
     function exportCsv(rows){
       const header=['live_id','title','channel_username','channel_id','start_time','duration_seconds','gmv_recorded','items_sold','gmv_final','currency','host','operator'];
       const lines=[header,...rows.map(s=>[s.liveId||s.id,s.title||'',s.channelUsername||'',s.channelId||'',s.startTime?.toDate?.().toISOString?.()||'',s.durationSeconds||0,s.recordedGmvAmount||0,s.currentItemsSold??s.recordedItemsSold??0,finalGmv(s),s.currency||'',s.hostName||'',s.operatorName||''])];
-      const csv=lines.map(r=>r.map(v=>`"${String(v??'').replaceAll('"','""')}"`).join(',')).join('\n'); const blob=new Blob(['\ufeff'+csv],{type:'text/csv;charset=utf-8'}); const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`tiktok-live-${state.month}.csv`;a.click();URL.revokeObjectURL(a.href);
+      const csv=lines.map(r=>r.map(v=>`"${String(v??'').replaceAll('"','""')}"`).join(',')).join('\n'); const blob=new Blob(['\ufeff'+csv],{type:'text/csv;charset=utf-8'}); const a=document.createElement('a');a.href=URL.createObjectURL(blob);const range=selectedRange();a.download=`tiktok-live-${range.startKey}_${range.endKey}.csv`;a.click();URL.revokeObjectURL(a.href);
     }
 
     function renderKpi(){
       if(!can('kpi.read')){ $('#section-kpi').innerHTML='<div class="notice bad">Bạn không có quyền xem KPI.</div>';return; }
-      const ss=sessionsForMonth(); const map=new Map();
+      const ss=sessionsForRange(); const map=new Map();
       const add=(uid,name,role,rate,gmv,currency)=>{ if(!uid&&!name)return; const key=uid||name; const cur=map.get(key)||{uid,name,role,rate,gmv:0,kpi:0,currency}; cur.gmv+=gmv; cur.kpi+=gmv*rate; map.set(key,cur); };
       for(const s of ss){ const g=finalGmv(s); add(s.hostUid,s.hostName,'host',.003,g,s.currency); add(s.operatorUid,s.operatorName,'operator',.001,g,s.currency); }
       const rows=[...map.values()].sort((a,b)=>b.kpi-a.kpi); const currency=rows[0]?.currency||'VND'; const totalKpi=rows.reduce((a,r)=>a+r.kpi,0);
       $('#section-kpi').innerHTML=`
-        <div class="toolbar">${monthPicker('kpiMonth')}<span class="pill">${monthLabel(state.month)}</span><span class="pill">Host 0,3%</span><span class="pill">Vận hành 0,1%</span></div>
+        ${timeFilterHtml('kpi','<span class="pill">Host 0,3%</span><span class="pill">Vận hành 0,1%</span>')}
         <div class="kpi-pair"><div class="pair-card"><b>Thảo My + Hùng Bắc Giang</b><span class="tiny">Đi theo cặp — Host / Vận hành</span></div><div class="pair-card"><b>Dung hoặc Tâm + Hùng Hiền Hòa</b><span class="tiny">Đi theo cặp — Host / Vận hành</span></div></div>
-        <div class="grid stats"><div class="card"><div class="stat-label">Nhân sự có KPI</div><div class="stat-value">${rows.length}</div></div><div class="card"><div class="stat-label">Tổng KPI tháng</div><div class="stat-value">${fmtMoney(totalKpi,currency)}</div></div></div>
+        <div class="grid stats"><div class="card"><div class="stat-label">Nhân sự có KPI</div><div class="stat-value">${rows.length}</div></div><div class="card"><div class="stat-label">Tổng KPI</div><div class="stat-value">${fmtMoney(totalKpi,currency)}</div></div></div>
         <div class="card">${rows.length?`<div class="table-wrap"><table style="min-width:700px"><thead><tr><th>Nhân sự</th><th>Vai trò</th><th>GMV gắn thẻ</th><th>Tỷ lệ</th><th>KPI</th></tr></thead><tbody>${rows.map(r=>`<tr><td><b>${esc(r.name||'Chưa đặt tên')}</b></td><td><span class="tag ${r.role}">${roleLabel(r.role)}</span></td><td class="money">${fmtMoney(r.gmv,r.currency)}</td><td>${(r.rate*100).toFixed(1).replace('.',',')}%</td><td class="money">${fmtMoney(r.kpi,r.currency)}</td></tr>`).join('')}</tbody></table></div>`:'<div class="empty">Chưa có phiên LIVE được gắn nhân sự trong tháng này.</div>'}</div>`;
-      $('#kpiMonth').onchange=e=>{state.month=e.target.value;renderAll()};
+      bindTimeFilter('kpi');
     }
 
     function renderUsers(){
