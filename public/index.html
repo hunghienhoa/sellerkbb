@@ -801,7 +801,7 @@ td .manual-kpi-check+.btn{width:100%}
       <div class="side-bottom"><div class="userbox row"><img id="userAvatar" class="avatar" alt=""><div class="usertext" style="min-width:0"><div id="userName" style="font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis"></div><div id="userRole" class="tiny"></div></div></div></div>
     </aside>
     <main class="main">
-      <header class="topbar"><div class="topbar-title-wrap"><button id="menuToggle" class="menu-toggle" type="button" aria-label="Mở menu" aria-expanded="false">☰</button><div><h1 id="pageTitle" class="page-title">Tổng quan</h1><div id="pageSub" class="tiny"></div></div></div><div class="row"><span id="syncBadge" class="pill">v1.5.6</span><button id="logoutBtn" class="btn ghost small">Đăng xuất</button></div></header>
+      <header class="topbar"><div class="topbar-title-wrap"><button id="menuToggle" class="menu-toggle" type="button" aria-label="Mở menu" aria-expanded="false">☰</button><div><h1 id="pageTitle" class="page-title">Tổng quan</h1><div id="pageSub" class="tiny"></div></div></div><div class="row"><span id="syncBadge" class="pill">v1.6.0</span><button id="logoutBtn" class="btn ghost small">Đăng xuất</button></div></header>
       <div class="content">
         <section id="section-dashboard" class="section active"></section>
         <section id="section-live" class="section"></section>
@@ -894,7 +894,7 @@ td .manual-kpi-check+.btn{width:100%}
       return `<div class="time-filter">
         <div class="range-row">
           <div class="range-tabs">${opts.map(([key,label])=>`<button class="range-btn ${state.rangeMode===key?'active':''}" data-range-mode="${key}">${label}</button>`).join('')}</div>
-          <div class="range-summary">${selected.label}</div>
+          <div class="range-summary">${icon('calendar',15)}<span>${selected.label}</span></div>
           ${actions?`<div class="range-actions">${actions}</div>`:''}
         </div>
         ${custom}
@@ -929,7 +929,7 @@ td .manual-kpi-check+.btn{width:100%}
 
     function previewTs(iso){ return {toDate:()=>new Date(iso)}; }
     function enterPreview(){
-      state.config={version:'1.5.6-preview',tiktokConfigured:true};
+      state.config={version:'1.6.0-preview',tiktokConfigured:true};
       state.user={uid:'preview-admin',email:'admin@sellerkbb.demo',displayName:'Quản trị viên Demo',photoURL:''};
       state.profile={role:'admin',status:'approved',displayName:'Quản trị viên Demo',permissions:['live.read','kpi.read']};
       state.maintenance={settings:{retentionDays:180,autoCleanup:true,emergencyPercent:85,firestoreSoftLimitMb:600,firestoreMaxSessions:12000,kvSoftKeyLimit:5000},cloudflare:{keyCount:4,lastRun:{ranAt:new Date().toISOString(),deleted:0}},firebase:{freePlanMode:true,ttlEnabled:false,ttlRecommended:false}};
@@ -1154,8 +1154,8 @@ td .manual-kpi-check+.btn{width:100%}
     }
 
     function renderNav(){
-      const items=[{id:'dashboard',icon:'⌂',label:'Tổng quan',show:true},{id:'live',icon:'◉',label:'Phiên LIVE',show:can('live.read')},{id:'kpi',icon:'✦',label:'KPI nhân sự',show:can('kpi.read')},{id:'export',icon:'⇩',label:'Xuất file',show:can('live.read')||can('kpi.read')},{id:'users',icon:'♙',label:'Tài khoản',show:isAdmin()},{id:'tiktok',icon:'↗',label:'TikTok / API',show:isAdmin()},{id:'storage',icon:'▣',label:'Lưu trữ',show:isAdmin()}].filter(x=>x.show);
-      $('#nav').innerHTML=items.map(x=>`<button data-section="${x.id}" class="${state.section===x.id?'active':''}"><span class="nav-icon">${x.icon}</span><span>${x.label}</span></button>`).join('');
+      const items=[{id:'dashboard',icon:'home',label:'Tổng quan',show:true},{id:'live',icon:'live',label:'Phiên LIVE',show:can('live.read')},{id:'kpi',icon:'kpi',label:'KPI nhân sự',show:can('kpi.read')},{id:'export',icon:'export',label:'Xuất file',show:can('live.read')||can('kpi.read')},{id:'users',icon:'users',label:'Tài khoản',show:isAdmin()},{id:'tiktok',icon:'plug',label:'TikTok / API',show:isAdmin()},{id:'storage',icon:'database',label:'Lưu trữ',show:isAdmin()}].filter(x=>x.show);
+      $('#nav').innerHTML=items.map(x=>`<button data-section="${x.id}" class="${state.section===x.id?'active':''}"><span class="nav-icon">${icon(x.icon,18)}</span><span>${x.label}</span></button>`).join('');
       $('#nav').querySelectorAll('button').forEach(b=>b.onclick=()=>switchSection(b.dataset.section));
     }
 
@@ -1164,11 +1164,40 @@ td .manual-kpi-check+.btn{width:100%}
     function finalGmv(s){ return Number(s.finalGmvAmount ?? s.currentGmvAmount ?? s.recordedGmvAmount ?? 0); }
     function isManualKpi(s){ return s?.kpiMode==='manual'; }
 
+    function icon(name,size=18){
+      const p={
+        home:'<path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V21h14V9.5"/><path d="M9 21v-7h6v7"/>',
+        live:'<rect x="3" y="6" width="13" height="12" rx="2"/><path d="m16 10 5-3v10l-5-3z"/>',
+        kpi:'<path d="M4 19V9"/><path d="M10 19V5"/><path d="M16 19v-7"/><path d="M22 19H2"/>',
+        export:'<path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/>',
+        users:'<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>',
+        plug:'<path d="M12 22v-5"/><path d="M9 8V2"/><path d="M15 8V2"/><path d="M18 8v4a6 6 0 0 1-12 0V8z"/>',
+        database:'<ellipse cx="12" cy="5" rx="8" ry="3"/><path d="M4 5v6c0 1.7 3.6 3 8 3s8-1.3 8-3V5"/><path d="M4 11v6c0 1.7 3.6 3 8 3s8-1.3 8-3v-6"/>',
+        money:'<circle cx="12" cy="12" r="9"/><path d="M16 8.5c-.7-.9-2-1.5-3.5-1.5-2 0-3.5 1-3.5 2.5s1.5 2.1 3.5 2.5 3.5 1 3.5 2.5-1.5 2.5-3.5 2.5c-1.6 0-3-.7-3.7-1.7"/><path d="M12 5v14"/>',
+        box:'<path d="m21 8-9 5-9-5"/><path d="m3 8 9-5 9 5v8l-9 5-9-5z"/><path d="M12 13v8"/>',
+        clock:'<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
+        calendar:'<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M8 3v4M16 3v4M3 10h18"/>',
+        refresh:'<path d="M20 7v5h-5"/><path d="M4 17v-5h5"/><path d="M6.1 9a7 7 0 0 1 11.3-2L20 9"/><path d="M17.9 15a7 7 0 0 1-11.3 2L4 15"/>',
+        sync:'<path d="M20 12a8 8 0 0 0-14.9-4"/><path d="M4 4v4h4"/><path d="M4 12a8 8 0 0 0 14.9 4"/><path d="M20 20v-4h-4"/>',
+        history:'<path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/><path d="M12 7v5l3 2"/>',
+        check:'<path d="m5 12 4 4L19 6"/>',
+        link:'<path d="M10 13a5 5 0 0 0 7.5.5l2-2a5 5 0 0 0-7-7l-1.1 1"/><path d="M14 11a5 5 0 0 0-7.5-.5l-2 2a5 5 0 0 0 7 7l1.1-1"/>',
+        file:'<path d="M6 2h8l4 4v16H6z"/><path d="M14 2v5h5"/><path d="M9 13h6M9 17h6"/>',
+        shield:'<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10"/><path d="m9 12 2 2 4-4"/>',
+        settings:'<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1-2.8 2.8-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.6v.2h-4v-.2a1.7 1.7 0 0 0-1-1.6 1.7 1.7 0 0 0-1.9.3l-.1.1L4.2 17l.1-.1a1.7 1.7 0 0 0 .3-1.9A1.7 1.7 0 0 0 3 14H2.8v-4H3a1.7 1.7 0 0 0 1.6-1 1.7 1.7 0 0 0-.3-1.9L4.2 7 7 4.2l.1.1a1.7 1.7 0 0 0 1.9.3A1.7 1.7 0 0 0 10 3V2.8h4V3a1.7 1.7 0 0 0 1 1.6 1.7 1.7 0 0 0 1.9-.3l.1-.1L19.8 7l-.1.1a1.7 1.7 0 0 0-.3 1.9 1.7 1.7 0 0 0 1.6 1h.2v4H21a1.7 1.7 0 0 0-1.6 1z"/>'
+      };
+      return `<svg class="ui-icon" width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${p[name]||p.file}</svg>`;
+    }
+
+    function metricCard(iconName,label,value,sub=''){
+      return `<div class="metric-card"><div class="metric-icon">${icon(iconName,20)}</div><div class="metric-copy"><span>${label}</span><strong>${value}</strong>${sub?`<small>${sub}</small>`:''}</div></div>`;
+    }
+
     function renderDashboard(){
       const ss=sessionsForRange(), gmv=ss.reduce((a,s)=>a+finalGmv(s),0), items=ss.reduce((a,s)=>a+Number(s.currentItemsSold??s.recordedItemsSold??0),0), totalSec=ss.reduce((a,s)=>a+Number(s.durationSeconds||0),0), currency=ss.find(s=>s.currency)?.currency||'VND';
       $('#section-dashboard').innerHTML=`
         ${timeFilterHtml('dashboard')}
-        <div class="grid stats"><div class="card"><div class="stat-label">Phiên LIVE</div><div class="stat-value">${ss.length}</div></div><div class="card"><div class="stat-label">GMV cuối kỳ</div><div class="stat-value">${fmtMoney(gmv,currency)}</div></div><div class="card"><div class="stat-label">Sản phẩm bán</div><div class="stat-value">${new Intl.NumberFormat('vi-VN').format(items)}</div></div><div class="card"><div class="stat-label">Tổng thời lượng</div><div class="stat-value">${fmtDuration(totalSec)}</div></div></div>
+        <div class="metrics-grid">${metricCard('live','Phiên LIVE',ss.length)}${metricCard('money','GMV cuối kỳ',fmtMoney(gmv,currency))}${metricCard('box','Sản phẩm bán',new Intl.NumberFormat('vi-VN').format(items))}${metricCard('clock','Tổng thời lượng',fmtDuration(totalSec))}</div>
         <div class="card"><div class="row space"><h3>Phiên LIVE gần nhất trong khoảng thời gian</h3><span class="pill">GMV dùng KPI = GMV cuối kỳ</span></div>${renderLiveTable(ss.slice(0,8),false)}</div>`;
       bindTimeFilter('dashboard');
     }
@@ -1315,10 +1344,10 @@ td .manual-kpi-check+.btn{width:100%}
       const manualCount=ss.filter(isManualKpi).length;
       let html=timeFilterHtml('export')+'<div class="export-list">';
       if(can('live.read')){
-        html+='<div class="export-row"><div><b>Phiên LIVE</b><div class="sub">'+ss.length+' phiên trong khoảng đã chọn · bao gồm dữ liệu Ngày Campaign/Mega Live.</div></div><button id="exportLiveCsv" class="btn primary">Xuất CSV phiên LIVE</button></div>';
+        html+='<div class="export-row"><div class="export-icon">'+icon('live',20)+'</div><div class="export-copy"><b>Phiên LIVE</b><div class="sub">'+ss.length+' phiên trong khoảng đã chọn · bao gồm dữ liệu Ngày Campaign/Mega Live.</div></div><button id="exportLiveCsv" class="btn primary">'+icon('export',16)+' Xuất CSV phiên LIVE</button></div>';
       }
       if(can('kpi.read')){
-        html+='<div class="export-row"><div><b>KPI nhân sự</b><div class="sub">Chỉ xuất KPI tự động · '+manualCount+' phiên tính thủ công được loại khỏi bảng KPI.</div></div><button id="exportKpiCsv" class="btn">Xuất CSV KPI</button></div>';
+        html+='<div class="export-row"><div class="export-icon">'+icon('kpi',20)+'</div><div class="export-copy"><b>KPI nhân sự</b><div class="sub">Chỉ xuất KPI tự động · '+manualCount+' phiên tính thủ công được loại khỏi bảng KPI.</div></div><button id="exportKpiCsv" class="btn">'+icon('export',16)+' Xuất CSV KPI</button></div>';
       }
       html+='</div>';
       $('#section-export').innerHTML=html;
@@ -1336,7 +1365,7 @@ td .manual-kpi-check+.btn{width:100%}
       $('#section-kpi').innerHTML=`
         ${timeFilterHtml('kpi','<span class="pill">Host 0,3%</span><span class="pill">Vận hành 0,1%</span>')}
         <div class="kpi-pair"><div class="pair-card"><b>Thảo My + Hùng Bắc Giang</b><span class="tiny">Đi theo cặp — Host / Vận hành</span></div><div class="pair-card"><b>Dung hoặc Tâm + Hùng Hiền Hòa</b><span class="tiny">Đi theo cặp — Host / Vận hành</span></div></div>
-        <div class="grid stats"><div class="card"><div class="stat-label">Nhân sự có KPI</div><div class="stat-value">${rows.length}</div></div><div class="card"><div class="stat-label">Tổng KPI</div><div class="stat-value">${fmtMoney(totalKpi,currency)}</div></div><div class="card"><div class="stat-label">Phiên tính thủ công</div><div class="stat-value">${manualSessions.length}</div></div></div>
+        <div class="metrics-grid metrics-3">${metricCard('users','Nhân sự có KPI',rows.length)}${metricCard('money','Tổng KPI',fmtMoney(totalKpi,currency))}${metricCard('settings','Phiên tính thủ công',manualSessions.length)}</div>
         ${manualSessions.length?`<div class="notice warn"><b>${manualSessions.length} phiên Ngày Campaign/Mega Live</b> đã được loại khỏi KPI tự động để bạn tính thủ công. GMV các phiên này vẫn giữ nguyên trong báo cáo LIVE/Tổng quan.</div>`:''}
         <div class="card">${rows.length?`<div class="table-wrap"><table style="min-width:700px"><thead><tr><th>Nhân sự</th><th>Vai trò</th><th>GMV gắn thẻ</th><th>Tỷ lệ</th><th>KPI</th></tr></thead><tbody>${rows.map(r=>`<tr><td><b>${esc(r.name||'Chưa đặt tên')}</b></td><td><span class="tag ${r.role}">${roleLabel(r.role)}</span></td><td class="money">${fmtMoney(r.gmv,r.currency)}</td><td>${(r.rate*100).toFixed(1).replace('.',',')}%</td><td class="money">${fmtMoney(r.kpi,r.currency)}</td></tr>`).join('')}</tbody></table></div>`:'<div class="empty">Chưa có phiên LIVE được gắn nhân sự trong tháng này.</div>'}</div>`;
       bindTimeFilter('kpi');
