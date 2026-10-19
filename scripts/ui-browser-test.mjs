@@ -36,9 +36,20 @@ try {
   await page.reload({waitUntil:"domcontentloaded"});
   await page.waitForSelector("#app:not(.hidden)",{timeout:30000});
 
-  await page.click('[data-section="live"]');
+  assert(await page.$eval('#section-dashboard [data-range-mode="today"]',e=>e.classList.contains('active')),"Dashboard must default to Today");
+  await page.click('#section-dashboard [data-range-mode="7d"]');
+  assert(await page.$eval('#section-dashboard [data-range-mode="7d"]',e=>e.classList.contains('active')),"7-day filter did not activate");
+  await page.click('#section-dashboard [data-range-mode="30d"]');
+  assert(await page.$eval('#section-dashboard [data-range-mode="30d"]',e=>e.classList.contains('active')),"1-month filter did not activate");
+  const monthlyTotal=await page.$eval('#section-dashboard .metric-card:first-child strong',e=>Number(e.textContent.replace(/\D/g,'')));
+  const monthlyVisible=await page.$eval('#section-dashboard .desktop-live-table tbody tr',els=>els.length);
+  assert(monthlyTotal>monthlyVisible,"Monthly Dashboard should hide older sessions and show only the latest 7 days");
+  assert(await page.$('#dashboardViewMore')!==null,"Monthly Dashboard View More button missing");
+  await page.click('#dashboardViewMore');
+  assert(await page.$eval('#section-live',e=>e.classList.contains('active')),"View More did not switch to LIVE section");
+  assert(await page.$eval('#section-live [data-range-mode="30d"]',e=>e.classList.contains('active')),"View More did not preserve the 1-month filter");
   assert(await page.$eval('#section-live .desktop-live-table thead',e=>e.textContent.includes('Thời gian phiên LIVE')),"Desktop LIVE time header missing");
-  assert(await page.$eval('#section-live .desktop-live-table tbody tr:first-child .live-time-cell',e=>/^\d{2}\/\d{2}\/\d{4} lúc \d{2}:\d{2}-/.test(e.textContent.trim())),"Desktop compact LIVE time range not rendered");
+  assert(await page.$eval('#section-live .desktop-live-table tbody tr:first-child .live-time-cell',e=>/^\d{2}\/\d{2}\/\d{4}  \d{2}:\d{2}-/.test(e.textContent.trim())),"Desktop compact LIVE time range not rendered");
   await page.click('#section-live [data-range-mode="custom"]');
   await page.waitForSelector('#section-live [data-date-calendar="live"] [data-calendar-day]');
   assert(await page.$('#section-live input[placeholder="DD/MM/YYYY"]') === null,"Manual date field still exists on desktop");
@@ -60,6 +71,7 @@ try {
   await page.reload({waitUntil:"domcontentloaded"});
   await page.waitForSelector("#app:not(.hidden)",{timeout:30000});
   await page.click('[data-section="live"]');
+  await page.click('#section-live [data-range-mode="30d"]');
   const desktopSavedRow='#section-live .desktop-live-table tbody tr:has([data-save-session="'+desktopId+'"])';
   assert(await page.$eval(desktopSavedRow+' select[data-person="host"]',e=>e.value)==='thao-my',"Desktop Host did not persist after reload");
   assert(await page.$eval(desktopSavedRow+' select[data-person="operator"]',e=>e.value)==='hung-bg',"Desktop Operator did not persist after reload");
@@ -73,6 +85,7 @@ try {
   await page.reload({waitUntil:"domcontentloaded"});
   await page.waitForSelector("#app:not(.hidden)",{timeout:30000});
   await page.click('[data-section="live"]');
+  await page.click('#section-live [data-range-mode="30d"]');
   const desktopManualRow='#section-live .desktop-live-table tbody tr:has([data-save-session="'+desktopId+'"])';
   assert(await page.$eval(desktopManualRow+' [data-manual-kpi]',e=>e.checked),"Campaign/Mega flag did not persist");
   assert(await page.$eval(desktopManualRow+' select[data-person="host"]',e=>e.value)==='',"Campaign/Mega Host was restored unexpectedly");
@@ -101,9 +114,10 @@ try {
   await page.$eval('#nav [data-section="live"]',e=>e.click());
   await page.waitForFunction(()=>!document.querySelector('#sidebar')?.classList.contains('open'));
   await sleep(320);
+  await page.click('#section-live [data-range-mode="30d"]');
 
   const mobileCard='#section-live .mobile-live-card:nth-child(2)';
-  assert(await page.$eval(mobileCard+' .mobile-live-time',e=>/^\d{2}\/\d{2}\/\d{4} lúc \d{2}:\d{2}-/.test(e.textContent.trim())),"Mobile compact LIVE time range not rendered");
+  assert(await page.$eval(mobileCard+' .mobile-live-time',e=>/^\d{2}\/\d{2}\/\d{4}  \d{2}:\d{2}-/.test(e.textContent.trim())),"Mobile compact LIVE time range not rendered");
   const mobileId=await page.$eval(mobileCard+' [data-save-session]',e=>e.dataset.saveSession);
   await page.select(mobileCard+' select[data-person="host"]','dung');
   await page.select(mobileCard+' select[data-person="operator"]','hung-hh');
@@ -117,6 +131,7 @@ try {
   await page.$eval('#nav [data-section="live"]',e=>e.click());
   await page.waitForFunction(()=>!document.querySelector('#sidebar')?.classList.contains('open'));
   await sleep(320);
+  await page.click('#section-live [data-range-mode="30d"]');
   const mobileSavedCard='#section-live .mobile-live-card:has([data-save-session="'+mobileId+'"])';
   assert(await page.$eval(mobileSavedCard+' select[data-person="host"]',e=>e.value)==='dung',"Mobile Host save read the wrong hidden desktop selector");
   assert(await page.$eval(mobileSavedCard+' select[data-person="operator"]',e=>e.value)==='hung-hh',"Mobile Operator save read the wrong hidden desktop selector");
