@@ -801,7 +801,7 @@ td .manual-kpi-check+.btn{width:100%}
       <div class="side-bottom"><div class="userbox row"><img id="userAvatar" class="avatar" alt=""><div class="usertext" style="min-width:0"><div id="userName" style="font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis"></div><div id="userRole" class="tiny"></div></div></div></div>
     </aside>
     <main class="main">
-      <header class="topbar"><div class="topbar-title-wrap"><button id="menuToggle" class="menu-toggle" type="button" aria-label="Mở menu" aria-expanded="false">☰</button><div><h1 id="pageTitle" class="page-title">Tổng quan</h1><div id="pageSub" class="tiny"></div></div></div><div class="row"><span id="syncBadge" class="pill">v1.5.5</span><button id="logoutBtn" class="btn ghost small">Đăng xuất</button></div></header>
+      <header class="topbar"><div class="topbar-title-wrap"><button id="menuToggle" class="menu-toggle" type="button" aria-label="Mở menu" aria-expanded="false">☰</button><div><h1 id="pageTitle" class="page-title">Tổng quan</h1><div id="pageSub" class="tiny"></div></div></div><div class="row"><span id="syncBadge" class="pill">v1.5.6</span><button id="logoutBtn" class="btn ghost small">Đăng xuất</button></div></header>
       <div class="content">
         <section id="section-dashboard" class="section active"></section>
         <section id="section-live" class="section"></section>
@@ -929,7 +929,7 @@ td .manual-kpi-check+.btn{width:100%}
 
     function previewTs(iso){ return {toDate:()=>new Date(iso)}; }
     function enterPreview(){
-      state.config={version:'1.5.5-preview',tiktokConfigured:true};
+      state.config={version:'1.5.6-preview',tiktokConfigured:true};
       state.user={uid:'preview-admin',email:'admin@sellerkbb.demo',displayName:'Quản trị viên Demo',photoURL:''};
       state.profile={role:'admin',status:'approved',displayName:'Quản trị viên Demo',permissions:['live.read','kpi.read']};
       state.maintenance={settings:{retentionDays:180,autoCleanup:true,emergencyPercent:85,firestoreSoftLimitMb:600,firestoreMaxSessions:12000,kvSoftKeyLimit:5000},cloudflare:{keyCount:4,lastRun:{ranAt:new Date().toISOString(),deleted:0}},firebase:{freePlanMode:true,ttlEnabled:false,ttlRecommended:false}};
@@ -1240,7 +1240,7 @@ td .manual-kpi-check+.btn{width:100%}
         }
         showToast(`Đã đồng bộ ${count} phiên LIVE`); await loadData(); const cleaned=await cleanupFirestoreData(true); if(cleaned>0) await loadData(); renderAll();
       }catch(e){ showToast('Đồng bộ thất bại: '+e.message); }
-      finally{ if(btn){btn.disabled=false;btn.textContent='Đồng bộ khoảng thời gian từ TikTok';} }
+      finally{ if(btn){btn.disabled=false;btn.textContent='Đồng bộ dữ liệu từ TikTok';} }
     }
 
     function exportCsv(rows){
@@ -1475,11 +1475,14 @@ td .manual-kpi-check+.btn{width:100%}
             </div>
             <div class="row section-actions"><button class="btn" id="previewSync">Kiểm tra kết nối</button></div>
           </div>
+          ${timeFilterHtml('tiktok','<button id="syncMonthBtn" class="btn primary">Đồng bộ dữ liệu từ TikTok</button>')}
           <div class="simple-panel api-summary">
             <h3>API báo cáo đang dùng</h3>
             <div class="sub"><b>LIVE Performance:</b> /analytics/202509/shop_lives/performance<br><b>Authorized Shops:</b> /authorization/202309/shops</div>
           </div>`;
         $('#previewSync').onclick=()=>showToast('Kết nối TikTok mẫu hoạt động bình thường');
+        bindTimeFilter('tiktok');
+        $('#syncMonthBtn').onclick=syncMonth;
         return;
       }
 
@@ -1508,13 +1511,16 @@ td .manual-kpi-check+.btn{width:100%}
           </div>
           ${status.grantedScopes?.length?`<div class="tiny scope-line">Scopes: ${esc(status.grantedScopes.join(', '))}</div>`:''}
         </div>
+        ${timeFilterHtml('tiktok',status.connected?'<button id="syncMonthBtn" class="btn primary">Đồng bộ dữ liệu từ TikTok</button>':'')}
         <div class="simple-panel api-summary">
           <h3>API báo cáo đang dùng</h3>
           <div class="sub"><b>LIVE Performance:</b> /analytics/202509/shop_lives/performance<br><b>Authorized Shops:</b> /authorization/202309/shops</div>
         </div>`;
 
+      bindTimeFilter('tiktok');
       if($('#connectTikTok')) $('#connectTikTok').onclick=async()=>{try{const result=await api('/api/tiktok/oauth/start',{method:'POST'});location.href=result.url}catch(e){showToast(e.message)}};
       if($('#checkTikTok')) $('#checkTikTok').onclick=()=>showToast(status.autoRefresh?'Kết nối ổn định · tự gia hạn đang bật':'Kết nối hiện tại hoạt động nhưng chưa có refresh token');
+      if($('#syncMonthBtn')) $('#syncMonthBtn').onclick=syncMonth;
     }
 
     function renderAll(){ renderNav(); renderDashboard(); renderLive(); renderKpi(); renderExport(); renderUsers(); renderTikTok(); renderStorage(); switchSection(state.section); }
