@@ -25,7 +25,7 @@
       <div class="side-bottom"><div class="userbox row"><img id="userAvatar" class="avatar" alt=""><div class="usertext" style="min-width:0"><div id="userName" style="font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis"></div><div id="userRole" class="tiny"></div></div></div></div>
     </aside>
     <main class="main">
-      <header class="topbar"><div><h1 id="pageTitle" class="page-title">Tổng quan</h1><div id="pageSub" class="tiny"></div></div><div class="row"><span id="syncBadge" class="pill">v1.0.0</span><button id="logoutBtn" class="btn ghost small">Đăng xuất</button></div></header>
+      <header class="topbar"><div><h1 id="pageTitle" class="page-title">Tổng quan</h1><div id="pageSub" class="tiny"></div></div><div class="row"><span id="syncBadge" class="pill">v1.0.1</span><button id="logoutBtn" class="btn ghost small">Đăng xuất</button></div></header>
       <div class="content">
         <section id="section-dashboard" class="section active"></section>
         <section id="section-live" class="section"></section>
@@ -50,8 +50,39 @@
     const monthBounds = (ym) => { const [y,m]=ym.split('-').map(Number); const start=new Date(y,m-1,1); const end=new Date(y,m,1); const iso=d=>`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; return {start:iso(start),end:iso(end)} };
     const roleLabel = r => ({admin:'Quản trị viên',host:'Host Livestream',operator:'Nhân viên vận hành livestream',pending:'Chờ duyệt'}[r]||r||'Chưa gán');
     const todayMonth = new Date().toISOString().slice(0,7);
+    const PREVIEW = location.pathname === '/preview' || new URLSearchParams(location.search).get('preview') === '1';
 
     const state = { config:null, auth:null, db:null, user:null, profile:null, sessions:[], users:[], month:todayMonth, section:'dashboard' };
+
+    function previewTs(iso){ return {toDate:()=>new Date(iso)}; }
+    function enterPreview(){
+      state.config={version:'1.0.1-preview',tiktokConfigured:true};
+      state.user={uid:'preview-admin',email:'admin@sellerkbb.demo',displayName:'Quản trị viên Demo',photoURL:''};
+      state.profile={role:'admin',status:'approved',displayName:'Quản trị viên Demo',permissions:['live.read','kpi.read']};
+      state.users=[
+        {id:'thao-my',displayName:'Thảo My',email:'thaomy@sellerkbb.demo',role:'host',status:'approved',permissions:['live.read','kpi.read']},
+        {id:'hung-bg',displayName:'Hùng Bắc Giang',email:'hungbg@sellerkbb.demo',role:'operator',status:'approved',permissions:['live.read','kpi.read']},
+        {id:'dung',displayName:'Dung',email:'dung@sellerkbb.demo',role:'host',status:'approved',permissions:['live.read','kpi.read']},
+        {id:'tam',displayName:'Tâm',email:'tam@sellerkbb.demo',role:'host',status:'approved',permissions:['live.read','kpi.read']},
+        {id:'hung-hh',displayName:'Hùng Hiền Hòa',email:'hunghh@sellerkbb.demo',role:'operator',status:'approved',permissions:['live.read','kpi.read']},
+        {id:'pending-01',displayName:'Nguyễn Minh Anh',email:'minhanh@example.com',role:'pending',status:'pending',permissions:[]},
+        {id:'preview-admin',displayName:'Quản trị viên Demo',email:'admin@sellerkbb.demo',role:'admin',status:'approved',permissions:['live.read','kpi.read']}
+      ];
+      const base=[
+        ['LIVE-202610-001','Mega Live 10.10 - Ca sáng','sellerkbb_official','743820194','2026-10-10T02:00:00+07:00',10800,186500000,1240,174320000,'thao-my','Thảo My','hung-bg','Hùng Bắc Giang'],
+        ['LIVE-202610-002','Flash Sale buổi trưa','sellerkbb_official','743820194','2026-10-10T06:30:00+07:00',7200,93200000,611,88750000,'dung','Dung','hung-hh','Hùng Hiền Hòa'],
+        ['LIVE-202610-003','Deal tối độc quyền','sellerkbb_official','743820194','2026-10-10T12:00:00+07:00',14400,241800000,1604,226910000,'tam','Tâm','hung-hh','Hùng Hiền Hòa'],
+        ['LIVE-202610-004','Live săn voucher cuối tuần','sellerkbb_beauty','881003522','2026-10-12T13:15:00+07:00',12600,154900000,983,148210000,'thao-my','Thảo My','hung-bg','Hùng Bắc Giang'],
+        ['LIVE-202610-005','Brand Day - Prime Time','sellerkbb_official','743820194','2026-10-15T12:30:00+07:00',16200,312400000,2018,294860000,'dung','Dung','hung-hh','Hùng Hiền Hòa'],
+        ['LIVE-202610-006','Live chốt đơn cuối ngày','sellerkbb_beauty','881003522','2026-10-18T13:00:00+07:00',9000,128600000,802,121970000,'tam','Tâm','hung-bg','Hùng Bắc Giang']
+      ];
+      state.sessions=base.map(x=>({id:x[0],liveId:x[0],title:x[1],channelUsername:x[2],channelId:x[3],startTime:previewTs(x[4]),durationSeconds:x[5],recordedGmvAmount:x[6],recordedItemsSold:x[7],currentItemsSold:x[7],currentGmvAmount:x[8],finalGmvAmount:x[8],currency:'VND',hostUid:x[9],hostName:x[10],operatorUid:x[11],operatorName:x[12]}));
+      showApp(); bindShell(); renderAll();
+      const bar=document.createElement('div');
+      bar.style.cssText='position:fixed;left:50%;transform:translateX(-50%);bottom:18px;z-index:99;background:#f7d66d;color:#241c05;padding:9px 14px;border-radius:999px;font-weight:800;font-size:12px;box-shadow:0 8px 30px rgba(0,0,0,.35)';
+      bar.textContent='PREVIEW MODE · Dữ liệu mẫu · Không ảnh hưởng hệ thống thật';
+      document.body.appendChild(bar);
+    }
 
     function showBoot(message, actions='') { $('#boot').classList.remove('hidden'); $('#app').classList.add('hidden'); $('#bootText').innerHTML=message; $('#bootActions').innerHTML=actions; }
     function showApp(){ $('#boot').classList.add('hidden'); $('#app').classList.remove('hidden'); }
@@ -70,6 +101,7 @@
     }
 
     async function init(){
+      if(PREVIEW){ enterPreview(); return; }
       const config=await fetch('/api/config',{cache:'no-store'}).then(r=>r.json()).catch(()=>null);
       state.config=config;
       if(!config?.firebase?.apiKey || !config.firebase.projectId){
@@ -117,7 +149,8 @@
     }
 
     function bindShell(){
-      $('#logoutBtn').onclick=()=>signOut(state.auth);
+      $('#logoutBtn').onclick=()=>{ if(PREVIEW) location.href='/'; else signOut(state.auth); };
+      $('#logoutBtn').textContent=PREVIEW?'Thoát Preview':'Đăng xuất';
       $('#userAvatar').src=state.user.photoURL||'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64"><rect width="64" height="64" fill="%23223044"/></svg>';
       $('#userName').textContent=state.profile.displayName||state.user.email||'';
       $('#userRole').textContent=roleLabel(state.profile.role);
@@ -179,12 +212,18 @@
 
     async function saveAssignment(id){
       const h=document.querySelector(`[data-person="host"][data-id="${CSS.escape(id)}"]`), o=document.querySelector(`[data-person="operator"][data-id="${CSS.escape(id)}"]`);
+      if(PREVIEW){
+        const host=state.users.find(u=>u.id===h.value), op=state.users.find(u=>u.id===o.value), item=state.sessions.find(x=>x.id===id);
+        Object.assign(item,{hostUid:h.value||'',hostName:host?.displayName||'',operatorUid:o.value||'',operatorName:op?.displayName||''});
+        renderAll(); return;
+      }
       const host=state.users.find(u=>u.id===h.value), op=state.users.find(u=>u.id===o.value);
       await updateDoc(doc(state.db,'liveSessions',id),{hostUid:h.value||'',hostName:host?.displayName||host?.email||'',operatorUid:o.value||'',operatorName:op?.displayName||op?.email||'',updatedAt:serverTimestamp()});
       await loadData(); renderAll();
     }
 
     async function syncMonth(){
+      if(PREVIEW){ alert('Preview Mode: đây là thao tác mô phỏng. Bản production sẽ đồng bộ dữ liệu thật từ TikTok Shop API.'); return; }
       const btn=$('#syncMonthBtn'); btn.disabled=true; btn.textContent='Đang đồng bộ…';
       try{
         const {start,end}=monthBounds(state.month); const result=await api('/api/tiktok/sync',{method:'POST',body:JSON.stringify({startDate:start,endDate:end})});
@@ -239,10 +278,16 @@
 
     function userApprovalCard(u){return `<div class="card" style="margin:10px 0;background:#0d141d"><div class="row space"><div><b>${esc(u.displayName||u.email)}</b><div class="tiny">${esc(u.email||'')}</div></div><span class="pill warn">Chờ duyệt</span></div><div class="form-grid" style="margin-top:12px"><label><div class="tiny">Vai trò</div><select class="input" data-role="${u.id}"><option value="host">Host Livestream</option><option value="operator">Nhân viên vận hành livestream</option><option value="admin">Quản trị viên</option></select></label><div><div class="tiny">Nội dung được phép xem</div><label class="checkline"><input type="checkbox" data-perm="live.read" data-uid="${u.id}" checked> Phiên LIVE</label><label class="checkline"><input type="checkbox" data-perm="kpi.read" data-uid="${u.id}" checked> KPI cá nhân / báo cáo</label></div></div><div class="row" style="margin-top:12px"><button class="btn primary" data-approve="${u.id}">Duyệt tài khoản</button></div></div>`;}
     function userApprovedRow(u){return `<div class="row space" style="padding:12px 0;border-bottom:1px solid var(--line)"><div><b>${esc(u.displayName||u.email)}</b><div class="tiny">${esc(u.email||'')} · ${(u.permissions||[]).join(', ')||'full/admin'}</div></div><span class="tag ${u.role}">${roleLabel(u.role)}</span></div>`;}
-    async function approveUser(uid){ const role=document.querySelector(`[data-role="${CSS.escape(uid)}"]`).value; const permissions=[...document.querySelectorAll(`[data-uid="${CSS.escape(uid)}"][data-perm]:checked`)].map(x=>x.dataset.perm); if(role==='admin'){permissions.splice(0,permissions.length,'live.read','kpi.read')} await updateDoc(doc(state.db,'users',uid),{role,status:'approved',permissions,approvedAt:serverTimestamp(),approvedBy:state.user.uid,updatedAt:serverTimestamp()}); await loadData(); renderAll(); }
+    async function approveUser(uid){ const role=document.querySelector(`[data-role="${CSS.escape(uid)}"]`).value; const permissions=[...document.querySelectorAll(`[data-uid="${CSS.escape(uid)}"][data-perm]:checked`)].map(x=>x.dataset.perm); if(role==='admin'){permissions.splice(0,permissions.length,'live.read','kpi.read')} if(PREVIEW){ const u=state.users.find(x=>x.id===uid); Object.assign(u,{role,status:'approved',permissions}); renderAll(); return; } await updateDoc(doc(state.db,'users',uid),{role,status:'approved',permissions,approvedAt:serverTimestamp(),approvedBy:state.user.uid,updatedAt:serverTimestamp()}); await loadData(); renderAll(); }
 
     async function renderTikTok(){
       if(!isAdmin()){ $('#section-tiktok').innerHTML='';return; }
+      if(PREVIEW){
+        $('#section-tiktok').innerHTML=`<div class="card"><div class="row space"><div><h3>Kết nối TikTok Shop Seller</h3><div class="sub">Preview giao diện dành riêng cho Quản trị viên. Host/Operator sẽ không thấy mục này.</div></div><span class="pill ok">Đã kết nối · Demo</span></div><div class="notice ok" style="margin-top:14px">Shop mẫu: SellerKBB Official · Khu vực VN · Token được lưu phía backend Cloudflare trong bản production.</div><div class="row" style="margin-top:14px"><button class="btn" id="previewSync">Kiểm tra kết nối</button><button class="btn danger" id="previewDisconnect">Ngắt kết nối</button></div><div class="tiny" style="margin-top:12px">Scopes minh họa: data.shop_analytics.public.read</div></div><div class="card" style="margin-top:14px"><h3>API dùng cho báo cáo</h3><div class="sub"><b>LIVE Performance:</b> /analytics/202509/shop_lives/performance<br><b>Authorized Shops:</b> /authorization/202309/shops<br><b>Finance đối soát:</b> dùng để mở rộng đối soát hoàn/hủy khi shop cấp quyền phù hợp.</div></div>`;
+        $('#previewSync').onclick=()=>alert('Kết nối TikTok mẫu hoạt động bình thường.');
+        $('#previewDisconnect').onclick=()=>alert('Preview Mode không thay đổi kết nối thật.');
+        return;
+      }
       let status={configured:state.config.tiktokConfigured,connected:false,grantedScopes:[]}; try{status=await api('/api/tiktok/status')}catch(e){status.error=e.message}
       $('#section-tiktok').innerHTML=`<div class="card"><div class="row space"><div><h3>Kết nối TikTok Shop Seller</h3><div class="sub">Token được giữ trong Cloudflare KV. Host/Operator không thấy khu vực này.</div></div><span class="pill ${status.connected?'ok':'warn'}">${status.connected?'Đã kết nối':'Chưa kết nối'}</span></div>${!status.configured?'<div class="notice" style="margin-top:14px">Chưa cấu hình đủ TikTok App Key / Secret / Service ID / Seller Authorization URL / KV binding.</div>':''}<div class="row" style="margin-top:14px">${status.configured&&!status.connected?'<button id="connectTikTok" class="btn primary">Kết nối TikTok Seller</button>':''}${status.connected?'<button id="disconnectTikTok" class="btn danger">Ngắt kết nối</button>':''}</div>${status.grantedScopes?.length?`<div class="tiny" style="margin-top:12px">Scopes: ${esc(status.grantedScopes.join(', '))}</div>`:''}</div><div class="card" style="margin-top:14px"><h3>API dùng cho báo cáo</h3><div class="sub"><b>LIVE Performance:</b> /analytics/202509/shop_lives/performance<br><b>Authorized Shops:</b> /authorization/202309/shops<br><b>Finance đối soát:</b> có thể bổ sung /finance/202501/orders/{order_id}/statement_transactions khi shop cấp scope Finance.</div></div>`;
       if($('#connectTikTok')) $('#connectTikTok').onclick=async()=>{try{const r=await api('/api/tiktok/oauth/start',{method:'POST'});location.href=r.url}catch(e){alert(e.message)}};
