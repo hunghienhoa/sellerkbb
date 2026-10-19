@@ -235,7 +235,7 @@ async function getStoredTikTokToken(env) {
   try { return JSON.parse(raw); } catch { return null; }
 }
 
-async function refreshTikTokTokenIfNeeded(env, thresholdSeconds = 7200, reason = "proactive") {
+async function refreshTikTokTokenIfNeeded(env, thresholdSeconds = 3600, reason = "proactive") {
   const token = await getStoredTikTokToken(env);
   if (!token?.access_token) return { token, refreshed: false, connected: false };
   const expireAt = tokenExpirySeconds(token);
@@ -249,7 +249,7 @@ async function refreshTikTokTokenIfNeeded(env, thresholdSeconds = 7200, reason =
 
 async function getTikTokToken(env) {
   try {
-    const result = await refreshTikTokTokenIfNeeded(env, 7200, "api_request");
+    const result = await refreshTikTokTokenIfNeeded(env, 3600, "api_request");
     return result.token;
   } catch {
     return await getStoredTikTokToken(env);
@@ -430,8 +430,8 @@ async function handleApi(request, env) {
 
 export default {
   async scheduled(controller, env, ctx) {
-    if (controller.cron === "0 */2 * * *") {
-      ctx.waitUntil(refreshTikTokTokenIfNeeded(env, 7200, "cron").catch(() => null));
+    if (controller.cron === "0 * * * *") {
+      ctx.waitUntil(refreshTikTokTokenIfNeeded(env, 3600, "cron").catch(() => null));
       return;
     }
     if (controller.cron === "15 3 * * *") {
