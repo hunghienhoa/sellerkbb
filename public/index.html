@@ -579,7 +579,8 @@ tbody tr:hover td{background:#fffafd}
 .action-toast{
   position:fixed;
   left:50%;
-  bottom:24px;
+  top:calc(env(safe-area-inset-top, 0px) + 14px);
+  bottom:auto;
   z-index:120;
   max-width:min(88vw,420px);
   padding:10px 14px;
@@ -592,7 +593,7 @@ tbody tr:hover td{background:#fffafd}
   text-align:center;
   opacity:0;
   pointer-events:none;
-  transform:translate(-50%,14px);
+  transform:translate(-50%,-12px);
   transition:opacity .2s ease,transform .2s ease;
 }
 .action-toast.show{opacity:1;transform:translate(-50%,0)}
@@ -730,7 +731,6 @@ tbody tr:hover td{background:#fffafd}
   .side-bottom .usertext{display:block!important}
   .userbox{justify-content:flex-start!important}
   body.menu-open{overflow:hidden}
-  .action-toast{bottom:18px}
 }
 
 @media(max-width:420px){
@@ -1270,6 +1270,12 @@ tbody tr:hover td{background:#fcfafb}
 .data-note .ui-icon{color:#a7527a}
 .storage-stat{display:flex!important;align-items:flex-start;gap:11px}
 .storage-stat .metric-icon{width:36px;height:36px}
+
+.manual-session .manual-kpi-check{color:#8a6829}
+.manual-session select[data-person]{border-color:#ddc9d3;background:#fffdfd}
+@media(max-width:700px){
+  .action-toast{top:calc(env(safe-area-inset-top, 0px) + 10px);max-width:calc(100vw - 24px)}
+}
 </style>
 </head>
 <body>
@@ -1282,7 +1288,7 @@ tbody tr:hover td{background:#fcfafb}
       <div class="side-bottom"><div class="userbox row"><img id="userAvatar" class="avatar" alt=""><div class="usertext" style="min-width:0"><div id="userName" style="font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis"></div><div id="userRole" class="tiny"></div></div></div></div>
     </aside>
     <main class="main">
-      <header class="topbar"><div class="topbar-title-wrap"><button id="menuToggle" class="menu-toggle" type="button" aria-label="Mở menu" aria-expanded="false">☰</button><div><h1 id="pageTitle" class="page-title">Tổng quan</h1><div id="pageSub" class="tiny"></div></div></div><div class="row"><span id="syncBadge" class="pill">v1.6.0</span><button id="logoutBtn" class="btn ghost small">Đăng xuất</button></div></header>
+      <header class="topbar"><div class="topbar-title-wrap"><button id="menuToggle" class="menu-toggle" type="button" aria-label="Mở menu" aria-expanded="false">☰</button><div><h1 id="pageTitle" class="page-title">Tổng quan</h1><div id="pageSub" class="tiny"></div></div></div><div class="row"><span id="syncBadge" class="pill">v1.6.1</span><button id="logoutBtn" class="btn ghost small">Đăng xuất</button></div></header>
       <div class="content">
         <section id="section-dashboard" class="section active"></section>
         <section id="section-live" class="section"></section>
@@ -1410,7 +1416,7 @@ tbody tr:hover td{background:#fcfafb}
 
     function previewTs(iso){ return {toDate:()=>new Date(iso)}; }
     function enterPreview(){
-      state.config={version:'1.6.0-preview',tiktokConfigured:true};
+      state.config={version:'1.6.1-preview',tiktokConfigured:true};
       state.user={uid:'preview-admin',email:'admin@sellerkbb.demo',displayName:'Quản trị viên Demo',photoURL:''};
       state.profile={role:'admin',status:'approved',displayName:'Quản trị viên Demo',permissions:['live.read','kpi.read']};
       state.maintenance={settings:{retentionDays:180,autoCleanup:true,emergencyPercent:85,firestoreSoftLimitMb:600,firestoreMaxSessions:12000,kvSoftKeyLimit:5000},cloudflare:{keyCount:4,lastRun:{ranAt:new Date().toISOString(),deleted:0}},firebase:{freePlanMode:true,ttlEnabled:false,ttlRecommended:false}};
@@ -1699,7 +1705,7 @@ tbody tr:hover td{background:#fcfafb}
           <div class="mobile-field"><span class="tiny">GMV sau hoàn/hủy</span><strong>${fmtMoney(finalGmv(s),s.currency)}</strong></div>
           <div class="mobile-field"><span class="tiny">Số món bán đã ghi nhận</span><strong>${new Intl.NumberFormat('vi-VN').format(Number(s.currentItemsSold??s.recordedItemsSold??0))}</strong></div>
         </div>
-        ${editable?`<div class="mobile-assign"><label class="manual-kpi-check"><input type="checkbox" data-manual-kpi="${s.id}" ${isManualKpi(s)?'checked':''}> <span>Ngày Campaign/Mega Live · tính KPI thủ công</span></label><label><span class="tiny">Host Livestream</span>${personSelect('host',s.id,s.hostUid,approvedHosts)}</label><label><span class="tiny">Nhân viên vận hành</span>${personSelect('operator',s.id,s.operatorUid,operators)}</label><button class="btn primary" data-save-session="${s.id}">${icon('check',15)} Lưu thiết lập</button></div>`:`<div class="mobile-assign">${isManualKpi(s)?'<div class="notice warn">Phiên này không cộng vào KPI tự động.</div>':`<div class="row space"><span class="tiny">Host</span><b>${esc(s.hostName||'—')}</b></div><div class="row space"><span class="tiny">Vận hành</span><b>${esc(s.operatorName||'—')}</b></div>`}</div>`}
+        ${editable?`<div class="mobile-assign"><label class="manual-kpi-check"><input type="checkbox" data-manual-kpi="${s.id}" ${isManualKpi(s)?'checked':''}> <span>Ngày Campaign/Mega Live · tính KPI thủ công</span></label><label><span class="tiny">Host Livestream</span>${personSelect('host',s.id,s.hostUid,approvedHosts)}</label><label><span class="tiny">Nhân viên vận hành</span>${personSelect('operator',s.id,s.operatorUid,operators)}</label><button class="btn primary" data-save-session="${s.id}">${icon('check',15)} Lưu thiết lập</button></div>`:`<div class="mobile-assign">${isManualKpi(s)?'<div class="notice warn">Phiên này không cộng vào KPI tự động.</div>':''}<div class="row space"><span class="tiny">Host</span><b>${esc(s.hostName||'—')}</b></div><div class="row space"><span class="tiny">Vận hành</span><b>${esc(s.operatorName||'—')}</b></div></div>`}
       </article>`).join('')}</div>`;
       return desktop+mobile;
     }
@@ -1736,14 +1742,14 @@ tbody tr:hover td{background:#fcfafb}
       if(isAdmin()){
         document.querySelectorAll('[data-save-session]').forEach(b=>b.onclick=()=>saveAssignment(b.dataset.saveSession));
         document.querySelectorAll('[data-manual-kpi]').forEach(c=>{
-          const apply=()=>{
+          c.onchange=()=>{
             const id=c.dataset.manualKpi;
-            document.querySelectorAll(`[data-person][data-id="${CSS.escape(id)}"]`).forEach(sel=>{
-              sel.disabled=c.checked;
-              if(c.checked) sel.value='';
-            });
+            const row=c.closest('tr,.mobile-live-card');
+            row?.classList.toggle('manual-session',c.checked);
+            // Manual KPI only changes KPI calculation mode.
+            // Host/Operator selections stay editable and are saved normally.
           };
-          c.onchange=apply; apply();
+          c.onchange();
         });
       }
     }
@@ -1751,16 +1757,16 @@ tbody tr:hover td{background:#fcfafb}
     async function saveAssignment(id){
       const h=document.querySelector(`[data-person="host"][data-id="${CSS.escape(id)}"]`), o=document.querySelector(`[data-person="operator"][data-id="${CSS.escape(id)}"]`);
       const manual=document.querySelector(`[data-manual-kpi="${CSS.escape(id)}"]`)?.checked===true;
-      const host=manual?null:state.users.find(u=>u.id===h?.value), op=manual?null:state.users.find(u=>u.id===o?.value);
+      const host=state.users.find(u=>u.id===h?.value), op=state.users.find(u=>u.id===o?.value);
       const payload={
         kpiMode:manual?'manual':'auto',
-        hostUid:manual?'':(h?.value||''), hostName:manual?'':(host?.displayName||host?.email||''),
-        operatorUid:manual?'':(o?.value||''), operatorName:manual?'':(op?.displayName||op?.email||'')
+        hostUid:h?.value||'', hostName:host?.displayName||host?.email||'',
+        operatorUid:o?.value||'', operatorName:op?.displayName||op?.email||''
       };
       if(PREVIEW){
         const item=state.sessions.find(x=>x.id===id);
         Object.assign(item,payload);
-        showToast(manual?'Đã chuyển phiên sang tính KPI thủ công':'Đã lưu nhân sự cho phiên LIVE');
+        showToast(manual?'Đã lưu phiên thủ công và nhân sự':'Đã lưu nhân sự cho phiên LIVE');
         renderAll(); return;
       }
       const item=state.sessions.find(x=>x.id===id);
@@ -1779,7 +1785,7 @@ tbody tr:hover td{background:#fcfafb}
         updatedAt:serverTimestamp()
       };
       await setDoc(doc(state.db,'liveSessions',id),persist,{merge:true});
-      showToast(manual?'Đã chuyển phiên sang tính KPI thủ công':'Đã lưu nhân sự cho phiên LIVE');
+      showToast(manual?'Đã lưu phiên thủ công và nhân sự':'Đã lưu nhân sự cho phiên LIVE');
       await loadData(); renderAll();
     }
 
