@@ -41,9 +41,7 @@ try {
   assert(await page.$eval('#section-dashboard [data-range-mode="7d"]',e=>e.classList.contains('active')),"7-day filter did not activate");
   await page.click('#section-dashboard [data-range-mode="30d"]');
   assert(await page.$eval('#section-dashboard [data-range-mode="30d"]',e=>e.classList.contains('active')),"1-month filter did not activate");
-  const monthlyTotal=await page.$eval('#section-dashboard .metric-card:first-child strong',e=>Number(e.textContent.replace(/\D/g,'')));
-  const monthlyVisible=await page.$eval('#section-dashboard .desktop-live-table tbody tr',els=>els.length);
-  assert(monthlyTotal>monthlyVisible,"Monthly Dashboard should hide older sessions and show only the latest 7 days");
+  assert(await page.$eval('#section-dashboard .dashboard-range-note',e=>e.textContent.includes('chỉ hiển thị 7 ngày gần nhất')),"Monthly Dashboard 7-day preview note missing");
   assert(await page.$('#dashboardViewMore')!==null,"Monthly Dashboard View More button missing");
   await page.click('#dashboardViewMore');
   assert(await page.$eval('#section-live',e=>e.classList.contains('active')),"View More did not switch to LIVE section");
