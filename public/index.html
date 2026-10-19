@@ -259,6 +259,145 @@
     .month-select{min-width:210px}
     @media(max-width:700px){.month-select{width:100%;min-width:0}}
 
+
+    /* v1.1.6 compact UI normalization */
+    body{font-size:13px}
+    .content{padding:22px 24px 60px}
+    .section.active{gap:16px}
+    .topbar{min-height:66px;padding:9px 24px}
+    .page-title{font-size:20px;line-height:1.25;letter-spacing:-.025em}
+    .tiny{font-size:11px;line-height:1.4}
+    .sub{font-size:13px;line-height:1.55}
+
+    .stats{gap:12px}
+    .stats .card{
+      min-height:0;
+      display:block;
+      padding:14px 16px
+    }
+    .stat-label{font-size:11px;line-height:1.35}
+    .stat-value{
+      font-size:19px;
+      line-height:1.25;
+      margin-top:5px;
+      letter-spacing:-.02em
+    }
+
+    .card{
+      padding:16px;
+      border-radius:16px;
+      box-shadow:0 8px 26px rgba(156,91,124,.075)
+    }
+    .card h3{font-size:14px;line-height:1.4;margin-bottom:9px}
+    .card>.row.space:first-child{margin-bottom:10px;gap:10px}
+
+    .toolbar{
+      padding:10px 12px;
+      gap:8px;
+      border-radius:14px
+    }
+    .input{
+      min-height:38px;
+      padding:7px 10px;
+      border-radius:10px;
+      font-size:12px
+    }
+    .btn{
+      min-height:38px;
+      padding:8px 12px;
+      border-radius:10px;
+      font-size:12px
+    }
+    .btn.small{min-height:31px;padding:5px 9px;font-size:11px}
+    .pill{font-size:10px;padding:5px 8px;line-height:1.2}
+    .tag{font-size:10px;padding:4px 7px}
+
+    .pair-card{
+      min-height:0;
+      padding:13px 14px;
+      border-radius:14px
+    }
+    .pair-card b{font-size:13px;margin-bottom:3px}
+    .kpi-pair{gap:10px}
+
+    .table-wrap{border-radius:13px}
+    th,td{padding:9px 10px}
+    th{font-size:10px;line-height:1.35}
+    td{font-size:11px;line-height:1.45}
+    td b{font-size:12px}
+    .money{font-size:11px}
+    .empty{padding:26px 14px;font-size:12px}
+
+    .notice{padding:11px 13px;border-radius:13px;font-size:12px;line-height:1.55}
+    .approval-item{padding:13px;margin-top:10px;border-radius:13px}
+    .approved-user-row{padding:10px 0;gap:10px}
+    .form-grid{gap:12px}
+    .checkline{min-height:24px;font-size:12px}
+
+    .mobile-live-list{gap:10px}
+    .mobile-live-card{
+      padding:13px;
+      border-radius:14px;
+      box-shadow:0 5px 18px rgba(156,91,124,.065)
+    }
+    .mobile-live-head{margin-bottom:10px;gap:8px}
+    .mobile-live-title{font-size:13px;line-height:1.4}
+    .mobile-grid{gap:8px}
+    .mobile-field{
+      padding:9px 10px;
+      border-radius:10px
+    }
+    .mobile-field .tiny{margin-bottom:2px}
+    .mobile-field strong{font-size:12px;line-height:1.35}
+    .mobile-assign{gap:8px;margin-top:10px;padding-top:10px}
+
+    .pagination-wrap{padding:10px 12px;border-radius:13px}
+    .pagination-info{font-size:10px}
+    .page-btn{min-width:32px;height:32px;padding:0 8px;font-size:11px;border-radius:9px}
+    .month-select{min-width:185px}
+
+    @media(max-width:1050px){
+      .content{padding:18px 18px 54px}
+      .stats{gap:10px}
+    }
+    @media(max-width:700px){
+      body{font-size:12px}
+      #app{padding-bottom:72px}
+      .content{padding:12px 10px 22px}
+      .section.active{gap:12px}
+      .topbar{min-height:60px;padding:8px 11px}
+      .page-title{font-size:17px}
+      .topbar .btn{min-height:32px;padding:5px 8px;font-size:10px}
+      .stats{gap:8px}
+      .stats .card{min-height:0;padding:11px 12px}
+      .stat-value{font-size:16px;margin-top:3px}
+      .stat-label{font-size:10px}
+      .card{padding:12px;border-radius:13px}
+      .card h3{font-size:13px;margin-bottom:7px}
+      .toolbar{padding:9px;gap:7px;border-radius:12px}
+      .input{min-height:36px;font-size:11px}
+      .btn{min-height:36px;font-size:11px}
+      .pair-card{min-height:0;padding:11px 12px}
+      .mobile-live-card{padding:11px;border-radius:12px}
+      .mobile-live-head{margin-bottom:8px}
+      .mobile-live-title{font-size:12px}
+      .mobile-field{padding:8px}
+      .mobile-field strong{font-size:11px}
+      .mobile-assign{margin-top:8px;padding-top:8px}
+      .pagination-wrap{padding:9px;gap:8px}
+      .page-btn{min-width:30px;height:30px;font-size:10px}
+      .nav button{padding:5px 3px;font-size:9px}
+      .nav-icon{font-size:15px;height:18px}
+      .sidebar{padding-top:5px;padding-bottom:calc(5px + env(safe-area-inset-bottom))}
+    }
+    @media(max-width:420px){
+      .stats{grid-template-columns:repeat(2,minmax(0,1fr))}
+      .mobile-grid{grid-template-columns:1fr 1fr}
+    }
+    @media(max-width:350px){
+      .stats,.mobile-grid{grid-template-columns:1fr}
+    }
+
   </style>
 </head>
 <body>
@@ -270,7 +409,7 @@
       <div class="side-bottom"><div class="userbox row"><img id="userAvatar" class="avatar" alt=""><div class="usertext" style="min-width:0"><div id="userName" style="font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis"></div><div id="userRole" class="tiny"></div></div></div></div>
     </aside>
     <main class="main">
-      <header class="topbar"><div><h1 id="pageTitle" class="page-title">Tổng quan</h1><div id="pageSub" class="tiny"></div></div><div class="row"><span id="syncBadge" class="pill">v1.1.5</span><button id="logoutBtn" class="btn ghost small">Đăng xuất</button></div></header>
+      <header class="topbar"><div><h1 id="pageTitle" class="page-title">Tổng quan</h1><div id="pageSub" class="tiny"></div></div><div class="row"><span id="syncBadge" class="pill">v1.1.6</span><button id="logoutBtn" class="btn ghost small">Đăng xuất</button></div></header>
       <div class="content">
         <section id="section-dashboard" class="section active"></section>
         <section id="section-live" class="section"></section>
@@ -335,7 +474,7 @@
 
     function previewTs(iso){ return {toDate:()=>new Date(iso)}; }
     function enterPreview(){
-      state.config={version:'1.1.5-preview',tiktokConfigured:true};
+      state.config={version:'1.1.6-preview',tiktokConfigured:true};
       state.user={uid:'preview-admin',email:'admin@sellerkbb.demo',displayName:'Quản trị viên Demo',photoURL:''};
       state.profile={role:'admin',status:'approved',displayName:'Quản trị viên Demo',permissions:['live.read','kpi.read']};
       state.users=[
