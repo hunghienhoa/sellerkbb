@@ -1090,6 +1090,46 @@ td .manual-kpi-check+.btn{width:100%}
       $('#syncBadge').textContent=`v${state.config.version||'1.0.0'}`;
     }
 
+    async function mergeAutoSyncedSessions(){
+      if(PREVIEW || !(can('live.read')||can('kpi.read'))) return;
+      try{
+        const auto=await api('/api/tiktok/autosync/sessions');
+        const byId=new Map(state.sessions.map(x=>[String(x.liveId||x.id),x]));
+        for(const src of auto.sessions||[]){
+          const id=String(src.liveId||'');
+          if(!id)continue;
+          const old=byId.get(id)||{};
+          const startMs=Number(src.startTimeSeconds||0)*1000;
+          const endMs=Number(src.endTimeSeconds||0)*1000;
+          const amount=Number(src.gmvAmount||0);
+          byId.set(id,{
+            ...old,
+            id,
+            liveId:id,
+            title:src.title||old.title||'Phiên LIVE',
+            channelUsername:src.channelUsername||old.channelUsername||'',
+            channelId:src.channelId||old.channelId||'',
+            accountType:src.accountType||old.accountType||'',
+            shopId:src.shopId||old.shopId||'',
+            shopName:src.shopName||old.shopName||'',
+            startTime:{toDate:()=>new Date(startMs)},
+            endTime:{toDate:()=>new Date(endMs)},
+            durationSeconds:Number(src.durationSeconds||0),
+            currency:src.currency||old.currency||'VND',
+            recordedGmvAmount:old.recordedGmvAmount??amount,
+            recordedItemsSold:old.recordedItemsSold??Number(src.itemsSold||0),
+            currentGmvAmount:amount,
+            finalGmvAmount:amount,
+            currentItemsSold:Number(src.itemsSold||0),
+            source:'tiktok-auto'
+          });
+        }
+        state.sessions=[...byId.values()].sort((a,b)=>(b.startTime?.toDate?.()?.getTime?.()||0)-(a.startTime?.toDate?.()?.getTime?.()||0));
+      }catch(e){
+        console.warn('auto sync cache',e);
+      }
+    }
+
     async function loadData(){
       state.sessions=[]; state.users=[];
       if(isAdmin()&&!PREVIEW){
@@ -1105,6 +1145,7 @@ td .manual-kpi-check+.btn{width:100%}
         const q=query(collection(state.db,'liveSessions'),where('startTime','>=',cutoff),orderBy('startTime','desc'),limit(maxDocs));
         const snap=await getDocs(q);
         state.sessions=snap.docs.map(d=>({id:d.id,...d.data()}));
+        await mergeAutoSyncedSessions();
       }
       if(isAdmin()){
         const us=await getDocs(collection(state.db,'users'));
@@ -1118,7 +1159,7 @@ td .manual-kpi-check+.btn{width:100%}
       $('#nav').querySelectorAll('button').forEach(b=>b.onclick=()=>switchSection(b.dataset.section));
     }
 
-    function switchSection(id){ state.section=id; setMobileMenu(false); document.querySelectorAll('.section').forEach(s=>s.classList.remove('active')); $(`#section-${id}`).classList.add('active'); renderNav(); const meta={dashboard:['Tổng quan','Báo cáo LIVE & KPI'],live:['Phiên LIVE','Gắn Host/Operator cho từng phiên'],kpi:['KPI nhân sự','Host 0,3% · Operator 0,1%'],users:['Duyệt tài khoản','Phân vai trò và nội dung được phép xem'],export:['Xuất file','Xuất báo cáo theo khoảng thời gian đã chọn'],tiktok:['Kết nối TikTok / API','Kết nối, gia hạn token và đồng bộ dữ liệu'],storage:['Lưu trữ & tự dọn','Giữ dữ liệu tối đa 6 tháng và bảo vệ dung lượng']}[id]; $('#pageTitle').textContent=meta[0]; $('#pageSub').textContent=meta[1]; }
+    function switchSection(id){ state.section=id; setMobileMenu(false); document.querySelectorAll('.section').forEach(s=>s.classList.remove('active')); $(`#section-${id}`).classList.add('active'); renderNav(); const meta={dashboard:['Tổng quan','Báo cáo LIVE & KPI'],live:['Phiên LIVE','Gắn Host/Operator cho từng phiên'],kpi:['KPI nhân sự','Host 0,3% · Operator 0,1%'],users:['Duyệt tài khoản','Phân vai trò và nội dung được phép xem'],export:['Xuất file','Xuất báo cáo theo khoảng thời gian đã chọn'],tiktok:['TikTok / API','Tự động đồng bộ LIVE và gia hạn token 24/24'],storage:['Lưu trữ & tự dọn','Giữ dữ liệu tối đa 6 tháng và bảo vệ dung lượng']}[id]; $('#pageTitle').textContent=meta[0]; $('#pageSub').textContent=meta[1]; }
 
     function finalGmv(s){ return Number(s.finalGmvAmount ?? s.currentGmvAmount ?? s.recordedGmvAmount ?? 0); }
     function isManualKpi(s){ return s?.kpiMode==='manual'; }
@@ -1211,36 +1252,24 @@ td .manual-kpi-check+.btn{width:100%}
         showToast(manual?'Đã chuyển phiên sang tính KPI thủ công':'Đã lưu nhân sự cho phiên LIVE');
         renderAll(); return;
       }
-      await updateDoc(doc(state.db,'liveSessions',id),{...payload,updatedAt:serverTimestamp()});
+      const item=state.sessions.find(x=>x.id===id);
+      const persist={
+        ...payload,
+        liveId:id,
+        title:item?.title||'Phiên LIVE',
+        channelUsername:item?.channelUsername||'',
+        channelId:item?.channelId||'',
+        startTime:item?.startTime?.toDate?.()?Timestamp.fromMillis(item.startTime.toDate().getTime()):serverTimestamp(),
+        endTime:item?.endTime?.toDate?.()?Timestamp.fromMillis(item.endTime.toDate().getTime()):null,
+        durationSeconds:Number(item?.durationSeconds||0),
+        currency:item?.currency||'VND',
+        recordedGmvAmount:Number(item?.recordedGmvAmount||0),
+        recordedItemsSold:Number(item?.recordedItemsSold||0),
+        updatedAt:serverTimestamp()
+      };
+      await setDoc(doc(state.db,'liveSessions',id),persist,{merge:true});
       showToast(manual?'Đã chuyển phiên sang tính KPI thủ công':'Đã lưu nhân sự cho phiên LIVE');
       await loadData(); renderAll();
-    }
-
-    async function syncMonth(){
-      if(PREVIEW){ showToast('Preview: thao tác đồng bộ TikTok đã được mô phỏng'); return; }
-      const btn=$('#syncMonthBtn'); btn.disabled=true; btn.textContent='Đang đồng bộ…';
-      try{
-        const range=selectedRange(); const start=range.startKey, end=localDateKey(range.endExclusive); const result=await api('/api/tiktok/sync',{method:'POST',body:JSON.stringify({startDate:start,endDate:end})});
-        const batchSize=300; let count=0;
-        for(let i=0;i<result.sessions.length;i+=batchSize){
-          const batch=writeBatch(state.db);
-          for(const s of result.sessions.slice(i,i+batchSize)){
-            const ref=doc(state.db,'liveSessions',s.liveId); const old=await getDoc(ref); const oldData=old.exists()?old.data():null;
-            const amount=Number(s.gmvAmount||0);
-            batch.set(ref,{
-              liveId:s.liveId,title:s.title,channelUsername:s.channelUsername,channelId:s.channelId||'',accountType:s.accountType||'',shopId:s.shopId||'',shopName:s.shopName||'',
-              startTime:Timestamp.fromMillis(s.startTimeSeconds*1000),endTime:Timestamp.fromMillis(s.endTimeSeconds*1000),durationSeconds:s.durationSeconds,currency:s.currency||'VND',
-              recordedGmvAmount:oldData?.recordedGmvAmount ?? amount,recordedItemsSold:oldData?.recordedItemsSold ?? Number(s.itemsSold||0),
-              currentGmvAmount:amount,finalGmvAmount:amount,currentItemsSold:Number(s.itemsSold||0),
-              hostUid:oldData?.hostUid||'',hostName:oldData?.hostName||'',operatorUid:oldData?.operatorUid||'',operatorName:oldData?.operatorName||'',
-              source:'tiktok',firstSyncedAt:oldData?.firstSyncedAt||serverTimestamp(),lastSyncedAt:serverTimestamp(),updatedAt:serverTimestamp()
-            },{merge:true}); count++;
-          }
-          await batch.commit();
-        }
-        showToast(`Đã đồng bộ ${count} phiên LIVE`); await loadData(); const cleaned=await cleanupFirestoreData(true); if(cleaned>0) await loadData(); renderAll();
-      }catch(e){ showToast('Đồng bộ thất bại: '+e.message); }
-      finally{ if(btn){btn.disabled=false;btn.textContent='Đồng bộ dữ liệu từ TikTok';} }
     }
 
     function exportCsv(rows){
@@ -1463,64 +1492,53 @@ td .manual-kpi-check+.btn{width:100%}
       if(!isAdmin()){ $('#section-tiktok').innerHTML='';return; }
       if(PREVIEW){
         $('#section-tiktok').innerHTML=`
-          <div class="card simple-panel">
-            <div class="row space">
-              <div><h3>Kết nối TikTok Shop Seller</h3><div class="sub">Chỉ Quản trị viên thấy mục này. Kết nối được duy trì bằng refresh token ở backend Cloudflare.</div></div>
-              <span class="pill ok">Đã kết nối</span>
-            </div>
-            <div class="status-lines">
-              <div><span>Tự động gia hạn token</span><b>Bật · kiểm tra mỗi 1 giờ</b></div>
-              <div><span>Cách hoạt động</span><b>Dùng Refresh Token khi Access Token còn không quá 60 phút</b></div>
-              <div><span>Khi nào cần cấp quyền lại?</span><b>Chỉ khi TikTok thu hồi quyền hoặc refresh token hết hạn</b></div>
-            </div>
-            <div class="row section-actions"><button class="btn" id="previewSync">Kiểm tra kết nối</button></div>
+          <div class="api-hero">
+            <div class="api-hero-icon">${icon('plug')}</div>
+            <div class="api-hero-copy"><span class="eyebrow">TikTok Shop Seller API</span><h3>Kết nối liên tục 24/24</h3><p>Dữ liệu LIVE tự được đồng bộ mỗi giờ. Không cần chọn ngày và không cần bấm đồng bộ thủ công.</p></div>
+            <span class="status-dot ok">Đang hoạt động</span>
           </div>
-          ${timeFilterHtml('tiktok','<button id="syncMonthBtn" class="btn primary">Đồng bộ dữ liệu từ TikTok</button>')}
-          <div class="simple-panel api-summary">
-            <h3>API báo cáo đang dùng</h3>
-            <div class="sub"><b>LIVE Performance:</b> /analytics/202509/shop_lives/performance<br><b>Authorized Shops:</b> /authorization/202309/shops</div>
-          </div>`;
+          <div class="status-grid">
+            <div class="status-item">${icon('refresh')}<div><span>Refresh Token</span><b>Tự gia hạn trước khi Access Token hết hạn</b></div></div>
+            <div class="status-item">${icon('sync')}<div><span>Đồng bộ tự động</span><b>Mỗi 1 giờ · chạy 24/24</b></div></div>
+            <div class="status-item">${icon('history')}<div><span>Đối soát số liệu</span><b>Mỗi ngày rà lại 30 ngày gần nhất</b></div></div>
+          </div>
+          <div class="api-foot"><div><b>LIVE Performance API</b><span>/analytics/202509/shop_lives/performance</span></div><button class="btn" id="previewSync">${icon('check')} Kiểm tra kết nối</button></div>`;
         $('#previewSync').onclick=()=>showToast('Kết nối TikTok mẫu hoạt động bình thường');
-        bindTimeFilter('tiktok');
-        $('#syncMonthBtn').onclick=syncMonth;
         return;
       }
 
-      let status={configured:state.config.tiktokConfigured,connected:false,autoRefresh:false,grantedScopes:[]};
+      let status={configured:state.config.tiktokConfigured,connected:false,autoRefresh:false,autoSyncEnabled:true,autoSync:null,grantedScopes:[]};
       try{status=await api('/api/tiktok/status')}catch(e){status.error=e.message}
       const accessExpiry=status.accessTokenExpiresAt?fmtDate({toDate:()=>new Date(status.accessTokenExpiresAt*1000)}):'Chưa có';
       const refreshExpiry=status.refreshTokenExpiresAt?fmtDate({toDate:()=>new Date(status.refreshTokenExpiresAt*1000)}):'Chưa có';
+      const sync=status.autoSync||{};
+      const lastSync=sync.finishedAt?fmtDate({toDate:()=>new Date(sync.finishedAt)}):'Chưa chạy';
+      const syncState=status.connected?(sync.ok===false?'Có lỗi cần kiểm tra':'Đang hoạt động'):'Chưa kết nối';
 
       $('#section-tiktok').innerHTML=`
-        <div class="card simple-panel">
-          <div class="row space">
-            <div><h3>Kết nối TikTok Shop Seller</h3><div class="sub">Token nằm ở backend Cloudflare. Host và Vận hành không nhìn thấy khu vực này.</div></div>
-            <span class="pill ${status.connected?'ok':'warn'}">${status.connected?'Đã kết nối':'Chưa kết nối'}</span>
-          </div>
-          ${!status.configured?'<div class="notice">Chưa cấu hình đủ TikTok App Key / Secret / Service ID / Seller Authorization URL / KV binding.</div>':''}
-          ${status.connected?`
-            <div class="status-lines">
-              <div><span>Tự động gia hạn token</span><b>${status.autoRefresh?'Đang bật · kiểm tra mỗi 1 giờ':'Chưa có refresh token'}</b></div>
-              <div><span>Access token hết hạn</span><b>${accessExpiry}</b></div>
-              <div><span>Refresh token hết hạn</span><b>${refreshExpiry}</b></div>
-            </div>
-          `:''}
-          <div class="row section-actions">
-            ${status.configured&&!status.connected?'<button id="connectTikTok" class="btn primary">Kết nối TikTok Seller</button>':''}
-            ${status.connected?'<button id="checkTikTok" class="btn">Kiểm tra kết nối</button>':''}
-          </div>
-          ${status.grantedScopes?.length?`<div class="tiny scope-line">Scopes: ${esc(status.grantedScopes.join(', '))}</div>`:''}
+        <div class="api-hero">
+          <div class="api-hero-icon">${icon('plug')}</div>
+          <div class="api-hero-copy"><span class="eyebrow">TikTok Shop Seller API</span><h3>${status.connected?'Kết nối liên tục 24/24':'Chưa kết nối TikTok'}</h3><p>${status.connected?'SellerKBB tự lấy dữ liệu LIVE mỗi giờ và tự đối soát lại số liệu hằng ngày.':'Kết nối một lần để bật đồng bộ tự động và gia hạn token.'}</p></div>
+          <span class="status-dot ${status.connected&&sync.ok!==false?'ok':'warn'}">${syncState}</span>
         </div>
-        ${timeFilterHtml('tiktok',status.connected?'<button id="syncMonthBtn" class="btn primary">Đồng bộ dữ liệu từ TikTok</button>':'')}
-        <div class="simple-panel api-summary">
-          <h3>API báo cáo đang dùng</h3>
-          <div class="sub"><b>LIVE Performance:</b> /analytics/202509/shop_lives/performance<br><b>Authorized Shops:</b> /authorization/202309/shops</div>
-        </div>`;
+        ${!status.configured?'<div class="notice">Chưa cấu hình đủ TikTok App Key / Secret / Service ID / Seller Authorization URL / KV binding.</div>':''}
+        <div class="status-grid">
+          <div class="status-item">${icon('refresh')}<div><span>Refresh Token</span><b>${status.autoRefresh?'Tự gia hạn · Access Token hết hạn '+accessExpiry:'Chưa có refresh token'}</b><small>Refresh Token hết hạn: ${refreshExpiry}</small></div></div>
+          <div class="status-item">${icon('sync')}<div><span>Đồng bộ tự động</span><b>Mỗi 1 giờ · chạy 24/24</b><small>Lần gần nhất: ${lastSync}</small></div></div>
+          <div class="status-item">${icon('database')}<div><span>Dữ liệu cache</span><b>${new Intl.NumberFormat('vi-VN').format(Number(sync.cached||0))} phiên LIVE</b><small>Đối soát 30 ngày gần nhất mỗi ngày</small></div></div>
+        </div>
+        <div class="api-foot">
+          <div><b>LIVE Performance API</b><span>/analytics/202509/shop_lives/performance</span></div>
+          <div class="row">
+            ${status.configured&&!status.connected?'<button id="connectTikTok" class="btn primary">'+icon('link')+' Kết nối TikTok Seller</button>':''}
+            ${status.connected?'<button id="checkTikTok" class="btn">'+icon('check')+' Kiểm tra trạng thái</button>':''}
+          </div>
+        </div>
+        ${sync.error?`<div class="notice bad">Đồng bộ gần nhất gặp lỗi: ${esc(sync.error)}</div>`:''}
+        ${status.grantedScopes?.length?`<div class="scope-line tiny">Scopes: ${esc(status.grantedScopes.join(', '))}</div>`:''}`;
 
-      bindTimeFilter('tiktok');
       if($('#connectTikTok')) $('#connectTikTok').onclick=async()=>{try{const result=await api('/api/tiktok/oauth/start',{method:'POST'});location.href=result.url}catch(e){showToast(e.message)}};
-      if($('#checkTikTok')) $('#checkTikTok').onclick=()=>showToast(status.autoRefresh?'Kết nối ổn định · tự gia hạn đang bật':'Kết nối hiện tại hoạt động nhưng chưa có refresh token');
-      if($('#syncMonthBtn')) $('#syncMonthBtn').onclick=syncMonth;
+      if($('#checkTikTok')) $('#checkTikTok').onclick=()=>showToast(status.connected?'Kết nối đang hoạt động · đồng bộ 24/24 đã bật':'TikTok chưa kết nối');
     }
 
     function renderAll(){ renderNav(); renderDashboard(); renderLive(); renderKpi(); renderExport(); renderUsers(); renderTikTok(); renderStorage(); switchSection(state.section); }
