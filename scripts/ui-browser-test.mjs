@@ -104,11 +104,8 @@ try {
   const mobileId=await page.$eval(mobileCard+' [data-save-session]',e=>e.dataset.saveSession);
   await page.select(mobileCard+' select[data-person="host"]','dung');
   await page.select(mobileCard+' select[data-person="operator"]','hung-hh');
-  console.log("mobile before save",mobileId,await page.$eval(mobileCard+' select[data-person="host"]',e=>e.value),await page.$eval(mobileCard+' select[data-person="operator"]',e=>e.value));
   await page.click(mobileCard+' [data-save-session]');
   await sleep(150);
-  console.log("save debug",await page.evaluate(()=>window.__sellerKbbSaveDebug||null));
-  console.log("preview state after mobile save",await page.evaluate(()=>localStorage.getItem('sellerkbb:preview-state:v1')));
   await page.reload({waitUntil:"domcontentloaded"});
   await page.waitForSelector("#app:not(.hidden)",{timeout:30000});
   await page.click('#menuToggle');
@@ -118,7 +115,6 @@ try {
   await page.waitForFunction(()=>!document.querySelector('#sidebar')?.classList.contains('open'));
   await sleep(320);
   const mobileSavedCard='#section-live .mobile-live-card:has([data-save-session="'+mobileId+'"])';
-  console.log("mobile after reload",mobileId,await page.$eval(mobileSavedCard+' select[data-person="host"]',e=>e.value),await page.$eval(mobileSavedCard+' select[data-person="operator"]',e=>e.value));
   assert(await page.$eval(mobileSavedCard+' select[data-person="host"]',e=>e.value)==='dung',"Mobile Host save read the wrong hidden desktop selector");
   assert(await page.$eval(mobileSavedCard+' select[data-person="operator"]',e=>e.value)==='hung-hh',"Mobile Operator save read the wrong hidden desktop selector");
 
