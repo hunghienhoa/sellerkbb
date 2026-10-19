@@ -5,6 +5,8 @@ const TIKTOK_API_HOST = "https://open-api.tiktokglobalshop.com";
 const TIKTOK_TOKEN_HOST = "https://auth.tiktok-shops.com";
 const MAINTENANCE_SETTINGS_KEY = "maintenance:settings";
 const MAINTENANCE_LAST_RUN_KEY = "maintenance:last_run";
+const AUTO_SYNC_DATA_KEY = "autosync:rolling";
+const AUTO_SYNC_STATUS_KEY = "autosync:status";
 const DEFAULT_MAINTENANCE = {
   retentionDays: 180,
   autoCleanup: true,
@@ -45,7 +47,7 @@ async function listAllKvKeys(env) {
 }
 
 function isProtectedKvKey(name) {
-  return name === "seller_token" || name === MAINTENANCE_SETTINGS_KEY;
+  return name === "seller_token" || name === MAINTENANCE_SETTINGS_KEY || name === AUTO_SYNC_DATA_KEY || name === AUTO_SYNC_STATUS_KEY;
 }
 
 function isExpendableKvKey(name) {
@@ -157,6 +159,20 @@ async function requireAdmin(request, env) {
   const caller = await getCallerUser(request, env);
   if (caller.user?.role !== "admin" || caller.user?.status !== "approved") {
     throw new Response(JSON.stringify({ error: "admin_required" }), { status: 403, headers: JSON_HEADERS });
+  }
+  return caller;
+}
+
+async function requireReportAccess(request, env) {
+  const caller = await getCallerUser(request, env);
+  const permissions = Array.isArray(caller.user?.permissions) ? caller.user.permissions : [];
+  const allowed = caller.user?.status === "approved" && (
+    caller.user?.role === "admin" ||
+    permissions.includes("live.read") ||
+    permissions.includes("kpi.read")
+  );
+  if (!allowed) {
+    throw new Response(JSON.stringify({ error: "report_access_required" }), { status: 403, headers: JSON_HEADERS });
   }
   return caller;
 }
@@ -324,6 +340,94 @@ async function syncLivePerformance(env, accessToken, startDate, endDate) {
   return { shops, sessions: all };
 }
 
+
+function vnDateKey(ms = Date.now()) {
+  return new Date(ms + 7 * 3600000).toISOString().slice(0, 10);
+}
+
+function shiftDateKey(daysFromToday) {
+  return vnDateKey(Date.now() + daysFromToday * 86400000);
+}
+
+async function getAutoSyncData(env) {
+  if (!env.TIKTOK_KV) return [];
+  const raw = await env.TIKTOK_KV.get(AUTO_SYNC_DATA_KEY);
+  if (!raw) return [];
+  try {
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
+
+async function writeAutoSyncStatus(env, patch) {
+  if (!env.TIKTOK_KV) return;
+  let current = {};
+  const raw = await env.TIKTOK_KV.get(AUTO_SYNC_STATUS_KEY);
+  try { current = raw ? JSON.parse(raw) : {}; } catch {}
+  await env.TIKTOK_KV.put(AUTO_SYNC_STATUS_KEY, JSON.stringify({ ...current, ...patch }));
+}
+
+async function runAutoSync(env, lookbackDays = 2, reason = "hourly") {
+  const startedAt = new Date().toISOString();
+  if (!env.TIKTOK_KV) return { ok: false, reason, error: "kv_not_bound", startedAt };
+
+  try {
+    const tokenResult = await refreshTikTokTokenIfNeeded(env, 3600, "autosync");
+    const token = tokenResult.token;
+    if (!token?.access_token) {
+      const status = { ok: false, reason, startedAt, finishedAt: new Date().toISOString(), error: "tiktok_not_connected" };
+      await writeAutoSyncStatus(env, status);
+      return status;
+    }
+
+    const days = Math.max(1, Math.min(30, Number(lookbackDays) || 2));
+    const startDate = shiftDateKey(-(days - 1));
+    const endDate = shiftDateKey(1);
+    const data = await syncLivePerformance(env, token.access_token, startDate, endDate);
+    const settings = await getMaintenanceSettings(env);
+    const retentionMs = Math.min(180, Number(settings.retentionDays || 180)) * 86400000;
+    const cutoffSeconds = Math.floor((Date.now() - retentionMs) / 1000);
+    const existing = await getAutoSyncData(env);
+    const byId = new Map();
+
+    for (const item of existing) {
+      if (Number(item?.startTimeSeconds || 0) >= cutoffSeconds && item?.liveId) byId.set(String(item.liveId), item);
+    }
+    for (const item of data.sessions || []) {
+      if (item?.liveId) byId.set(String(item.liveId), item);
+    }
+
+    const merged = [...byId.values()]
+      .filter(item => Number(item?.startTimeSeconds || 0) >= cutoffSeconds)
+      .sort((a, b) => Number(b.startTimeSeconds || 0) - Number(a.startTimeSeconds || 0))
+      .slice(0, Math.min(12000, Number(settings.firestoreMaxSessions || 12000)));
+
+    const nextRaw = JSON.stringify(merged);
+    const oldRaw = JSON.stringify(existing);
+    if (nextRaw !== oldRaw) await env.TIKTOK_KV.put(AUTO_SYNC_DATA_KEY, nextRaw);
+
+    const status = {
+      ok: true,
+      reason,
+      startedAt,
+      finishedAt: new Date().toISOString(),
+      windowStart: startDate,
+      windowEndExclusive: endDate,
+      fetched: Number(data.sessions?.length || 0),
+      cached: merged.length,
+      tokenRefreshed: Boolean(tokenResult.refreshed)
+    };
+    await writeAutoSyncStatus(env, status);
+    return status;
+  } catch (e) {
+    const status = { ok: false, reason, startedAt, finishedAt: new Date().toISOString(), error: String(e?.message || e) };
+    await writeAutoSyncStatus(env, status).catch(() => null);
+    return status;
+  }
+}
+
 async function handleOAuthStart(request, env) {
   await requireAdmin(request, env);
   if (!env.TIKTOK_KV || !env.TIKTOK_SERVICE_ID || !env.TIKTOK_SELLER_AUTH_URL) return json({ error: "tiktok_not_configured" }, 503);
@@ -396,10 +500,17 @@ async function handleApi(request, env) {
     const token = await getTikTokToken(env);
     const accessExpiresAt = tokenExpirySeconds(token);
     const refreshExpiresAt = refreshTokenExpirySeconds(token);
+    let autoSync = null;
+    if (env.TIKTOK_KV) {
+      const raw = await env.TIKTOK_KV.get(AUTO_SYNC_STATUS_KEY);
+      try { autoSync = raw ? JSON.parse(raw) : null; } catch {}
+    }
     return json({
       configured: publicConfig(env).tiktokConfigured,
       connected: Boolean(token?.access_token),
       autoRefresh: Boolean(token?.refresh_token),
+      autoSyncEnabled: true,
+      autoSync,
       accessTokenExpiresAt: accessExpiresAt || null,
       refreshTokenExpiresAt: refreshExpiresAt || null,
       lastRefreshedAt: token?.refreshed_at || null,
@@ -409,20 +520,9 @@ async function handleApi(request, env) {
 
   if (url.pathname === "/api/tiktok/oauth/start" && request.method === "POST") return handleOAuthStart(request, env);
 
-  if (url.pathname === "/api/tiktok/sync" && request.method === "POST") {
-    await requireAdmin(request, env);
-    const token = await getTikTokToken(env);
-    if (!token?.access_token) return json({ error: "tiktok_not_connected" }, 409);
-    const body = await request.json().catch(() => ({}));
-    const startDate = String(body.startDate || "");
-    const endDate = String(body.endDate || "");
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(startDate) || !/^\d{4}-\d{2}-\d{2}$/.test(endDate)) return json({ error: "invalid_date" }, 400);
-    try {
-      const data = await syncLivePerformance(env, token.access_token, startDate, endDate);
-      return json({ ok: true, ...data });
-    } catch (e) {
-      return json({ error: "tiktok_api_error", message: String(e?.message || e) }, 502);
-    }
+  if (url.pathname === "/api/tiktok/autosync/sessions" && request.method === "GET") {
+    await requireReportAccess(request, env);
+    return json({ ok: true, sessions: await getAutoSyncData(env) });
   }
 
   return json({ error: "not_found" }, 404);
@@ -431,11 +531,14 @@ async function handleApi(request, env) {
 export default {
   async scheduled(controller, env, ctx) {
     if (controller.cron === "0 * * * *") {
-      ctx.waitUntil(refreshTikTokTokenIfNeeded(env, 3600, "cron").catch(() => null));
+      ctx.waitUntil(runAutoSync(env, 2, "hourly"));
       return;
     }
     if (controller.cron === "15 3 * * *") {
-      ctx.waitUntil(runKvMaintenance(env, "daily_free_plan"));
+      ctx.waitUntil((async () => {
+        await runAutoSync(env, 30, "daily_reconcile");
+        await runKvMaintenance(env, "daily_free_plan");
+      })());
       return;
     }
   },
