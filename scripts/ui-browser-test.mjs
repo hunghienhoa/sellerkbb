@@ -50,10 +50,10 @@ try {
   await page.click('#section-live [data-range-mode="30d"]');
 
   const desktopRow='#section-live .desktop-live-table tbody tr:nth-child(1)';
-  const desktopId=await page.$eval(desktopSavedRow+' [data-save-session]',e=>e.dataset.saveSession);
-  await page.select(desktopSavedRow+' select[data-person="host"]','thao-my');
-  await page.select(desktopSavedRow+' select[data-person="operator"]','hung-bg');
-  await page.click(desktopSavedRow+' [data-save-session]');
+  const desktopId=await page.$eval(desktopRow+' [data-save-session]',e=>e.dataset.saveSession);
+  await page.select(desktopRow+' select[data-person="host"]','thao-my');
+  await page.select(desktopRow+' select[data-person="operator"]','hung-bg');
+  await page.click(desktopRow+' [data-save-session]');
   await sleep(150);
   await page.reload({waitUntil:"domcontentloaded"});
   await page.waitForSelector("#app:not(.hidden)",{timeout:30000});
