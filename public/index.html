@@ -2172,6 +2172,13 @@ tbody tr:hover td{background:#fffafb}
       {id:'staff-hung-bg',displayName:'Hùng Bắc Giang',role:'operator'},
       {id:'staff-hung-hh',displayName:'Hùng Hiền Hoà',role:'operator'}
     ];
+    const LEGACY_STAFF_ID_MAP={
+      'thao-my':'staff-thao-my',
+      'dung':'staff-dung',
+      'tam':'staff-tam',
+      'hung-bg':'staff-hung-bg',
+      'hung-hh':'staff-hung-hh'
+    };
     function defaultStaffMembers(){ return DEFAULT_STAFF_MEMBERS.map((x,index)=>({...x,sortOrder:(index+1)*10})); }
     function normalizeStaffMembers(items){
       return (Array.isArray(items)?items:[])
@@ -2194,7 +2201,8 @@ tbody tr:hover td{background:#fffafb}
         || {id:uid||'',displayName:name||'Chưa đặt tên'};
     }
     function staffSelectionId(role,uid,name=''){
-      const exact=state.staff.find(x=>x.role===role&&x.id===uid);
+      const mappedUid=LEGACY_STAFF_ID_MAP[uid]||uid;
+      const exact=state.staff.find(x=>x.role===role&&x.id===mappedUid);
       if(exact)return exact.id;
       const byName=state.staff.find(x=>x.role===role&&String(x.displayName||'').localeCompare(String(name||''),'vi',{sensitivity:'base'})===0);
       return byName?.id||'';
@@ -2546,10 +2554,13 @@ tbody tr:hover td{background:#fffafb}
       const fallback=defaultStaffMembers();
       try{
         const snap=await getDoc(doc(state.db,'settings','staffMembers'));
-        const items=snap.exists()?normalizeStaffMembers(snap.data()?.items):[];
-        state.staff=items.length?items:fallback;
-        if(isAdmin()&&!items.length){
-          await setDoc(doc(state.db,'settings','staffMembers'),{items:state.staff,updatedAt:serverTimestamp(),updatedBy:state.user?.uid||''},{merge:true});
+        if(snap.exists()){
+          state.staff=normalizeStaffMembers(snap.data()?.items);
+        }else{
+          state.staff=fallback;
+          if(isAdmin()){
+            await setDoc(doc(state.db,'settings','staffMembers'),{items:state.staff,updatedAt:serverTimestamp(),updatedBy:state.user?.uid||''},{merge:true});
+          }
         }
       }catch(error){
         console.warn('staff directory',error);

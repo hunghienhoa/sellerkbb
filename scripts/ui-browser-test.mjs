@@ -189,7 +189,7 @@ try {
   await sleep(100);
   await page.click('#nav [data-section="staff"]');
   assert(await page.$eval('#section-staff',e=>e.textContent.includes('độc lập hoàn toàn với tài khoản đăng nhập')),"Staff/account separation notice missing");
-  const defaultHostStaff=await page.$eval('#section-staff [data-staff-row]',els=>els.map(e=>e.textContent.trim()));
+  const defaultHostStaff=await page.$eval('#section-staff',e=>[...e.querySelectorAll('[data-staff-row]')].map(x=>x.textContent.trim()));
   assert(defaultHostStaff.some(x=>x.includes('Thảo My')&&x.includes('Host Livestream')),"Default Thảo My Host staff missing");
   assert(defaultHostStaff.some(x=>x.includes('Dung')&&x.includes('Host Livestream')),"Default Dung Host staff missing");
   assert(defaultHostStaff.some(x=>x.includes('Tâm')&&x.includes('Host Livestream')),"Default Tâm Host staff missing");
@@ -201,8 +201,7 @@ try {
   await page.click('#addStaffBtn');
   await sleep(80);
   assert(await page.$eval('#section-staff',e=>e.textContent.includes('Host Mới')),"Adding staff failed");
-  const newStaffId=await page.$eval('#section-staff [data-staff-row]',els=>els.dataset.staffRow);
-  const hostMoiId=await page.$eval('#section-staff [data-staff-row]',els=>els.find(e=>e.textContent.includes('Host Mới'))?.dataset.staffRow||'');
+  const hostMoiId=await page.$eval('#section-staff',e=>[...e.querySelectorAll('[data-staff-row]')].find(x=>x.textContent.includes('Host Mới'))?.dataset.staffRow||'');
   assert(hostMoiId.startsWith('staff-'),"New staff ID must be independent from account IDs");
   await page.click('[data-staff-edit="'+hostMoiId+'"]');
   await page.$eval('[data-staff-name="'+hostMoiId+'"]',e=>e.value='Host Mới Sửa');
@@ -212,7 +211,7 @@ try {
 
   await page.click('[data-section="live"]');
   await page.click('#section-live [data-range-mode="30d"]');
-  const hostDropdownText=await page.$eval('#section-live select[data-person="host"] option',els=>els.map(e=>e.textContent.trim()));
+  const hostDropdownText=await page.$eval('#section-live',e=>[...e.querySelectorAll('select[data-person="host"] option')].map(x=>x.textContent.trim()));
   assert(hostDropdownText.includes('Thảo My')&&hostDropdownText.includes('Dung')&&hostDropdownText.includes('Tâm')&&hostDropdownText.includes('Host Mới Sửa'),"LIVE Host dropdown is not linked to staff directory");
 
   await page.click('#nav [data-section="staff"]');
@@ -253,7 +252,7 @@ try {
   assert(await page.$('[data-approved-user="tam"]')===null,"Confirmed delete did not remove user");
   await page.click('[data-section="live"]');
   await page.click('#section-live [data-range-mode="30d"]');
-  assert(await page.$eval('#section-live select[data-person="host"] option',els=>els.some(e=>e.textContent.trim()==='Tâm'),"Deleting login account Tâm must not remove staff Tâm from Host dropdown");
+  assert(await page.$eval('#section-live',e=>[...e.querySelectorAll('select[data-person="host"] option')].some(x=>x.textContent.trim()==='Tâm'),"Deleting login account Tâm must not remove staff Tâm from Host dropdown");
   await page.click('#nav [data-section="users"]');
 
   await page.select('[data-role="pending-01"]','operator');
