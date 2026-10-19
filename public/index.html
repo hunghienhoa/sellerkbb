@@ -398,6 +398,78 @@
       .stats,.mobile-grid{grid-template-columns:1fr}
     }
 
+
+    /* v1.1.7 responsive readable typography */
+    html{font-size:16px;-webkit-text-size-adjust:100%;text-size-adjust:100%}
+    body{
+      font-size:clamp(13px,0.22vw + 12.2px,15px);
+      line-height:1.55
+    }
+    .page-title{
+      font-size:clamp(20px,0.75vw + 17px,26px);
+      line-height:1.25
+    }
+    .sub{font-size:clamp(12px,0.18vw + 11.5px,14px)}
+    .tiny{font-size:clamp(11px,0.14vw + 10.5px,12.5px)}
+    .card h3{font-size:clamp(14px,0.3vw + 13px,17px)}
+    .stat-label{font-size:clamp(11px,0.18vw + 10.5px,13px)}
+    .stat-value{
+      font-size:clamp(18px,0.75vw + 15px,25px);
+      line-height:1.3
+    }
+
+    .btn,.input{
+      font-size:clamp(12px,0.16vw + 11.5px,14px);
+      min-height:clamp(38px,1vw + 34px,44px)
+    }
+    .btn.small{font-size:clamp(11px,0.12vw + 10.5px,12px)}
+    .pill{font-size:clamp(10.5px,0.12vw + 10px,12px)}
+    .tag{font-size:clamp(10px,0.1vw + 9.8px,11.5px)}
+
+    th{font-size:clamp(10.5px,0.16vw + 10px,12px)}
+    td{font-size:clamp(11.5px,0.16vw + 11px,13px)}
+    td b{font-size:clamp(12px,0.18vw + 11.5px,13.5px)}
+    .money{font-size:inherit}
+
+    .pair-card b{font-size:clamp(12.5px,0.2vw + 12px,14px)}
+    .checkline{font-size:clamp(11.5px,0.15vw + 11px,13px)}
+    .notice{font-size:clamp(12px,0.16vw + 11.5px,13.5px)}
+    .mobile-live-title{font-size:clamp(12.5px,0.55vw + 10.5px,14px)}
+    .mobile-field strong{font-size:clamp(12px,0.45vw + 10.5px,13.5px)}
+    .pagination-info{font-size:clamp(10.5px,0.14vw + 10px,12px)}
+    .page-btn{font-size:clamp(11px,0.12vw + 10.5px,12px)}
+
+    .content{
+      padding-left:clamp(14px,2vw,28px);
+      padding-right:clamp(14px,2vw,28px)
+    }
+    .section.active{gap:clamp(14px,1.4vw,20px)}
+    .card{padding:clamp(14px,1.3vw,18px)}
+    .stats .card{padding:clamp(13px,1.2vw,17px)}
+    .toolbar{padding:clamp(10px,0.9vw,13px)}
+    .pair-card{padding:clamp(12px,1vw,16px)}
+    .mobile-live-card{padding:clamp(12px,2.8vw,16px)}
+
+    @media(max-width:700px){
+      body{font-size:14px}
+      .page-title{font-size:clamp(19px,5.2vw,22px)}
+      .tiny{font-size:11.5px}
+      .stat-label{font-size:11.5px}
+      .stat-value{font-size:clamp(18px,4.9vw,21px)}
+      .card h3{font-size:14px}
+      .btn,.input{font-size:13px;min-height:40px}
+      .pill{font-size:11px}
+      .mobile-live-title{font-size:13.5px}
+      .mobile-field strong{font-size:13px}
+      .pagination-info{font-size:11px;line-height:1.45}
+      .page-btn{font-size:11.5px}
+      .nav button{font-size:10px}
+      .nav-icon{font-size:16px}
+    }
+    @media(min-width:1440px){
+      .content{max-width:1480px}
+    }
+
   </style>
 </head>
 <body>
@@ -409,7 +481,7 @@
       <div class="side-bottom"><div class="userbox row"><img id="userAvatar" class="avatar" alt=""><div class="usertext" style="min-width:0"><div id="userName" style="font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis"></div><div id="userRole" class="tiny"></div></div></div></div>
     </aside>
     <main class="main">
-      <header class="topbar"><div><h1 id="pageTitle" class="page-title">Tổng quan</h1><div id="pageSub" class="tiny"></div></div><div class="row"><span id="syncBadge" class="pill">v1.1.6</span><button id="logoutBtn" class="btn ghost small">Đăng xuất</button></div></header>
+      <header class="topbar"><div><h1 id="pageTitle" class="page-title">Tổng quan</h1><div id="pageSub" class="tiny"></div></div><div class="row"><span id="syncBadge" class="pill">v1.1.7</span><button id="logoutBtn" class="btn ghost small">Đăng xuất</button></div></header>
       <div class="content">
         <section id="section-dashboard" class="section active"></section>
         <section id="section-live" class="section"></section>
@@ -474,7 +546,7 @@
 
     function previewTs(iso){ return {toDate:()=>new Date(iso)}; }
     function enterPreview(){
-      state.config={version:'1.1.6-preview',tiktokConfigured:true};
+      state.config={version:'1.1.7-preview',tiktokConfigured:true};
       state.user={uid:'preview-admin',email:'admin@sellerkbb.demo',displayName:'Quản trị viên Demo',photoURL:''};
       state.profile={role:'admin',status:'approved',displayName:'Quản trị viên Demo',permissions:['live.read','kpi.read']};
       state.users=[
