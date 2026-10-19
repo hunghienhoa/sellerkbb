@@ -4,7 +4,7 @@
 
 ### Báo cáo TikTok LIVE · KPI nhân sự · Tự đồng bộ 24/24
 
-**Phiên bản hiện tại: v1.16.0**
+**Phiên bản hiện tại: v1.17.0**
 
 [![GitHub Release](https://img.shields.io/github/v/release/hunghienhoa/sellerkbb?label=Release)](https://github.com/hunghienhoa/sellerkbb/releases)
 [![GitHub Actions](https://img.shields.io/github/actions/workflow/status/hunghienhoa/sellerkbb/deploy.yml?branch=main&label=Ki%E1%BB%83m%20tra%20%26%20Backup)](https://github.com/hunghienhoa/sellerkbb/actions)
@@ -17,14 +17,14 @@
 
 ---
 
-## 🆕 Cập nhật mới nhất — v1.16.0
+## 🆕 Cập nhật mới nhất — v1.17.0
 
-- Chuyển giao diện từ **tím lavender** sang **hồng pastel nhẹ**, đồng bộ sidebar, thanh trên, nút, bộ lọc, thẻ số liệu và các trạng thái.
-- Xóa nút **Users** nổi bên ngoài sidebar để không còn hai nơi cùng mở trang duyệt thành viên.
-- **Duyệt tài khoản** vẫn nằm trong nhóm **Quản trị** và là nơi duy nhất để quản lý user.
-- Với user đã duyệt, Admin có thể **đổi vai trò** (Host / Vận hành / Quản trị viên), bật/tắt quyền **Phiên LIVE** và **KPI nhân sự / báo cáo**, sau đó bấm **Lưu quyền**.
-- Admin có thể **Xóa user** đang chờ hoặc đã duyệt. User bị xóa khỏi SellerKBB; nếu đăng nhập lại thì trở về trạng thái **chờ duyệt**.
-- Tài khoản Admin đang đăng nhập không thể tự xóa hoặc tự hạ quyền để tránh khóa mất quyền quản trị.
+- Đổi tên mục **Duyệt tài khoản** thành **Quản lý tài khoản** trong nhóm **Quản trị**.
+- Danh sách **Tài khoản đã duyệt** được thu gọn: mặc định chỉ hiển thị hồ sơ, vai trò/quyền tóm tắt và hai nút biểu tượng **Cây bút** / **X**.
+- Bấm **Cây bút** mới mở bảng chỉnh **Vai trò** và **Quyền truy cập**; có nút **Đóng** và **Lưu quyền**.
+- Bấm **X** luôn hiện hộp xác nhận. Chỉ khi chọn **Đồng ý** tài khoản mới bị xóa; chọn **Hủy** thì không thay đổi dữ liệu.
+- Tài khoản Admin đang đăng nhập vẫn bị khóa thao tác tự sửa/xóa để tránh tự mất quyền quản trị.
+- Bản **preview/demo** và website được đồng bộ cùng source mỗi lần cập nhật.
 - README và GitHub Release tiếp tục được cập nhật cùng phiên bản.
 
 ---
@@ -64,7 +64,7 @@ Bạn không cần hiểu hết code. Chỉ cần nhớ 4 nơi chính:
 - Lưu dữ liệu tối đa **180 ngày (6 tháng)** theo cấu hình.
 - Có trang **Lưu trữ & tự dọn** theo dõi GitHub / Firebase / Cloudflare.
 - Hỗ trợ PC và điện thoại.
-- Giao diện **hồng pastel nhẹ**, sidebar chia rõ **Báo cáo / Công cụ / Quản trị**; **KPI thủ công** nằm ở **Công cụ**, còn **Duyệt tài khoản** nằm trong **Quản trị** và là nơi duy nhất quản lý user.
+- Giao diện **hồng pastel nhẹ**, sidebar chia rõ **Báo cáo / Công cụ / Quản trị**; **KPI thủ công** nằm ở **Công cụ**, còn **Quản lý tài khoản** nằm trong **Quản trị** và là nơi duy nhất quản lý user.
 
 ---
 
@@ -184,7 +184,7 @@ Hiểu đơn giản:
 
 ### Admin
 
-- Duyệt tài khoản.
+- Quản lý tài khoản.
 - Chọn vai trò/quyền xem.
 - Gắn Host/Operator.
 - Bật Campaign/Mega thủ công.

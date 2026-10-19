@@ -114,10 +114,15 @@ assert(html.includes("renderKpi(); renderManualKpi();"), "renderAll must render 
 const toolsGroup=html.slice(html.indexOf("{label:'Công cụ'"),html.indexOf("{label:'Quản trị'"));
 assert(toolsGroup.includes("id:'export'")&&toolsGroup.includes("id:'manual-kpi'"), "Export and manual KPI must share Công cụ group");
 const adminGroup=html.slice(html.indexOf("{label:'Quản trị'"),html.indexOf("];",html.indexOf("{label:'Quản trị'")));
-assert(adminGroup.includes("id:'users'"), "Duyệt tài khoản must stay inside Quản trị nav group");
-assert(adminGroup.includes("label:'Duyệt tài khoản'"), "Duyệt tài khoản nav label missing");
+assert(adminGroup.includes("id:'users'"), "Quản lý tài khoản must stay inside Quản trị nav group");
+assert(adminGroup.includes("label:'Quản lý tài khoản'"), "Quản lý tài khoản nav label missing");
 assert(!html.includes('id="usersDockBtn"'), "Duplicate external Users dock must be removed");
 assert(!html.includes('id="usersQuickBtn"'), "Legacy internal Users quick button must stay removed");
+assert(html.includes("function toggleApprovedUserEditor(uid)"), "Approved-user editor toggle missing");
+assert(html.includes('data-user-edit="'), "Approved-user pencil/close action missing");
+assert(html.includes('data-user-editor="'), "Hidden approved-user editor missing");
+assert(html.includes("user-icon-btn"), "Compact approved-user icon buttons missing");
+assert(html.includes("Chọn Đồng ý để xóa. Chọn Hủy để giữ nguyên tài khoản."), "Explicit delete confirmation copy missing");
 assert(html.includes("async function saveUserAccess(uid)"), "Approved-user access editor missing");
 assert(html.includes("async function deleteUserAccount(uid)"), "User delete action missing");
 assert(html.includes("deleteDoc(doc(state.db,'users',uid))"), "Firestore user delete is missing");
