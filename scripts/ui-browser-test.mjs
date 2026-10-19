@@ -47,29 +47,33 @@ try {
   await page.click('#section-live [data-calendar-day="'+dates[0]+'"]');
   await page.click('#section-live [data-calendar-day="'+dates[1]+'"]');
   await page.click('#section-live [data-apply-range="live"]');
+  await page.click('#section-live [data-range-mode="30d"]');
 
   const desktopRow='#section-live .desktop-live-table tbody tr:nth-child(1)';
-  await page.select(desktopRow+' select[data-person="host"]','thao-my');
-  await page.select(desktopRow+' select[data-person="operator"]','hung-bg');
-  await page.click(desktopRow+' [data-save-session]');
+  const desktopId=await page.$eval(desktopSavedRow+' [data-save-session]',e=>e.dataset.saveSession);
+  await page.select(desktopSavedRow+' select[data-person="host"]','thao-my');
+  await page.select(desktopSavedRow+' select[data-person="operator"]','hung-bg');
+  await page.click(desktopSavedRow+' [data-save-session]');
   await sleep(150);
   await page.reload({waitUntil:"domcontentloaded"});
   await page.waitForSelector("#app:not(.hidden)",{timeout:30000});
   await page.click('[data-section="live"]');
-  assert(await page.$eval(desktopRow+' select[data-person="host"]',e=>e.value)==='thao-my',"Desktop Host did not persist after reload");
-  assert(await page.$eval(desktopRow+' select[data-person="operator"]',e=>e.value)==='hung-bg',"Desktop Operator did not persist after reload");
+  const desktopSavedRow='#section-live .desktop-live-table tbody tr:has([data-save-session="'+desktopId+'"])';
+  assert(await page.$eval(desktopSavedRow+' select[data-person="host"]',e=>e.value)==='thao-my',"Desktop Host did not persist after reload");
+  assert(await page.$eval(desktopSavedRow+' select[data-person="operator"]',e=>e.value)==='hung-bg',"Desktop Operator did not persist after reload");
 
-  await page.click(desktopRow+' [data-manual-kpi]');
-  assert(await page.$eval(desktopRow+' select[data-person="host"]',e=>e.value)==='',"Campaign/Mega did not clear desktop Host");
-  assert(await page.$eval(desktopRow+' select[data-person="operator"]',e=>e.value)==='',"Campaign/Mega did not clear desktop Operator");
-  assert(await page.$eval(desktopRow+' select[data-person="host"]',e=>e.disabled),"Campaign/Mega did not disable desktop Host");
-  await page.click(desktopRow+' [data-save-session]');
+  await page.click(desktopSavedRow+' [data-manual-kpi]');
+  assert(await page.$eval(desktopSavedRow+' select[data-person="host"]',e=>e.value)==='',"Campaign/Mega did not clear desktop Host");
+  assert(await page.$eval(desktopSavedRow+' select[data-person="operator"]',e=>e.value)==='',"Campaign/Mega did not clear desktop Operator");
+  assert(await page.$eval(desktopSavedRow+' select[data-person="host"]',e=>e.disabled),"Campaign/Mega did not disable desktop Host");
+  await page.click(desktopSavedRow+' [data-save-session]');
   await sleep(150);
   await page.reload({waitUntil:"domcontentloaded"});
   await page.waitForSelector("#app:not(.hidden)",{timeout:30000});
   await page.click('[data-section="live"]');
-  assert(await page.$eval(desktopRow+' [data-manual-kpi]',e=>e.checked),"Campaign/Mega flag did not persist");
-  assert(await page.$eval(desktopRow+' select[data-person="host"]',e=>e.value)==='',"Campaign/Mega Host was restored unexpectedly");
+  const desktopManualRow='#section-live .desktop-live-table tbody tr:has([data-save-session="'+desktopId+'"])';
+  assert(await page.$eval(desktopManualRow+' [data-manual-kpi]',e=>e.checked),"Campaign/Mega flag did not persist");
+  assert(await page.$eval(desktopManualRow+' select[data-person="host"]',e=>e.value)==='',"Campaign/Mega Host was restored unexpectedly");
 
   await page.click('[data-section="storage"]');
   await page.select('#retentionDays','120');
@@ -93,6 +97,7 @@ try {
   await page.click('#nav [data-section="live"]');
 
   const mobileCard='#section-live .mobile-live-card:nth-child(2)';
+  const mobileId=await page.$eval(mobileCard+' [data-save-session]',e=>e.dataset.saveSession);
   await page.select(mobileCard+' select[data-person="host"]','dung');
   await page.select(mobileCard+' select[data-person="operator"]','hung-hh');
   await page.click(mobileCard+' [data-save-session]');
@@ -101,13 +106,14 @@ try {
   await page.waitForSelector("#app:not(.hidden)",{timeout:30000});
   await page.click('#menuToggle');
   await page.click('#nav [data-section="live"]');
-  assert(await page.$eval(mobileCard+' select[data-person="host"]',e=>e.value)==='dung',"Mobile Host save read the wrong hidden desktop selector");
-  assert(await page.$eval(mobileCard+' select[data-person="operator"]',e=>e.value)==='hung-hh',"Mobile Operator save read the wrong hidden desktop selector");
+  const mobileSavedCard='#section-live .mobile-live-card:has([data-save-session="'+mobileId+'"])';
+  assert(await page.$eval(mobileSavedCard+' select[data-person="host"]',e=>e.value)==='dung',"Mobile Host save read the wrong hidden desktop selector");
+  assert(await page.$eval(mobileSavedCard+' select[data-person="operator"]',e=>e.value)==='hung-hh',"Mobile Operator save read the wrong hidden desktop selector");
 
-  await page.click(mobileCard+' [data-manual-kpi]');
-  assert(await page.$eval(mobileCard+' select[data-person="host"]',e=>e.value)==='',"Mobile Campaign/Mega did not clear Host");
-  assert(await page.$eval(mobileCard+' select[data-person="operator"]',e=>e.value)==='',"Mobile Campaign/Mega did not clear Operator");
-  await page.click(mobileCard+' [data-save-session]');
+  await page.click(mobileSavedCard+' [data-manual-kpi]');
+  assert(await page.$eval(mobileSavedCard+' select[data-person="host"]',e=>e.value)==='',"Mobile Campaign/Mega did not clear Host");
+  assert(await page.$eval(mobileSavedCard+' select[data-person="operator"]',e=>e.value)==='',"Mobile Campaign/Mega did not clear Operator");
+  await page.click(mobileSavedCard+' [data-save-session]');
   await sleep(100);
 
   await page.click('#section-live [data-range-mode="custom"]');
