@@ -2017,12 +2017,12 @@ tbody tr:hover td{background:#fcfafb}
       const p=n=>String(n).padStart(2,'0');
       const startDate=`${p(start.getDate())}/${p(start.getMonth()+1)}/${start.getFullYear()}`;
       const startTime=`${p(start.getHours())}:${p(start.getMinutes())}`;
-      if(!(end instanceof Date)||Number.isNaN(end.getTime()))return `${startDate} lúc ${startTime}`;
+      if(!(end instanceof Date)||Number.isNaN(end.getTime()))return `${startDate}  ${startTime}`;
       const endTime=`${p(end.getHours())}:${p(end.getMinutes())}`;
       const sameDay=start.getFullYear()===end.getFullYear()&&start.getMonth()===end.getMonth()&&start.getDate()===end.getDate();
-      if(sameDay)return `${startDate} lúc ${startTime}-${endTime}`;
+      if(sameDay)return `${startDate}  ${startTime}-${endTime}`;
       const endDate=`${p(end.getDate())}/${p(end.getMonth()+1)}/${end.getFullYear()}`;
-      return `${startDate} lúc ${startTime}-${endDate} ${endTime}`;
+      return `${startDate}  ${startTime}-${endDate} ${endTime}`;
     }
     function isManualKpi(s){ return s?.kpiMode==='manual'; }
 
