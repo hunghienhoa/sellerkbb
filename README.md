@@ -105,3 +105,13 @@ Không tạo project mới. Mỗi lần cập nhật:
 3. Commit lên `main`.
 4. Deploy bản mới từ lịch sử cũ.
 5. Xuất `.zip` snapshot tương ứng để lưu trữ.
+
+
+## v1.5.0 — Free-plan safe mode
+
+- Firestore free-plan strategy: no paid TTL deletion. SellerKBB reads only the configured retention window (maximum 180 days) and deletes expired LIVE documents in bounded batches.
+- Default safety limits: 180-day retention, 600 MB application soft limit, 12,000 LIVE-session soft limit, emergency cleanup at 85%.
+- Cloudflare KV maintenance runs once daily to minimize Free-plan operations.
+- TikTok access tokens are checked every 2 hours and proactively refreshed from the stored refresh token before expiry.
+- There is no disconnect action in the SellerKBB UI/API. Reauthorization is only needed if TikTok revokes authorization or the refresh token itself expires.
+- Source code and GitHub files are never part of automated cleanup.
