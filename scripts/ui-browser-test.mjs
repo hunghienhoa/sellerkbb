@@ -58,6 +58,12 @@ try {
   await page.click('#section-live [data-calendar-day="'+dates[0]+'"]');
   await page.click('#section-live [data-calendar-day="'+dates[1]+'"]');
   await page.click('#section-live [data-apply-range="live"]');
+  assert(await page.$('#section-live [data-date-calendar="live"]')===null,"Desktop calendar did not collapse after Apply");
+  assert(await page.$eval('#section-live [data-range-mode="custom"]',e=>e.classList.contains('active')),"Custom range should remain active after Apply");
+  await page.click('#section-live [data-range-mode="custom"]');
+  await page.waitForSelector('#section-live [data-date-calendar="live"] [data-calendar-day]');
+  await page.click('#section-live [data-apply-range="live"]');
+  assert(await page.$('#section-live [data-date-calendar="live"]')===null,"Desktop calendar did not collapse after reopening and applying");
   await page.click('#section-live [data-range-mode="30d"]');
 
   const desktopRow='#section-live .desktop-live-table tbody tr:nth-child(1)';
@@ -142,7 +148,9 @@ try {
 
   await page.click('#section-live [data-range-mode="custom"]');
   await page.waitForSelector('#section-live [data-date-calendar="live"] [data-calendar-day]');
-  assert((await page.$$eval('#section-live [data-calendar-day]',els=>els.length))>=28,"Mobile calendar grid missing");
+  assert((await page.$eval('#section-live [data-calendar-day]',els=>els.length))>=28,"Mobile calendar grid missing");
+  await page.click('#section-live [data-apply-range="live"]');
+  assert(await page.$('#section-live [data-date-calendar="live"]')===null,"Mobile calendar did not collapse after Apply");
 
   console.log("Desktop + mobile browser smoke tests passed");
 } finally {
