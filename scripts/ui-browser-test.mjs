@@ -170,9 +170,9 @@ try {
   assert(!(await page.$eval('[data-approved-uid="thao-my"][data-approved-perm="kpi.read"]',e=>e.checked)),"Approved user KPI permission did not update");
 
   page.once('dialog',dialog=>dialog.accept());
-  await page.click('[data-user-delete="dung"]');
+  await page.click('[data-user-delete="tam"]');
   await sleep(100);
-  assert(await page.$('[data-approved-user="dung"]')===null,"Deleted user remains visible");
+  assert(await page.$('[data-approved-user="tam"]')===null,"Deleted user remains visible");
 
   await page.select('[data-role="pending-01"]','operator');
   await page.click('[data-approve="pending-01"]');
@@ -183,7 +183,7 @@ try {
   assert(await page.$eval('#retentionDays',e=>e.value)==='120',"Storage settings did not persist in Preview");
   await page.click('#nav [data-section="users"]');
   assert(await page.$('[data-role="pending-01"]')===null,"Approved Preview user returned to pending after reload");
-  assert(await page.$('[data-approved-user="dung"]')===null,"Deleted Preview user returned after reload");
+  assert(await page.$('[data-approved-user="tam"]')===null,"Deleted Preview user returned after reload");
   assert(await page.$eval('[data-approved-role="thao-my"]',e=>e.value)==='operator',"Updated Preview role did not persist after reload");
   assert(!(await page.$eval('[data-approved-uid="thao-my"][data-approved-perm="kpi.read"]',e=>e.checked)),"Updated Preview permission did not persist after reload");
 
