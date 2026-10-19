@@ -2071,6 +2071,7 @@ tbody tr:hover td{background:#fcfafb}
       if(!scopeEl){ showToast('Không xác định được phiên LIVE cần lưu'); return; }
       const h=scopeEl.querySelector('[data-person="host"]'), o=scopeEl.querySelector('[data-person="operator"]');
       const manual=scopeEl.querySelector('[data-manual-kpi]')?.checked===true;
+      window.__sellerKbbSaveDebug={id,container:scopeEl.className,host:h?.value||'',operator:o?.value||'',manual};
       const host=manual?null:state.users.find(u=>u.id===h?.value), op=manual?null:state.users.find(u=>u.id===o?.value);
       const payload={
         kpiMode:manual?'manual':'auto',
