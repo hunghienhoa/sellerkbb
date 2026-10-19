@@ -17,6 +17,16 @@
 
 ---
 
+## 🆕 Cập nhật mới nhất — v1.14.0
+
+- **KPI thủ công** là tab riêng trong nhóm **Công cụ**, đặt cùng nhóm với **Xuất file**.
+- **KPI nhân sự** chỉ dùng để tổng hợp KPI tự động + KPI thủ công đã lưu.
+- **Tài khoản/Users** được đưa ra khỏi nhóm Quản trị. Admin mở nhanh bằng nút riêng nằm bên phải, cùng hàng với khối avatar/tên tài khoản ở cuối sidebar.
+- Release từ bản này ghi rõ **Tính năng/cập nhật trong bản này** để dễ nhận biết mỗi phiên bản đã thay đổi gì.
+- Mỗi khi thêm/sửa tính năng, README cũng phải được cập nhật trong cùng phiên bản.
+
+---
+
 ## 👋 README này dành cho ai?
 
 README này được viết để **người không phải dân IT vẫn có thể quản lý SellerKBB**.
@@ -52,7 +62,7 @@ Bạn không cần hiểu hết code. Chỉ cần nhớ 4 nơi chính:
 - Lưu dữ liệu tối đa **180 ngày (6 tháng)** theo cấu hình.
 - Có trang **Lưu trữ & tự dọn** theo dõi GitHub / Firebase / Cloudflare.
 - Hỗ trợ PC và điện thoại.
-- Giao diện **tím pastel**, sidebar chia rõ **Báo cáo / Công cụ / Quản trị**.
+- Giao diện **tím pastel**, sidebar chia rõ **Báo cáo / Công cụ / Quản trị**; KPI thủ công nằm ở **Công cụ**, còn quản lý Tài khoản có nút riêng cạnh hồ sơ đăng nhập.
 
 ---
 
