@@ -37,6 +37,8 @@ try {
   await page.waitForSelector("#app:not(.hidden)",{timeout:30000});
 
   await page.click('[data-section="live"]');
+  assert(await page.$eval('#section-live .desktop-live-table thead',e=>e.textContent.includes('Thời gian phiên LIVE')),"Desktop LIVE time header missing");
+  assert(await page.$eval('#section-live .desktop-live-table tbody tr:first-child .live-time-cell',e=>e.textContent.includes('Bắt đầu')&&e.textContent.includes('Kết thúc')),"Desktop start/end time not rendered");
   await page.click('#section-live [data-range-mode="custom"]');
   await page.waitForSelector('#section-live [data-date-calendar="live"] [data-calendar-day]');
   assert(await page.$('#section-live input[placeholder="DD/MM/YYYY"]') === null,"Manual date field still exists on desktop");
@@ -101,6 +103,7 @@ try {
   await sleep(320);
 
   const mobileCard='#section-live .mobile-live-card:nth-child(2)';
+  assert(await page.$eval(mobileCard+' .mobile-live-time',e=>e.textContent.includes('Bắt đầu')&&e.textContent.includes('Kết thúc')),"Mobile start/end time not rendered");
   const mobileId=await page.$eval(mobileCard+' [data-save-session]',e=>e.dataset.saveSession);
   await page.select(mobileCard+' select[data-person="host"]','dung');
   await page.select(mobileCard+' select[data-person="operator"]','hung-hh');
