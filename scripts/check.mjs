@@ -52,4 +52,13 @@ assert(html.includes("fmtLiveTimeRange(s)"), "Compact LIVE time range formatter 
 assert(html.includes('live-time-cell"><b>${fmtLiveTimeRange(s)}</b>'), "Desktop compact LIVE time missing");
 assert(worker.includes('"/api/tiktok/autosync/status"'), "Auto-sync status endpoint missing");
 assert(worker.includes('"/api/tiktok/autosync/sessions"'), "Auto-sync sessions endpoint missing");
+assert(html.includes("function storageQuotaCard"), "Storage quota card renderer missing");
+assert(html.includes("provider:'GitHub'"), "GitHub storage card missing");
+assert(html.includes("provider:'Firebase'"), "Firebase storage card missing");
+assert(html.includes("provider:'Cloudflare'"), "Cloudflare storage card missing");
+assert(html.includes("storage-progress"), "Storage progress bar missing");
+assert(worker.includes("async function measureKvStorage"), "Cloudflare KV byte measurement missing");
+assert(worker.includes("async function getGithubRepoStorage"), "GitHub repository storage lookup missing");
+assert(worker.includes("storageLimitBytes: 1073741824"), "Firebase 1 GiB storage limit missing");
+assert(worker.includes("storageLimitBytes: 1000000000"), "Cloudflare 1 GB storage limit missing");
 console.log("Project structure, syntax, persistence selectors, calendar, and auto-sync checks OK");
