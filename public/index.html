@@ -1793,6 +1793,30 @@ tbody tr:hover td{background:#fbf9fe}
   .manual-kpi-actions .btn{width:100%}
 }
 
+
+/* v1.14 navigation placement refinements */
+.side-account-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:7px;align-items:stretch}
+.side-account-row .account-trigger{min-width:0}
+.users-quick-btn{
+  width:42px;min-width:42px;
+  display:grid;place-items:center;
+  padding:7px 5px;
+  border:1px solid var(--line);
+  border-radius:9px;
+  background:#fff;
+  color:#765aa0;
+  cursor:pointer;
+}
+.users-quick-btn:hover{background:#f2edf9;border-color:#d5c9e7}
+@media(max-width:1100px) and (min-width:701px){
+  .side-account-row{grid-template-columns:1fr}
+  .users-quick-btn{width:100%;min-width:0}
+}
+@media(max-width:700px){
+  .side-account-row{grid-template-columns:minmax(0,1fr) auto}
+  .users-quick-btn{width:42px;min-width:42px}
+}
+
 </style>
 </head>
 <body>
@@ -1803,11 +1827,16 @@ tbody tr:hover td{background:#fbf9fe}
       <div class="side-brand"><div class="brand brand-lockup"><span class="brand-seller">Seller</span><b>KBB</b><span class="brand-live">LIVE</span></div></div>
       <nav class="nav" id="nav"></nav>
       <div class="side-bottom">
-        <button id="userMenuBtn" class="userbox account-trigger row" type="button" aria-expanded="false" aria-controls="accountPopover">
-          <img id="userAvatar" class="avatar" alt="Ảnh đại diện Google">
-          <div class="usertext"><div id="userName"></div><div id="userRole" class="tiny"></div></div>
-          <span class="account-chevron" aria-hidden="true">⌃</span>
-        </button>
+        <div class="side-account-row">
+          <button id="userMenuBtn" class="userbox account-trigger row" type="button" aria-expanded="false" aria-controls="accountPopover">
+            <img id="userAvatar" class="avatar" alt="Ảnh đại diện Google">
+            <div class="usertext"><div id="userName"></div><div id="userRole" class="tiny"></div></div>
+            <span class="account-chevron" aria-hidden="true">⌃</span>
+          </button>
+          <button id="usersQuickBtn" class="users-quick-btn hidden" type="button" aria-label="Quản lý tài khoản" title="Tài khoản">
+            <svg class="ui-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          </button>
+        </div>
         <div id="accountPopover" class="account-popover hidden" role="dialog" aria-label="Thông tin tài khoản"></div>
       </div>
     </aside>
@@ -2356,6 +2385,11 @@ tbody tr:hover td{background:#fbf9fe}
       $('#userRole').textContent=roleLabel(state.profile.role);
       renderAccountPopover();
       $('#userMenuBtn').onclick=e=>{ e.stopPropagation(); setAccountMenu($('#accountPopover').classList.contains('hidden')); };
+      const usersQuick=$('#usersQuickBtn');
+      if(usersQuick){
+        usersQuick.classList.toggle('hidden',!isAdmin());
+        usersQuick.onclick=e=>{ e.stopPropagation(); switchSection('users'); };
+      }
       $('#syncBadge').textContent=`v${state.config.version||'1.0.0'}`;
     }
 
@@ -2433,14 +2467,13 @@ tbody tr:hover td{background:#fbf9fe}
         {label:'Báo cáo',items:[
           {id:'dashboard',icon:'home',label:'Tổng quan',show:true},
           {id:'live',icon:'live',label:'Phiên LIVE',show:can('live.read')},
-          {id:'kpi',icon:'kpi',label:'KPI nhân sự',show:can('kpi.read')},
-          {id:'manual-kpi',icon:'settings',label:'KPI thủ công',show:isAdmin()}
+          {id:'kpi',icon:'kpi',label:'KPI nhân sự',show:can('kpi.read')}
         ]},
         {label:'Công cụ',items:[
-          {id:'export',icon:'export',label:'Xuất file',show:can('live.read')||can('kpi.read')}
+          {id:'export',icon:'export',label:'Xuất file',show:can('live.read')||can('kpi.read')},
+          {id:'manual-kpi',icon:'settings',label:'KPI thủ công',show:isAdmin()}
         ]},
         {label:'Quản trị',items:[
-          {id:'users',icon:'users',label:'Tài khoản',show:isAdmin()},
           {id:'tiktok',icon:'plug',label:'TikTok / API',show:isAdmin()},
           {id:'storage',icon:'database',label:'Lưu trữ',show:isAdmin()}
         ]}
