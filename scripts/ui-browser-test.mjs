@@ -37,8 +37,12 @@ try {
   await page.waitForSelector("#app:not(.hidden)",{timeout:30000});
 
   assert((await page.$eval('#userAvatar',e=>e.getAttribute('src')||'')).length>0,"Sidebar Google avatar is missing");
-  const navGroups=await page.$$eval('#nav .nav-group-title',els=>els.map(e=>e.textContent.trim()));
+  const navGroups=await page.$eval('#nav .nav-group-title',els=>els.map(e=>e.textContent.trim()));
   assert(navGroups.join('|')==='Báo cáo|Công cụ|Quản trị',"Sidebar groups are not ordered correctly");
+  const toolItems=await page.$eval('#nav .nav-group:nth-child(2) [data-section]',els=>els.map(e=>e.dataset.section));
+  assert(toolItems.join('|')==='export|manual-kpi',"Công cụ must contain Xuất file then KPI thủ công");
+  assert(await page.$('#nav [data-section="users"]')===null,"Users must not remain inside sidebar navigation groups");
+  assert(!(await page.$eval('#usersQuickBtn',e=>e.classList.contains('hidden'))),"Admin Users quick button is hidden");
   assert(await page.$eval('.side-brand .brand-lockup',e=>e.textContent.replace(/\s+/g,'').includes('SellerKBBLIVE')),"SellerKBB LIVE brand lockup is incorrect");
   assert(await page.$eval('html',e=>getComputedStyle(e).getPropertyValue('--accent').trim())==='#a88bd7',"Pastel purple theme accent is not active");
   await page.click('#userMenuBtn');
@@ -147,7 +151,7 @@ try {
   await page.select('#retentionDays','120');
   await page.click('#saveMaintenance');
   await sleep(100);
-  await page.click('[data-section="users"]');
+  await page.click('#usersQuickBtn');
   assert((await page.$$eval('#section-users .user-list-avatar',els=>els.length))>=6,"User account avatars are missing from the Users page");
   const approvedRoles=await page.$$eval('#section-users .approved-user-row .tag',els=>els.map(e=>e.textContent.trim()));
   const roleRank={'Quản trị viên':0,'Nhân viên vận hành livestream':1,'Host Livestream':2};
@@ -160,7 +164,7 @@ try {
   await page.waitForSelector("#app:not(.hidden)",{timeout:30000});
   await page.click('[data-section="storage"]');
   assert(await page.$eval('#retentionDays',e=>e.value)==='120',"Storage settings did not persist in Preview");
-  await page.click('[data-section="users"]');
+  await page.click('#usersQuickBtn');
   assert(await page.$('[data-role="pending-01"]')===null,"Approved Preview user returned to pending after reload");
 
   await page.setViewport({width:390,height:844,deviceScaleFactor:1});
@@ -169,9 +173,11 @@ try {
   await page.click('#menuToggle');
   await page.waitForFunction(()=>document.querySelector('#sidebar')?.classList.contains('open'));
   await sleep(300);
-  const mobileNavGroups=await page.$$eval('#nav .nav-group-title',els=>els.map(e=>e.textContent.trim()));
+  const mobileNavGroups=await page.$eval('#nav .nav-group-title',els=>els.map(e=>e.textContent.trim()));
   assert(mobileNavGroups.join('|')==='Báo cáo|Công cụ|Quản trị',"Mobile sidebar groups are missing");
   assert(await page.$('#nav [data-section="manual-kpi"]')!==null,"Mobile KPI thủ công tab missing");
+  assert(await page.$('#nav [data-section="users"]')===null,"Mobile Users must be outside grouped navigation");
+  assert(!(await page.$eval('#usersQuickBtn',e=>e.classList.contains('hidden'))),"Mobile Admin Users quick button is hidden");
   await page.click('#userMenuBtn');
   assert(!(await page.$eval('#accountPopover',e=>e.classList.contains('hidden'))),"Mobile account popover did not open");
   assert(await page.$('#accountLogoutBtn')!==null,"Mobile account logout button missing");
