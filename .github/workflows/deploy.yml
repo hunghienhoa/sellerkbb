@@ -110,24 +110,40 @@ jobs:
         run: |
           git archive --format=zip --output="sellerkbb-v${VERSION}-src.zip" HEAD
 
-      - name: Write friendly release notes
+      - name: Write release notes with changes
         env:
+          GH_TOKEN: ${{ github.token }}
           VERSION: ${{ steps.version.outputs.version }}
+          TAG: ${{ steps.version.outputs.tag }}
+        shell: bash
         run: |
-          cat > release-notes.md <<EOF
-          # SellerKBB v${VERSION}
-
-          Đây là bản backup mã nguồn tự động sau khi kiểm tra hoàn tất.
-
-          **Trong Release này có:**
-          - Source code đúng theo commit: `${GITHUB_SHA}`
-          - File `sellerkbb-v${VERSION}-src.zip` để tải về lưu hoặc khôi phục
-          - Source ZIP/TAR mặc định do GitHub tạo
-
-          **Lưu ý:** Release chỉ backup **mã nguồn/SRC**. Release không chứa dữ liệu Firestore, dữ liệu Cloudflare KV đang chạy, TikTok token, Firebase service account hoặc các secret.
-
-          **Khôi phục đơn giản:** vào Releases → chọn version cần quay lại → đưa link Release đó cho AI và yêu cầu `Khôi phục SellerKBB về đúng Release này, kiểm tra PC/mobile rồi deploy lại`.
-          EOF
+          set -euo pipefail
+          PREV_TAG="$(gh release list --limit 100 --json tagName --jq '.[].tagName' | grep -v "^$TAG$" | head -n 1 || true)"
+          if [ -n "$PREV_TAG" ]; then
+            RANGE="$PREV_TAG..HEAD"
+          else
+            RANGE="HEAD"
+          fi
+          mapfile -t CHANGES < <(git log "$RANGE" --pretty=format:%s | grep -E '^(feat|fix)(\([^)]*\))?:' || true)
+          {
+            printf '# SellerKBB v%s\n\n' "$VERSION"
+            printf '## ✨ Tính năng/cập nhật trong bản này\n\n'
+            if [ "${#CHANGES[@]}" -eq 0 ]; then
+              printf '%s\n' '- Cập nhật kỹ thuật và hoàn thiện độ ổn định của SellerKBB.'
+            else
+              for ITEM in "${CHANGES[@]}"; do
+                CLEAN="$(printf '%s' "$ITEM" | sed -E 's/^(feat|fix)(\([^)]*\))?:[[:space:]]*//')"
+                printf -- '- %s\n' "$CLEAN"
+              done
+            fi
+            printf '\n## 📦 Backup mã nguồn\n\n'
+            printf -- '- Source code đúng theo commit: %s\n' "$GITHUB_SHA"
+            printf -- '- File: sellerkbb-v%s-src.zip\n' "$VERSION"
+            printf -- '- Kèm Source ZIP/TAR mặc định do GitHub tạo.\n'
+            printf '\n## ⚠️ Lưu ý\n\n'
+            printf '%s\n' 'Release chỉ backup mã nguồn/SRC. Release không chứa dữ liệu Firestore, dữ liệu Cloudflare KV đang chạy, TikTok token, Firebase service account hoặc các secret.'
+            printf '\n%s\n' 'Muốn khôi phục: vào Releases → chọn version → đưa link Release đó cho AI và yêu cầu khôi phục SellerKBB về đúng Release, chạy test PC/mobile rồi deploy lại.'
+          } > release-notes.md
 
       - name: Create or refresh Release for this version
         env:
