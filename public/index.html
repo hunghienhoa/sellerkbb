@@ -1272,7 +1272,7 @@ tbody tr:hover td{background:#fcfafb}
 .storage-stat .metric-icon{width:36px;height:36px}
 
 .manual-session .manual-kpi-check{color:#8a6829}
-.manual-session select[data-person]{border-color:#ddc9d3;background:#fffdfd}
+.manual-session select[data-person]{border-color:#e6d9df;background:#f5f2f4;color:#9b9095;cursor:not-allowed}
 @media(max-width:700px){
   .action-toast{top:calc(env(safe-area-inset-top, 0px) + 10px);max-width:calc(100vw - 24px)}
 }
@@ -1292,7 +1292,7 @@ tbody tr:hover td{background:#fcfafb}
       <div class="side-bottom"><div class="userbox row"><img id="userAvatar" class="avatar" alt=""><div class="usertext" style="min-width:0"><div id="userName" style="font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis"></div><div id="userRole" class="tiny"></div></div></div></div>
     </aside>
     <main class="main">
-      <header class="topbar"><div class="topbar-title-wrap"><button id="menuToggle" class="menu-toggle" type="button" aria-label="Mở menu" aria-expanded="false">☰</button><div><h1 id="pageTitle" class="page-title">Tổng quan</h1><div id="pageSub" class="tiny"></div></div></div><div class="row"><span id="syncBadge" class="pill">v1.6.2</span><button id="logoutBtn" class="btn ghost small">Đăng xuất</button></div></header>
+      <header class="topbar"><div class="topbar-title-wrap"><button id="menuToggle" class="menu-toggle" type="button" aria-label="Mở menu" aria-expanded="false">☰</button><div><h1 id="pageTitle" class="page-title">Tổng quan</h1><div id="pageSub" class="tiny"></div></div></div><div class="row"><span id="syncBadge" class="pill">v1.6.3</span><button id="logoutBtn" class="btn ghost small">Đăng xuất</button></div></header>
       <div class="content">
         <section id="section-dashboard" class="section active"></section>
         <section id="section-live" class="section"></section>
@@ -1420,7 +1420,7 @@ tbody tr:hover td{background:#fcfafb}
 
     function previewTs(iso){ return {toDate:()=>new Date(iso)}; }
     function enterPreview(){
-      state.config={version:'1.6.2-preview',tiktokConfigured:true};
+      state.config={version:'1.6.3-preview',tiktokConfigured:true};
       state.user={uid:'preview-admin',email:'admin@sellerkbb.demo',displayName:'Quản trị viên Demo',photoURL:''};
       state.profile={role:'admin',status:'approved',displayName:'Quản trị viên Demo',permissions:['live.read','kpi.read']};
       state.maintenance={settings:{retentionDays:180,autoCleanup:true,emergencyPercent:85,firestoreSoftLimitMb:600,firestoreMaxSessions:12000,kvSoftKeyLimit:5000},cloudflare:{keyCount:4,lastRun:{ranAt:new Date().toISOString(),deleted:0}},firebase:{freePlanMode:true,ttlEnabled:false,ttlRecommended:false}};
@@ -1442,13 +1442,11 @@ tbody tr:hover td{background:#fcfafb}
         ['LIVE-202610-005','Brand Day - Prime Time','sellerkbb_official','743820194','2026-10-15T12:30:00+07:00',16200,312400000,2018,294860000,'dung','Dung','hung-hh','Hùng Hiền Hòa'],
         ['LIVE-202610-006','Live chốt đơn cuối ngày','sellerkbb_beauty','881003522','2026-10-18T13:00:00+07:00',9000,128600000,802,121970000,'tam','Tâm','hung-bg','Hùng Bắc Giang']
       ];
-      state.sessions=base.map(x=>({id:x[0],liveId:x[0],title:x[1],channelUsername:x[2],channelId:x[3],startTime:previewTs(x[4]),durationSeconds:x[5],recordedGmvAmount:x[6],recordedItemsSold:x[7],currentItemsSold:x[7],currentGmvAmount:x[8],finalGmvAmount:x[8],currency:'VND',hostUid:x[9],hostName:x[10],operatorUid:x[11],operatorName:x[12]}));
+      state.sessions=base.map(x=>({id:x[0],liveId:x[0],title:x[1],channelUsername:x[2],channelId:x[3],startTime:previewTs(x[4]),durationSeconds:x[5],recordedGmvAmount:x[6],recordedItemsSold:x[7],currentItemsSold:x[7],currentGmvAmount:x[8],finalGmvAmount:x[8],currency:'VND',hostUid:'',hostName:'',operatorUid:'',operatorName:''}));
       for(let i=7;i<=34;i++){
         const d=String(((i-1)%19)+1).padStart(2,'0');
-        const host=i%3===0?['tam','Tâm']:i%2===0?['dung','Dung']:['thao-my','Thảo My'];
-        const op=i%2===0?['hung-hh','Hùng Hiền Hòa']:['hung-bg','Hùng Bắc Giang'];
         const gmv=72000000+i*4200000, final=Math.round(gmv*(.91+(i%5)*.01)), items=420+i*37;
-        state.sessions.push({id:`LIVE-202610-${String(i).padStart(3,'0')}`,liveId:`LIVE-202610-${String(i).padStart(3,'0')}`,title:`Phiên LIVE mẫu #${i}`,channelUsername:i%2?'sellerkbb_official':'sellerkbb_beauty',channelId:i%2?'743820194':'881003522',startTime:previewTs(`2026-10-${d}T12:30:00+07:00`),durationSeconds:7200+(i%4)*1800,recordedGmvAmount:gmv,recordedItemsSold:items,currentItemsSold:items,currentGmvAmount:final,finalGmvAmount:final,currency:'VND',hostUid:host[0],hostName:host[1],operatorUid:op[0],operatorName:op[1]});
+        state.sessions.push({id:`LIVE-202610-${String(i).padStart(3,'0')}`,liveId:`LIVE-202610-${String(i).padStart(3,'0')}`,title:`Phiên LIVE mẫu #${i}`,channelUsername:i%2?'sellerkbb_official':'sellerkbb_beauty',channelId:i%2?'743820194':'881003522',startTime:previewTs(`2026-10-${d}T12:30:00+07:00`),durationSeconds:7200+(i%4)*1800,recordedGmvAmount:gmv,recordedItemsSold:items,currentItemsSold:items,currentGmvAmount:final,finalGmvAmount:final,currency:'VND',hostUid:'',hostName:'',operatorUid:'',operatorName:''});
       }
       showApp(); bindShell(); renderAll(); startAutoSyncWatcher();
       const bar=document.createElement('div');
@@ -1677,6 +1675,11 @@ tbody tr:hover td{background:#fcfafb}
             currentGmvAmount:amount,
             finalGmvAmount:amount,
             currentItemsSold:Number(src.itemsSold||0),
+            hostUid:old.hostUid||'',
+            hostName:old.hostName||'',
+            operatorUid:old.operatorUid||'',
+            operatorName:old.operatorName||'',
+            kpiMode:old.kpiMode||'auto',
             source:'tiktok-auto'
           });
         }
@@ -1812,14 +1815,17 @@ tbody tr:hover td{background:#fcfafb}
       if(isAdmin()){
         document.querySelectorAll('[data-save-session]').forEach(b=>b.onclick=()=>saveAssignment(b.dataset.saveSession));
         document.querySelectorAll('[data-manual-kpi]').forEach(c=>{
-          c.onchange=()=>{
+          const apply=()=>{
             const id=c.dataset.manualKpi;
             const row=c.closest('tr,.mobile-live-card');
             row?.classList.toggle('manual-session',c.checked);
-            // Manual KPI only changes KPI calculation mode.
-            // Host/Operator selections stay editable and are saved normally.
+            document.querySelectorAll(`[data-person][data-id="${CSS.escape(id)}"]`).forEach(sel=>{
+              if(c.checked) sel.value='';
+              sel.disabled=c.checked;
+            });
           };
-          c.onchange();
+          c.onchange=apply;
+          apply();
         });
       }
     }
@@ -1827,16 +1833,16 @@ tbody tr:hover td{background:#fcfafb}
     async function saveAssignment(id){
       const h=document.querySelector(`[data-person="host"][data-id="${CSS.escape(id)}"]`), o=document.querySelector(`[data-person="operator"][data-id="${CSS.escape(id)}"]`);
       const manual=document.querySelector(`[data-manual-kpi="${CSS.escape(id)}"]`)?.checked===true;
-      const host=state.users.find(u=>u.id===h?.value), op=state.users.find(u=>u.id===o?.value);
+      const host=manual?null:state.users.find(u=>u.id===h?.value), op=manual?null:state.users.find(u=>u.id===o?.value);
       const payload={
         kpiMode:manual?'manual':'auto',
-        hostUid:h?.value||'', hostName:host?.displayName||host?.email||'',
-        operatorUid:o?.value||'', operatorName:op?.displayName||op?.email||''
+        hostUid:manual?'':(h?.value||''), hostName:manual?'':(host?.displayName||host?.email||''),
+        operatorUid:manual?'':(o?.value||''), operatorName:manual?'':(op?.displayName||op?.email||'')
       };
       if(PREVIEW){
         const item=state.sessions.find(x=>x.id===id);
         Object.assign(item,payload);
-        showToast(manual?'Đã lưu phiên thủ công và nhân sự':'Đã lưu nhân sự cho phiên LIVE');
+        showToast(manual?'Đã lưu phiên thủ công · Host/Vận hành để trống':'Đã lưu nhân sự cho phiên LIVE');
         renderAll(); return;
       }
       const item=state.sessions.find(x=>x.id===id);
@@ -1855,7 +1861,7 @@ tbody tr:hover td{background:#fcfafb}
         updatedAt:serverTimestamp()
       };
       await setDoc(doc(state.db,'liveSessions',id),persist,{merge:true});
-      showToast(manual?'Đã lưu phiên thủ công và nhân sự':'Đã lưu nhân sự cho phiên LIVE');
+      showToast(manual?'Đã lưu phiên thủ công · Host/Vận hành để trống':'Đã lưu nhân sự cho phiên LIVE');
       await loadData(); renderAll();
     }
 
