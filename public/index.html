@@ -470,6 +470,40 @@
       .content{max-width:1480px}
     }
 
+
+    /* v1.1.8 mobile bottom navigation safe area */
+    @media(max-width:700px){
+      #app{
+        padding-bottom:calc(96px + env(safe-area-inset-bottom))
+      }
+      .sidebar{
+        bottom:calc(10px + env(safe-area-inset-bottom));
+        left:10px;
+        right:10px;
+        width:auto;
+        border:1px solid var(--line);
+        border-radius:18px;
+        padding:8px 8px 9px;
+        box-shadow:0 -4px 24px rgba(156,91,124,.10),0 10px 30px rgba(156,91,124,.14);
+      }
+      .nav button{
+        min-height:52px;
+        padding:7px 4px 8px;
+      }
+      .nav-icon{
+        font-size:17px;
+        height:20px;
+      }
+    }
+    @media(max-width:390px){
+      .sidebar{
+        bottom:calc(8px + env(safe-area-inset-bottom));
+        left:8px;
+        right:8px;
+      }
+      .nav button{min-height:50px}
+    }
+
   </style>
 </head>
 <body>
@@ -481,7 +515,7 @@
       <div class="side-bottom"><div class="userbox row"><img id="userAvatar" class="avatar" alt=""><div class="usertext" style="min-width:0"><div id="userName" style="font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis"></div><div id="userRole" class="tiny"></div></div></div></div>
     </aside>
     <main class="main">
-      <header class="topbar"><div><h1 id="pageTitle" class="page-title">Tổng quan</h1><div id="pageSub" class="tiny"></div></div><div class="row"><span id="syncBadge" class="pill">v1.1.7</span><button id="logoutBtn" class="btn ghost small">Đăng xuất</button></div></header>
+      <header class="topbar"><div><h1 id="pageTitle" class="page-title">Tổng quan</h1><div id="pageSub" class="tiny"></div></div><div class="row"><span id="syncBadge" class="pill">v1.1.8</span><button id="logoutBtn" class="btn ghost small">Đăng xuất</button></div></header>
       <div class="content">
         <section id="section-dashboard" class="section active"></section>
         <section id="section-live" class="section"></section>
@@ -546,7 +580,7 @@
 
     function previewTs(iso){ return {toDate:()=>new Date(iso)}; }
     function enterPreview(){
-      state.config={version:'1.1.7-preview',tiktokConfigured:true};
+      state.config={version:'1.1.8-preview',tiktokConfigured:true};
       state.user={uid:'preview-admin',email:'admin@sellerkbb.demo',displayName:'Quản trị viên Demo',photoURL:''};
       state.profile={role:'admin',status:'approved',displayName:'Quản trị viên Demo',permissions:['live.read','kpi.read']};
       state.users=[
