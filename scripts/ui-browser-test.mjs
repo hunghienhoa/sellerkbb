@@ -106,6 +106,27 @@ try {
   assert(await page.$eval(desktopManualRow+' [data-manual-kpi]',e=>e.checked),"Campaign/Mega flag did not persist");
   assert(await page.$eval(desktopManualRow+' select[data-person="host"]',e=>e.value)==='',"Campaign/Mega Host was restored unexpectedly");
 
+  await page.click('[data-section="kpi"]');
+  await page.click('#section-kpi [data-range-mode="30d"]');
+  assert((await page.$('#section-kpi [data-manual-session]')).length>=1,"Manual KPI session section missing");
+  const manualCard='#section-kpi [data-manual-session]:first-of-type';
+  assert(await page.$eval(manualCard,e=>e.textContent.includes('không tự chia GMV tổng')),"Manual KPI no-equal-split notice missing");
+  await page.select(manualCard+' [data-manual-person]','thao-my');
+  await page.select(manualCard+' [data-manual-role]','host');
+  await page.$eval(manualCard+' [data-manual-gmv]',e=>{e.value='1234000';e.dispatchEvent(new Event('input',{bubbles:true}));});
+  await page.$eval(manualCard+' [data-manual-kpi-amount]',e=>{e.value='4321';e.dispatchEvent(new Event('input',{bubbles:true}));});
+  await page.click(manualCard+' [data-manual-save]');
+  await sleep(150);
+  assert(await page.$eval('#section-kpi',e=>e.textContent.includes('4.321')),"Manual KPI amount was not added to KPI nhân sự");
+  assert(await page.$eval('#section-kpi',e=>e.textContent.includes('1.234.000')),"Manual personal GMV was not added to KPI nhân sự");
+
+  await page.reload({waitUntil:"domcontentloaded"});
+  await page.waitForSelector("#app:not(.hidden)",{timeout:30000});
+  await page.click('[data-section="kpi"]');
+  await page.click('#section-kpi [data-range-mode="30d"]');
+  assert(await page.$eval('#section-kpi [data-manual-session] [data-manual-kpi-amount]',e=>e.value)==='4321',"Manual KPI did not persist after reload");
+  assert(await page.$eval('#section-kpi [data-manual-session] [data-manual-gmv]',e=>e.value)==='1234000',"Manual personal GMV did not persist after reload");
+
   await page.click('[data-section="export"]');
   assert(await page.$eval('#section-export',e=>e.textContent.includes('BO_HO_SO_KPI_KHANGCHOU_'+new Date().getFullYear())),"Khangchou KPI dossier export item missing");
   await page.click('#exportKhangchouDossier');

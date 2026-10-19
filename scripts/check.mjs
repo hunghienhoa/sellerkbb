@@ -90,4 +90,14 @@ assert(html.includes("const roleOrder={admin:0,operator:1,host:2};"), "Approved-
 assert(html.includes("BO_HO_SO_KPI_KHANGCHOU_"), "Khangchou KPI dossier export placeholder missing");
 assert(html.includes("Tính năng đang được phát triển"), "Khangchou dossier development notice missing");
 assert(html.includes("chỉ lấy GMV sau hoàn/hủy + KPI cá nhân"), "Khangchou dossier personal-data rule missing");
-console.log("Project structure, syntax, persistence, calendar, storage, Google profiles, grouped lavender UI, KPI dossier placeholder, Release backup, README, and auto-sync checks OK");
+assert(html.includes("function normalizedManualKpiEntries"), "Manual KPI normalization missing");
+assert(html.includes("function buildKpiRows"), "Combined auto/manual KPI aggregation missing");
+assert(html.includes("Phiên KPI thủ công"), "Manual KPI section missing");
+assert(html.includes("GMV sau hoàn/hủy của cá nhân"), "Per-person manual GMV field missing");
+assert(html.includes("KPI thủ công của cá nhân"), "Per-person manual KPI field missing");
+assert(html.includes("Không bắt buộc đủ số người tham gia"), "Manual KPI optional-person rule missing");
+assert(html.includes("SellerKBB không tự chia GMV tổng phiên"), "No-equal-split rule missing");
+assert(html.includes("manualKpiEntries:Array.isArray"), "Preview manual KPI persistence missing");
+assert(html.includes("manualKpiEntries:entries"), "Firestore manual KPI persistence missing");
+assert(html.includes("manualKpi:0"), "Manual KPI aggregate field missing");
+console.log("Project structure, syntax, persistence, calendar, storage, Google profiles, grouped lavender UI, manual KPI allocation, KPI dossier placeholder, Release backup, README, and auto-sync checks OK");

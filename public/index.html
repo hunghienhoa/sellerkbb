@@ -1740,6 +1740,59 @@ tbody tr:hover td{background:#fbf9fe}
 .export-coming-soon .export-copy{display:grid;gap:3px}
 .export-coming-soon .export-copy .pill{width:max-content;margin-top:4px}
 
+
+/* v1.13 manual KPI allocations */
+.metrics-grid.metrics-4{grid-template-columns:repeat(4,minmax(0,1fr))}
+.manual-kpi-section-head{align-items:flex-start}
+.manual-kpi-session-list{display:grid;gap:12px;margin-top:12px}
+.manual-kpi-session{
+  padding:14px;
+  border:1px solid var(--line);
+  border-radius:10px;
+  background:linear-gradient(145deg,#fff 0,#faf8fe 100%);
+}
+.manual-kpi-session-head{display:flex;align-items:flex-start;justify-content:space-between;gap:14px}
+.manual-kpi-title-row{gap:8px;flex-wrap:wrap}
+.manual-kpi-session-head>div:first-child{min-width:0}
+.manual-kpi-total{display:grid;gap:2px;text-align:right;white-space:nowrap}
+.manual-kpi-total span{font-size:9.5px;color:var(--muted)}
+.manual-kpi-total b{color:#6f50a1;font-size:14px}
+.manual-kpi-rule{display:flex;align-items:flex-start;gap:7px;margin:10px 0;padding:9px 10px;border-left:3px solid #b69add;border-radius:4px;background:#f5f1fb;color:#6f6379;font-size:10.5px;line-height:1.45}
+.manual-kpi-rule .ui-icon{flex:0 0 auto;color:#8061b1;margin-top:1px}
+.manual-kpi-entries{display:grid;gap:7px}
+.manual-kpi-entry{
+  display:grid;
+  grid-template-columns:minmax(180px,1.2fr) minmax(170px,.9fr) minmax(170px,.9fr) minmax(170px,.9fr) 34px;
+  align-items:end;
+  gap:7px;
+  padding:9px;
+  border:1px solid #e8e1f1;
+  border-radius:8px;
+  background:#fff;
+}
+.manual-kpi-entry label{display:grid;gap:4px;min-width:0}
+.manual-kpi-entry label>span,.manual-kpi-entry.readonly>div>span{font-size:9.5px;color:var(--muted);font-weight:650}
+.manual-kpi-entry .input{width:100%;min-width:0}
+.manual-entry-remove{width:34px;height:36px;padding:0;font-size:18px}
+.manual-kpi-entry.readonly{grid-template-columns:minmax(180px,1.3fr) repeat(3,minmax(130px,1fr));align-items:center}
+.manual-kpi-entry.readonly>div{display:grid;gap:3px}
+.manual-kpi-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:10px}
+.manual-kpi-value{color:#7654a6!important;font-weight:750}
+@media(max-width:1050px){
+  .metrics-grid.metrics-4{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .manual-kpi-entry{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .manual-entry-remove{grid-column:2;justify-self:end}
+}
+@media(max-width:700px){
+  .metrics-grid.metrics-4{grid-template-columns:1fr 1fr}
+  .manual-kpi-section-head,.manual-kpi-session-head{display:grid;gap:9px}
+  .manual-kpi-total{text-align:left}
+  .manual-kpi-entry,.manual-kpi-entry.readonly{grid-template-columns:1fr}
+  .manual-entry-remove{grid-column:1;justify-self:end}
+  .manual-kpi-actions{display:grid;grid-template-columns:1fr}
+  .manual-kpi-actions .btn{width:100%}
+}
+
 </style>
 </head>
 <body>
@@ -1759,7 +1812,7 @@ tbody tr:hover td{background:#fbf9fe}
       </div>
     </aside>
     <main class="main">
-      <header class="topbar"><div class="topbar-title-wrap"><button id="menuToggle" class="menu-toggle" type="button" aria-label="Mở menu" aria-expanded="false">☰</button><div><h1 id="pageTitle" class="page-title">Tổng quan</h1><div id="pageSub" class="tiny"></div></div></div><div class="row"><span id="syncBadge" class="pill">v1.12.0</span></div></header>
+      <header class="topbar"><div class="topbar-title-wrap"><button id="menuToggle" class="menu-toggle" type="button" aria-label="Mở menu" aria-expanded="false">☰</button><div><h1 id="pageTitle" class="page-title">Tổng quan</h1><div id="pageSub" class="tiny"></div></div></div><div class="row"><span id="syncBadge" class="pill">v1.13.0</span></div></header>
       <div class="content">
         <section id="section-dashboard" class="section active"></section>
         <section id="section-live" class="section"></section>
@@ -2021,7 +2074,7 @@ tbody tr:hover td{background:#fbf9fe}
       if(!PREVIEW)return;
       const sessionEdits={};
       for(const x of state.sessions){
-        sessionEdits[x.id]={kpiMode:x.kpiMode||'auto',hostUid:x.hostUid||'',hostName:x.hostName||'',operatorUid:x.operatorUid||'',operatorName:x.operatorName||''};
+        sessionEdits[x.id]={kpiMode:x.kpiMode||'auto',hostUid:x.hostUid||'',hostName:x.hostName||'',operatorUid:x.operatorUid||'',operatorName:x.operatorName||'',manualKpiEntries:Array.isArray(x.manualKpiEntries)?x.manualKpiEntries:[]};
       }
       const users=state.users.map(u=>({id:u.id,role:u.role,status:u.status,permissions:u.permissions||[]}));
       localStorage.setItem(PREVIEW_STATE_KEY,JSON.stringify({sessionEdits,users,maintenance:state.maintenance.settings}));
@@ -2045,7 +2098,7 @@ tbody tr:hover td{background:#fbf9fe}
 
     function previewTs(iso){ return {toDate:()=>new Date(iso)}; }
     function enterPreview(){
-      state.config={version:'1.12.0-preview',tiktokConfigured:true};
+      state.config={version:'1.13.0-preview',tiktokConfigured:true};
       state.user={uid:'preview-admin',email:'admin@sellerkbb.demo',displayName:'Quản trị viên Demo',photoURL:avatarFallbackData('Quản trị viên Demo')};
       state.profile={role:'admin',status:'approved',displayName:'Quản trị viên Demo',photoURL:state.user.photoURL,permissions:['live.read','kpi.read']};
       state.maintenance={settings:{retentionDays:180,autoCleanup:true,emergencyPercent:85,firestoreSoftLimitMb:600,firestoreMaxSessions:12000,kvSoftKeyLimit:5000},github:{usedBytes:124000,limitBytes:10000000000,available:true},cloudflare:{keyCount:5,lastRun:{ranAt:new Date().toISOString(),deleted:0},usedBytes:428000,storageLimitBytes:1000000000,storageComplete:true},firebase:{freePlanMode:true,ttlEnabled:false,ttlRecommended:false,storageLimitBytes:1073741824}};
@@ -2592,26 +2645,78 @@ tbody tr:hover td{background:#fbf9fe}
     }
 
 
-    function kpiRowsForExport(){
+    function normalizedManualKpiEntries(session){
+      return (Array.isArray(session?.manualKpiEntries)?session.manualKpiEntries:[])
+        .map((entry,index)=>({
+          uid:String(entry?.uid||''),
+          name:String(entry?.name||''),
+          role:entry?.role==='operator'?'operator':'host',
+          gmv:Math.max(0,Number(entry?.gmv||0)),
+          kpi:Math.max(0,Number(entry?.kpi||0)),
+          currency:String(entry?.currency||session?.currency||'VND'),
+          index
+        }))
+        .filter(entry=>entry.uid||entry.name);
+    }
+
+    function buildKpiRows(){
       const map=new Map();
-      const add=(uid,name,role,rate,gmv,currency)=>{
-        if(!uid&&!name)return;
-        const key=(uid||name)+'|'+role;
-        const cur=map.get(key)||{name:name||'',role,rate,gmv:0,kpi:0,currency:currency||'VND'};
-        cur.gmv+=gmv; cur.kpi+=gmv*rate; map.set(key,cur);
+      const ensure=(uid,name,currency)=>{
+        const key=uid||name;
+        if(!key)return null;
+        let cur=map.get(key);
+        if(!cur){
+          cur={uid:uid||'',name:name||'',roles:new Set(),autoGmv:0,manualGmv:0,autoKpi:0,manualKpi:0,currency:currency||'VND'};
+          map.set(key,cur);
+        }
+        if(name&&!cur.name)cur.name=name;
+        if(currency)cur.currency=currency;
+        return cur;
       };
-      for(const item of sessionsForRange().filter(x=>!isManualKpi(x))){
-        const g=finalGmv(item);
-        add(item.hostUid,item.hostName,'host',.003,g,item.currency);
-        add(item.operatorUid,item.operatorName,'operator',.001,g,item.currency);
+      for(const session of sessionsForRange()){
+        if(isManualKpi(session)){
+          for(const entry of normalizedManualKpiEntries(session)){
+            const cur=ensure(entry.uid,entry.name,entry.currency||session.currency);
+            if(!cur)continue;
+            cur.roles.add(entry.role);
+            cur.manualGmv+=entry.gmv;
+            cur.manualKpi+=entry.kpi;
+          }
+          continue;
+        }
+        const g=finalGmv(session);
+        if(session.hostUid||session.hostName){
+          const cur=ensure(session.hostUid,session.hostName,session.currency);
+          if(cur){cur.roles.add('host');cur.autoGmv+=g;cur.autoKpi+=g*.003;}
+        }
+        if(session.operatorUid||session.operatorName){
+          const cur=ensure(session.operatorUid,session.operatorName,session.currency);
+          if(cur){cur.roles.add('operator');cur.autoGmv+=g;cur.autoKpi+=g*.001;}
+        }
       }
-      return [...map.values()].sort((a,b)=>b.kpi-a.kpi);
+      return [...map.values()].map(row=>({
+        ...row,
+        roles:[...row.roles],
+        gmv:row.autoGmv+row.manualGmv,
+        kpi:row.autoKpi+row.manualKpi
+      })).sort((a,b)=>b.kpi-a.kpi);
+    }
+
+    function kpiRoleSummary(row){
+      const roles=Array.isArray(row?.roles)?row.roles:[];
+      if(roles.length===1)return roleLabel(roles[0]);
+      if(roles.length>1)return 'Nhiều vai trò';
+      return 'KPI thủ công';
+    }
+
+    function kpiRowsForExport(){
+      return buildKpiRows();
     }
 
     function exportKpiCsv(){
       const rows=kpiRowsForExport();
-      const header=['name','role','gmv','rate_percent','kpi','currency'];
-      const lines=[header,...rows.map(x=>[x.name,roleLabel(x.role),x.gmv,(x.rate*100).toFixed(1),x.kpi,x.currency])];
+      const header=['name','role','gmv_auto','gmv_manual','gmv_total','kpi_auto','kpi_manual','kpi_total','currency'];
+      const lines=[header,...rows.map(x=>[x.name,kpiRoleSummary(x),x.autoGmv,x.manualGmv,x.gmv,x.autoKpi,x.manualKpi,x.kpi,x.currency])];
       const csv=lines.map(row=>row.map(v=>'"'+String(v??'').replaceAll('"','""')+'"').join(',')).join('\n');
       const blob=new Blob(['\ufeff'+csv],{type:'text/csv;charset=utf-8'});
       const a=document.createElement('a');
@@ -2643,19 +2748,152 @@ tbody tr:hover td{background:#fbf9fe}
       if($('#exportKhangchouDossier')) $('#exportKhangchouDossier').onclick=()=>showToast('Tính năng đang được phát triển');
     }
 
+    function manualKpiPeople(){
+      return state.users
+        .filter(u=>u.status==='approved'&&(u.role==='host'||u.role==='operator'))
+        .sort((a,b)=>String(a.displayName||a.email||'').localeCompare(String(b.displayName||b.email||''),'vi'));
+    }
+
+    function manualKpiPersonSelect(sessionId,index,value){
+      const people=manualKpiPeople();
+      return `<select class="input" data-manual-person data-session-id="${sessionId}" data-entry-index="${index}">
+        <option value="">— Chọn nhân viên —</option>
+        ${people.map(u=>`<option value="${u.id}" ${u.id===value?'selected':''}>${esc(u.displayName||u.email)}</option>`).join('')}
+      </select>`;
+    }
+
+    function manualKpiEntryRow(session,entry,index,editable){
+      const e=entry||{uid:'',role:'host',gmv:0,kpi:0};
+      if(!editable){
+        return `<div class="manual-kpi-entry readonly">
+          <div>${userIdentityHtml(userDisplayRecord(e.uid,e.name),true)}</div>
+          <div><span>Vai trò</span><b>${esc(roleLabel(e.role))}</b></div>
+          <div><span>GMV cá nhân sau hoàn/hủy</span><b>${fmtMoney(e.gmv,session.currency)}</b></div>
+          <div><span>KPI thủ công</span><b>${fmtMoney(e.kpi,session.currency)}</b></div>
+        </div>`;
+      }
+      return `<div class="manual-kpi-entry" data-manual-entry>
+        <label><span>Nhân viên</span>${manualKpiPersonSelect(session.id,index,e.uid)}</label>
+        <label><span>Vai trò</span><select class="input" data-manual-role>
+          <option value="host" ${e.role==='host'?'selected':''}>Host Livestream · 0,3%</option>
+          <option value="operator" ${e.role==='operator'?'selected':''}>Vận hành · 0,1%</option>
+        </select></label>
+        <label><span>GMV sau hoàn/hủy của cá nhân</span><input class="input" type="number" inputmode="decimal" min="0" step="1000" data-manual-gmv value="${Number(e.gmv||0)}"></label>
+        <label><span>KPI thủ công của cá nhân</span><input class="input" type="number" inputmode="decimal" min="0" step="1000" data-manual-kpi-amount value="${Number(e.kpi||0)}"></label>
+        <button class="btn small danger manual-entry-remove" type="button" data-manual-remove aria-label="Xóa người này">×</button>
+      </div>`;
+    }
+
+    function manualKpiSessionCard(session,editable){
+      const saved=normalizedManualKpiEntries(session);
+      const entries=saved.length?saved:[{uid:'',name:'',role:'host',gmv:0,kpi:0,currency:session.currency||'VND'}];
+      const totalManual=entries.reduce((sum,e)=>sum+Number(e.kpi||0),0);
+      const status=saved.length?'Đã nhập '+saved.length+' người':'Chưa nhập';
+      return `<div class="manual-kpi-session" data-manual-session="${session.id}">
+        <div class="manual-kpi-session-head">
+          <div>
+            <div class="row manual-kpi-title-row"><b>${esc(session.title||'Phiên LIVE')}</b><span class="pill warn">${status}</span></div>
+            <div class="tiny">@${esc(session.channelUsername||'—')} · ${fmtLiveTimeRange(session)} · GMV phiên: ${fmtMoney(finalGmv(session),session.currency)}</div>
+          </div>
+          <div class="manual-kpi-total"><span>KPI thủ công đã nhập</span><b>${fmtMoney(totalManual,session.currency)}</b></div>
+        </div>
+        <div class="manual-kpi-rule">${icon('shield',15)} <span>Chỉ nhập số liệu của người cần tính KPI. Không bắt buộc đủ số người tham gia và SellerKBB không tự chia GMV tổng phiên.</span></div>
+        <div class="manual-kpi-entries">${entries.map((entry,index)=>manualKpiEntryRow(session,entry,index,editable)).join('')}</div>
+        ${editable?`<div class="manual-kpi-actions"><button class="btn" type="button" data-manual-add>${icon('users',15)} Thêm người</button><button class="btn primary" type="button" data-manual-save>${icon('check',15)} Lưu KPI thủ công</button></div>`:''}
+      </div>`;
+    }
+
+    function collectManualKpiEntries(card,session){
+      const rows=[...card.querySelectorAll('[data-manual-entry]')];
+      const entries=[];
+      for(const row of rows){
+        const uid=row.querySelector('[data-manual-person]')?.value||'';
+        const role=row.querySelector('[data-manual-role]')?.value==='operator'?'operator':'host';
+        const gmv=Math.max(0,Number(row.querySelector('[data-manual-gmv]')?.value||0));
+        const kpi=Math.max(0,Number(row.querySelector('[data-manual-kpi-amount]')?.value||0));
+        if(!uid){
+          if(gmv||kpi)throw new Error('Hãy chọn nhân viên cho dòng KPI đã nhập.');
+          continue;
+        }
+        const person=state.users.find(u=>u.id===uid);
+        if(!person)throw new Error('Không tìm thấy tài khoản nhân viên đã chọn.');
+        entries.push({uid,name:person.displayName||person.email||'',role,gmv,kpi,currency:session.currency||'VND'});
+      }
+      return entries;
+    }
+
+    async function saveManualKpiSession(sessionId,button){
+      const session=state.sessions.find(s=>s.id===sessionId);
+      const card=button?.closest('[data-manual-session]');
+      if(!session||!card)return;
+      let entries;
+      try{entries=collectManualKpiEntries(card,session)}catch(error){showToast(error.message||'Dữ liệu KPI thủ công chưa hợp lệ');return;}
+      session.manualKpiEntries=entries;
+      if(PREVIEW){
+        persistPreviewState();
+        showToast('Đã lưu KPI thủ công và cộng vào KPI nhân sự');
+        renderKpi();
+        return;
+      }
+      await setDoc(doc(state.db,'liveSessions',sessionId),{
+        manualKpiEntries:entries,
+        manualKpiUpdatedAt:serverTimestamp(),
+        updatedAt:serverTimestamp()
+      },{merge:true});
+      showToast('Đã lưu KPI thủ công và cộng vào KPI nhân sự');
+      await loadData();
+      renderAll();
+    }
+
+    function bindManualKpiEditors(){
+      if(!isAdmin())return;
+      document.querySelectorAll('[data-manual-session]').forEach(card=>{
+        const sessionId=card.dataset.manualSession;
+        card.querySelector('[data-manual-add]')?.addEventListener('click',()=>{
+          const list=card.querySelector('.manual-kpi-entries');
+          const index=list.querySelectorAll('[data-manual-entry]').length;
+          const session=state.sessions.find(s=>s.id===sessionId);
+          list.insertAdjacentHTML('beforeend',manualKpiEntryRow(session,{uid:'',role:'host',gmv:0,kpi:0},index,true));
+        });
+        card.addEventListener('click',event=>{
+          const remove=event.target.closest('[data-manual-remove]');
+          if(remove){
+            const row=remove.closest('[data-manual-entry]');
+            const rows=card.querySelectorAll('[data-manual-entry]');
+            if(rows.length===1){
+              row.querySelector('[data-manual-person]').value='';
+              row.querySelector('[data-manual-role]').value='host';
+              row.querySelector('[data-manual-gmv]').value='0';
+              row.querySelector('[data-manual-kpi-amount]').value='0';
+            }else row.remove();
+          }
+        });
+        card.querySelector('[data-manual-save]')?.addEventListener('click',event=>saveManualKpiSession(sessionId,event.currentTarget));
+      });
+    }
+
     function renderKpi(){
       if(!can('kpi.read')){ $('#section-kpi').innerHTML='<div class="notice bad">Bạn không có quyền xem KPI.</div>';return; }
-      const allSessions=sessionsForRange(); const manualSessions=allSessions.filter(isManualKpi); const ss=allSessions.filter(s=>!isManualKpi(s)); const map=new Map();
-      const add=(uid,name,role,rate,gmv,currency)=>{ if(!uid&&!name)return; const key=uid||name; const cur=map.get(key)||{uid,name,role,rate,gmv:0,kpi:0,currency}; cur.gmv+=gmv; cur.kpi+=gmv*rate; map.set(key,cur); };
-      for(const s of ss){ const g=finalGmv(s); add(s.hostUid,s.hostName,'host',.003,g,s.currency); add(s.operatorUid,s.operatorName,'operator',.001,g,s.currency); }
-      const rows=[...map.values()].sort((a,b)=>b.kpi-a.kpi); const currency=rows[0]?.currency||'VND'; const totalKpi=rows.reduce((a,r)=>a+r.kpi,0);
+      const manualSessions=sessionsForRange().filter(isManualKpi);
+      const rows=buildKpiRows();
+      const currency=rows[0]?.currency||manualSessions[0]?.currency||'VND';
+      const totalKpi=rows.reduce((a,r)=>a+r.kpi,0);
+      const totalManualKpi=rows.reduce((a,r)=>a+r.manualKpi,0);
+      const manualWithData=manualSessions.filter(s=>normalizedManualKpiEntries(s).length).length;
       $('#section-kpi').innerHTML=`
         ${timeFilterHtml('kpi','<span class="pill">Host 0,3%</span><span class="pill">Vận hành 0,1%</span>')}
         <div class="kpi-pair"><div class="pair-card"><b>Thảo My + Hùng Bắc Giang</b><span class="tiny">Đi theo cặp — Host / Vận hành</span></div><div class="pair-card"><b>Dung hoặc Tâm + Hùng Hiền Hòa</b><span class="tiny">Đi theo cặp — Host / Vận hành</span></div></div>
-        <div class="metrics-grid metrics-3">${metricCard('users','Nhân sự có KPI',rows.length)}${metricCard('money','Tổng KPI',fmtMoney(totalKpi,currency))}${metricCard('settings','Phiên tính thủ công',manualSessions.length)}</div>
-        ${manualSessions.length?`<div class="notice warn"><b>${manualSessions.length} phiên Ngày Campaign/Mega Live</b> đã được loại khỏi KPI tự động để bạn tính thủ công. GMV các phiên này vẫn giữ nguyên trong báo cáo LIVE/Tổng quan.</div>`:''}
-        <div class="card">${rows.length?`<div class="table-wrap"><table style="min-width:700px"><thead><tr><th>Nhân sự</th><th>Vai trò</th><th>GMV gắn thẻ</th><th>Tỷ lệ</th><th>KPI</th></tr></thead><tbody>${rows.map(r=>`<tr><td>${userIdentityHtml(userDisplayRecord(r.uid,r.name),false)}</td><td><span class="tag ${r.role}">${roleLabel(r.role)}</span></td><td class="money">${fmtMoney(r.gmv,r.currency)}</td><td>${(r.rate*100).toFixed(1).replace('.',',')}%</td><td class="money">${fmtMoney(r.kpi,r.currency)}</td></tr>`).join('')}</tbody></table></div>`:'<div class="empty">Chưa có phiên LIVE được gắn nhân sự trong tháng này.</div>'}</div>`;
+        <div class="metrics-grid metrics-4">${metricCard('users','Nhân sự có KPI',rows.length)}${metricCard('money','Tổng KPI',fmtMoney(totalKpi,currency))}${metricCard('settings','Phiên KPI thủ công',manualSessions.length)}${metricCard('check','Đã nhập thủ công',manualWithData+' / '+manualSessions.length)}</div>
+        <div class="card manual-kpi-section">
+          <div class="row space manual-kpi-section-head"><div><h3 class="heading-with-icon">${icon('settings',18)} Phiên KPI thủ công</h3><div class="sub">Các phiên đã tích “Tính KPI thủ công” được gom tại đây. Mỗi người dùng số liệu riêng; không chia GMV tổng.</div></div><span class="pill">${fmtMoney(totalManualKpi,currency)} KPI thủ công</span></div>
+          ${manualSessions.length?`<div class="manual-kpi-session-list">${manualSessions.map(s=>manualKpiSessionCard(s,isAdmin())).join('')}</div>`:'<div class="empty">Không có phiên KPI thủ công trong khoảng thời gian này.</div>'}
+        </div>
+        <div class="card">
+          <div class="row space"><div><h3>KPI nhân sự</h3><div class="sub">KPI tự động + KPI thủ công đã lưu được cộng vào đúng từng nhân viên.</div></div><span class="pill">Tổng ${fmtMoney(totalKpi,currency)}</span></div>
+          ${rows.length?`<div class="table-wrap"><table style="min-width:920px"><thead><tr><th>Nhân sự</th><th>Vai trò</th><th>GMV tự động</th><th>GMV thủ công</th><th>KPI tự động</th><th>KPI thủ công</th><th>Tổng KPI</th></tr></thead><tbody>${rows.map(r=>`<tr><td>${userIdentityHtml(userDisplayRecord(r.uid,r.name),false)}</td><td><span class="tag ${r.roles[0]||''}">${esc(kpiRoleSummary(r))}</span></td><td class="money">${fmtMoney(r.autoGmv,r.currency)}</td><td class="money">${fmtMoney(r.manualGmv,r.currency)}</td><td class="money">${fmtMoney(r.autoKpi,r.currency)}</td><td class="money manual-kpi-value">${fmtMoney(r.manualKpi,r.currency)}</td><td class="money"><b>${fmtMoney(r.kpi,r.currency)}</b></td></tr>`).join('')}</tbody></table></div>`:'<div class="empty">Chưa có KPI trong khoảng thời gian này.</div>'}
+        </div>`;
       bindTimeFilter('kpi');
+      bindManualKpiEditors();
     }
 
     function renderUsers(){
