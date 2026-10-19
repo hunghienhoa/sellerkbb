@@ -37,9 +37,9 @@ try {
   await page.waitForSelector("#app:not(.hidden)",{timeout:30000});
 
   assert((await page.$eval('#userAvatar',e=>e.getAttribute('src')||'')).length>0,"Sidebar Google avatar is missing");
-  const navGroups=await page.$eval('#nav .nav-group-title',els=>els.map(e=>e.textContent.trim()));
+  const navGroups=await page.$$eval('#nav .nav-group-title',els=>els.map(e=>e.textContent.trim()));
   assert(navGroups.join('|')==='Báo cáo|Công cụ|Quản trị',"Sidebar groups are not ordered correctly");
-  const toolItems=await page.$eval('#nav .nav-group:nth-child(2) [data-section]',els=>els.map(e=>e.dataset.section));
+  const toolItems=await page.$$eval('#nav .nav-group:nth-child(2) [data-section]',els=>els.map(e=>e.dataset.section));
   assert(toolItems.join('|')==='export|manual-kpi',"Công cụ must contain Xuất file then KPI thủ công");
   assert(await page.$('#nav [data-section="users"]')===null,"Users must not remain inside sidebar navigation groups");
   assert(!(await page.$eval('#usersQuickBtn',e=>e.classList.contains('hidden'))),"Admin Users quick button is hidden");
@@ -173,7 +173,7 @@ try {
   await page.click('#menuToggle');
   await page.waitForFunction(()=>document.querySelector('#sidebar')?.classList.contains('open'));
   await sleep(300);
-  const mobileNavGroups=await page.$eval('#nav .nav-group-title',els=>els.map(e=>e.textContent.trim()));
+  const mobileNavGroups=await page.$$eval('#nav .nav-group-title',els=>els.map(e=>e.textContent.trim()));
   assert(mobileNavGroups.join('|')==='Báo cáo|Công cụ|Quản trị',"Mobile sidebar groups are missing");
   assert(await page.$('#nav [data-section="manual-kpi"]')!==null,"Mobile KPI thủ công tab missing");
   assert(await page.$('#nav [data-section="users"]')===null,"Mobile Users must be outside grouped navigation");
