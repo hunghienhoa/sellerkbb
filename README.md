@@ -4,7 +4,7 @@
 
 ### Báo cáo TikTok LIVE · KPI nhân sự · Tự đồng bộ 24/24
 
-**Phiên bản hiện tại: v1.14.1**
+**Phiên bản hiện tại: v1.14.2**
 
 [![GitHub Release](https://img.shields.io/github/v/release/hunghienhoa/sellerkbb?label=Release)](https://github.com/hunghienhoa/sellerkbb/releases)
 [![GitHub Actions](https://img.shields.io/github/actions/workflow/status/hunghienhoa/sellerkbb/deploy.yml?branch=main&label=Ki%E1%BB%83m%20tra%20%26%20Backup)](https://github.com/hunghienhoa/sellerkbb/actions)
@@ -17,14 +17,13 @@
 
 ---
 
-## 🆕 Cập nhật mới nhất — v1.14.1
+## 🆕 Cập nhật mới nhất — v1.14.2
 
-- **KPI thủ công** nằm trong nhóm **Công cụ**, ngay cùng nhóm với **Xuất file**.
-- **Users/Tài khoản** của Admin là nút độc lập bên phải khối avatar/tên tài khoản ở cuối sidebar; không nằm trong nhóm **Quản trị**.
-- Ở chế độ sidebar thu gọn trên tablet, nút **Users** vẫn giữ **cùng hàng với avatar** thay vì tụt xuống dưới.
-- Bổ sung kiểm tra giao diện để bảo đảm nút Users luôn nằm bên phải và thẳng hàng với khối hồ sơ.
-- README và GitHub Release tiếp tục dùng cùng nội dung cập nhật để mỗi phiên bản đều ghi rõ thay đổi.
-- Mỗi lần thêm/sửa tính năng hoặc bố cục, README phải được cập nhật cùng phiên bản trước khi Release được tạo.
+- **Duyệt tài khoản** được đưa trở lại nhóm **Quản trị** theo đúng bố cục quản trị hệ thống.
+- Bỏ nút **Users/Tài khoản** riêng cạnh avatar ở cuối sidebar.
+- **KPI thủ công** vẫn nằm trong nhóm **Công cụ**, cùng với **Xuất file**.
+- Cập nhật kiểm tra giao diện để bảo đảm mục **Duyệt tài khoản** luôn nằm trong nhóm **Quản trị** trên PC, tablet và điện thoại.
+- README và GitHub Release tiếp tục dùng cùng nội dung cập nhật để dễ theo dõi thay đổi từng phiên bản.
 
 ---
 
@@ -63,7 +62,7 @@ Bạn không cần hiểu hết code. Chỉ cần nhớ 4 nơi chính:
 - Lưu dữ liệu tối đa **180 ngày (6 tháng)** theo cấu hình.
 - Có trang **Lưu trữ & tự dọn** theo dõi GitHub / Firebase / Cloudflare.
 - Hỗ trợ PC và điện thoại.
-- Giao diện **tím pastel**, sidebar chia rõ **Báo cáo / Công cụ / Quản trị**; KPI thủ công nằm ở **Công cụ**, còn quản lý Tài khoản có nút riêng cạnh hồ sơ đăng nhập.
+- Giao diện **tím pastel**, sidebar chia rõ **Báo cáo / Công cụ / Quản trị**; KPI thủ công nằm ở **Công cụ**, còn **Duyệt tài khoản** nằm trong **Quản trị**.
 
 ---
 
