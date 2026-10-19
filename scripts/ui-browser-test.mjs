@@ -95,10 +95,10 @@ try {
   assert(await page.$eval(desktopManualRow+' select[data-person="host"]',e=>e.value)==='',"Campaign/Mega Host was restored unexpectedly");
 
   await page.click('[data-section="storage"]');
-  assert((await page.$('#section-storage .storage-quota-card')).length===3,"Storage page must show GitHub Firebase and Cloudflare cards");
-  const providerText=await page.$eval('#section-storage .storage-provider-copy b',els=>els.map(e=>e.textContent));
+  assert((await page.$$('#section-storage .storage-quota-card')).length===3,"Storage page must show GitHub Firebase and Cloudflare cards");
+  const providerText=await page.$$eval('#section-storage .storage-provider-copy b',els=>els.map(e=>e.textContent));
   assert(providerText.join('|').includes('GitHub')&&providerText.join('|').includes('Firebase')&&providerText.join('|').includes('Cloudflare'),"Storage provider labels missing");
-  assert((await page.$('#section-storage .storage-progress')).length===3,"Storage progress bars missing");
+  assert((await page.$$('#section-storage .storage-progress')).length===3,"Storage progress bars missing");
   assert(await page.$eval('#section-storage .storage-quota-grid',e=>e.textContent.includes('% / 100%')),"Storage percentage text missing");
   await page.select('#retentionDays','120');
   await page.click('#saveMaintenance');
