@@ -115,3 +115,13 @@ Không tạo project mới. Mỗi lần cập nhật:
 - TikTok access tokens are checked every 2 hours and proactively refreshed from the stored refresh token before expiry.
 - There is no disconnect action in the SellerKBB UI/API. Reauthorization is only needed if TikTok revokes authorization or the refresh token itself expires.
 - Source code and GitHub files are never part of automated cleanup.
+
+
+## v1.6.0 — 24/7 auto-sync + unified UI
+
+- TikTok LIVE data sync is fully automatic. There is no manual sync button or sync date picker.
+- Hourly Cron refreshes the TikTok token when necessary and pulls the latest LIVE performance window.
+- Daily reconciliation refreshes the previous 30 days to catch late metric changes.
+- Auto-synced TikTok metrics are kept in a rolling Cloudflare KV cache for the configured retention window (maximum 180 days).
+- Firestore remains the source for user roles, Host/Operator assignments and manual KPI flags; the UI merges those fields with the auto-sync cache.
+- The interface now uses one SVG icon system and a flatter connected layout with fewer nested rounded cards.
