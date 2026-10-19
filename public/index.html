@@ -1736,6 +1736,10 @@ tbody tr:hover td{background:#fbf9fe}
   .section.active{background:#fff;border-color:var(--line)}
 }
 
+
+.export-coming-soon .export-copy{display:grid;gap:3px}
+.export-coming-soon .export-copy .pill{width:max-content;margin-top:4px}
+
 </style>
 </head>
 <body>
@@ -2628,12 +2632,15 @@ tbody tr:hover td{background:#fbf9fe}
       }
       if(can('kpi.read')){
         html+='<div class="export-row"><div class="export-icon">'+icon('kpi',20)+'</div><div class="export-copy"><b>KPI nhân sự</b><div class="sub">Chỉ xuất KPI tự động · '+manualCount+' phiên tính thủ công được loại khỏi bảng KPI.</div></div><button id="exportKpiCsv" class="btn">'+icon('export',16)+' Xuất CSV KPI</button></div>';
+        const dossierYear=new Date().getFullYear();
+        html+='<div class="export-row export-coming-soon"><div class="export-icon">'+icon('file',20)+'</div><div class="export-copy"><b>BO_HO_SO_KPI_KHANGCHOU_'+dossierYear+'</b><div class="sub">Hồ sơ KPI cá nhân · sau khi hoàn thiện sẽ chọn 1 nhân viên/lần, chỉ lấy GMV sau hoàn/hủy + KPI cá nhân, không gộp dữ liệu người khác.</div><span class="pill">Đang phát triển</span></div><button id="exportKhangchouDossier" class="btn">'+icon('export',16)+' Xuất hồ sơ</button></div>';
       }
       html+='</div>';
       $('#section-export').innerHTML=html;
       bindTimeFilter('export');
       if($('#exportLiveCsv')) $('#exportLiveCsv').onclick=()=>exportCsv(ss);
       if($('#exportKpiCsv')) $('#exportKpiCsv').onclick=exportKpiCsv;
+      if($('#exportKhangchouDossier')) $('#exportKhangchouDossier').onclick=()=>showToast('Tính năng đang được phát triển');
     }
 
     function renderKpi(){

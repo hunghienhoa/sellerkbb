@@ -87,4 +87,7 @@ assert(html.includes("{label:'Công cụ'"), "Công cụ navigation group missin
 assert(html.includes("{label:'Quản trị'"), "Quản trị navigation group missing");
 assert(html.includes("brand-seller"), "SellerKBB brand lockup missing");
 assert(html.includes("const roleOrder={admin:0,operator:1,host:2};"), "Approved-account authority sorting missing");
-console.log("Project structure, syntax, persistence, calendar, storage, Google profiles, grouped lavender UI, Release backup, README, and auto-sync checks OK");
+assert(html.includes("BO_HO_SO_KPI_KHANGCHOU_"), "Khangchou KPI dossier export placeholder missing");
+assert(html.includes("Tính năng đang được phát triển"), "Khangchou dossier development notice missing");
+assert(html.includes("chỉ lấy GMV sau hoàn/hủy + KPI cá nhân"), "Khangchou dossier personal-data rule missing");
+console.log("Project structure, syntax, persistence, calendar, storage, Google profiles, grouped lavender UI, KPI dossier placeholder, Release backup, README, and auto-sync checks OK");

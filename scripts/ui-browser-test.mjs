@@ -106,8 +106,14 @@ try {
   assert(await page.$eval(desktopManualRow+' [data-manual-kpi]',e=>e.checked),"Campaign/Mega flag did not persist");
   assert(await page.$eval(desktopManualRow+' select[data-person="host"]',e=>e.value)==='',"Campaign/Mega Host was restored unexpectedly");
 
+  await page.click('[data-section="export"]');
+  assert(await page.$eval('#section-export',e=>e.textContent.includes('BO_HO_SO_KPI_KHANGCHOU_'+new Date().getFullYear())),"Khangchou KPI dossier export item missing");
+  await page.click('#exportKhangchouDossier');
+  await sleep(100);
+  assert(await page.$eval('#toast',e=>e.textContent.includes('Tính năng đang được phát triển')),"Khangchou dossier placeholder toast missing");
+
   await page.click('[data-section="storage"]');
-  assert((await page.$$('#section-storage .storage-quota-card')).length===3,"Storage page must show GitHub Firebase and Cloudflare cards");
+  assert((await page.$('#section-storage .storage-quota-card')).length===3,"Storage page must show GitHub Firebase and Cloudflare cards");
   const providerText=await page.$$eval('#section-storage .storage-provider-copy b',els=>els.map(e=>e.textContent));
   assert(providerText.join('|').includes('GitHub')&&providerText.join('|').includes('Firebase')&&providerText.join('|').includes('Cloudflare'),"Storage provider labels missing");
   assert((await page.$$('#section-storage .storage-progress')).length===3,"Storage progress bars missing");
@@ -116,8 +122,8 @@ try {
   await page.click('#saveMaintenance');
   await sleep(100);
   await page.click('[data-section="users"]');
-  assert((await page.$eval('#section-users .user-list-avatar',els=>els.length))>=6,"User account avatars are missing from the Users page");
-  const approvedRoles=await page.$eval('#section-users .approved-user-row .tag',els=>els.map(e=>e.textContent.trim()));
+  assert((await page.$$eval('#section-users .user-list-avatar',els=>els.length))>=6,"User account avatars are missing from the Users page");
+  const approvedRoles=await page.$$eval('#section-users .approved-user-row .tag',els=>els.map(e=>e.textContent.trim()));
   const roleRank={'Quản trị viên':0,'Nhân viên vận hành livestream':1,'Host Livestream':2};
   assert(approvedRoles[0]==='Quản trị viên',"Approved accounts must start with administrators");
   assert(approvedRoles.every((role,i)=>i===0||(roleRank[approvedRoles[i-1]]??9)<=(roleRank[role]??9)),"Approved accounts are not sorted Admin → Operator → Host");
