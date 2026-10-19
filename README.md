@@ -4,7 +4,7 @@
 
 ### Báo cáo TikTok LIVE · KPI nhân sự · Tự đồng bộ 24/24
 
-**Phiên bản hiện tại: v1.14.2**
+**Phiên bản hiện tại: v1.15.0**
 
 [![GitHub Release](https://img.shields.io/github/v/release/hunghienhoa/sellerkbb?label=Release)](https://github.com/hunghienhoa/sellerkbb/releases)
 [![GitHub Actions](https://img.shields.io/github/actions/workflow/status/hunghienhoa/sellerkbb/deploy.yml?branch=main&label=Ki%E1%BB%83m%20tra%20%26%20Backup)](https://github.com/hunghienhoa/sellerkbb/actions)
@@ -17,13 +17,15 @@
 
 ---
 
-## 🆕 Cập nhật mới nhất — v1.14.2
+## 🆕 Cập nhật mới nhất — v1.15.0
 
-- **Duyệt tài khoản** được đưa trở lại nhóm **Quản trị** theo đúng bố cục quản trị hệ thống.
-- Bỏ nút **Users/Tài khoản** riêng cạnh avatar ở cuối sidebar.
-- **KPI thủ công** vẫn nằm trong nhóm **Công cụ**, cùng với **Xuất file**.
-- Cập nhật kiểm tra giao diện để bảo đảm mục **Duyệt tài khoản** luôn nằm trong nhóm **Quản trị** trên PC, tablet và điện thoại.
-- README và GitHub Release tiếp tục dùng cùng nội dung cập nhật để dễ theo dõi thay đổi từng phiên bản.
+- Đối chiếu lại theo **source gốc v1.13.0** do người dùng cung cấp.
+- **Users** là nút nhanh riêng nằm **bên ngoài mép phải sidebar**, canh cùng hàng với khu vực avatar/tài khoản ở cuối sidebar theo Hình 1.
+- **Duyệt tài khoản** vẫn nằm trong nhóm **Quản trị**, cùng **TikTok / API** và **Lưu trữ**.
+- **KPI thủ công** vẫn nằm trong nhóm **Công cụ**, cùng **Xuất file**.
+- **KPI nhân sự** chỉ tổng hợp KPI tự động + KPI thủ công đã lưu; nhập/chỉnh KPI thủ công ở tab **KPI thủ công**.
+- Bổ sung kiểm tra desktop/tablet/mobile để không nhầm vị trí **Users** với **Duyệt tài khoản** trong các bản sau.
+- README và GitHub Release tiếp tục dùng cùng nội dung cập nhật để biết rõ mỗi phiên bản thay đổi gì.
 
 ---
 
@@ -62,7 +64,7 @@ Bạn không cần hiểu hết code. Chỉ cần nhớ 4 nơi chính:
 - Lưu dữ liệu tối đa **180 ngày (6 tháng)** theo cấu hình.
 - Có trang **Lưu trữ & tự dọn** theo dõi GitHub / Firebase / Cloudflare.
 - Hỗ trợ PC và điện thoại.
-- Giao diện **tím pastel**, sidebar chia rõ **Báo cáo / Công cụ / Quản trị**; KPI thủ công nằm ở **Công cụ**, còn **Duyệt tài khoản** nằm trong **Quản trị**.
+- Giao diện **tím pastel**, sidebar chia rõ **Báo cáo / Công cụ / Quản trị**; **KPI thủ công** nằm ở **Công cụ**, **Duyệt tài khoản** nằm trong **Quản trị**, còn nút nhanh **Users** nằm ngoài mép phải sidebar cạnh khu vực avatar.
 
 ---
 
