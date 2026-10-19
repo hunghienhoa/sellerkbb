@@ -784,6 +784,11 @@ tbody tr:hover td{background:#fffafd}
 .manual-kpi-check{display:flex;align-items:center;gap:6px;color:#7a5b20;font-size:11px;font-weight:700;margin-bottom:7px;white-space:nowrap}
 .manual-kpi-check input{accent-color:var(--accent-strong)}
 td .manual-kpi-check+.btn{width:100%}
+
+.export-list{display:grid;border-top:1px solid var(--line)}
+.export-row{display:flex;align-items:center;justify-content:space-between;gap:18px;padding:16px 2px;border-bottom:1px solid var(--line)}
+.export-row b{display:block;margin-bottom:3px;color:#583849}
+@media(max-width:700px){.export-row{align-items:stretch;flex-direction:column}.export-row .btn{width:100%}}
 </style>
 </head>
 <body>
@@ -1244,6 +1249,55 @@ td .manual-kpi-check+.btn{width:100%}
       const csv=lines.map(r=>r.map(v=>`"${String(v??'').replaceAll('"','""')}"`).join(',')).join('\n'); const blob=new Blob(['\ufeff'+csv],{type:'text/csv;charset=utf-8'}); const a=document.createElement('a');a.href=URL.createObjectURL(blob);const range=selectedRange();a.download=`tiktok-live-${range.startKey}_${range.endKey}.csv`;a.click();URL.revokeObjectURL(a.href);
     }
 
+
+    function kpiRowsForExport(){
+      const map=new Map();
+      const add=(uid,name,role,rate,gmv,currency)=>{
+        if(!uid&&!name)return;
+        const key=(uid||name)+'|'+role;
+        const cur=map.get(key)||{name:name||'',role,rate,gmv:0,kpi:0,currency:currency||'VND'};
+        cur.gmv+=gmv; cur.kpi+=gmv*rate; map.set(key,cur);
+      };
+      for(const item of sessionsForRange().filter(x=>!isManualKpi(x))){
+        const g=finalGmv(item);
+        add(item.hostUid,item.hostName,'host',.003,g,item.currency);
+        add(item.operatorUid,item.operatorName,'operator',.001,g,item.currency);
+      }
+      return [...map.values()].sort((a,b)=>b.kpi-a.kpi);
+    }
+
+    function exportKpiCsv(){
+      const rows=kpiRowsForExport();
+      const header=['name','role','gmv','rate_percent','kpi','currency'];
+      const lines=[header,...rows.map(x=>[x.name,roleLabel(x.role),x.gmv,(x.rate*100).toFixed(1),x.kpi,x.currency])];
+      const csv=lines.map(row=>row.map(v=>'"'+String(v??'').replaceAll('"','""')+'"').join(',')).join('\n');
+      const blob=new Blob(['\ufeff'+csv],{type:'text/csv;charset=utf-8'});
+      const a=document.createElement('a');
+      a.href=URL.createObjectURL(blob);
+      const range=selectedRange();
+      a.download='sellerkbb-kpi-'+range.startKey+'_'+range.endKey+'.csv';
+      a.click();
+      URL.revokeObjectURL(a.href);
+    }
+
+    function renderExport(){
+      if(!(can('live.read')||can('kpi.read'))){ $('#section-export').innerHTML=''; return; }
+      const ss=sessionsForRange();
+      const manualCount=ss.filter(isManualKpi).length;
+      let html=timeFilterHtml('export')+'<div class="export-list">';
+      if(can('live.read')){
+        html+='<div class="export-row"><div><b>Phiên LIVE</b><div class="sub">'+ss.length+' phiên trong khoảng đã chọn · bao gồm dữ liệu Ngày Campaign/Mega Live.</div></div><button id="exportLiveCsv" class="btn primary">Xuất CSV phiên LIVE</button></div>';
+      }
+      if(can('kpi.read')){
+        html+='<div class="export-row"><div><b>KPI nhân sự</b><div class="sub">Chỉ xuất KPI tự động · '+manualCount+' phiên tính thủ công được loại khỏi bảng KPI.</div></div><button id="exportKpiCsv" class="btn">Xuất CSV KPI</button></div>';
+      }
+      html+='</div>';
+      $('#section-export').innerHTML=html;
+      bindTimeFilter('export');
+      if($('#exportLiveCsv')) $('#exportLiveCsv').onclick=()=>exportCsv(ss);
+      if($('#exportKpiCsv')) $('#exportKpiCsv').onclick=exportKpiCsv;
+    }
+
     function renderKpi(){
       if(!can('kpi.read')){ $('#section-kpi').innerHTML='<div class="notice bad">Bạn không có quyền xem KPI.</div>';return; }
       const allSessions=sessionsForRange(); const manualSessions=allSessions.filter(isManualKpi); const ss=allSessions.filter(s=>!isManualKpi(s)); const map=new Map();
@@ -1463,7 +1517,7 @@ td .manual-kpi-check+.btn{width:100%}
       if($('#checkTikTok')) $('#checkTikTok').onclick=()=>showToast(status.autoRefresh?'Kết nối ổn định · tự gia hạn đang bật':'Kết nối hiện tại hoạt động nhưng chưa có refresh token');
     }
 
-    function renderAll(){ renderNav(); renderDashboard(); renderLive(); renderKpi(); renderUsers(); renderTikTok(); renderStorage(); switchSection(state.section); }
+    function renderAll(){ renderNav(); renderDashboard(); renderLive(); renderKpi(); renderExport(); renderUsers(); renderTikTok(); renderStorage(); switchSection(state.section); }
 
     init().catch(e=>showBoot(`<b>Không khởi động được ứng dụng.</b><br><br>${esc(e.message)}`));
   </script>
