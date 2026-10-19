@@ -148,7 +148,7 @@ try {
 
   await page.click('#section-live [data-range-mode="custom"]');
   await page.waitForSelector('#section-live [data-date-calendar="live"] [data-calendar-day]');
-  assert((await page.$eval('#section-live [data-calendar-day]',els=>els.length))>=28,"Mobile calendar grid missing");
+  assert((await page.$$eval('#section-live [data-calendar-day]',els=>els.length))>=28,"Mobile calendar grid missing");
   await page.click('#section-live [data-apply-range="live"]');
   assert(await page.$('#section-live [data-date-calendar="live"]')===null,"Mobile calendar did not collapse after Apply");
 
