@@ -42,7 +42,15 @@ try {
   const toolItems=await page.$$eval('#nav .nav-group:nth-child(2) [data-section]',els=>els.map(e=>e.dataset.section));
   assert(toolItems.join('|')==='export|manual-kpi',"Công cụ must contain Xuất file then KPI thủ công");
   assert(await page.$('#nav .nav-group:nth-child(3) [data-section="users"]')!==null,"Duyệt tài khoản must be inside Quản trị");
-  assert(await page.$('#usersQuickBtn')===null,"External Users quick button must be removed");
+  assert(await page.$eval('#nav [data-section="users"]',e=>e.textContent.includes('Duyệt tài khoản')),"Duyệt tài khoản label is missing");
+  assert(!(await page.$eval('#usersDockBtn',e=>e.classList.contains('hidden'))),"External Users dock button is hidden for Admin");
+  const desktopUsersDock=await page.evaluate(()=>{
+    const side=document.querySelector('#sidebar')?.getBoundingClientRect();
+    const avatar=document.querySelector('#userAvatar')?.getBoundingClientRect();
+    const dock=document.querySelector('#usersDockBtn')?.getBoundingClientRect();
+    return side&&avatar&&dock?{outside:dock.left>=side.right+4,aligned:Math.abs((dock.top+dock.height/2)-(avatar.top+avatar.height/2))<=5}:null;
+  });
+  assert(desktopUsersDock?.outside&&desktopUsersDock?.aligned,"Desktop Users must be outside sidebar and aligned with avatar");
   assert(await page.$eval('.side-brand .brand-lockup',e=>e.textContent.replace(/\s+/g,'').includes('SellerKBBLIVE')),"SellerKBB LIVE brand lockup is incorrect");
   assert(await page.$eval('html',e=>getComputedStyle(e).getPropertyValue('--accent').trim())==='#a88bd7',"Pastel purple theme accent is not active");
   await page.click('#userMenuBtn');
@@ -171,6 +179,13 @@ try {
   await page.reload({waitUntil:"domcontentloaded"});
   await page.waitForSelector("#app:not(.hidden)",{timeout:30000});
   assert(await page.$('#nav .nav-group:nth-child(3) [data-section="users"]')!==null,"Tablet Duyệt tài khoản must stay inside Quản trị");
+  const tabletUsersDock=await page.evaluate(()=>{
+    const side=document.querySelector('#sidebar')?.getBoundingClientRect();
+    const avatar=document.querySelector('#userAvatar')?.getBoundingClientRect();
+    const dock=document.querySelector('#usersDockBtn')?.getBoundingClientRect();
+    return side&&avatar&&dock?{outside:dock.left>=side.right+4,aligned:Math.abs((dock.top+dock.height/2)-(avatar.top+avatar.height/2))<=5}:null;
+  });
+  assert(tabletUsersDock?.outside&&tabletUsersDock?.aligned,"Tablet Users must stay outside sidebar and aligned with avatar");
 
   await page.setViewport({width:390,height:844,deviceScaleFactor:1});
   await page.reload({waitUntil:"domcontentloaded"});
@@ -182,7 +197,14 @@ try {
   assert(mobileNavGroups.join('|')==='Báo cáo|Công cụ|Quản trị',"Mobile sidebar groups are missing");
   assert(await page.$('#nav [data-section="manual-kpi"]')!==null,"Mobile KPI thủ công tab missing");
   assert(await page.$('#nav .nav-group:nth-child(3) [data-section="users"]')!==null,"Mobile Duyệt tài khoản must stay inside Quản trị");
-  assert(await page.$('#usersQuickBtn')===null,"Mobile external Users quick button must be removed");
+  assert(!(await page.$eval('#usersDockBtn',e=>e.classList.contains('hidden'))),"Mobile external Users dock button is hidden for Admin");
+  const mobileUsersDock=await page.evaluate(()=>{
+    const side=document.querySelector('#sidebar')?.getBoundingClientRect();
+    const avatar=document.querySelector('#userAvatar')?.getBoundingClientRect();
+    const dock=document.querySelector('#usersDockBtn')?.getBoundingClientRect();
+    return side&&avatar&&dock?{outside:dock.left>=side.right+4,aligned:Math.abs((dock.top+dock.height/2)-(avatar.top+avatar.height/2))<=10}:null;
+  });
+  assert(mobileUsersDock?.outside&&mobileUsersDock?.aligned,"Mobile Users must sit outside the open sidebar and align with avatar");
   await page.click('#userMenuBtn');
   assert(!(await page.$eval('#accountPopover',e=>e.classList.contains('hidden'))),"Mobile account popover did not open");
   assert(await page.$('#accountLogoutBtn')!==null,"Mobile account logout button missing");

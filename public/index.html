@@ -1795,6 +1795,49 @@ tbody tr:hover td{background:#fbf9fe}
 
 
 
+
+/* v1.15 Users quick access outside the sidebar */
+.users-dock-btn{
+  position:fixed;
+  left:252px;
+  bottom:23px;
+  z-index:32;
+  min-height:42px;
+  display:flex;
+  align-items:center;
+  gap:7px;
+  padding:0 12px;
+  border:1px solid var(--line);
+  border-radius:10px;
+  background:rgba(255,255,255,.97);
+  color:#765aa0;
+  font:inherit;
+  font-size:11px;
+  font-weight:750;
+  cursor:pointer;
+  box-shadow:0 8px 24px rgba(80,54,68,.10);
+}
+.users-dock-btn:hover{background:#f8f3fc;border-color:#d8cbe9}
+.users-dock-btn.hidden{display:none}
+@media(max-width:700px){
+  .users-dock-btn{
+    left:calc(min(82vw,300px) + 8px);
+    bottom:calc(28px + env(safe-area-inset-bottom));
+    z-index:41;
+    min-width:42px;
+    width:42px;
+    padding:0;
+    justify-content:center;
+    opacity:0;
+    visibility:hidden;
+    pointer-events:none;
+    transform:translateX(-8px);
+    transition:opacity .2s ease,transform .2s ease,visibility .2s ease;
+  }
+  .users-dock-btn span{display:none}
+  .sidebar.open + .users-dock-btn{opacity:1;visibility:visible;pointer-events:auto;transform:none}
+}
+
 </style>
 </head>
 <body>
@@ -1813,8 +1856,11 @@ tbody tr:hover td{background:#fbf9fe}
         <div id="accountPopover" class="account-popover hidden" role="dialog" aria-label="Thông tin tài khoản"></div>
       </div>
     </aside>
+    <button id="usersDockBtn" class="users-dock-btn hidden" type="button" aria-label="Mở Users" title="Users">
+      <svg class="ui-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg><span>Users</span>
+    </button>
     <main class="main">
-      <header class="topbar"><div class="topbar-title-wrap"><button id="menuToggle" class="menu-toggle" type="button" aria-label="Mở menu" aria-expanded="false">☰</button><div><h1 id="pageTitle" class="page-title">Tổng quan</h1><div id="pageSub" class="tiny"></div></div></div><div class="row"><span id="syncBadge" class="pill">v1.14.2</span></div></header>
+      <header class="topbar"><div class="topbar-title-wrap"><button id="menuToggle" class="menu-toggle" type="button" aria-label="Mở menu" aria-expanded="false">☰</button><div><h1 id="pageTitle" class="page-title">Tổng quan</h1><div id="pageSub" class="tiny"></div></div></div><div class="row"><span id="syncBadge" class="pill">v1.15.0</span></div></header>
       <div class="content">
         <section id="section-dashboard" class="section active"></section>
         <section id="section-live" class="section"></section>
@@ -2101,7 +2147,7 @@ tbody tr:hover td{background:#fbf9fe}
 
     function previewTs(iso){ return {toDate:()=>new Date(iso)}; }
     function enterPreview(){
-      state.config={version:'1.14.2-preview',tiktokConfigured:true};
+      state.config={version:'1.15.0-preview',tiktokConfigured:true};
       state.user={uid:'preview-admin',email:'admin@sellerkbb.demo',displayName:'Quản trị viên Demo',photoURL:avatarFallbackData('Quản trị viên Demo')};
       state.profile={role:'admin',status:'approved',displayName:'Quản trị viên Demo',photoURL:state.user.photoURL,permissions:['live.read','kpi.read']};
       state.maintenance={settings:{retentionDays:180,autoCleanup:true,emergencyPercent:85,firestoreSoftLimitMb:600,firestoreMaxSessions:12000,kvSoftKeyLimit:5000},github:{usedBytes:124000,limitBytes:10000000000,available:true},cloudflare:{keyCount:5,lastRun:{ranAt:new Date().toISOString(),deleted:0},usedBytes:428000,storageLimitBytes:1000000000,storageComplete:true},firebase:{freePlanMode:true,ttlEnabled:false,ttlRecommended:false,storageLimitBytes:1073741824}};
@@ -2358,6 +2404,11 @@ tbody tr:hover td{background:#fbf9fe}
       $('#userRole').textContent=roleLabel(state.profile.role);
       renderAccountPopover();
       $('#userMenuBtn').onclick=e=>{ e.stopPropagation(); setAccountMenu($('#accountPopover').classList.contains('hidden')); };
+      const usersDock=$('#usersDockBtn');
+      if(usersDock){
+        usersDock.classList.toggle('hidden',!isAdmin());
+        usersDock.onclick=e=>{ e.stopPropagation(); switchSection('users'); };
+      }
       $('#syncBadge').textContent=`v${state.config.version||'1.0.0'}`;
     }
 
