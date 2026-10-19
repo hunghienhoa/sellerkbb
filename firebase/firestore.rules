@@ -1,0 +1,83 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function currentUserPath() {
+      return /databases/$(database)/documents/users/$(request.auth.uid);
+    }
+
+    function currentUser() {
+      return get(currentUserPath()).data;
+    }
+
+    function isAdmin() {
+      return signedIn() && exists(currentUserPath()) && currentUser().role == 'admin';
+    }
+
+    function hasPermission(permission) {
+      return isAdmin() || (
+        signedIn() &&
+        exists(currentUserPath()) &&
+        currentUser().status == 'approved' &&
+        currentUser().permissions.hasAny([permission])
+      );
+    }
+
+    function isBootstrapUserCreate(uid) {
+      return signedIn()
+        && request.auth.uid == uid
+        && !exists(/databases/$(database)/documents/system/bootstrap)
+        && getAfter(/databases/$(database)/documents/system/bootstrap).data.adminUid == uid
+        && request.resource.data.role == 'admin'
+        && request.resource.data.status == 'approved';
+    }
+
+    match /system/bootstrap {
+      allow read: if signedIn();
+      allow create: if signedIn()
+        && !exists(/databases/$(database)/documents/system/bootstrap)
+        && request.resource.data.adminUid == request.auth.uid
+        && getAfter(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+      allow update, delete: if false;
+    }
+
+    match /users/{uid} {
+      allow create: if signedIn() && request.auth.uid == uid && (
+        isBootstrapUserCreate(uid) || (
+          request.resource.data.role == 'pending'
+          && request.resource.data.status == 'pending'
+          && request.resource.data.permissions.size() == 0
+          && request.resource.data.email == request.auth.token.email
+        )
+      );
+
+      allow read: if signedIn() && (request.auth.uid == uid || isAdmin());
+
+      allow update: if isAdmin() || (
+        signedIn()
+        && request.auth.uid == uid
+        && request.resource.data.diff(resource.data).changedKeys().hasOnly([
+          'displayName', 'photoURL', 'lastLoginAt', 'updatedAt'
+        ])
+        && request.resource.data.role == resource.data.role
+        && request.resource.data.status == resource.data.status
+        && request.resource.data.permissions == resource.data.permissions
+      );
+
+      allow delete: if isAdmin();
+    }
+
+    match /liveSessions/{liveId} {
+      allow read: if hasPermission('live.read') || hasPermission('kpi.read');
+      allow create, update, delete: if isAdmin();
+    }
+
+    match /settings/{docId} {
+      allow read: if signedIn();
+      allow write: if isAdmin();
+    }
+  }
+}
