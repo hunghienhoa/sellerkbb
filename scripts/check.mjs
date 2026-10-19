@@ -116,5 +116,6 @@ assert(!adminGroup.includes("id:'users'"), "Users must be outside Quản trị n
 assert(html.includes('id="usersQuickBtn"'), "External Users quick button missing");
 assert(readme.includes("Cập nhật mới nhất — v1.14.0"), "README latest-update section missing");
 assert(workflow.includes("Tính năng/cập nhật trong bản này"), "Release changelog heading missing");
-assert(workflow.includes("git log \"$RANGE\" --pretty=format:%s"), "Release changelog git log missing");
+assert(workflow.includes("Write release notes from README"), "README-driven Release notes step missing");
+assert(workflow.includes('Cập nhật mới nhất — v" ver'), "Release notes must read the matching README version section");
 console.log("Project structure, syntax, persistence, calendar, storage, Google profiles, grouped lavender UI, tool-group manual KPI, external Users shortcut, descriptive Releases, README, and auto-sync checks OK");
