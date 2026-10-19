@@ -1457,7 +1457,7 @@ tbody tr:hover td{background:#fcfafb}
       <div class="side-bottom"><div class="userbox row"><img id="userAvatar" class="avatar" alt=""><div class="usertext" style="min-width:0"><div id="userName" style="font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis"></div><div id="userRole" class="tiny"></div></div></div></div>
     </aside>
     <main class="main">
-      <header class="topbar"><div class="topbar-title-wrap"><button id="menuToggle" class="menu-toggle" type="button" aria-label="Mở menu" aria-expanded="false">☰</button><div><h1 id="pageTitle" class="page-title">Tổng quan</h1><div id="pageSub" class="tiny"></div></div></div><div class="row"><span id="syncBadge" class="pill">v1.8.0</span><button id="logoutBtn" class="btn ghost small">Đăng xuất</button></div></header>
+      <header class="topbar"><div class="topbar-title-wrap"><button id="menuToggle" class="menu-toggle" type="button" aria-label="Mở menu" aria-expanded="false">☰</button><div><h1 id="pageTitle" class="page-title">Tổng quan</h1><div id="pageSub" class="tiny"></div></div></div><div class="row"><span id="syncBadge" class="pill">v1.8.1</span><button id="logoutBtn" class="btn ghost small">Đăng xuất</button></div></header>
       <div class="content">
         <section id="section-dashboard" class="section active"></section>
         <section id="section-live" class="section"></section>
@@ -1552,7 +1552,7 @@ tbody tr:hover td{background:#fcfafb}
     function timeFilterHtml(scope,actions=''){
       const selected=selectedRange();
       const opts=[['today','Hôm nay'],['7d','7 ngày'],['30d','1 tháng'],['custom','Chọn ngày']];
-      const custom=state.rangeMode==='custom'?`
+      const custom=state.rangeMode==='custom'&&state.customPickerScope===scope?`
         <div class="custom-range">
           <div class="date-range-picks">
             <button type="button" class="date-pick active" data-date-target="start" data-value="${state.customStart}"><span>Từ ngày</span><b>${displayDateKey(state.customStart)}</b></button>
@@ -1642,10 +1642,15 @@ tbody tr:hover td{background:#fcfafb}
       section.querySelectorAll('[data-range-mode]').forEach(btn=>btn.onclick=()=>{
         const mode=btn.dataset.rangeMode;
         state.rangeMode=mode;
-        if(mode==='custom'&&(!state.customStart||!state.customEnd)){
-          const today=new Date(); today.setHours(0,0,0,0);
-          const from=new Date(today); from.setDate(from.getDate()-6);
-          state.customStart=localDateKey(from); state.customEnd=localDateKey(today);
+        if(mode==='custom'){
+          state.customPickerScope=scope;
+          if(!state.customStart||!state.customEnd){
+            const today=new Date(); today.setHours(0,0,0,0);
+            const from=new Date(today); from.setDate(from.getDate()-6);
+            state.customStart=localDateKey(from); state.customEnd=localDateKey(today);
+          }
+        }else{
+          state.customPickerScope=null;
         }
         state.livePage=1; renderAll();
       });
@@ -1659,13 +1664,14 @@ tbody tr:hover td{background:#fcfafb}
         if(!/^\d{4}-\d{2}-\d{2}$/.test(start)||!/^\d{4}-\d{2}-\d{2}$/.test(end)){ showToast('Hãy chọn đủ ngày bắt đầu và ngày kết thúc'); return; }
         if(start>end){ const t=start; start=end; end=t; }
         state.customStart=start; state.customEnd=end;
+        state.customPickerScope=null;
         state.livePage=1; renderAll();
       };
     }
     const PREVIEW = location.pathname === '/preview' || new URLSearchParams(location.search).get('preview') === '1';
 
     const LIVE_PAGE_SIZE = 20;
-    const state = { config:null, auth:null, db:null, user:null, profile:null, sessions:[], users:[], section:'dashboard', livePage:1, rangeMode:'today', customStart:'', customEnd:'', maintenance:{settings:{retentionDays:180,autoCleanup:true,emergencyPercent:85,firestoreSoftLimitMb:600,firestoreMaxSessions:12000,kvSoftKeyLimit:5000},cloudflare:{keyCount:0,lastRun:null},firebase:{freePlanMode:true,ttlEnabled:false,ttlRecommended:false}}, autoSyncStatus:null, autoSyncRefreshing:false, autoSyncWatcher:null, autoSyncVisibilityBound:false };
+    const state = { config:null, auth:null, db:null, user:null, profile:null, sessions:[], users:[], section:'dashboard', livePage:1, rangeMode:'today', customStart:'', customEnd:'', customPickerScope:null, maintenance:{settings:{retentionDays:180,autoCleanup:true,emergencyPercent:85,firestoreSoftLimitMb:600,firestoreMaxSessions:12000,kvSoftKeyLimit:5000},cloudflare:{keyCount:0,lastRun:null},firebase:{freePlanMode:true,ttlEnabled:false,ttlRecommended:false}}, autoSyncStatus:null, autoSyncRefreshing:false, autoSyncWatcher:null, autoSyncVisibilityBound:false };
 
     const PREVIEW_STATE_KEY='sellerkbb:preview-state:v1';
     function readPreviewState(){
@@ -1699,7 +1705,7 @@ tbody tr:hover td{background:#fcfafb}
 
     function previewTs(iso){ return {toDate:()=>new Date(iso)}; }
     function enterPreview(){
-      state.config={version:'1.8.0-preview',tiktokConfigured:true};
+      state.config={version:'1.8.1-preview',tiktokConfigured:true};
       state.user={uid:'preview-admin',email:'admin@sellerkbb.demo',displayName:'Quản trị viên Demo',photoURL:''};
       state.profile={role:'admin',status:'approved',displayName:'Quản trị viên Demo',permissions:['live.read','kpi.read']};
       state.maintenance={settings:{retentionDays:180,autoCleanup:true,emergencyPercent:85,firestoreSoftLimitMb:600,firestoreMaxSessions:12000,kvSoftKeyLimit:5000},cloudflare:{keyCount:4,lastRun:{ranAt:new Date().toISOString(),deleted:0}},firebase:{freePlanMode:true,ttlEnabled:false,ttlRecommended:false}};
