@@ -919,7 +919,7 @@ tbody tr:hover td{background:#fffafd}
       }
       showApp(); bindShell(); renderAll();
       const bar=document.createElement('div');
-      bar.style.cssText='position:fixed;left:50%;transform:translateX(-50%);bottom:18px;z-index:99;background:#f7c5dc;color:#653a50;padding:8px 12px;border:1px solid #edb4cf;border-radius:999px;font-weight:800;font-size:10px;box-shadow:0 8px 24px rgba(156,91,124,.16);white-space:nowrap';
+      bar.style.cssText='position:fixed;left:50%;transform:translateX(-50%);bottom:18px;z-index:15;background:#f7c5dc;color:#653a50;padding:8px 12px;border:1px solid #edb4cf;border-radius:999px;font-weight:800;font-size:10px;box-shadow:0 8px 24px rgba(156,91,124,.16);white-space:nowrap';
       bar.textContent='PREVIEW MODE · Dữ liệu mẫu · Không ảnh hưởng hệ thống thật';
       document.body.appendChild(bar);
     }
@@ -1140,7 +1140,7 @@ tbody tr:hover td{background:#fffafd}
     }
 
     async function syncMonth(){
-      if(PREVIEW){ alert('Preview Mode: đây là thao tác mô phỏng. Bản production sẽ đồng bộ dữ liệu thật từ TikTok Shop API.'); return; }
+      if(PREVIEW){ showToast('Preview: thao tác đồng bộ TikTok đã được mô phỏng'); return; }
       const btn=$('#syncMonthBtn'); btn.disabled=true; btn.textContent='Đang đồng bộ…';
       try{
         const range=selectedRange(); const start=range.startKey, end=localDateKey(range.endExclusive); const result=await api('/api/tiktok/sync',{method:'POST',body:JSON.stringify({startDate:start,endDate:end})});
@@ -1161,8 +1161,8 @@ tbody tr:hover td{background:#fffafd}
           }
           await batch.commit();
         }
-        alert(`Đã đồng bộ ${count} phiên LIVE.`); await loadData(); renderAll();
-      }catch(e){ alert('Đồng bộ thất bại: '+e.message); }
+        showToast(`Đã đồng bộ ${count} phiên LIVE`); await loadData(); renderAll();
+      }catch(e){ showToast('Đồng bộ thất bại: '+e.message); }
       finally{ if(btn){btn.disabled=false;btn.textContent='Đồng bộ khoảng thời gian từ TikTok';} }
     }
 
@@ -1201,8 +1201,8 @@ tbody tr:hover td{background:#fffafd}
       if(!isAdmin()){ $('#section-tiktok').innerHTML='';return; }
       if(PREVIEW){
         $('#section-tiktok').innerHTML=`<div class="card"><div class="row space"><div><h3>Kết nối TikTok Shop Seller</h3><div class="sub">Preview giao diện dành riêng cho Quản trị viên. Host/Operator sẽ không thấy mục này.</div></div><span class="pill ok">Đã kết nối · Demo</span></div><div class="notice ok" style="margin-top:14px">Shop mẫu: SellerKBB Official · Khu vực VN · Token được lưu phía backend Cloudflare trong bản production.</div><div class="row" style="margin-top:14px"><button class="btn" id="previewSync">Kiểm tra kết nối</button><button class="btn danger" id="previewDisconnect">Ngắt kết nối</button></div><div class="tiny" style="margin-top:12px">Scopes minh họa: data.shop_analytics.public.read</div></div><div class="card" style="margin-top:14px"><h3>API dùng cho báo cáo</h3><div class="sub"><b>LIVE Performance:</b> /analytics/202509/shop_lives/performance<br><b>Authorized Shops:</b> /authorization/202309/shops<br><b>Finance đối soát:</b> dùng để mở rộng đối soát hoàn/hủy khi shop cấp quyền phù hợp.</div></div>`;
-        $('#previewSync').onclick=()=>alert('Kết nối TikTok mẫu hoạt động bình thường.');
-        $('#previewDisconnect').onclick=()=>alert('Preview Mode không thay đổi kết nối thật.');
+        $('#previewSync').onclick=()=>showToast('Kết nối TikTok mẫu hoạt động bình thường');
+        $('#previewDisconnect').onclick=()=>showToast('Preview Mode không thay đổi kết nối thật');
         return;
       }
       let status={configured:state.config.tiktokConfigured,connected:false,grantedScopes:[]}; try{status=await api('/api/tiktok/status')}catch(e){status.error=e.message}
