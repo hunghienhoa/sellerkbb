@@ -112,7 +112,7 @@ try {
   await page.click('#saveMaintenance');
   await sleep(100);
   await page.click('[data-section="users"]');
-  assert((await page.$('#section-users .user-list-avatar')).length>=6,"User account avatars are missing from the Users page");
+  assert((await page.$$eval('#section-users .user-list-avatar',els=>els.length))>=6,"User account avatars are missing from the Users page");
   await page.select('[data-role="pending-01"]','operator');
   await page.click('[data-approve="pending-01"]');
   await sleep(100);
