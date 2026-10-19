@@ -19,7 +19,7 @@
 
 ## 🆕 Cập nhật mới nhất — v1.17.0
 
-- Đổi tên mục **Quản lý tài khoản** thành **Quản lý tài khoản** trong nhóm **Quản trị**.
+- Đổi tên mục **Duyệt tài khoản** thành **Quản lý tài khoản** trong nhóm **Quản trị**.
 - Danh sách **Tài khoản đã duyệt** được thu gọn: mặc định chỉ hiển thị hồ sơ, vai trò/quyền tóm tắt và hai nút biểu tượng **Cây bút** / **X**.
 - Bấm **Cây bút** mới mở bảng chỉnh **Vai trò** và **Quyền truy cập**; có nút **Đóng** và **Lưu quyền**.
 - Bấm **X** luôn hiện hộp xác nhận. Chỉ khi chọn **Đồng ý** tài khoản mới bị xóa; chọn **Hủy** thì không thay đổi dữ liệu.
