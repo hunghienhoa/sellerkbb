@@ -984,7 +984,7 @@ tbody tr:hover td{background:#fffafd}
       if(state.profile?.status!=='approved'){
         showBoot(`<b>Tài khoản chưa được phép truy cập.</b>`, `<button id="logoutBlocked" class="btn ghost">Đăng xuất</button>`); $('#logoutBlocked').onclick=()=>signOut(state.auth); return;
       }
-      showApp(); bindShell(); await loadData(); renderAll();
+      showApp(); bindShell(); await loadData(); if(isAdmin()){ const cleaned=await cleanupFirestoreData(true); if(cleaned>0) await loadData(); } renderAll();
     }
 
     async function ensureProfile(user){
