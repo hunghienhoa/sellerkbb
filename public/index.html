@@ -1847,7 +1847,9 @@ tbody tr:hover td{background:#fffafb}
 .manual-entry-remove{width:34px;height:36px;padding:0;font-size:18px}
 .manual-kpi-entry.readonly{grid-template-columns:minmax(180px,1.3fr) repeat(3,minmax(130px,1fr));align-items:center}
 .manual-kpi-entry.readonly>div{display:grid;gap:3px}
-.manual-kpi-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:10px}
+.manual-kpi-actions{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-top:10px}
+.manual-kpi-add-group{display:flex;gap:8px;flex-wrap:wrap}
+.manual-kpi-entry [data-manual-kpi-amount][readonly]{background:#fff5f8;color:#a45579;font-weight:750}
 .manual-kpi-value{color:#7654a6!important;font-weight:750}
 @media(max-width:1050px){
   .metrics-grid.metrics-4{grid-template-columns:repeat(2,minmax(0,1fr))}
@@ -1861,6 +1863,7 @@ tbody tr:hover td{background:#fffafb}
   .manual-kpi-entry,.manual-kpi-entry.readonly{grid-template-columns:1fr}
   .manual-entry-remove{grid-column:1;justify-self:end}
   .manual-kpi-actions{display:grid;grid-template-columns:1fr}
+  .manual-kpi-add-group{display:grid;grid-template-columns:1fr 1fr}
   .manual-kpi-actions .btn{width:100%}
 }
 
@@ -1887,7 +1890,7 @@ tbody tr:hover td{background:#fffafb}
       </div>
     </aside>
     <main class="main">
-      <header class="topbar"><div class="topbar-title-wrap"><button id="menuToggle" class="menu-toggle" type="button" aria-label="Mở menu" aria-expanded="false">☰</button><div><h1 id="pageTitle" class="page-title">Tổng quan</h1><div id="pageSub" class="tiny"></div></div></div><div class="row"><span id="syncBadge" class="pill">v1.18.0</span></div></header>
+      <header class="topbar"><div class="topbar-title-wrap"><button id="menuToggle" class="menu-toggle" type="button" aria-label="Mở menu" aria-expanded="false">☰</button><div><h1 id="pageTitle" class="page-title">Tổng quan</h1><div id="pageSub" class="tiny"></div></div></div><div class="row"><span id="syncBadge" class="pill">v1.19.0</span></div></header>
       <div class="content">
         <section id="section-dashboard" class="section active"></section>
         <section id="section-live" class="section"></section>
@@ -2176,7 +2179,7 @@ tbody tr:hover td{background:#fffafb}
 
     function previewTs(iso){ return {toDate:()=>new Date(iso)}; }
     function enterPreview(){
-      state.config={version:'1.18.0-preview',tiktokConfigured:true};
+      state.config={version:'1.19.0-preview',tiktokConfigured:true};
       state.user={uid:'preview-admin',email:'admin@sellerkbb.demo',displayName:'Quản trị viên Demo',photoURL:avatarFallbackData('Quản trị viên Demo')};
       state.profile={role:'admin',status:'approved',displayName:'Quản trị viên Demo',photoURL:state.user.photoURL,permissions:['live.read','kpi.read']};
       state.maintenance={settings:{retentionDays:180,autoCleanup:true,emergencyPercent:85,firestoreSoftLimitMb:600,firestoreMaxSessions:12000,kvSoftKeyLimit:5000},github:{usedBytes:124000,limitBytes:10000000000,available:true},cloudflare:{keyCount:5,lastRun:{ranAt:new Date().toISOString(),deleted:0},usedBytes:428000,storageLimitBytes:1000000000,storageComplete:true},firebase:{freePlanMode:true,ttlEnabled:false,ttlRecommended:false,storageLimitBytes:1073741824}};
@@ -2829,18 +2832,33 @@ tbody tr:hover td{background:#fffafb}
       if($('#exportKhangchouDossier')) $('#exportKhangchouDossier').onclick=()=>showToast('Tính năng đang được phát triển');
     }
 
-    function manualKpiPeople(){
+    function manualMoneyNumber(value){
+      const digits=String(value??'').replace(/[^0-9]/g,'');
+      return Math.max(0,Number(digits||0));
+    }
+
+    function manualMoneyDisplay(value){
+      return new Intl.NumberFormat('vi-VN',{maximumFractionDigits:0}).format(manualMoneyNumber(value))+'đ';
+    }
+
+    function setManualMoneyInput(input,value){
+      if(input)input.value=manualMoneyDisplay(value);
+    }
+
+    function manualKpiPeople(role=''){
       return state.users
-        .filter(u=>u.status==='approved'&&(u.role==='host'||u.role==='operator'))
+        .filter(u=>u.status==='approved'&&(u.role==='host'||u.role==='operator')&&(!role||u.role===role))
         .sort((a,b)=>String(a.displayName||a.email||'').localeCompare(String(b.displayName||b.email||''),'vi'));
     }
 
-    function manualKpiPersonSelect(sessionId,index,value){
-      const people=manualKpiPeople();
-      return `<select class="input" data-manual-person data-session-id="${sessionId}" data-entry-index="${index}">
-        <option value="">— Chọn nhân viên —</option>
-        ${people.map(u=>`<option value="${u.id}" ${u.id===value?'selected':''}>${esc(u.displayName||u.email)}</option>`).join('')}
-      </select>`;
+    function manualKpiPersonOptions(role,value=''){
+      const people=manualKpiPeople(role);
+      return '<option value="">— Chọn nhân viên —</option>'+
+        people.map(u=>`<option value="${u.id}" ${u.id===value?'selected':''}>${esc(u.displayName||u.email)}</option>`).join('');
+    }
+
+    function manualKpiPersonSelect(sessionId,index,value,role){
+      return `<select class="input" data-manual-person data-session-id="${sessionId}" data-entry-index="${index}">${manualKpiPersonOptions(role,value)}</select>`;
     }
 
     function manualKpiEntryRow(session,entry,index,editable){
@@ -2848,21 +2866,90 @@ tbody tr:hover td{background:#fffafb}
       if(!editable){
         return `<div class="manual-kpi-entry readonly">
           <div>${userIdentityHtml(userDisplayRecord(e.uid,e.name),true)}</div>
-          <div><span>Vai trò</span><b>${esc(roleLabel(e.role))}</b></div>
+          <div><span>Vai trò</span><b>${esc(e.role==='operator'?'Vận hành riêng':'Host riêng')}</b></div>
           <div><span>GMV cá nhân sau hoàn/hủy</span><b>${fmtMoney(e.gmv,session.currency)}</b></div>
           <div><span>KPI thủ công</span><b>${fmtMoney(e.kpi,session.currency)}</b></div>
         </div>`;
       }
+      const operator=e.role==='operator';
       return `<div class="manual-kpi-entry" data-manual-entry>
-        <label><span>Nhân viên</span>${manualKpiPersonSelect(session.id,index,e.uid)}</label>
+        <label><span>Nhân viên</span>${manualKpiPersonSelect(session.id,index,e.uid,e.role)}</label>
         <label><span>Vai trò</span><select class="input" data-manual-role>
-          <option value="host" ${e.role==='host'?'selected':''}>Host Livestream · 0,3%</option>
-          <option value="operator" ${e.role==='operator'?'selected':''}>Vận hành · 0,1%</option>
+          <option value="host" ${!operator?'selected':''}>Host riêng</option>
+          <option value="operator" ${operator?'selected':''}>Vận hành riêng · tự tính 0,1%</option>
         </select></label>
-        <label><span>GMV sau hoàn/hủy của cá nhân</span><input class="input" type="number" inputmode="decimal" min="0" step="1000" data-manual-gmv value="${Number(e.gmv||0)}"></label>
-        <label><span>KPI thủ công của cá nhân</span><input class="input" type="number" inputmode="decimal" min="0" step="1000" data-manual-kpi-amount value="${Number(e.kpi||0)}"></label>
+        <label><span>GMV sau hoàn/hủy của cá nhân</span><input class="input" type="text" inputmode="numeric" autocomplete="off" data-manual-gmv value="${manualMoneyDisplay(e.gmv||0)}"></label>
+        <label><span>${operator?'KPI vận hành tự tính 0,1%':'KPI thủ công của Host'}</span><input class="input" type="text" inputmode="numeric" autocomplete="off" data-manual-kpi-amount value="${manualMoneyDisplay(e.kpi||0)}" ${operator?'readonly':''}></label>
         <button class="btn small danger manual-entry-remove" type="button" data-manual-remove aria-label="Xóa người này">×</button>
       </div>`;
+    }
+
+    function currentHostManualGmv(card){
+      const hosts=[...card.querySelectorAll('[data-manual-entry]')].filter(row=>row.querySelector('[data-manual-role]')?.value==='host');
+      const withValue=hosts.find(row=>manualMoneyNumber(row.querySelector('[data-manual-gmv]')?.value)>0)||hosts[0];
+      return manualMoneyNumber(withValue?.querySelector('[data-manual-gmv]')?.value||0);
+    }
+
+    function syncOperatorManualKpi(row,gmvOverride=null){
+      if(row.querySelector('[data-manual-role]')?.value!=='operator')return;
+      const gmvInput=row.querySelector('[data-manual-gmv]');
+      const kpiInput=row.querySelector('[data-manual-kpi-amount]');
+      const gmv=gmvOverride===null?manualMoneyNumber(gmvInput?.value):Math.max(0,Number(gmvOverride||0));
+      if(gmvOverride!==null)setManualMoneyInput(gmvInput,gmv);
+      setManualMoneyInput(kpiInput,Math.round(gmv*.001));
+      if(kpiInput)kpiInput.readOnly=true;
+    }
+
+    function syncOperatorsFromHost(card,gmv){
+      card.querySelectorAll('[data-manual-entry]').forEach(row=>{
+        if(row.querySelector('[data-manual-role]')?.value==='operator')syncOperatorManualKpi(row,gmv);
+      });
+    }
+
+    function refreshManualPersonSelect(row){
+      const role=row.querySelector('[data-manual-role]')?.value==='operator'?'operator':'host';
+      const select=row.querySelector('[data-manual-person]');
+      if(!select)return;
+      const previous=select.value;
+      select.innerHTML=manualKpiPersonOptions(role,previous);
+      if(![...select.options].some(o=>o.value===previous))select.value='';
+    }
+
+    function bindManualKpiEntry(row,card){
+      const roleSelect=row.querySelector('[data-manual-role]');
+      const gmvInput=row.querySelector('[data-manual-gmv]');
+      const kpiInput=row.querySelector('[data-manual-kpi-amount]');
+      setManualMoneyInput(gmvInput,manualMoneyNumber(gmvInput?.value));
+      setManualMoneyInput(kpiInput,manualMoneyNumber(kpiInput?.value));
+
+      gmvInput?.addEventListener('input',()=>{
+        const amount=manualMoneyNumber(gmvInput.value);
+        setManualMoneyInput(gmvInput,amount);
+        if(roleSelect?.value==='operator')syncOperatorManualKpi(row);
+        else syncOperatorsFromHost(card,amount);
+      });
+
+      kpiInput?.addEventListener('input',()=>{
+        if(roleSelect?.value==='operator'){syncOperatorManualKpi(row);return;}
+        setManualMoneyInput(kpiInput,manualMoneyNumber(kpiInput.value));
+      });
+
+      roleSelect?.addEventListener('change',()=>{
+        refreshManualPersonSelect(row);
+        const operator=roleSelect.value==='operator';
+        if(kpiInput)kpiInput.readOnly=operator;
+        const label=kpiInput?.closest('label')?.querySelector('span');
+        if(label)label.textContent=operator?'KPI vận hành tự tính 0,1%':'KPI thủ công của Host';
+        if(operator){
+          const hostGmv=currentHostManualGmv(card);
+          syncOperatorManualKpi(row,hostGmv||manualMoneyNumber(gmvInput?.value));
+        }
+      });
+
+      if(roleSelect?.value==='operator'){
+        const hostGmv=currentHostManualGmv(card);
+        syncOperatorManualKpi(row,hostGmv||manualMoneyNumber(gmvInput?.value));
+      }
     }
 
     function manualKpiSessionCard(session,editable){
@@ -2878,9 +2965,9 @@ tbody tr:hover td{background:#fffafb}
           </div>
           <div class="manual-kpi-total"><span>KPI thủ công đã nhập</span><b>${fmtMoney(totalManual,session.currency)}</b></div>
         </div>
-        <div class="manual-kpi-rule">${icon('shield',15)} <span>Chỉ nhập số liệu của người cần tính KPI. Không bắt buộc đủ số người tham gia và SellerKBB không tự chia GMV tổng phiên.</span></div>
+        <div class="manual-kpi-rule">${icon('shield',15)} <span>Không bắt buộc đủ số người tham gia và SellerKBB không tự chia GMV tổng phiên. Nhập GMV sau hoàn/hủy của Host; nếu có Vận hành, SellerKBB tự lấy cùng GMV đó và tính KPI Vận hành = 0,1%. Host vẫn có thể nhập KPI thủ công riêng.</span></div>
         <div class="manual-kpi-entries">${entries.map((entry,index)=>manualKpiEntryRow(session,entry,index,editable)).join('')}</div>
-        ${editable?`<div class="manual-kpi-actions"><button class="btn" type="button" data-manual-add>${icon('users',15)} Thêm người</button><button class="btn primary" type="button" data-manual-save>${icon('check',15)} Lưu KPI thủ công</button></div>`:''}
+        ${editable?`<div class="manual-kpi-actions"><div class="manual-kpi-add-group"><button class="btn" type="button" data-manual-add-role="host">${icon('users',15)} Thêm Host riêng</button><button class="btn" type="button" data-manual-add-role="operator">${icon('users',15)} Thêm Vận hành riêng</button></div><button class="btn primary" type="button" data-manual-save>${icon('check',15)} Lưu KPI thủ công</button></div>`:''}
       </div>`;
     }
 
@@ -2890,8 +2977,8 @@ tbody tr:hover td{background:#fffafb}
       for(const row of rows){
         const uid=row.querySelector('[data-manual-person]')?.value||'';
         const role=row.querySelector('[data-manual-role]')?.value==='operator'?'operator':'host';
-        const gmv=Math.max(0,Number(row.querySelector('[data-manual-gmv]')?.value||0));
-        const kpi=Math.max(0,Number(row.querySelector('[data-manual-kpi-amount]')?.value||0));
+        const gmv=manualMoneyNumber(row.querySelector('[data-manual-gmv]')?.value);
+        const kpi=role==='operator'?Math.round(gmv*.001):manualMoneyNumber(row.querySelector('[data-manual-kpi-amount]')?.value);
         if(!uid){
           if(gmv||kpi)throw new Error('Hãy chọn nhân viên cho dòng KPI đã nhập.');
           continue;
@@ -2931,12 +3018,19 @@ tbody tr:hover td{background:#fffafb}
       if(!isAdmin())return;
       document.querySelectorAll('[data-manual-session]').forEach(card=>{
         const sessionId=card.dataset.manualSession;
-        card.querySelector('[data-manual-add]')?.addEventListener('click',()=>{
+        card.querySelectorAll('[data-manual-entry]').forEach(row=>bindManualKpiEntry(row,card));
+
+        card.querySelectorAll('[data-manual-add-role]').forEach(button=>button.addEventListener('click',()=>{
+          const role=button.dataset.manualAddRole==='operator'?'operator':'host';
           const list=card.querySelector('.manual-kpi-entries');
           const index=list.querySelectorAll('[data-manual-entry]').length;
           const session=state.sessions.find(s=>s.id===sessionId);
-          list.insertAdjacentHTML('beforeend',manualKpiEntryRow(session,{uid:'',role:'host',gmv:0,kpi:0},index,true));
-        });
+          const hostGmv=role==='operator'?currentHostManualGmv(card):0;
+          const kpi=role==='operator'?Math.round(hostGmv*.001):0;
+          list.insertAdjacentHTML('beforeend',manualKpiEntryRow(session,{uid:'',role,gmv:hostGmv,kpi},index,true));
+          bindManualKpiEntry(list.lastElementChild,card);
+        }));
+
         card.addEventListener('click',event=>{
           const remove=event.target.closest('[data-manual-remove]');
           if(remove){
@@ -2945,8 +3039,10 @@ tbody tr:hover td{background:#fffafb}
             if(rows.length===1){
               row.querySelector('[data-manual-person]').value='';
               row.querySelector('[data-manual-role]').value='host';
-              row.querySelector('[data-manual-gmv]').value='0';
-              row.querySelector('[data-manual-kpi-amount]').value='0';
+              row.querySelector('[data-manual-kpi-amount]').readOnly=false;
+              setManualMoneyInput(row.querySelector('[data-manual-gmv]'),0);
+              setManualMoneyInput(row.querySelector('[data-manual-kpi-amount]'),0);
+              refreshManualPersonSelect(row);
             }else row.remove();
           }
         });
@@ -2970,7 +3066,7 @@ tbody tr:hover td{background:#fffafb}
           ${metricCard('money','GMV cá nhân đã nhập',fmtMoney(totalManualGmv,currency))}
           ${metricCard('kpi','KPI thủ công đã nhập',fmtMoney(totalManualKpi,currency))}
         </div>
-        <div class="data-note">${icon('shield',16)}<span>Mỗi người dùng số liệu riêng. Không bắt buộc nhập đủ người tham gia và SellerKBB không tự chia GMV tổng phiên.</span></div>
+        <div class="data-note">${icon('shield',16)}<span>Tiền tự định dạng theo VND. Có thể thêm Host riêng hoặc Vận hành riêng; Vận hành tự tính 0,1% từ GMV Host.</span></div>
         <div class="card manual-kpi-section">
           <div class="row space manual-kpi-section-head"><div><h3 class="heading-with-icon">${icon('settings',18)} Phiên cần tính KPI thủ công</h3><div class="sub">Phiên nào đã tích “Tính KPI thủ công” ở tab Phiên LIVE sẽ tự xuất hiện tại đây.</div></div><span class="pill">${manualSessions.length} phiên</span></div>
           ${manualSessions.length?`<div class="manual-kpi-session-list">${manualSessions.map(s=>manualKpiSessionCard(s,true)).join('')}</div>`:'<div class="empty">Không có phiên KPI thủ công trong khoảng thời gian này.</div>'}

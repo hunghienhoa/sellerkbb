@@ -118,24 +118,49 @@ try {
   assert(await page.$('#section-kpi [data-manual-session]')===null,"Manual KPI editor must not remain inside KPI nhân sự");
   const manualCard='#section-manual-kpi [data-manual-session]:first-of-type';
   assert(await page.$eval(manualCard,e=>e.textContent.includes('không tự chia GMV tổng')),"Manual KPI no-equal-split notice missing");
+  assert(await page.$eval(manualCard,e=>e.textContent.includes('Thêm Host riêng')&&e.textContent.includes('Thêm Vận hành riêng')),"Separate Host/Operator add controls missing");
+  const hostOptions=await page.$$eval(manualCard+' [data-manual-person] option',els=>els.map(e=>e.textContent.trim()));
+  assert(hostOptions.includes('Thảo My')&&!hostOptions.includes('Hùng Bắc Giang'),"Host row must list Host accounts only");
   await page.select(manualCard+' [data-manual-person]','thao-my');
-  await page.select(manualCard+' [data-manual-role]','host');
-  await page.$eval(manualCard+' [data-manual-gmv]',e=>{e.value='1234000';e.dispatchEvent(new Event('input',{bubbles:true}));});
-  await page.$eval(manualCard+' [data-manual-kpi-amount]',e=>{e.value='4321';e.dispatchEvent(new Event('input',{bubbles:true}));});
+
+  await page.click(manualCard+' [data-manual-add-role="operator"]');
+  const manualRows=manualCard+' [data-manual-entry]';
+  assert((await page.$$(manualRows)).length===2,"Adding a separate Operator row failed");
+  const operatorRow=manualRows+':nth-child(2)';
+  const operatorOptions=await page.$$eval(operatorRow+' [data-manual-person] option',els=>els.map(e=>e.textContent.trim()));
+  assert(operatorOptions.includes('Hùng Bắc Giang')&&!operatorOptions.includes('Thảo My'),"Operator row must list Operator accounts only");
+  await page.select(operatorRow+' [data-manual-person]','hung-bg');
+
+  await page.$eval(manualCard+' [data-manual-entry]:first-child [data-manual-gmv]',e=>{e.value='10000';e.dispatchEvent(new Event('input',{bubbles:true}));});
+  assert(await page.$eval(manualCard+' [data-manual-entry]:first-child [data-manual-gmv]',e=>e.value)==='10.000đ',"Manual GMV did not format 10000 as 10.000đ");
+  assert(await page.$eval(operatorRow+' [data-manual-gmv]',e=>e.value)==='10.000đ',"Operator GMV did not follow Host GMV");
+  assert(await page.$eval(operatorRow+' [data-manual-kpi-amount]',e=>e.value)==='10đ',"Operator KPI did not auto-calculate at 0.1%");
+  assert(await page.$eval(operatorRow+' [data-manual-kpi-amount]',e=>e.readOnly),"Operator KPI must be read-only");
+
+  await page.$eval(manualCard+' [data-manual-entry]:first-child [data-manual-gmv]',e=>{e.value='1234000';e.dispatchEvent(new Event('input',{bubbles:true}));});
+  await page.$eval(manualCard+' [data-manual-entry]:first-child [data-manual-kpi-amount]',e=>{e.value='4321';e.dispatchEvent(new Event('input',{bubbles:true}));});
+  assert(await page.$eval(manualCard+' [data-manual-entry]:first-child [data-manual-gmv]',e=>e.value)==='1.234.000đ',"Formatted Host GMV is incorrect");
+  assert(await page.$eval(manualCard+' [data-manual-entry]:first-child [data-manual-kpi-amount]',e=>e.value)==='4.321đ',"Formatted Host manual KPI is incorrect");
+  assert(await page.$eval(operatorRow+' [data-manual-gmv]',e=>e.value)==='1.234.000đ',"Operator GMV did not stay synced with Host");
+  assert(await page.$eval(operatorRow+' [data-manual-kpi-amount]',e=>e.value)==='1.234đ',"Operator KPI 0.1% is incorrect");
+
   await page.click(manualCard+' [data-manual-save]');
   await sleep(150);
   await page.click('[data-section="kpi"]');
   await page.click('#section-kpi [data-range-mode="30d"]');
-  assert(await page.$eval('#section-kpi',e=>e.textContent.includes('4.321')),"Manual KPI amount was not added to KPI nhân sự");
-  assert(await page.$eval('#section-kpi',e=>e.textContent.includes('1.234.000')),"Manual personal GMV was not added to KPI nhân sự");
+  assert(await page.$eval('#section-kpi',e=>e.textContent.includes('4.321')),"Host manual KPI amount was not added to KPI nhân sự");
+  assert(await page.$eval('#section-kpi',e=>e.textContent.includes('1.234')),"Operator 0.1% KPI was not added to KPI nhân sự");
+  assert(await page.$eval('#section-kpi',e=>e.textContent.includes('1.234.000')),"Manual GMV was not added to KPI nhân sự");
   assert(await page.$('#section-kpi [data-manual-save]')===null,"KPI nhân sự must not contain manual KPI save controls");
 
   await page.reload({waitUntil:"domcontentloaded"});
   await page.waitForSelector("#app:not(.hidden)",{timeout:30000});
   await page.click('[data-section="manual-kpi"]');
   await page.click('#section-manual-kpi [data-range-mode="30d"]');
-  assert(await page.$eval('#section-manual-kpi [data-manual-session] [data-manual-kpi-amount]',e=>e.value)==='4321',"Manual KPI did not persist after reload");
-  assert(await page.$eval('#section-manual-kpi [data-manual-session] [data-manual-gmv]',e=>e.value)==='1234000',"Manual personal GMV did not persist after reload");
+  const savedManualCard='#section-manual-kpi [data-manual-session]:first-of-type';
+  assert(await page.$eval(savedManualCard+' [data-manual-entry]:first-child [data-manual-kpi-amount]',e=>e.value)==='4.321đ',"Formatted Host KPI did not persist after reload");
+  assert(await page.$eval(savedManualCard+' [data-manual-entry]:first-child [data-manual-gmv]',e=>e.value)==='1.234.000đ',"Formatted Host GMV did not persist after reload");
+  assert(await page.$eval(savedManualCard+' [data-manual-entry]:nth-child(2) [data-manual-kpi-amount]',e=>e.value)==='1.234đ',"Operator auto KPI did not persist after reload");
 
   await page.click('[data-section="export"]');
   assert(await page.$eval('#section-export',e=>e.textContent.includes('BO_HO_SO_KPI_KHANGCHOU_'+new Date().getFullYear())),"Khangchou KPI dossier export item missing");
