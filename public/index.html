@@ -1812,11 +1812,12 @@ tbody tr:hover td{background:#fbf9fe}
       </div>
     </aside>
     <main class="main">
-      <header class="topbar"><div class="topbar-title-wrap"><button id="menuToggle" class="menu-toggle" type="button" aria-label="Mở menu" aria-expanded="false">☰</button><div><h1 id="pageTitle" class="page-title">Tổng quan</h1><div id="pageSub" class="tiny"></div></div></div><div class="row"><span id="syncBadge" class="pill">v1.13.0</span></div></header>
+      <header class="topbar"><div class="topbar-title-wrap"><button id="menuToggle" class="menu-toggle" type="button" aria-label="Mở menu" aria-expanded="false">☰</button><div><h1 id="pageTitle" class="page-title">Tổng quan</h1><div id="pageSub" class="tiny"></div></div></div><div class="row"><span id="syncBadge" class="pill">v1.14.0</span></div></header>
       <div class="content">
         <section id="section-dashboard" class="section active"></section>
         <section id="section-live" class="section"></section>
         <section id="section-kpi" class="section"></section>
+        <section id="section-manual-kpi" class="section"></section>
         <section id="section-users" class="section"></section>
         <section id="section-tiktok" class="section"></section>
         <section id="section-export" class="section"></section>
@@ -2098,7 +2099,7 @@ tbody tr:hover td{background:#fbf9fe}
 
     function previewTs(iso){ return {toDate:()=>new Date(iso)}; }
     function enterPreview(){
-      state.config={version:'1.13.0-preview',tiktokConfigured:true};
+      state.config={version:'1.14.0-preview',tiktokConfigured:true};
       state.user={uid:'preview-admin',email:'admin@sellerkbb.demo',displayName:'Quản trị viên Demo',photoURL:avatarFallbackData('Quản trị viên Demo')};
       state.profile={role:'admin',status:'approved',displayName:'Quản trị viên Demo',photoURL:state.user.photoURL,permissions:['live.read','kpi.read']};
       state.maintenance={settings:{retentionDays:180,autoCleanup:true,emergencyPercent:85,firestoreSoftLimitMb:600,firestoreMaxSessions:12000,kvSoftKeyLimit:5000},github:{usedBytes:124000,limitBytes:10000000000,available:true},cloudflare:{keyCount:5,lastRun:{ranAt:new Date().toISOString(),deleted:0},usedBytes:428000,storageLimitBytes:1000000000,storageComplete:true},firebase:{freePlanMode:true,ttlEnabled:false,ttlRecommended:false,storageLimitBytes:1073741824}};
@@ -2432,7 +2433,8 @@ tbody tr:hover td{background:#fbf9fe}
         {label:'Báo cáo',items:[
           {id:'dashboard',icon:'home',label:'Tổng quan',show:true},
           {id:'live',icon:'live',label:'Phiên LIVE',show:can('live.read')},
-          {id:'kpi',icon:'kpi',label:'KPI nhân sự',show:can('kpi.read')}
+          {id:'kpi',icon:'kpi',label:'KPI nhân sự',show:can('kpi.read')},
+          {id:'manual-kpi',icon:'settings',label:'KPI thủ công',show:isAdmin()}
         ]},
         {label:'Công cụ',items:[
           {id:'export',icon:'export',label:'Xuất file',show:can('live.read')||can('kpi.read')}
@@ -2451,7 +2453,7 @@ tbody tr:hover td{background:#fbf9fe}
       $('#nav').querySelectorAll('button').forEach(b=>b.onclick=()=>switchSection(b.dataset.section));
     }
 
-    function switchSection(id){ state.section=id; setAccountMenu(false); setMobileMenu(false); document.querySelectorAll('.section').forEach(s=>s.classList.remove('active')); $(`#section-${id}`).classList.add('active'); renderNav(); const meta={dashboard:['Tổng quan','Báo cáo LIVE & KPI'],live:['Phiên LIVE','Gắn Host/Operator cho từng phiên'],kpi:['KPI nhân sự','Host 0,3% · Operator 0,1%'],users:['Duyệt tài khoản','Phân vai trò và nội dung được phép xem'],export:['Xuất file','Xuất báo cáo theo khoảng thời gian đã chọn'],tiktok:['TikTok / API','Tự động đồng bộ LIVE và gia hạn token 24/24'],storage:['Lưu trữ & tự dọn','Giữ dữ liệu tối đa 6 tháng và bảo vệ dung lượng']}[id]; $('#pageTitle').textContent=meta[0]; $('#pageSub').textContent=meta[1]; }
+    function switchSection(id){ state.section=id; setAccountMenu(false); setMobileMenu(false); document.querySelectorAll('.section').forEach(s=>s.classList.remove('active')); $(`#section-${id}`).classList.add('active'); renderNav(); const meta={dashboard:['Tổng quan','Báo cáo LIVE & KPI'],live:['Phiên LIVE','Gắn Host/Operator cho từng phiên'],kpi:['KPI nhân sự','Tổng hợp KPI tự động + KPI thủ công đã lưu'], 'manual-kpi':['KPI thủ công','Nhập KPI theo từng người cho các phiên tính thủ công'],users:['Duyệt tài khoản','Phân vai trò và nội dung được phép xem'],export:['Xuất file','Xuất báo cáo theo khoảng thời gian đã chọn'],tiktok:['TikTok / API','Tự động đồng bộ LIVE và gia hạn token 24/24'],storage:['Lưu trữ & tự dọn','Giữ dữ liệu tối đa 6 tháng và bảo vệ dung lượng']}[id]; $('#pageTitle').textContent=meta[0]; $('#pageSub').textContent=meta[1]; }
 
     function finalGmv(s){ return Number(s.finalGmvAmount ?? s.currentGmvAmount ?? s.recordedGmvAmount ?? 0); }
     function liveEndTime(s){
@@ -2832,6 +2834,7 @@ tbody tr:hover td{background:#fbf9fe}
       if(PREVIEW){
         persistPreviewState();
         showToast('Đã lưu KPI thủ công và cộng vào KPI nhân sự');
+        renderManualKpi();
         renderKpi();
         return;
       }
@@ -2872,28 +2875,48 @@ tbody tr:hover td{background:#fbf9fe}
       });
     }
 
+    function renderManualKpi(){
+      if(!isAdmin()){ $('#section-manual-kpi').innerHTML=''; return; }
+      const manualSessions=sessionsForRange().filter(isManualKpi);
+      const entries=manualSessions.flatMap(normalizedManualKpiEntries);
+      const currency=manualSessions[0]?.currency||entries[0]?.currency||'VND';
+      const totalManualKpi=entries.reduce((sum,e)=>sum+Number(e.kpi||0),0);
+      const totalManualGmv=entries.reduce((sum,e)=>sum+Number(e.gmv||0),0);
+      const completed=manualSessions.filter(s=>normalizedManualKpiEntries(s).length).length;
+      $('#section-manual-kpi').innerHTML=`
+        ${timeFilterHtml('manual-kpi')}
+        <div class="metrics-grid metrics-4">
+          ${metricCard('settings','Phiên KPI thủ công',manualSessions.length)}
+          ${metricCard('check','Đã nhập',completed+' / '+manualSessions.length)}
+          ${metricCard('money','GMV cá nhân đã nhập',fmtMoney(totalManualGmv,currency))}
+          ${metricCard('kpi','KPI thủ công đã nhập',fmtMoney(totalManualKpi,currency))}
+        </div>
+        <div class="data-note">${icon('shield',16)}<span>Mỗi người dùng số liệu riêng. Không bắt buộc nhập đủ người tham gia và SellerKBB không tự chia GMV tổng phiên.</span></div>
+        <div class="card manual-kpi-section">
+          <div class="row space manual-kpi-section-head"><div><h3 class="heading-with-icon">${icon('settings',18)} Phiên cần tính KPI thủ công</h3><div class="sub">Phiên nào đã tích “Tính KPI thủ công” ở tab Phiên LIVE sẽ tự xuất hiện tại đây.</div></div><span class="pill">${manualSessions.length} phiên</span></div>
+          ${manualSessions.length?`<div class="manual-kpi-session-list">${manualSessions.map(s=>manualKpiSessionCard(s,true)).join('')}</div>`:'<div class="empty">Không có phiên KPI thủ công trong khoảng thời gian này.</div>'}
+        </div>`;
+      bindTimeFilter('manual-kpi');
+      bindManualKpiEditors();
+    }
+
     function renderKpi(){
       if(!can('kpi.read')){ $('#section-kpi').innerHTML='<div class="notice bad">Bạn không có quyền xem KPI.</div>';return; }
-      const manualSessions=sessionsForRange().filter(isManualKpi);
       const rows=buildKpiRows();
+      const manualSessions=sessionsForRange().filter(isManualKpi);
       const currency=rows[0]?.currency||manualSessions[0]?.currency||'VND';
       const totalKpi=rows.reduce((a,r)=>a+r.kpi,0);
+      const totalAutoKpi=rows.reduce((a,r)=>a+r.autoKpi,0);
       const totalManualKpi=rows.reduce((a,r)=>a+r.manualKpi,0);
-      const manualWithData=manualSessions.filter(s=>normalizedManualKpiEntries(s).length).length;
       $('#section-kpi').innerHTML=`
         ${timeFilterHtml('kpi','<span class="pill">Host 0,3%</span><span class="pill">Vận hành 0,1%</span>')}
         <div class="kpi-pair"><div class="pair-card"><b>Thảo My + Hùng Bắc Giang</b><span class="tiny">Đi theo cặp — Host / Vận hành</span></div><div class="pair-card"><b>Dung hoặc Tâm + Hùng Hiền Hòa</b><span class="tiny">Đi theo cặp — Host / Vận hành</span></div></div>
-        <div class="metrics-grid metrics-4">${metricCard('users','Nhân sự có KPI',rows.length)}${metricCard('money','Tổng KPI',fmtMoney(totalKpi,currency))}${metricCard('settings','Phiên KPI thủ công',manualSessions.length)}${metricCard('check','Đã nhập thủ công',manualWithData+' / '+manualSessions.length)}</div>
-        <div class="card manual-kpi-section">
-          <div class="row space manual-kpi-section-head"><div><h3 class="heading-with-icon">${icon('settings',18)} Phiên KPI thủ công</h3><div class="sub">Các phiên đã tích “Tính KPI thủ công” được gom tại đây. Mỗi người dùng số liệu riêng; không chia GMV tổng.</div></div><span class="pill">${fmtMoney(totalManualKpi,currency)} KPI thủ công</span></div>
-          ${manualSessions.length?`<div class="manual-kpi-session-list">${manualSessions.map(s=>manualKpiSessionCard(s,isAdmin())).join('')}</div>`:'<div class="empty">Không có phiên KPI thủ công trong khoảng thời gian này.</div>'}
-        </div>
+        <div class="metrics-grid metrics-4">${metricCard('users','Nhân sự có KPI',rows.length)}${metricCard('money','Tổng KPI',fmtMoney(totalKpi,currency))}${metricCard('kpi','KPI tự động',fmtMoney(totalAutoKpi,currency))}${metricCard('settings','KPI thủ công',fmtMoney(totalManualKpi,currency))}</div>
         <div class="card">
-          <div class="row space"><div><h3>KPI nhân sự</h3><div class="sub">KPI tự động + KPI thủ công đã lưu được cộng vào đúng từng nhân viên.</div></div><span class="pill">Tổng ${fmtMoney(totalKpi,currency)}</span></div>
+          <div class="row space"><div><h3>KPI nhân sự</h3><div class="sub">Bảng tổng hợp này tự cộng KPI tự động và KPI thủ công đã lưu của đúng từng nhân viên.</div></div><span class="pill">Tổng ${fmtMoney(totalKpi,currency)}</span></div>
           ${rows.length?`<div class="table-wrap"><table style="min-width:920px"><thead><tr><th>Nhân sự</th><th>Vai trò</th><th>GMV tự động</th><th>GMV thủ công</th><th>KPI tự động</th><th>KPI thủ công</th><th>Tổng KPI</th></tr></thead><tbody>${rows.map(r=>`<tr><td>${userIdentityHtml(userDisplayRecord(r.uid,r.name),false)}</td><td><span class="tag ${r.roles[0]||''}">${esc(kpiRoleSummary(r))}</span></td><td class="money">${fmtMoney(r.autoGmv,r.currency)}</td><td class="money">${fmtMoney(r.manualGmv,r.currency)}</td><td class="money">${fmtMoney(r.autoKpi,r.currency)}</td><td class="money manual-kpi-value">${fmtMoney(r.manualKpi,r.currency)}</td><td class="money"><b>${fmtMoney(r.kpi,r.currency)}</b></td></tr>`).join('')}</tbody></table></div>`:'<div class="empty">Chưa có KPI trong khoảng thời gian này.</div>'}
         </div>`;
       bindTimeFilter('kpi');
-      bindManualKpiEditors();
     }
 
     function renderUsers(){
@@ -3154,7 +3177,7 @@ tbody tr:hover td{background:#fbf9fe}
       if($('#checkTikTok')) $('#checkTikTok').onclick=()=>showToast(status.connected?'Kết nối đang hoạt động · đồng bộ 24/24 đã bật':'TikTok chưa kết nối');
     }
 
-    function renderAll(){ renderNav(); renderDashboard(); renderLive(); renderKpi(); renderExport(); renderUsers(); renderTikTok(); renderStorage(); switchSection(state.section); }
+    function renderAll(){ renderNav(); renderDashboard(); renderLive(); renderKpi(); renderManualKpi(); renderExport(); renderUsers(); renderTikTok(); renderStorage(); switchSection(state.section); }
 
     init().catch(e=>showBoot(`<b>Không khởi động được ứng dụng.</b><br><br>${esc(e.message)}`));
   </script>

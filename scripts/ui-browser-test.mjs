@@ -106,10 +106,12 @@ try {
   assert(await page.$eval(desktopManualRow+' [data-manual-kpi]',e=>e.checked),"Campaign/Mega flag did not persist");
   assert(await page.$eval(desktopManualRow+' select[data-person="host"]',e=>e.value)==='',"Campaign/Mega Host was restored unexpectedly");
 
-  await page.click('[data-section="kpi"]');
-  await page.click('#section-kpi [data-range-mode="30d"]');
-  assert((await page.$$('#section-kpi [data-manual-session]')).length>=1,"Manual KPI session section missing");
-  const manualCard='#section-kpi [data-manual-session]:first-of-type';
+  assert(await page.$('#nav [data-section="manual-kpi"]')!==null,"Dedicated KPI thủ công nav tab missing");
+  await page.click('[data-section="manual-kpi"]');
+  await page.click('#section-manual-kpi [data-range-mode="30d"]');
+  assert((await page.$('#section-manual-kpi [data-manual-session]')).length>=1,"Manual KPI session section missing");
+  assert(await page.$('#section-kpi [data-manual-session]')===null,"Manual KPI editor must not remain inside KPI nhân sự");
+  const manualCard='#section-manual-kpi [data-manual-session]:first-of-type';
   assert(await page.$eval(manualCard,e=>e.textContent.includes('không tự chia GMV tổng')),"Manual KPI no-equal-split notice missing");
   await page.select(manualCard+' [data-manual-person]','thao-my');
   await page.select(manualCard+' [data-manual-role]','host');
@@ -117,15 +119,18 @@ try {
   await page.$eval(manualCard+' [data-manual-kpi-amount]',e=>{e.value='4321';e.dispatchEvent(new Event('input',{bubbles:true}));});
   await page.click(manualCard+' [data-manual-save]');
   await sleep(150);
+  await page.click('[data-section="kpi"]');
+  await page.click('#section-kpi [data-range-mode="30d"]');
   assert(await page.$eval('#section-kpi',e=>e.textContent.includes('4.321')),"Manual KPI amount was not added to KPI nhân sự");
   assert(await page.$eval('#section-kpi',e=>e.textContent.includes('1.234.000')),"Manual personal GMV was not added to KPI nhân sự");
+  assert(await page.$('#section-kpi [data-manual-save]')===null,"KPI nhân sự must not contain manual KPI save controls");
 
   await page.reload({waitUntil:"domcontentloaded"});
   await page.waitForSelector("#app:not(.hidden)",{timeout:30000});
-  await page.click('[data-section="kpi"]');
-  await page.click('#section-kpi [data-range-mode="30d"]');
-  assert(await page.$eval('#section-kpi [data-manual-session] [data-manual-kpi-amount]',e=>e.value)==='4321',"Manual KPI did not persist after reload");
-  assert(await page.$eval('#section-kpi [data-manual-session] [data-manual-gmv]',e=>e.value)==='1234000',"Manual personal GMV did not persist after reload");
+  await page.click('[data-section="manual-kpi"]');
+  await page.click('#section-manual-kpi [data-range-mode="30d"]');
+  assert(await page.$eval('#section-manual-kpi [data-manual-session] [data-manual-kpi-amount]',e=>e.value)==='4321',"Manual KPI did not persist after reload");
+  assert(await page.$eval('#section-manual-kpi [data-manual-session] [data-manual-gmv]',e=>e.value)==='1234000',"Manual personal GMV did not persist after reload");
 
   await page.click('[data-section="export"]');
   assert(await page.$eval('#section-export',e=>e.textContent.includes('BO_HO_SO_KPI_KHANGCHOU_'+new Date().getFullYear())),"Khangchou KPI dossier export item missing");
@@ -164,8 +169,9 @@ try {
   await page.click('#menuToggle');
   await page.waitForFunction(()=>document.querySelector('#sidebar')?.classList.contains('open'));
   await sleep(300);
-  const mobileNavGroups=await page.$$eval('#nav .nav-group-title',els=>els.map(e=>e.textContent.trim()));
+  const mobileNavGroups=await page.$eval('#nav .nav-group-title',els=>els.map(e=>e.textContent.trim()));
   assert(mobileNavGroups.join('|')==='Báo cáo|Công cụ|Quản trị',"Mobile sidebar groups are missing");
+  assert(await page.$('#nav [data-section="manual-kpi"]')!==null,"Mobile KPI thủ công tab missing");
   await page.click('#userMenuBtn');
   assert(!(await page.$eval('#accountPopover',e=>e.classList.contains('hidden'))),"Mobile account popover did not open");
   assert(await page.$('#accountLogoutBtn')!==null,"Mobile account logout button missing");

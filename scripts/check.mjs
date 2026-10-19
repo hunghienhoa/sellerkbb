@@ -100,4 +100,13 @@ assert(html.includes("SellerKBB không tự chia GMV tổng phiên"), "No-equal-
 assert(html.includes("manualKpiEntries:Array.isArray"), "Preview manual KPI persistence missing");
 assert(html.includes("manualKpiEntries:entries"), "Firestore manual KPI persistence missing");
 assert(html.includes("manualKpi:0"), "Manual KPI aggregate field missing");
-console.log("Project structure, syntax, persistence, calendar, storage, Google profiles, grouped lavender UI, manual KPI allocation, KPI dossier placeholder, Release backup, README, and auto-sync checks OK");
+assert(html.includes('id="section-manual-kpi"'), "Dedicated manual KPI section missing");
+assert(html.includes("{id:'manual-kpi',icon:'settings',label:'KPI thủ công',show:isAdmin()}"), "Manual KPI nav tab missing");
+assert(html.includes("function renderManualKpi()"), "Manual KPI renderer missing");
+assert(html.includes("bindTimeFilter('manual-kpi')"), "Manual KPI time filter missing");
+const kpiRendererStart=html.indexOf("function renderKpi(){");
+const kpiRendererEnd=html.indexOf("function renderUsers(){",kpiRendererStart);
+const kpiRenderer=html.slice(kpiRendererStart,kpiRendererEnd);
+assert(!kpiRenderer.includes("manualKpiSessionCard(s,true)"), "Manual KPI editor must not remain inside KPI nhân sự");
+assert(html.includes("renderKpi(); renderManualKpi();"), "renderAll must render separate manual KPI tab");
+console.log("Project structure, syntax, persistence, calendar, storage, Google profiles, grouped lavender UI, separate manual KPI tab, KPI dossier placeholder, Release backup, README, and auto-sync checks OK");
