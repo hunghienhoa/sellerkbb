@@ -1,0 +1,8 @@
+.env
+.env.*
+!.env.example
+node_modules/
+.wrangler/
+.firebase/
+.DS_Store
+*.log
