@@ -1457,7 +1457,7 @@ tbody tr:hover td{background:#fcfafb}
       <div class="side-bottom"><div class="userbox row"><img id="userAvatar" class="avatar" alt=""><div class="usertext" style="min-width:0"><div id="userName" style="font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis"></div><div id="userRole" class="tiny"></div></div></div></div>
     </aside>
     <main class="main">
-      <header class="topbar"><div class="topbar-title-wrap"><button id="menuToggle" class="menu-toggle" type="button" aria-label="Mở menu" aria-expanded="false">☰</button><div><h1 id="pageTitle" class="page-title">Tổng quan</h1><div id="pageSub" class="tiny"></div></div></div><div class="row"><span id="syncBadge" class="pill">v1.8.1</span><button id="logoutBtn" class="btn ghost small">Đăng xuất</button></div></header>
+      <header class="topbar"><div class="topbar-title-wrap"><button id="menuToggle" class="menu-toggle" type="button" aria-label="Mở menu" aria-expanded="false">☰</button><div><h1 id="pageTitle" class="page-title">Tổng quan</h1><div id="pageSub" class="tiny"></div></div></div><div class="row"><span id="syncBadge" class="pill">v1.8.2</span><button id="logoutBtn" class="btn ghost small">Đăng xuất</button></div></header>
       <div class="content">
         <section id="section-dashboard" class="section active"></section>
         <section id="section-live" class="section"></section>
@@ -1551,7 +1551,7 @@ tbody tr:hover td{background:#fcfafb}
     }
     function timeFilterHtml(scope,actions=''){
       const selected=selectedRange();
-      const opts=[['today','Hôm nay'],['7d','7 ngày'],['30d','1 tháng'],['custom','Chọn ngày']];
+      const opts=[['today','Hôm nay'],['7d','7 ngày'],['30d','30 Ngày'],['custom','Chọn ngày']];
       const custom=state.rangeMode==='custom'&&state.customPickerScope===scope?`
         <div class="custom-range">
           <div class="date-range-picks">
@@ -1705,7 +1705,7 @@ tbody tr:hover td{background:#fcfafb}
 
     function previewTs(iso){ return {toDate:()=>new Date(iso)}; }
     function enterPreview(){
-      state.config={version:'1.8.1-preview',tiktokConfigured:true};
+      state.config={version:'1.8.2-preview',tiktokConfigured:true};
       state.user={uid:'preview-admin',email:'admin@sellerkbb.demo',displayName:'Quản trị viên Demo',photoURL:''};
       state.profile={role:'admin',status:'approved',displayName:'Quản trị viên Demo',permissions:['live.read','kpi.read']};
       state.maintenance={settings:{retentionDays:180,autoCleanup:true,emergencyPercent:85,firestoreSoftLimitMb:600,firestoreMaxSessions:12000,kvSoftKeyLimit:5000},cloudflare:{keyCount:4,lastRun:{ranAt:new Date().toISOString(),deleted:0}},firebase:{freePlanMode:true,ttlEnabled:false,ttlRecommended:false}};
@@ -2068,13 +2068,13 @@ tbody tr:hover td{background:#fcfafb}
       const monthly=state.rangeMode==='30d';
       const listTitle=state.rangeMode==='today'?'Phiên LIVE hôm nay':state.rangeMode==='7d'?'Phiên LIVE trong 7 ngày gần nhất':monthly?'Phiên LIVE 7 ngày gần nhất':'Phiên LIVE trong khoảng thời gian';
       const moreAction=monthly?`<button id="dashboardViewMore" class="btn dashboard-more">${icon('live',15)} Xem thêm</button>`:'';
-      const monthlyHint=monthly?`<div class="dashboard-range-note">${icon('calendar',15)}<span>Tổng số liệu phía trên tính đủ 1 tháng. Danh sách dưới đây chỉ hiển thị 7 ngày gần nhất.</span></div>`:'';
+      const monthlyHint=monthly?`<div class="dashboard-range-note">${icon('calendar',15)}<span>Tổng số liệu phía trên tính đủ 30 ngày. Danh sách dưới đây chỉ hiển thị 7 ngày gần nhất.</span></div>`:'';
       $('#section-dashboard').innerHTML=`
         ${timeFilterHtml('dashboard')}
         <div class="data-note sync-status ${state.autoSyncRefreshing?'is-refreshing':''}">${icon('sync',16)}<span>Dữ liệu Tiktok được đồng bộ lúc: <b>${fmtSyncMoment(state.autoSyncStatus?.finishedAt)}</b></span></div>
         <div class="metrics-grid">${metricCard('live','Phiên LIVE',ss.length)}${metricCard('money','GMV cuối kỳ',fmtMoney(gmv,currency))}${metricCard('box','Sản phẩm bán',new Intl.NumberFormat('vi-VN').format(items))}${metricCard('clock','Tổng thời lượng',fmtDuration(totalSec))}</div>
         ${monthlyHint}
-        <div class="card dashboard-live-card"><div class="row space dashboard-live-head"><div><h3>${listTitle}</h3>${monthly?`<div class="tiny">Đang hiển thị ${visibleSessions.length} phiên thuộc 7 ngày gần nhất trên tổng ${ss.length} phiên của 1 tháng.</div>`:''}</div><div class="row"><span class="pill">GMV dùng KPI = GMV cuối kỳ</span>${moreAction}</div></div>${renderLiveTable(visibleSessions,false)}</div>`;
+        <div class="card dashboard-live-card"><div class="row space dashboard-live-head"><div><h3>${listTitle}</h3>${monthly?`<div class="tiny">Đang hiển thị ${visibleSessions.length} phiên thuộc 7 ngày gần nhất trên tổng ${ss.length} phiên của 30 ngày.</div>`:''}</div><div class="row"><span class="pill">GMV dùng KPI = GMV cuối kỳ</span>${moreAction}</div></div>${renderLiveTable(visibleSessions,false)}</div>`;
       bindTimeFilter('dashboard');
       const more=$('#dashboardViewMore');
       if(more)more.onclick=()=>{
