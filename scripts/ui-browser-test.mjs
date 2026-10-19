@@ -94,7 +94,9 @@ try {
   await page.reload({waitUntil:"domcontentloaded"});
   await page.waitForSelector("#app:not(.hidden)",{timeout:30000});
   await page.click('#menuToggle');
-  await page.click('#nav [data-section="live"]');
+  await page.waitForFunction(()=>document.querySelector('#sidebar')?.classList.contains('open'));
+  await sleep(300);
+  await page.$eval('#nav [data-section="live"]',e=>e.click());
 
   const mobileCard='#section-live .mobile-live-card:nth-child(2)';
   const mobileId=await page.$eval(mobileCard+' [data-save-session]',e=>e.dataset.saveSession);
@@ -105,7 +107,9 @@ try {
   await page.reload({waitUntil:"domcontentloaded"});
   await page.waitForSelector("#app:not(.hidden)",{timeout:30000});
   await page.click('#menuToggle');
-  await page.click('#nav [data-section="live"]');
+  await page.waitForFunction(()=>document.querySelector('#sidebar')?.classList.contains('open'));
+  await sleep(300);
+  await page.$eval('#nav [data-section="live"]',e=>e.click());
   const mobileSavedCard='#section-live .mobile-live-card:has([data-save-session="'+mobileId+'"])';
   assert(await page.$eval(mobileSavedCard+' select[data-person="host"]',e=>e.value)==='dung',"Mobile Host save read the wrong hidden desktop selector");
   assert(await page.$eval(mobileSavedCard+' select[data-person="operator"]',e=>e.value)==='hung-hh',"Mobile Operator save read the wrong hidden desktop selector");
