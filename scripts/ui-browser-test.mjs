@@ -110,7 +110,7 @@ try {
   assert(await page.$eval('#section-export',e=>e.textContent.includes('BO_HO_SO_KPI_KHANGCHOU_'+new Date().getFullYear())),"Khangchou KPI dossier export item missing");
   await page.click('#exportKhangchouDossier');
   await sleep(100);
-  assert(await page.$eval('#toast',e=>e.textContent.includes('Tính năng đang được phát triển')),"Khangchou dossier placeholder toast missing");
+  assert(await page.$eval('#actionToast',e=>e.textContent.includes('Tính năng đang được phát triển')&&e.classList.contains('show')),"Khangchou dossier placeholder toast missing");
 
   await page.click('[data-section="storage"]');
   assert((await page.$('#section-storage .storage-quota-card')).length===3,"Storage page must show GitHub Firebase and Cloudflare cards");
