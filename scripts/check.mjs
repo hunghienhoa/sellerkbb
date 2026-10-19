@@ -20,6 +20,8 @@ const assert = (ok, message) => { if (!ok) throw new Error(message); };
 assert((html.match(/<style>/g) || []).length === 1, "Expected exactly one stylesheet");
 assert(html.includes("data-date-calendar"), "Calendar picker missing");
 assert(html.includes("data-calendar-day"), "Calendar day grid missing");
+assert(html.includes("customPickerScope:null"), "Custom picker visibility state missing");
+assert(html.includes("state.customPickerScope=null;"), "Custom picker does not collapse after apply");
 assert(!html.includes('placeholder="DD/MM/YYYY"'), "Manual date input still present");
 assert(html.includes("saveAssignment(b.dataset.saveSession,b)"), "LIVE save is not scoped to clicked control");
 assert(html.includes("async function saveAssignment(id,sourceEl)"), "Scoped saveAssignment signature missing");
