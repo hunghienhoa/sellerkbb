@@ -38,7 +38,7 @@ assert(html.includes("operatorUid:manual?'':"), "Campaign/Mega must persist Oper
 assert(html.includes("hostUid:old.kpiMode==='manual'?'':"), "Auto-sync merge must not restore staff for manual KPI sessions");
 assert(html.includes("Dữ liệu Tiktok được đồng bộ lúc:"), "Sync status text missing");
 assert(html.includes("rangeMode:'today'"), "Default filter must be Today");
-assert(html.includes("['30d','1 tháng']"), "Monthly filter label missing");
+assert(html.includes("['30d','30 Ngày']"), "30-day filter label missing");
 assert(html.includes("function dashboardSessionsForRange()"), "Dashboard 7-day monthly preview helper missing");
 assert(html.includes('id="dashboardViewMore"'), "Dashboard View More button missing");
 const timeRangeStart = html.indexOf("function fmtLiveTimeRange(s)");
