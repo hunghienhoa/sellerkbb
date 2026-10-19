@@ -792,7 +792,7 @@ tbody tr:hover td{background:#fffafd}
       <div class="side-bottom"><div class="userbox row"><img id="userAvatar" class="avatar" alt=""><div class="usertext" style="min-width:0"><div id="userName" style="font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis"></div><div id="userRole" class="tiny"></div></div></div></div>
     </aside>
     <main class="main">
-      <header class="topbar"><div class="topbar-title-wrap"><button id="menuToggle" class="menu-toggle" type="button" aria-label="Mở menu" aria-expanded="false">☰</button><div><h1 id="pageTitle" class="page-title">Tổng quan</h1><div id="pageSub" class="tiny"></div></div></div><div class="row"><span id="syncBadge" class="pill">v1.5.0</span><button id="logoutBtn" class="btn ghost small">Đăng xuất</button></div></header>
+      <header class="topbar"><div class="topbar-title-wrap"><button id="menuToggle" class="menu-toggle" type="button" aria-label="Mở menu" aria-expanded="false">☰</button><div><h1 id="pageTitle" class="page-title">Tổng quan</h1><div id="pageSub" class="tiny"></div></div></div><div class="row"><span id="syncBadge" class="pill">v1.5.1</span><button id="logoutBtn" class="btn ghost small">Đăng xuất</button></div></header>
       <div class="content">
         <section id="section-dashboard" class="section active"></section>
         <section id="section-live" class="section"></section>
@@ -919,7 +919,7 @@ tbody tr:hover td{background:#fffafd}
 
     function previewTs(iso){ return {toDate:()=>new Date(iso)}; }
     function enterPreview(){
-      state.config={version:'1.5.0-preview',tiktokConfigured:true};
+      state.config={version:'1.5.1-preview',tiktokConfigured:true};
       state.user={uid:'preview-admin',email:'admin@sellerkbb.demo',displayName:'Quản trị viên Demo',photoURL:''};
       state.profile={role:'admin',status:'approved',displayName:'Quản trị viên Demo',permissions:['live.read','kpi.read']};
       state.maintenance={settings:{retentionDays:180,autoCleanup:true,emergencyPercent:85,firestoreSoftLimitMb:600,firestoreMaxSessions:12000,kvSoftKeyLimit:5000},cloudflare:{keyCount:4,lastRun:{ranAt:new Date().toISOString(),deleted:0}},firebase:{freePlanMode:true,ttlEnabled:false,ttlRecommended:false}};
@@ -1349,7 +1349,7 @@ tbody tr:hover td{background:#fffafd}
         <div class="card">
           <h3>Gợi ý cài đặt</h3>
           <div class="recommend-list">
-            <div><b>Khuyến nghị hiện tại</b><span>180 ngày · dọn ở 85% · gia hạn TikTok mỗi 2 giờ · dọn KV 1 lần/ngày</span></div>
+            <div><b>Khuyến nghị hiện tại</b><span>180 ngày · dọn ở 85% · kiểm tra TikTok mỗi 1 giờ · dọn KV 1 lần/ngày</span></div>
             <div><b>Nếu dữ liệu tăng rất nhanh</b><span>Giữ 120–150 ngày hoặc hạ ngưỡng khẩn cấp xuống 80%.</span></div>
             <div><b>Nếu muốn ưu tiên lịch sử</b><span>Giữ 180 ngày và nâng ngưỡng ứng dụng; không được vượt quá 180 ngày.</span></div>
           </div>
@@ -1394,8 +1394,8 @@ tbody tr:hover td{background:#fffafd}
               <span class="pill ok">Đã kết nối</span>
             </div>
             <div class="status-lines">
-              <div><span>Tự động gia hạn token</span><b>Bật · kiểm tra mỗi 2 giờ</b></div>
-              <div><span>Cách hoạt động</span><b>Gia hạn trước khi access token hết hạn</b></div>
+              <div><span>Tự động gia hạn token</span><b>Bật · kiểm tra mỗi 1 giờ</b></div>
+              <div><span>Cách hoạt động</span><b>Dùng Refresh Token khi Access Token còn không quá 60 phút</b></div>
               <div><span>Khi nào cần cấp quyền lại?</span><b>Chỉ khi TikTok thu hồi quyền hoặc refresh token hết hạn</b></div>
             </div>
             <div class="row section-actions"><button class="btn" id="previewSync">Kiểm tra kết nối</button></div>
@@ -1422,7 +1422,7 @@ tbody tr:hover td{background:#fffafd}
           ${!status.configured?'<div class="notice">Chưa cấu hình đủ TikTok App Key / Secret / Service ID / Seller Authorization URL / KV binding.</div>':''}
           ${status.connected?`
             <div class="status-lines">
-              <div><span>Tự động gia hạn token</span><b>${status.autoRefresh?'Đang bật · kiểm tra mỗi 2 giờ':'Chưa có refresh token'}</b></div>
+              <div><span>Tự động gia hạn token</span><b>${status.autoRefresh?'Đang bật · kiểm tra mỗi 1 giờ':'Chưa có refresh token'}</b></div>
               <div><span>Access token hết hạn</span><b>${accessExpiry}</b></div>
               <div><span>Refresh token hết hạn</span><b>${refreshExpiry}</b></div>
             </div>
