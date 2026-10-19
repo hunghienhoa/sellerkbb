@@ -3,6 +3,74 @@ const APP_HTML = __APP_HTML__;
 const JSON_HEADERS = { "content-type": "application/json; charset=utf-8" };
 const TIKTOK_API_HOST = "https://open-api.tiktokglobalshop.com";
 const TIKTOK_TOKEN_HOST = "https://auth.tiktok-shops.com";
+const MAINTENANCE_SETTINGS_KEY = "maintenance:settings";
+const MAINTENANCE_LAST_RUN_KEY = "maintenance:last_run";
+const DEFAULT_MAINTENANCE = {
+  retentionDays: 180,
+  autoCleanup: true,
+  emergencyPercent: 85,
+  firestoreSoftLimitMb: 512,
+  firestoreMaxSessions: 20000,
+  kvSoftKeyLimit: 8000
+};
+
+function normalizeMaintenance(input = {}) {
+  const n = { ...DEFAULT_MAINTENANCE, ...(input || {}) };
+  n.retentionDays = Math.min(180, Math.max(30, Number(n.retentionDays) || 180));
+  n.autoCleanup = n.autoCleanup !== false;
+  n.emergencyPercent = Math.min(95, Math.max(70, Number(n.emergencyPercent) || 85));
+  n.firestoreSoftLimitMb = Math.min(100000, Math.max(50, Number(n.firestoreSoftLimitMb) || 512));
+  n.firestoreMaxSessions = Math.min(1000000, Math.max(500, Number(n.firestoreMaxSessions) || 20000));
+  n.kvSoftKeyLimit = Math.min(1000000, Math.max(100, Number(n.kvSoftKeyLimit) || 8000));
+  return n;
+}
+
+async function getMaintenanceSettings(env) {
+  if (!env.TIKTOK_KV) return { ...DEFAULT_MAINTENANCE };
+  const raw = await env.TIKTOK_KV.get(MAINTENANCE_SETTINGS_KEY);
+  if (!raw) return { ...DEFAULT_MAINTENANCE };
+  try { return normalizeMaintenance(JSON.parse(raw)); } catch { return { ...DEFAULT_MAINTENANCE }; }
+}
+
+async function listAllKvKeys(env) {
+  if (!env.TIKTOK_KV) return [];
+  const keys = [];
+  let cursor;
+  do {
+    const page = await env.TIKTOK_KV.list(cursor ? { cursor, limit: 1000 } : { limit: 1000 });
+    keys.push(...(page.keys || []));
+    cursor = page.list_complete ? undefined : page.cursor;
+  } while (cursor && keys.length < 50000);
+  return keys;
+}
+
+function isProtectedKvKey(name) {
+  return name === "seller_token" || name === MAINTENANCE_SETTINGS_KEY;
+}
+
+function isExpendableKvKey(name) {
+  return name.startsWith("oauth_state:") || name.startsWith("cache:") || name.startsWith("maintenance_log:") || name === MAINTENANCE_LAST_RUN_KEY;
+}
+
+async function runKvMaintenance(env, reason = "scheduled") {
+  const settings = await getMaintenanceSettings(env);
+  if (!env.TIKTOK_KV) return { ok: true, skipped: "kv_not_bound", settings };
+  const keys = await listAllKvKeys(env);
+  const threshold = Math.floor(settings.kvSoftKeyLimit * settings.emergencyPercent / 100);
+  const target = Math.floor(settings.kvSoftKeyLimit * 0.70);
+  let deleted = 0;
+  if (settings.autoCleanup && keys.length >= threshold) {
+    const expendable = keys.filter(k => !isProtectedKvKey(k.name) && isExpendableKvKey(k.name));
+    for (const k of expendable) {
+      if (keys.length - deleted <= target) break;
+      await env.TIKTOK_KV.delete(k.name);
+      deleted++;
+    }
+  }
+  const status = { ok: true, reason, ranAt: new Date().toISOString(), keyCount: keys.length, deleted, settings };
+  await env.TIKTOK_KV.put(MAINTENANCE_LAST_RUN_KEY, JSON.stringify(status), { expirationTtl: 2592000 });
+  return status;
+}
 
 function json(data, status = 200, extraHeaders = {}) {
   return new Response(JSON.stringify(data), { status, headers: { ...JSON_HEADERS, ...extraHeaders } });
@@ -271,6 +339,28 @@ async function handleApi(request, env) {
 
   if (url.pathname === "/api/tiktok/oauth/callback") return handleOAuthCallback(request, env);
 
+  if (url.pathname === "/api/maintenance/settings") {
+    await requireAdmin(request, env);
+    if (request.method === "GET") {
+      const settings = await getMaintenanceSettings(env);
+      const keys = await listAllKvKeys(env);
+      const lastRaw = env.TIKTOK_KV ? await env.TIKTOK_KV.get(MAINTENANCE_LAST_RUN_KEY) : null;
+      let lastRun = null; try { lastRun = lastRaw ? JSON.parse(lastRaw) : null; } catch {}
+      return json({ ok: true, settings, cloudflare: { keyCount: keys.length, lastRun }, firebase: { ttlField: "expiresAt", ttlPolicyMustBeEnabled: true } });
+    }
+    if (request.method === "POST") {
+      const body = await request.json().catch(() => ({}));
+      const settings = normalizeMaintenance(body);
+      if (env.TIKTOK_KV) await env.TIKTOK_KV.put(MAINTENANCE_SETTINGS_KEY, JSON.stringify(settings));
+      return json({ ok: true, settings });
+    }
+  }
+
+  if (url.pathname === "/api/maintenance/run" && request.method === "POST") {
+    await requireAdmin(request, env);
+    return json(await runKvMaintenance(env, "manual"));
+  }
+
   if (url.pathname === "/api/tiktok/status") {
     await requireAdmin(request, env);
     const token = await getTikTokToken(env);
@@ -305,6 +395,9 @@ async function handleApi(request, env) {
 }
 
 export default {
+  async scheduled(controller, env, ctx) {
+    ctx.waitUntil(runKvMaintenance(env, "cron"));
+  },
   async fetch(request, env) {
     const url = new URL(request.url);
     try {
