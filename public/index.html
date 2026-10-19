@@ -1421,6 +1421,30 @@ tbody tr:hover td{background:#fcfafb}
 .mobile-live-time .ui-icon{color:#a7527a}
 .mobile-live-time b{color:#5b4651;font-weight:650}
 
+
+.dashboard-range-note{
+  display:flex;
+  align-items:flex-start;
+  gap:8px;
+  padding:10px 12px;
+  border-left:3px solid #deb0c6;
+  border-radius:4px;
+  background:#fcf7f9;
+  color:#75666e;
+  font-size:11.5px;
+  line-height:1.5;
+}
+.dashboard-range-note .ui-icon{margin-top:1px;color:#a7527a}
+.dashboard-live-head{align-items:flex-start}
+.dashboard-live-head>div:first-child{min-width:0}
+.dashboard-live-head h3{margin-bottom:2px}
+.dashboard-more{white-space:nowrap}
+@media(max-width:700px){
+  .dashboard-live-head{align-items:stretch;flex-direction:column;gap:10px}
+  .dashboard-live-head>.row{width:100%;justify-content:space-between}
+  .dashboard-more{margin-left:auto}
+}
+
 </style>
 </head>
 <body>
@@ -1433,7 +1457,7 @@ tbody tr:hover td{background:#fcfafb}
       <div class="side-bottom"><div class="userbox row"><img id="userAvatar" class="avatar" alt=""><div class="usertext" style="min-width:0"><div id="userName" style="font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis"></div><div id="userRole" class="tiny"></div></div></div></div>
     </aside>
     <main class="main">
-      <header class="topbar"><div class="topbar-title-wrap"><button id="menuToggle" class="menu-toggle" type="button" aria-label="Mở menu" aria-expanded="false">☰</button><div><h1 id="pageTitle" class="page-title">Tổng quan</h1><div id="pageSub" class="tiny"></div></div></div><div class="row"><span id="syncBadge" class="pill">v1.7.2</span><button id="logoutBtn" class="btn ghost small">Đăng xuất</button></div></header>
+      <header class="topbar"><div class="topbar-title-wrap"><button id="menuToggle" class="menu-toggle" type="button" aria-label="Mở menu" aria-expanded="false">☰</button><div><h1 id="pageTitle" class="page-title">Tổng quan</h1><div id="pageSub" class="tiny"></div></div></div><div class="row"><span id="syncBadge" class="pill">v1.8.0</span><button id="logoutBtn" class="btn ghost small">Đăng xuất</button></div></header>
       <div class="content">
         <section id="section-dashboard" class="section active"></section>
         <section id="section-live" class="section"></section>
@@ -1513,9 +1537,21 @@ tbody tr:hover td{background:#fcfafb}
         return d>=start&&d<endExclusive;
       });
     }
+
+    function dashboardSessionsForRange(){
+      const all=sessionsForRange();
+      if(state.rangeMode!=='30d')return all;
+      const today=new Date(); today.setHours(0,0,0,0);
+      const start=new Date(today); start.setDate(start.getDate()-6);
+      const endExclusive=new Date(today); endExclusive.setDate(endExclusive.getDate()+1);
+      return all.filter(s=>{
+        const d=s.startTime?.toDate?.()||new Date(0);
+        return d>=start&&d<endExclusive;
+      });
+    }
     function timeFilterHtml(scope,actions=''){
       const selected=selectedRange();
-      const opts=[['today','Hôm nay'],['7d','7 ngày'],['30d','30 ngày'],['custom','Chọn ngày']];
+      const opts=[['today','Hôm nay'],['7d','7 ngày'],['30d','1 tháng'],['custom','Chọn ngày']];
       const custom=state.rangeMode==='custom'?`
         <div class="custom-range">
           <div class="date-range-picks">
@@ -1629,7 +1665,7 @@ tbody tr:hover td{background:#fcfafb}
     const PREVIEW = location.pathname === '/preview' || new URLSearchParams(location.search).get('preview') === '1';
 
     const LIVE_PAGE_SIZE = 20;
-    const state = { config:null, auth:null, db:null, user:null, profile:null, sessions:[], users:[], section:'dashboard', livePage:1, rangeMode:'30d', customStart:'', customEnd:'', maintenance:{settings:{retentionDays:180,autoCleanup:true,emergencyPercent:85,firestoreSoftLimitMb:600,firestoreMaxSessions:12000,kvSoftKeyLimit:5000},cloudflare:{keyCount:0,lastRun:null},firebase:{freePlanMode:true,ttlEnabled:false,ttlRecommended:false}}, autoSyncStatus:null, autoSyncRefreshing:false, autoSyncWatcher:null, autoSyncVisibilityBound:false };
+    const state = { config:null, auth:null, db:null, user:null, profile:null, sessions:[], users:[], section:'dashboard', livePage:1, rangeMode:'today', customStart:'', customEnd:'', maintenance:{settings:{retentionDays:180,autoCleanup:true,emergencyPercent:85,firestoreSoftLimitMb:600,firestoreMaxSessions:12000,kvSoftKeyLimit:5000},cloudflare:{keyCount:0,lastRun:null},firebase:{freePlanMode:true,ttlEnabled:false,ttlRecommended:false}}, autoSyncStatus:null, autoSyncRefreshing:false, autoSyncWatcher:null, autoSyncVisibilityBound:false };
 
     const PREVIEW_STATE_KEY='sellerkbb:preview-state:v1';
     function readPreviewState(){
@@ -1663,7 +1699,7 @@ tbody tr:hover td{background:#fcfafb}
 
     function previewTs(iso){ return {toDate:()=>new Date(iso)}; }
     function enterPreview(){
-      state.config={version:'1.7.2-preview',tiktokConfigured:true};
+      state.config={version:'1.8.0-preview',tiktokConfigured:true};
       state.user={uid:'preview-admin',email:'admin@sellerkbb.demo',displayName:'Quản trị viên Demo',photoURL:''};
       state.profile={role:'admin',status:'approved',displayName:'Quản trị viên Demo',permissions:['live.read','kpi.read']};
       state.maintenance={settings:{retentionDays:180,autoCleanup:true,emergencyPercent:85,firestoreSoftLimitMb:600,firestoreMaxSessions:12000,kvSoftKeyLimit:5000},cloudflare:{keyCount:4,lastRun:{ranAt:new Date().toISOString(),deleted:0}},firebase:{freePlanMode:true,ttlEnabled:false,ttlRecommended:false}};
@@ -2020,13 +2056,26 @@ tbody tr:hover td{background:#fcfafb}
     }
 
     function renderDashboard(){
-      const ss=sessionsForRange(), gmv=ss.reduce((a,s)=>a+finalGmv(s),0), items=ss.reduce((a,s)=>a+Number(s.currentItemsSold??s.recordedItemsSold??0),0), totalSec=ss.reduce((a,s)=>a+Number(s.durationSeconds||0),0), currency=ss.find(s=>s.currency)?.currency||'VND';
+      const ss=sessionsForRange();
+      const visibleSessions=dashboardSessionsForRange();
+      const gmv=ss.reduce((a,s)=>a+finalGmv(s),0), items=ss.reduce((a,s)=>a+Number(s.currentItemsSold??s.recordedItemsSold??0),0), totalSec=ss.reduce((a,s)=>a+Number(s.durationSeconds||0),0), currency=ss.find(s=>s.currency)?.currency||'VND';
+      const monthly=state.rangeMode==='30d';
+      const listTitle=state.rangeMode==='today'?'Phiên LIVE hôm nay':state.rangeMode==='7d'?'Phiên LIVE trong 7 ngày gần nhất':monthly?'Phiên LIVE 7 ngày gần nhất':'Phiên LIVE trong khoảng thời gian';
+      const moreAction=monthly?`<button id="dashboardViewMore" class="btn dashboard-more">${icon('live',15)} Xem thêm</button>`:'';
+      const monthlyHint=monthly?`<div class="dashboard-range-note">${icon('calendar',15)}<span>Tổng số liệu phía trên tính đủ 1 tháng. Danh sách dưới đây chỉ hiển thị 7 ngày gần nhất.</span></div>`:'';
       $('#section-dashboard').innerHTML=`
         ${timeFilterHtml('dashboard')}
         <div class="data-note sync-status ${state.autoSyncRefreshing?'is-refreshing':''}">${icon('sync',16)}<span>Dữ liệu Tiktok được đồng bộ lúc: <b>${fmtSyncMoment(state.autoSyncStatus?.finishedAt)}</b></span></div>
         <div class="metrics-grid">${metricCard('live','Phiên LIVE',ss.length)}${metricCard('money','GMV cuối kỳ',fmtMoney(gmv,currency))}${metricCard('box','Sản phẩm bán',new Intl.NumberFormat('vi-VN').format(items))}${metricCard('clock','Tổng thời lượng',fmtDuration(totalSec))}</div>
-        <div class="card"><div class="row space"><h3>Phiên LIVE gần nhất trong khoảng thời gian</h3><span class="pill">GMV dùng KPI = GMV cuối kỳ</span></div>${renderLiveTable(ss.slice(0,8),false)}</div>`;
+        ${monthlyHint}
+        <div class="card dashboard-live-card"><div class="row space dashboard-live-head"><div><h3>${listTitle}</h3>${monthly?`<div class="tiny">Đang hiển thị ${visibleSessions.length} phiên thuộc 7 ngày gần nhất trên tổng ${ss.length} phiên của 1 tháng.</div>`:''}</div><div class="row"><span class="pill">GMV dùng KPI = GMV cuối kỳ</span>${moreAction}</div></div>${renderLiveTable(visibleSessions,false)}</div>`;
       bindTimeFilter('dashboard');
+      const more=$('#dashboardViewMore');
+      if(more)more.onclick=()=>{
+        state.livePage=1;
+        switchSection('live');
+        $('#section-live')?.scrollIntoView({behavior:'smooth',block:'start'});
+      };
     }
 
     function renderLiveTable(rows, editable){
