@@ -98,7 +98,7 @@ assert(html.includes("chỉ lấy GMV sau hoàn/hủy + KPI cá nhân"), "Khangc
 assert(html.includes("function normalizedManualKpiEntries"), "Manual KPI normalization missing");
 assert(html.includes("function buildKpiRows"), "Combined auto/manual KPI aggregation missing");
 assert(html.includes("Phiên KPI thủ công"), "Manual KPI section missing");
-assert(html.includes("GMV sau hoàn/hủy của cá nhân"), "Per-person manual GMV field missing");
+assert(html.includes("GMV sau hoàn/hủy của Host Livestream"), "Host manual GMV field missing");
 assert(html.includes("function manualMoneyDisplay(value)"), "Manual KPI VND formatter missing");
 assert(html.includes("replace(/[^0-9]/g,''"), "Manual KPI money parser missing");
 assert(html.includes('data-manual-host-person'), "Host Livestream selector missing");
