@@ -803,6 +803,7 @@ td .manual-kpi-check+.btn{width:100%}
         <section id="section-kpi" class="section"></section>
         <section id="section-users" class="section"></section>
         <section id="section-tiktok" class="section"></section>
+        <section id="section-export" class="section"></section>
         <section id="section-storage" class="section"></section>
       </div>
     </main>
@@ -1107,12 +1108,12 @@ td .manual-kpi-check+.btn{width:100%}
     }
 
     function renderNav(){
-      const items=[{id:'dashboard',icon:'⌂',label:'Tổng quan',show:true},{id:'live',icon:'◉',label:'Phiên LIVE',show:can('live.read')},{id:'kpi',icon:'✦',label:'KPI nhân sự',show:can('kpi.read')},{id:'users',icon:'♙',label:'Tài khoản',show:isAdmin()},{id:'tiktok',icon:'↗',label:'TikTok',show:isAdmin()},{id:'storage',icon:'▣',label:'Lưu trữ',show:isAdmin()}].filter(x=>x.show);
+      const items=[{id:'dashboard',icon:'⌂',label:'Tổng quan',show:true},{id:'live',icon:'◉',label:'Phiên LIVE',show:can('live.read')},{id:'kpi',icon:'✦',label:'KPI nhân sự',show:can('kpi.read')},{id:'export',icon:'⇩',label:'Xuất file',show:can('live.read')||can('kpi.read')},{id:'users',icon:'♙',label:'Tài khoản',show:isAdmin()},{id:'tiktok',icon:'↗',label:'TikTok / API',show:isAdmin()},{id:'storage',icon:'▣',label:'Lưu trữ',show:isAdmin()}].filter(x=>x.show);
       $('#nav').innerHTML=items.map(x=>`<button data-section="${x.id}" class="${state.section===x.id?'active':''}"><span class="nav-icon">${x.icon}</span><span>${x.label}</span></button>`).join('');
       $('#nav').querySelectorAll('button').forEach(b=>b.onclick=()=>switchSection(b.dataset.section));
     }
 
-    function switchSection(id){ state.section=id; setMobileMenu(false); document.querySelectorAll('.section').forEach(s=>s.classList.remove('active')); $(`#section-${id}`).classList.add('active'); renderNav(); const meta={dashboard:['Tổng quan','Báo cáo LIVE & KPI'],live:['Phiên LIVE','Gắn Host/Operator cho từng phiên'],kpi:['KPI nhân sự','Host 0,3% · Operator 0,1%'],users:['Duyệt tài khoản','Phân vai trò và nội dung được phép xem'],tiktok:['Kết nối TikTok Shop','Chỉ quản trị viên nhìn thấy phần này'],storage:['Lưu trữ & tự dọn','Giữ dữ liệu tối đa 6 tháng và bảo vệ dung lượng']}[id]; $('#pageTitle').textContent=meta[0]; $('#pageSub').textContent=meta[1]; }
+    function switchSection(id){ state.section=id; setMobileMenu(false); document.querySelectorAll('.section').forEach(s=>s.classList.remove('active')); $(`#section-${id}`).classList.add('active'); renderNav(); const meta={dashboard:['Tổng quan','Báo cáo LIVE & KPI'],live:['Phiên LIVE','Gắn Host/Operator cho từng phiên'],kpi:['KPI nhân sự','Host 0,3% · Operator 0,1%'],users:['Duyệt tài khoản','Phân vai trò và nội dung được phép xem'],export:['Xuất file','Xuất báo cáo theo khoảng thời gian đã chọn'],tiktok:['Kết nối TikTok / API','Kết nối, gia hạn token và đồng bộ dữ liệu'],storage:['Lưu trữ & tự dọn','Giữ dữ liệu tối đa 6 tháng và bảo vệ dung lượng']}[id]; $('#pageTitle').textContent=meta[0]; $('#pageSub').textContent=meta[1]; }
 
     function finalGmv(s){ return Number(s.finalGmvAmount ?? s.currentGmvAmount ?? s.recordedGmvAmount ?? 0); }
     function isManualKpi(s){ return s?.kpiMode==='manual'; }
@@ -1160,7 +1161,7 @@ td .manual-kpi-check+.btn{width:100%}
         .reduce((arr,p,idx,list)=>{ if(idx&&p-list[idx-1]>1) arr.push('…'); arr.push(p); return arr; },[])
         .map(p=>p==='…'?'<span class="page-ellipsis">…</span>':`<button class="page-btn ${p===state.livePage?'active':''}" data-page="${p}">${p}</button>`).join('');
       $('#section-live').innerHTML=`
-        ${timeFilterHtml('live',`${isAdmin()?'<button id="syncMonthBtn" class="btn primary">Đồng bộ khoảng thời gian từ TikTok</button>':''}<button id="csvBtn" class="btn">Xuất CSV</button>`)}
+        ${timeFilterHtml('live')}
         <div class="card live-list-card">${renderLiveTable(pageRows,isAdmin())}</div>
         <div class="pagination-wrap">
           <div class="pagination-info">Đang hiển thị từ phiên <b>${from}</b> đến phiên <b>${to}</b> trên tổng số <b>${ss.length}</b> phiên · Mỗi trang hiển thị 20 phiên</div>
@@ -1171,13 +1172,11 @@ td .manual-kpi-check+.btn{width:100%}
           </div>
         </div>`;
       bindTimeFilter('live');
-      $('#csvBtn').onclick=()=>exportCsv(ss);
       document.querySelectorAll('[data-page]').forEach(b=>b.onclick=()=>{
         const p=Number(b.dataset.page); if(!p||p===state.livePage||p<1||p>totalPages)return;
         state.livePage=p; renderLive(); document.querySelector('#section-live')?.scrollIntoView({behavior:'smooth',block:'start'});
       });
       if(isAdmin()){
-        $('#syncMonthBtn').onclick=syncMonth;
         document.querySelectorAll('[data-save-session]').forEach(b=>b.onclick=()=>saveAssignment(b.dataset.saveSession));
         document.querySelectorAll('[data-manual-kpi]').forEach(c=>{
           const apply=()=>{
