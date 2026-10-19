@@ -1292,7 +1292,7 @@ tbody tr:hover td{background:#fcfafb}
       <div class="side-bottom"><div class="userbox row"><img id="userAvatar" class="avatar" alt=""><div class="usertext" style="min-width:0"><div id="userName" style="font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis"></div><div id="userRole" class="tiny"></div></div></div></div>
     </aside>
     <main class="main">
-      <header class="topbar"><div class="topbar-title-wrap"><button id="menuToggle" class="menu-toggle" type="button" aria-label="Mở menu" aria-expanded="false">☰</button><div><h1 id="pageTitle" class="page-title">Tổng quan</h1><div id="pageSub" class="tiny"></div></div></div><div class="row"><span id="syncBadge" class="pill">v1.6.5</span><button id="logoutBtn" class="btn ghost small">Đăng xuất</button></div></header>
+      <header class="topbar"><div class="topbar-title-wrap"><button id="menuToggle" class="menu-toggle" type="button" aria-label="Mở menu" aria-expanded="false">☰</button><div><h1 id="pageTitle" class="page-title">Tổng quan</h1><div id="pageSub" class="tiny"></div></div></div><div class="row"><span id="syncBadge" class="pill">v1.7.0</span><button id="logoutBtn" class="btn ghost small">Đăng xuất</button></div></header>
       <div class="content">
         <section id="section-dashboard" class="section active"></section>
         <section id="section-live" class="section"></section>
@@ -1377,10 +1377,13 @@ tbody tr:hover td{background:#fcfafb}
       const opts=[['today','Hôm nay'],['7d','7 ngày'],['30d','30 ngày'],['custom','Chọn ngày']];
       const custom=state.rangeMode==='custom'?`
         <div class="custom-range">
-          <label class="range-field"><span>Từ ngày</span><input id="${scope}RangeStart" class="input date-text" inputmode="numeric" placeholder="DD/MM/YYYY" value="${displayDateKey(state.customStart)}"></label>
-          <span class="range-separator">đến</span>
-          <label class="range-field"><span>Đến ngày</span><input id="${scope}RangeEnd" class="input date-text" inputmode="numeric" placeholder="DD/MM/YYYY" value="${displayDateKey(state.customEnd)}"></label>
-          <button class="btn primary" data-apply-range="${scope}">Áp dụng</button>
+          <div class="date-range-picks">
+            <button type="button" class="date-pick active" data-date-target="start" data-value="${state.customStart}"><span>Từ ngày</span><b>${displayDateKey(state.customStart)}</b></button>
+            <span class="range-separator">đến</span>
+            <button type="button" class="date-pick" data-date-target="end" data-value="${state.customEnd}"><span>Đến ngày</span><b>${displayDateKey(state.customEnd)}</b></button>
+            <button class="btn primary apply-range-btn" data-apply-range="${scope}">Áp dụng</button>
+          </div>
+          <div class="date-calendar" data-date-calendar="${scope}"></div>
         </div>`:''; 
       return `<div class="time-filter">
         <div class="range-row">
@@ -1391,6 +1394,71 @@ tbody tr:hover td{background:#fcfafb}
         ${custom}
       </div>`;
     }
+
+    function bindCalendarPicker(scope,section){
+      const calendar=section.querySelector(`[data-date-calendar="${scope}"]`);
+      if(!calendar)return;
+      const startBtn=section.querySelector('[data-date-target="start"]');
+      const endBtn=section.querySelector('[data-date-target="end"]');
+      if(!startBtn||!endBtn)return;
+
+      let target='start';
+      let view=new Date((startBtn.dataset.value||localDateKey(new Date()))+'T00:00:00');
+      const todayKey=localDateKey(new Date());
+
+      const setTarget=next=>{
+        target=next;
+        startBtn.classList.toggle('active',target==='start');
+        endBtn.classList.toggle('active',target==='end');
+        const value=(target==='start'?startBtn:endBtn).dataset.value;
+        if(value)view=new Date(value+'T00:00:00');
+        draw();
+      };
+
+      const draw=()=>{
+        const y=view.getFullYear(), m=view.getMonth();
+        const first=new Date(y,m,1);
+        const offset=(first.getDay()+6)%7;
+        const days=new Date(y,m+1,0).getDate();
+        const startKey=startBtn.dataset.value||'';
+        const endKey=endBtn.dataset.value||'';
+        let cells='';
+        for(let i=0;i<offset;i++)cells+='<span class="calendar-day empty" aria-hidden="true"></span>';
+        for(let day=1;day<=days;day++){
+          const d=new Date(y,m,day);
+          const key=localDateKey(d);
+          const inRange=startKey&&endKey&&key>=startKey&&key<=endKey;
+          const cls=['calendar-day',key===todayKey?'today':'',key===startKey?'start':'',key===endKey?'end':'',inRange?'in-range':''].filter(Boolean).join(' ');
+          cells+=`<button type="button" class="${cls}" data-calendar-day="${key}">${day}</button>`;
+        }
+        calendar.innerHTML=`
+          <div class="calendar-head">
+            <button type="button" class="calendar-nav" data-calendar-nav="-1" aria-label="Tháng trước">‹</button>
+            <b>Tháng ${m+1}/${y}</b>
+            <button type="button" class="calendar-nav" data-calendar-nav="1" aria-label="Tháng sau">›</button>
+          </div>
+          <div class="calendar-week"><span>T2</span><span>T3</span><span>T4</span><span>T5</span><span>T6</span><span>T7</span><span>CN</span></div>
+          <div class="calendar-grid">${cells}</div>`;
+
+        calendar.querySelectorAll('[data-calendar-nav]').forEach(btn=>btn.onclick=()=>{
+          view=new Date(view.getFullYear(),view.getMonth()+Number(btn.dataset.calendarNav),1);
+          draw();
+        });
+        calendar.querySelectorAll('[data-calendar-day]').forEach(btn=>btn.onclick=()=>{
+          const value=btn.dataset.calendarDay;
+          const pick=target==='start'?startBtn:endBtn;
+          pick.dataset.value=value;
+          pick.querySelector('b').textContent=displayDateKey(value);
+          if(target==='start') setTarget('end');
+          else draw();
+        });
+      };
+
+      startBtn.onclick=()=>setTarget('start');
+      endBtn.onclick=()=>setTarget('end');
+      draw();
+    }
+
     function bindTimeFilter(scope){
       const section=$(`#section-${scope}`);
       if(!section)return;
@@ -1404,12 +1472,16 @@ tbody tr:hover td{background:#fcfafb}
         }
         state.livePage=1; renderAll();
       });
+
+      bindCalendarPicker(scope,section);
+
       const apply=section.querySelector(`[data-apply-range="${scope}"]`);
       if(apply) apply.onclick=()=>{
-        const a=parseDisplayDate(section.querySelector(`#${scope}RangeStart`)?.value);
-        const b=parseDisplayDate(section.querySelector(`#${scope}RangeEnd`)?.value);
-        if(!a||!b){ showToast('Ngày không hợp lệ. Hãy nhập theo dạng DD/MM/YYYY'); return; }
-        state.customStart=localDateKey(a); state.customEnd=localDateKey(b);
+        let start=section.querySelector('[data-date-target="start"]')?.dataset.value||'';
+        let end=section.querySelector('[data-date-target="end"]')?.dataset.value||'';
+        if(!/^\d{4}-\d{2}-\d{2}$/.test(start)||!/^\d{4}-\d{2}-\d{2}$/.test(end)){ showToast('Hãy chọn đủ ngày bắt đầu và ngày kết thúc'); return; }
+        if(start>end){ const t=start; start=end; end=t; }
+        state.customStart=start; state.customEnd=end;
         state.livePage=1; renderAll();
       };
     }
@@ -1418,9 +1490,39 @@ tbody tr:hover td{background:#fcfafb}
     const LIVE_PAGE_SIZE = 20;
     const state = { config:null, auth:null, db:null, user:null, profile:null, sessions:[], users:[], section:'dashboard', livePage:1, rangeMode:'30d', customStart:'', customEnd:'', maintenance:{settings:{retentionDays:180,autoCleanup:true,emergencyPercent:85,firestoreSoftLimitMb:600,firestoreMaxSessions:12000,kvSoftKeyLimit:5000},cloudflare:{keyCount:0,lastRun:null},firebase:{freePlanMode:true,ttlEnabled:false,ttlRecommended:false}}, autoSyncStatus:null, autoSyncRefreshing:false, autoSyncWatcher:null, autoSyncVisibilityBound:false };
 
+    const PREVIEW_STATE_KEY='sellerkbb:preview-state:v1';
+    function readPreviewState(){
+      try{return JSON.parse(localStorage.getItem(PREVIEW_STATE_KEY)||'{}')}catch{return {}}
+    }
+    function persistPreviewState(){
+      if(!PREVIEW)return;
+      const sessionEdits={};
+      for(const x of state.sessions){
+        sessionEdits[x.id]={kpiMode:x.kpiMode||'auto',hostUid:x.hostUid||'',hostName:x.hostName||'',operatorUid:x.operatorUid||'',operatorName:x.operatorName||''};
+      }
+      const users=state.users.map(u=>({id:u.id,role:u.role,status:u.status,permissions:u.permissions||[]}));
+      localStorage.setItem(PREVIEW_STATE_KEY,JSON.stringify({sessionEdits,users,maintenance:state.maintenance.settings}));
+    }
+    function restorePreviewState(){
+      if(!PREVIEW)return;
+      const saved=readPreviewState();
+      if(saved.maintenance)state.maintenance.settings={...state.maintenance.settings,...saved.maintenance};
+      if(saved.sessionEdits){
+        for(const item of state.sessions){
+          if(saved.sessionEdits[item.id])Object.assign(item,saved.sessionEdits[item.id]);
+        }
+      }
+      if(Array.isArray(saved.users)){
+        for(const patch of saved.users){
+          const u=state.users.find(x=>x.id===patch.id);
+          if(u)Object.assign(u,patch);
+        }
+      }
+    }
+
     function previewTs(iso){ return {toDate:()=>new Date(iso)}; }
     function enterPreview(){
-      state.config={version:'1.6.5-preview',tiktokConfigured:true};
+      state.config={version:'1.7.0-preview',tiktokConfigured:true};
       state.user={uid:'preview-admin',email:'admin@sellerkbb.demo',displayName:'Quản trị viên Demo',photoURL:''};
       state.profile={role:'admin',status:'approved',displayName:'Quản trị viên Demo',permissions:['live.read','kpi.read']};
       state.maintenance={settings:{retentionDays:180,autoCleanup:true,emergencyPercent:85,firestoreSoftLimitMb:600,firestoreMaxSessions:12000,kvSoftKeyLimit:5000},cloudflare:{keyCount:4,lastRun:{ranAt:new Date().toISOString(),deleted:0}},firebase:{freePlanMode:true,ttlEnabled:false,ttlRecommended:false}};
@@ -1448,6 +1550,7 @@ tbody tr:hover td{background:#fcfafb}
         const gmv=72000000+i*4200000, final=Math.round(gmv*(.91+(i%5)*.01)), items=420+i*37;
         state.sessions.push({id:`LIVE-202610-${String(i).padStart(3,'0')}`,liveId:`LIVE-202610-${String(i).padStart(3,'0')}`,title:`Phiên LIVE mẫu #${i}`,channelUsername:i%2?'sellerkbb_official':'sellerkbb_beauty',channelId:i%2?'743820194':'881003522',startTime:previewTs(`2026-10-${d}T12:30:00+07:00`),durationSeconds:7200+(i%4)*1800,recordedGmvAmount:gmv,recordedItemsSold:items,currentItemsSold:items,currentGmvAmount:final,finalGmvAmount:final,currency:'VND',hostUid:'',hostName:'',operatorUid:'',operatorName:''});
       }
+      restorePreviewState();
       showApp(); bindShell(); renderAll(); startAutoSyncWatcher();
       const bar=document.createElement('div');
       bar.style.cssText='position:fixed;left:50%;transform:translateX(-50%);bottom:18px;z-index:15;background:#f7c5dc;color:#653a50;padding:8px 12px;border:1px solid #edb4cf;border-radius:999px;font-weight:800;font-size:10px;box-shadow:0 8px 24px rgba(156,91,124,.16);white-space:nowrap';
@@ -1675,10 +1778,10 @@ tbody tr:hover td{background:#fcfafb}
             currentGmvAmount:amount,
             finalGmvAmount:amount,
             currentItemsSold:Number(src.itemsSold||0),
-            hostUid:old.hostUid||'',
-            hostName:old.hostName||'',
-            operatorUid:old.operatorUid||'',
-            operatorName:old.operatorName||'',
+            hostUid:old.kpiMode==='manual'?'':(old.hostUid||''),
+            hostName:old.kpiMode==='manual'?'':(old.hostName||''),
+            operatorUid:old.kpiMode==='manual'?'':(old.operatorUid||''),
+            operatorName:old.kpiMode==='manual'?'':(old.operatorName||''),
             kpiMode:old.kpiMode||'auto',
             source:'tiktok-auto'
           });
@@ -1704,7 +1807,7 @@ tbody tr:hover td{background:#fcfafb}
         const maxDocs=Math.min(12000,Number(state.maintenance.settings.firestoreMaxSessions||12000));
         const q=query(collection(state.db,'liveSessions'),where('startTime','>=',cutoff),orderBy('startTime','desc'),limit(maxDocs));
         const snap=await getDocs(q);
-        state.sessions=snap.docs.map(d=>({id:d.id,...d.data()}));
+        state.sessions=snap.docs.map(d=>({id:d.id,...d.data()})).map(x=>isManualKpi(x)?{...x,hostUid:'',hostName:'',operatorUid:'',operatorName:''}:x);
         await mergeAutoSyncedSessions();
       }
       if(isAdmin()){
@@ -1813,13 +1916,12 @@ tbody tr:hover td{background:#fcfafb}
         state.livePage=p; renderLive(); document.querySelector('#section-live')?.scrollIntoView({behavior:'smooth',block:'start'});
       });
       if(isAdmin()){
-        document.querySelectorAll('[data-save-session]').forEach(b=>b.onclick=()=>saveAssignment(b.dataset.saveSession));
+        document.querySelectorAll('[data-save-session]').forEach(b=>b.onclick=()=>saveAssignment(b.dataset.saveSession,b));
         document.querySelectorAll('[data-manual-kpi]').forEach(c=>{
           const apply=()=>{
-            const id=c.dataset.manualKpi;
-            const row=c.closest('tr,.mobile-live-card');
-            row?.classList.toggle('manual-session',c.checked);
-            document.querySelectorAll(`[data-person][data-id="${CSS.escape(id)}"]`).forEach(sel=>{
+            const scopeEl=c.closest('tr,.mobile-live-card');
+            scopeEl?.classList.toggle('manual-session',c.checked);
+            scopeEl?.querySelectorAll('[data-person]').forEach(sel=>{
               if(c.checked) sel.value='';
               sel.disabled=c.checked;
             });
@@ -1830,9 +1932,11 @@ tbody tr:hover td{background:#fcfafb}
       }
     }
 
-    async function saveAssignment(id){
-      const h=document.querySelector(`[data-person="host"][data-id="${CSS.escape(id)}"]`), o=document.querySelector(`[data-person="operator"][data-id="${CSS.escape(id)}"]`);
-      const manual=document.querySelector(`[data-manual-kpi="${CSS.escape(id)}"]`)?.checked===true;
+    async function saveAssignment(id,sourceEl){
+      const scopeEl=sourceEl?.closest('tr,.mobile-live-card');
+      if(!scopeEl){ showToast('Không xác định được phiên LIVE cần lưu'); return; }
+      const h=scopeEl.querySelector('[data-person="host"]'), o=scopeEl.querySelector('[data-person="operator"]');
+      const manual=scopeEl.querySelector('[data-manual-kpi]')?.checked===true;
       const host=manual?null:state.users.find(u=>u.id===h?.value), op=manual?null:state.users.find(u=>u.id===o?.value);
       const payload={
         kpiMode:manual?'manual':'auto',
@@ -1842,6 +1946,7 @@ tbody tr:hover td{background:#fcfafb}
       if(PREVIEW){
         const item=state.sessions.find(x=>x.id===id);
         Object.assign(item,payload);
+        persistPreviewState();
         showToast(manual?'Đã lưu phiên thủ công · Host/Vận hành để trống':'Đã lưu nhân sự cho phiên LIVE');
         renderAll(); return;
       }
@@ -1867,7 +1972,7 @@ tbody tr:hover td{background:#fcfafb}
 
     function exportCsv(rows){
       const header=['title','channel_username','channel_id','start_time','duration_seconds','gmv_recorded','items_sold','gmv_final','currency','kpi_mode','host','operator'];
-      const lines=[header,...rows.map(s=>[s.title||'',s.channelUsername||'',s.channelId||'',s.startTime?.toDate?.().toISOString?.()||'',s.durationSeconds||0,s.recordedGmvAmount||0,s.currentItemsSold??s.recordedItemsSold??0,finalGmv(s),s.currency||'',isManualKpi(s)?'manual':'auto',s.hostName||'',s.operatorName||''])];
+      const lines=[header,...rows.map(s=>[s.title||'',s.channelUsername||'',s.channelId||'',s.startTime?.toDate?.().toISOString?.()||'',s.durationSeconds||0,s.recordedGmvAmount||0,s.currentItemsSold??s.recordedItemsSold??0,finalGmv(s),s.currency||'',isManualKpi(s)?'manual':'auto',isManualKpi(s)?'':(s.hostName||''),isManualKpi(s)?'':(s.operatorName||'')])];
       const csv=lines.map(r=>r.map(v=>`"${String(v??'').replaceAll('"','""')}"`).join(',')).join('\n'); const blob=new Blob(['\ufeff'+csv],{type:'text/csv;charset=utf-8'}); const a=document.createElement('a');a.href=URL.createObjectURL(blob);const range=selectedRange();a.download=`tiktok-live-${range.startKey}_${range.endKey}.csv`;a.click();URL.revokeObjectURL(a.href);
     }
 
@@ -1944,7 +2049,7 @@ tbody tr:hover td{background:#fcfafb}
 
     function userApprovalCard(u){return `<div class="approval-item"><div class="row space"><div><b>${esc(u.displayName||u.email)}</b><div class="tiny">${esc(u.email||'')}</div></div><span class="pill warn">Chờ duyệt</span></div><div class="form-grid" style="margin-top:16px"><label><div class="tiny">Vai trò</div><select class="input" style="width:100%" data-role="${u.id}"><option value="host">Host Livestream</option><option value="operator">Nhân viên vận hành livestream</option><option value="admin">Quản trị viên</option></select></label><div><div class="tiny">Nội dung được phép xem</div><label class="checkline"><input type="checkbox" data-perm="live.read" data-uid="${u.id}" checked> Phiên LIVE</label><label class="checkline"><input type="checkbox" data-perm="kpi.read" data-uid="${u.id}" checked> KPI cá nhân / báo cáo</label></div></div><div class="row" style="margin-top:16px"><button class="btn primary" data-approve="${u.id}">${icon('check',15)} Duyệt tài khoản</button></div></div>`;}
     function userApprovedRow(u){return `<div class="row space approved-user-row"><div><b>${esc(u.displayName||u.email)}</b><div class="tiny">${esc(u.email||'')} · ${(u.permissions||[]).join(', ')||'full/admin'}</div></div><span class="tag ${u.role}">${roleLabel(u.role)}</span></div>`;}
-    async function approveUser(uid){ const role=document.querySelector(`[data-role="${CSS.escape(uid)}"]`).value; const permissions=[...document.querySelectorAll(`[data-uid="${CSS.escape(uid)}"][data-perm]:checked`)].map(x=>x.dataset.perm); if(role==='admin'){permissions.splice(0,permissions.length,'live.read','kpi.read')} if(PREVIEW){ const u=state.users.find(x=>x.id===uid); Object.assign(u,{role,status:'approved',permissions}); showToast('Đã duyệt tài khoản'); renderAll(); return; } await updateDoc(doc(state.db,'users',uid),{role,status:'approved',permissions,approvedAt:serverTimestamp(),approvedBy:state.user.uid,updatedAt:serverTimestamp()}); showToast('Đã duyệt tài khoản'); await loadData(); renderAll(); }
+    async function approveUser(uid){ const role=document.querySelector(`[data-role="${CSS.escape(uid)}"]`).value; const permissions=[...document.querySelectorAll(`[data-uid="${CSS.escape(uid)}"][data-perm]:checked`)].map(x=>x.dataset.perm); if(role==='admin'){permissions.splice(0,permissions.length,'live.read','kpi.read')} if(PREVIEW){ const u=state.users.find(x=>x.id===uid); Object.assign(u,{role,status:'approved',permissions}); persistPreviewState(); showToast('Đã duyệt tài khoản'); renderAll(); return; } await updateDoc(doc(state.db,'users',uid),{role,status:'approved',permissions,approvedAt:serverTimestamp(),approvedBy:state.user.uid,updatedAt:serverTimestamp()}); showToast('Đã duyệt tài khoản'); await loadData(); renderAll(); }
 
 
     function estimateSessionBytes(session){
@@ -2070,6 +2175,7 @@ tbody tr:hover td{background:#fcfafb}
       if(next.retentionDays>180)next.retentionDays=180;
       if(PREVIEW){
         state.maintenance.settings={...state.maintenance.settings,...next};
+        persistPreviewState();
         showToast('Đã lưu cài đặt Preview');
         renderAll(); return;
       }
