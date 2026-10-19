@@ -41,8 +41,8 @@ try {
   assert(navGroups.join('|')==='Báo cáo|Công cụ|Quản trị',"Sidebar groups are not ordered correctly");
   const toolItems=await page.$$eval('#nav .nav-group:nth-child(2) [data-section]',els=>els.map(e=>e.dataset.section));
   assert(toolItems.join('|')==='export|manual-kpi',"Công cụ must contain Xuất file then KPI thủ công");
-  assert(await page.$('#nav .nav-group:nth-child(3) [data-section="users"]')!==null,"Duyệt tài khoản must be inside Quản trị");
-  assert(await page.$eval('#nav [data-section="users"]',e=>e.textContent.includes('Duyệt tài khoản')),"Duyệt tài khoản label is missing");
+  assert(await page.$('#nav .nav-group:nth-child(3) [data-section="users"]')!==null,"Quản lý tài khoản must be inside Quản trị");
+  assert(await page.$eval('#nav [data-section="users"]',e=>e.textContent.includes('Quản lý tài khoản')),"Quản lý tài khoản label is missing");
   assert(await page.$('#usersDockBtn')===null,"Duplicate external Users dock must be removed");
   assert(await page.$eval('.side-brand .brand-lockup',e=>e.textContent.replace(/\s+/g,'').includes('SellerKBBLIVE')),"SellerKBB LIVE brand lockup is incorrect");
   assert(await page.$eval('html',e=>getComputedStyle(e).getPropertyValue('--accent').trim())==='#e7a3c0',"Pastel pink theme accent is not active");
@@ -159,20 +159,29 @@ try {
   const roleRank={'Quản trị viên':0,'Nhân viên vận hành livestream':1,'Host Livestream':2};
   assert(approvedRoles[0]==='Quản trị viên',"Approved accounts must start with administrators");
   assert(approvedRoles.every((role,i)=>i===0||(roleRank[approvedRoles[i-1]]??9)<=(roleRank[role]??9)),"Approved accounts are not sorted Admin → Operator → Host");
-  assert(await page.$('[data-user-save="preview-admin"][disabled]')!==null,"Current admin save button must be locked");
+  assert(await page.$('[data-user-edit="preview-admin"][disabled]')!==null,"Current admin edit button must be locked");
   assert(await page.$('[data-user-delete="preview-admin"][disabled]')!==null,"Current admin delete button must be locked");
+  assert(await page.$eval('[data-user-editor="thao-my"]',e=>e.classList.contains('hidden')),"Approved user editor must be hidden by default");
 
+  await page.click('[data-user-edit="thao-my"]');
+  assert(!(await page.$eval('[data-user-editor="thao-my"]',e=>e.classList.contains('hidden'))),"Pencil button did not open approved user editor");
   await page.select('[data-approved-role="thao-my"]','operator');
   await page.click('[data-approved-uid="thao-my"][data-approved-perm="kpi.read"]');
   await page.click('[data-user-save="thao-my"]');
   await sleep(100);
   assert(await page.$eval('[data-approved-role="thao-my"]',e=>e.value)==='operator',"Approved user role did not update");
   assert(!(await page.$eval('[data-approved-uid="thao-my"][data-approved-perm="kpi.read"]',e=>e.checked)),"Approved user KPI permission did not update");
+  assert(await page.$eval('[data-user-editor="thao-my"]',e=>e.classList.contains('hidden')),"Editor must close after saving");
+
+  page.once('dialog',dialog=>dialog.dismiss());
+  await page.click('[data-user-delete="tam"]');
+  await sleep(80);
+  assert(await page.$('[data-approved-user="tam"]')!==null,"Canceling delete confirmation must keep user");
 
   page.once('dialog',dialog=>dialog.accept());
   await page.click('[data-user-delete="tam"]');
   await sleep(100);
-  assert(await page.$('[data-approved-user="tam"]')===null,"Deleted user remains visible");
+  assert(await page.$('[data-approved-user="tam"]')===null,"Confirmed delete did not remove user");
 
   await page.select('[data-role="pending-01"]','operator');
   await page.click('[data-approve="pending-01"]');
@@ -190,7 +199,7 @@ try {
   await page.setViewport({width:900,height:844,deviceScaleFactor:1});
   await page.reload({waitUntil:"domcontentloaded"});
   await page.waitForSelector("#app:not(.hidden)",{timeout:30000});
-  assert(await page.$('#nav .nav-group:nth-child(3) [data-section="users"]')!==null,"Tablet Duyệt tài khoản must stay inside Quản trị");
+  assert(await page.$('#nav .nav-group:nth-child(3) [data-section="users"]')!==null,"Tablet Quản lý tài khoản must stay inside Quản trị");
   assert(await page.$('#usersDockBtn')===null,"Tablet duplicate Users dock must be removed");
 
   await page.setViewport({width:390,height:844,deviceScaleFactor:1});
@@ -202,7 +211,7 @@ try {
   const mobileNavGroups=await page.$$eval('#nav .nav-group-title',els=>els.map(e=>e.textContent.trim()));
   assert(mobileNavGroups.join('|')==='Báo cáo|Công cụ|Quản trị',"Mobile sidebar groups are missing");
   assert(await page.$('#nav [data-section="manual-kpi"]')!==null,"Mobile KPI thủ công tab missing");
-  assert(await page.$('#nav .nav-group:nth-child(3) [data-section="users"]')!==null,"Mobile Duyệt tài khoản must stay inside Quản trị");
+  assert(await page.$('#nav .nav-group:nth-child(3) [data-section="users"]')!==null,"Mobile Quản lý tài khoản must stay inside Quản trị");
   assert(await page.$('#usersDockBtn')===null,"Mobile duplicate Users dock must be removed");
   await page.click('#userMenuBtn');
   assert(!(await page.$eval('#accountPopover',e=>e.classList.contains('hidden'))),"Mobile account popover did not open");
