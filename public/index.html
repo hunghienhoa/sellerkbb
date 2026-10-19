@@ -143,6 +143,95 @@
       .mobile-grid{grid-template-columns:1fr}
       .nav button{flex-basis:58px;min-width:58px;font-size:9px}
     }
+  
+    /* v1.1.1 layout balance */
+    .content{padding-top:30px;padding-bottom:80px}
+    .section.active{display:flex;flex-direction:column;gap:24px}
+    .section.active>*{margin-top:0!important;margin-bottom:0!important}
+    .section.active>.toolbar{margin:0!important}
+    .stats{
+      grid-template-columns:repeat(auto-fit,minmax(210px,1fr));
+      gap:16px;
+      margin:0
+    }
+    .stats .card{
+      min-height:132px;
+      display:flex;
+      flex-direction:column;
+      justify-content:space-between
+    }
+    .card{padding:20px}
+    .card+.card{margin-top:0!important}
+    .card>.row.space:first-child{gap:14px;margin-bottom:16px}
+    .card>.row.space:first-child h3{margin:0}
+    .toolbar{
+      margin:0;
+      padding:14px 16px;
+      background:rgba(255,255,255,.76);
+      border:1px solid var(--line);
+      border-radius:16px;
+      box-shadow:0 8px 24px rgba(156,91,124,.06)
+    }
+    .toolbar>.tiny{min-width:max-content;font-weight:700}
+    .kpi-pair{gap:16px}
+    .pair-card{min-height:92px;display:flex;flex-direction:column;justify-content:center;padding:18px}
+    .form-grid{gap:18px}
+    .checkline{min-height:30px}
+    .table-wrap{margin-top:2px}
+    .mobile-live-list{gap:14px}
+    .mobile-live-card{padding:18px}
+    .mobile-grid{gap:12px}
+    .mobile-field{padding:12px}
+    .mobile-assign{gap:12px;margin-top:16px;padding-top:16px}
+    .approval-item{
+      margin-top:16px;
+      padding:18px;
+      border:1px solid var(--line);
+      border-radius:16px;
+      background:var(--surface-soft)
+    }
+    .approved-user-row{
+      padding:15px 0;
+      border-bottom:1px solid var(--line);
+      gap:16px
+    }
+    .approved-user-row:last-child{border-bottom:0;padding-bottom:0}
+    @media(max-width:1050px){
+      .content{padding-left:22px;padding-right:22px}
+      .stats{grid-template-columns:repeat(2,minmax(0,1fr))}
+    }
+    @media(max-width:700px){
+      .content{padding:18px 14px 34px}
+      .section.active{gap:18px}
+      .topbar{min-height:76px;padding:12px 14px}
+      .stats{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+      .stats .card{min-height:108px}
+      .card{padding:16px}
+      .toolbar{padding:12px;gap:10px}
+      .toolbar .input,.toolbar .btn{width:100%;flex:1 1 100%}
+      .kpi-pair{gap:12px}
+      .pair-card{min-height:82px;padding:15px}
+      .mobile-live-card{padding:16px}
+      .mobile-live-head{margin-bottom:14px}
+      .mobile-grid{gap:10px}
+      .mobile-field{padding:11px}
+      .approval-item{padding:15px;margin-top:14px}
+      .form-grid{gap:14px}
+      #section-live>.card{
+        padding:0;
+        border:0;
+        background:transparent;
+        box-shadow:none
+      }
+      #section-live>.card .mobile-live-list{margin:0}
+    }
+    @media(max-width:420px){
+      .stats{grid-template-columns:1fr}
+      .stats .card{min-height:96px}
+      .mobile-grid{grid-template-columns:1fr}
+      .page-title{font-size:20px}
+    }
+
   </style>
 </head>
 <body>
@@ -154,7 +243,7 @@
       <div class="side-bottom"><div class="userbox row"><img id="userAvatar" class="avatar" alt=""><div class="usertext" style="min-width:0"><div id="userName" style="font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis"></div><div id="userRole" class="tiny"></div></div></div></div>
     </aside>
     <main class="main">
-      <header class="topbar"><div><h1 id="pageTitle" class="page-title">Tổng quan</h1><div id="pageSub" class="tiny"></div></div><div class="row"><span id="syncBadge" class="pill">v1.1.0</span><button id="logoutBtn" class="btn ghost small">Đăng xuất</button></div></header>
+      <header class="topbar"><div><h1 id="pageTitle" class="page-title">Tổng quan</h1><div id="pageSub" class="tiny"></div></div><div class="row"><span id="syncBadge" class="pill">v1.1.1</span><button id="logoutBtn" class="btn ghost small">Đăng xuất</button></div></header>
       <div class="content">
         <section id="section-dashboard" class="section active"></section>
         <section id="section-live" class="section"></section>
@@ -185,7 +274,7 @@
 
     function previewTs(iso){ return {toDate:()=>new Date(iso)}; }
     function enterPreview(){
-      state.config={version:'1.1.0-preview',tiktokConfigured:true};
+      state.config={version:'1.1.1-preview',tiktokConfigured:true};
       state.user={uid:'preview-admin',email:'admin@sellerkbb.demo',displayName:'Quản trị viên Demo',photoURL:''};
       state.profile={role:'admin',status:'approved',displayName:'Quản trị viên Demo',permissions:['live.read','kpi.read']};
       state.users=[
@@ -416,8 +505,8 @@
       document.querySelectorAll('[data-approve]').forEach(b=>b.onclick=()=>approveUser(b.dataset.approve));
     }
 
-    function userApprovalCard(u){return `<div class="card" style="margin:10px 0;background:var(--surface-soft)"><div class="row space"><div><b>${esc(u.displayName||u.email)}</b><div class="tiny">${esc(u.email||'')}</div></div><span class="pill warn">Chờ duyệt</span></div><div class="form-grid" style="margin-top:12px"><label><div class="tiny">Vai trò</div><select class="input" data-role="${u.id}"><option value="host">Host Livestream</option><option value="operator">Nhân viên vận hành livestream</option><option value="admin">Quản trị viên</option></select></label><div><div class="tiny">Nội dung được phép xem</div><label class="checkline"><input type="checkbox" data-perm="live.read" data-uid="${u.id}" checked> Phiên LIVE</label><label class="checkline"><input type="checkbox" data-perm="kpi.read" data-uid="${u.id}" checked> KPI cá nhân / báo cáo</label></div></div><div class="row" style="margin-top:12px"><button class="btn primary" data-approve="${u.id}">Duyệt tài khoản</button></div></div>`;}
-    function userApprovedRow(u){return `<div class="row space" style="padding:12px 0;border-bottom:1px solid var(--line)"><div><b>${esc(u.displayName||u.email)}</b><div class="tiny">${esc(u.email||'')} · ${(u.permissions||[]).join(', ')||'full/admin'}</div></div><span class="tag ${u.role}">${roleLabel(u.role)}</span></div>`;}
+    function userApprovalCard(u){return `<div class="approval-item"><div class="row space"><div><b>${esc(u.displayName||u.email)}</b><div class="tiny">${esc(u.email||'')}</div></div><span class="pill warn">Chờ duyệt</span></div><div class="form-grid" style="margin-top:16px"><label><div class="tiny">Vai trò</div><select class="input" style="width:100%" data-role="${u.id}"><option value="host">Host Livestream</option><option value="operator">Nhân viên vận hành livestream</option><option value="admin">Quản trị viên</option></select></label><div><div class="tiny">Nội dung được phép xem</div><label class="checkline"><input type="checkbox" data-perm="live.read" data-uid="${u.id}" checked> Phiên LIVE</label><label class="checkline"><input type="checkbox" data-perm="kpi.read" data-uid="${u.id}" checked> KPI cá nhân / báo cáo</label></div></div><div class="row" style="margin-top:16px"><button class="btn primary" data-approve="${u.id}">Duyệt tài khoản</button></div></div>`;}
+    function userApprovedRow(u){return `<div class="row space approved-user-row"><div><b>${esc(u.displayName||u.email)}</b><div class="tiny">${esc(u.email||'')} · ${(u.permissions||[]).join(', ')||'full/admin'}</div></div><span class="tag ${u.role}">${roleLabel(u.role)}</span></div>`;}
     async function approveUser(uid){ const role=document.querySelector(`[data-role="${CSS.escape(uid)}"]`).value; const permissions=[...document.querySelectorAll(`[data-uid="${CSS.escape(uid)}"][data-perm]:checked`)].map(x=>x.dataset.perm); if(role==='admin'){permissions.splice(0,permissions.length,'live.read','kpi.read')} if(PREVIEW){ const u=state.users.find(x=>x.id===uid); Object.assign(u,{role,status:'approved',permissions}); renderAll(); return; } await updateDoc(doc(state.db,'users',uid),{role,status:'approved',permissions,approvedAt:serverTimestamp(),approvedBy:state.user.uid,updatedAt:serverTimestamp()}); await loadData(); renderAll(); }
 
     async function renderTikTok(){
