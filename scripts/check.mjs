@@ -35,6 +35,15 @@ assert(html.includes("hostUid:manual?'':"), "Campaign/Mega must persist Host bla
 assert(html.includes("operatorUid:manual?'':"), "Campaign/Mega must persist Operator blank");
 assert(html.includes("hostUid:old.kpiMode==='manual'?'':"), "Auto-sync merge must not restore staff for manual KPI sessions");
 assert(html.includes("Dữ liệu Tiktok được đồng bộ lúc:"), "Sync status text missing");
+assert(html.includes("rangeMode:'today'"), "Default filter must be Today");
+assert(html.includes("['30d','1 tháng']"), "Monthly filter label missing");
+assert(html.includes("function dashboardSessionsForRange()"), "Dashboard 7-day monthly preview helper missing");
+assert(html.includes('id="dashboardViewMore"'), "Dashboard View More button missing");
+const timeRangeStart = html.indexOf("function fmtLiveTimeRange(s)");
+const timeRangeEnd = html.indexOf("function isManualKpi", timeRangeStart);
+const timeRangeBlock = html.slice(timeRangeStart, timeRangeEnd);
+assert(!timeRangeBlock.includes(" lúc "), "LIVE time range must not contain the word lúc");
+assert(timeRangeBlock.includes("${startDate}  ${startTime}-${endTime}"), "LIVE time range must use two spaces between date and time");
 assert(html.includes("function liveEndTime(s)"), "LIVE end-time helper missing");
 assert(html.includes("Thời gian phiên LIVE"), "Desktop LIVE time header missing");
 assert(html.includes("fmtLiveTimeRange(s)"), "Compact LIVE time range formatter missing");
