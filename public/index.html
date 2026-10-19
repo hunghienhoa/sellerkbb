@@ -270,7 +270,7 @@
       <div class="side-bottom"><div class="userbox row"><img id="userAvatar" class="avatar" alt=""><div class="usertext" style="min-width:0"><div id="userName" style="font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis"></div><div id="userRole" class="tiny"></div></div></div></div>
     </aside>
     <main class="main">
-      <header class="topbar"><div><h1 id="pageTitle" class="page-title">Tổng quan</h1><div id="pageSub" class="tiny"></div></div><div class="row"><span id="syncBadge" class="pill">v1.1.4</span><button id="logoutBtn" class="btn ghost small">Đăng xuất</button></div></header>
+      <header class="topbar"><div><h1 id="pageTitle" class="page-title">Tổng quan</h1><div id="pageSub" class="tiny"></div></div><div class="row"><span id="syncBadge" class="pill">v1.1.5</span><button id="logoutBtn" class="btn ghost small">Đăng xuất</button></div></header>
       <div class="content">
         <section id="section-dashboard" class="section active"></section>
         <section id="section-live" class="section"></section>
@@ -335,7 +335,7 @@
 
     function previewTs(iso){ return {toDate:()=>new Date(iso)}; }
     function enterPreview(){
-      state.config={version:'1.1.4-preview',tiktokConfigured:true};
+      state.config={version:'1.1.5-preview',tiktokConfigured:true};
       state.user={uid:'preview-admin',email:'admin@sellerkbb.demo',displayName:'Quản trị viên Demo',photoURL:''};
       state.profile={role:'admin',status:'approved',displayName:'Quản trị viên Demo',permissions:['live.read','kpi.read']};
       state.users=[
@@ -478,7 +478,7 @@
       if(!rows.length)return `<div class="empty">Chưa có dữ liệu LIVE trong khoảng này.</div>`;
       const approvedHosts=state.users.filter(u=>u.status==='approved'&&u.role==='host'); const operators=state.users.filter(u=>u.status==='approved'&&u.role==='operator');
       const desktop=`<div class="table-wrap desktop-live-table"><table><thead><tr><th>Phiên / Kênh</th><th>Thời gian bắt đầu</th><th>Thời lượng phiên LIVE</th><th>GMV đã ghi nhận</th><th>Số món bán đã ghi nhận</th><th>GMV sau hoàn/hủy</th><th>Host</th><th>Vận hành</th>${editable?'<th></th>':''}</tr></thead><tbody>${rows.map(s=>`<tr>
-        <td><b>${esc(s.title||'Phiên LIVE')}</b><div class="tiny">@${esc(s.channelUsername||'—')} ${s.channelId?`· ID ${esc(s.channelId)}`:''}<br>LIVE ID ${esc(s.liveId||s.id)}</div></td>
+        <td><b>${esc(s.title||'Phiên LIVE')}</b><div class="tiny">@${esc(s.channelUsername||'—')} ${s.channelId?`· ID kênh ${esc(s.channelId)}`:''}</div></td>
         <td>${fmtDate(s.startTime)}</td><td>${fmtDuration(s.durationSeconds)}</td><td class="money">${fmtMoney(s.recordedGmvAmount,s.currency)}</td><td>${new Intl.NumberFormat('vi-VN').format(Number(s.currentItemsSold??s.recordedItemsSold??0))}</td><td class="money">${fmtMoney(finalGmv(s),s.currency)}</td>
         <td>${editable?personSelect('host',s.id,s.hostUid,approvedHosts):esc(s.hostName||'—')}</td><td>${editable?personSelect('operator',s.id,s.operatorUid,operators):esc(s.operatorName||'—')}</td>${editable?`<td><button class="btn small" data-save-session="${s.id}">Lưu</button></td>`:''}
       </tr>`).join('')}</tbody></table></div>`;
@@ -488,7 +488,6 @@
           <div class="mobile-field"><span class="tiny">GMV đã ghi nhận</span><strong>${fmtMoney(s.recordedGmvAmount,s.currency)}</strong></div>
           <div class="mobile-field"><span class="tiny">GMV sau hoàn/hủy</span><strong>${fmtMoney(finalGmv(s),s.currency)}</strong></div>
           <div class="mobile-field"><span class="tiny">Số món bán đã ghi nhận</span><strong>${new Intl.NumberFormat('vi-VN').format(Number(s.currentItemsSold??s.recordedItemsSold??0))}</strong></div>
-          <div class="mobile-field"><span class="tiny">LIVE ID</span><strong>${esc(s.liveId||s.id)}</strong></div>
         </div>
         ${editable?`<div class="mobile-assign"><label><span class="tiny">Host Livestream</span>${personSelect('host',s.id,s.hostUid,approvedHosts)}</label><label><span class="tiny">Nhân viên vận hành</span>${personSelect('operator',s.id,s.operatorUid,operators)}</label><button class="btn primary" data-save-session="${s.id}">Lưu nhân sự</button></div>`:`<div class="mobile-assign"><div class="row space"><span class="tiny">Host</span><b>${esc(s.hostName||'—')}</b></div><div class="row space"><span class="tiny">Vận hành</span><b>${esc(s.operatorName||'—')}</b></div></div>`}
       </article>`).join('')}</div>`;
