@@ -131,6 +131,21 @@ assert(toolsGroup.includes("id:'export'")&&toolsGroup.includes("id:'manual-kpi'"
 const adminGroup=html.slice(html.indexOf("{label:'Quản trị'"),html.indexOf("];",html.indexOf("{label:'Quản trị'")));
 assert(adminGroup.includes("id:'users'"), "Quản lý tài khoản must stay inside Quản trị nav group");
 assert(adminGroup.includes("label:'Quản lý tài khoản'"), "Quản lý tài khoản nav label missing");
+assert(adminGroup.includes("id:'staff'")&&adminGroup.includes("label:'Quản lý nhân sự'"), "Quản lý nhân sự must be a separate Quản trị tab");
+assert(html.includes('id="section-staff"'), "Dedicated staff management section missing");
+assert(html.includes("DEFAULT_STAFF_MEMBERS"), "Default staff directory missing");
+assert(html.includes("staff-thao-my")&&html.includes("staff-dung")&&html.includes("staff-tam"), "Default Host staff missing");
+assert(html.includes("staff-hung-bg")&&html.includes("staff-hung-hh"), "Default Operator staff missing");
+assert(html.includes("settings','staffMembers"), "Independent Firestore staff directory missing");
+assert(html.includes("function renderStaff()"), "Staff management renderer missing");
+assert(html.includes("async function addStaffMember()"), "Add staff action missing");
+assert(html.includes("async function saveStaffMember(id)"), "Edit staff action missing");
+assert(html.includes("async function deleteStaffMember(id)"), "Delete staff action missing");
+assert(html.includes("const approvedHosts=staffForRole('host')"), "LIVE Host selector must use staff directory");
+assert(html.includes("const operators=staffForRole('operator')"), "LIVE Operator selector must use staff directory");
+assert(html.includes("return role?staffForRole(role)"), "Manual KPI selectors must use staff directory");
+assert(html.includes("const host=manual?null:state.staff.find"), "LIVE assignment must save staff, not users");
+assert(!html.includes("const approvedHosts=state.users.filter"), "LIVE selector must not derive personnel from login accounts");
 assert(!html.includes('id="usersDockBtn"'), "Duplicate external Users dock must be removed");
 assert(!html.includes('id="usersQuickBtn"'), "Legacy internal Users quick button must stay removed");
 assert(html.includes("function toggleApprovedUserEditor(uid)"), "Approved-user editor toggle missing");
@@ -150,4 +165,4 @@ assert(readme.includes(`Cập nhật mới nhất — v${version}`), "README lat
 assert(workflow.includes("Tính năng/cập nhật trong bản này"), "Release changelog heading missing");
 assert(workflow.includes("Write release notes from README"), "README-driven Release notes step missing");
 assert(workflow.includes('Cập nhật mới nhất — v" ver'), "Release notes must read the matching README version section");
-console.log("Project structure, syntax, persistence, calendar, storage, Google profiles, pink pastel UI, tool-group manual KPI, single admin approval navigation + editable user access, descriptive Releases, README, and auto-sync checks OK");
+console.log("Project structure, syntax, persistence, calendar, storage, Google profiles, pink pastel UI, tool-group manual KPI, separate account + personnel administration, descriptive Releases, README, and auto-sync checks OK");

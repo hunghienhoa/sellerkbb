@@ -1871,6 +1871,25 @@ tbody tr:hover td{background:#fffafb}
 
 
 
+
+/* v1.21 independent personnel directory */
+.staff-toolbar{display:grid;grid-template-columns:minmax(220px,1fr) minmax(220px,.8fr) auto;gap:10px;align-items:end;margin-top:14px}
+.staff-list{display:grid;gap:8px;margin-top:14px}
+.staff-row{padding:12px;border:1px solid var(--line);border-radius:10px;background:var(--surface)}
+.staff-row-summary{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.staff-row-copy{display:grid;gap:3px;min-width:0}
+.staff-row-copy b{color:#583d4a;font-size:13px}
+.staff-row-actions{display:flex;gap:6px;align-items:center}
+.staff-edit-grid{display:grid;grid-template-columns:minmax(200px,1fr) minmax(220px,.8fr) auto;gap:10px;align-items:end;margin-top:10px;padding-top:10px;border-top:1px solid var(--line)}
+.staff-edit-grid.hidden{display:none}
+.staff-role-host{background:#fff0f6;color:#a6567c;border-color:#f0cbdc}
+.staff-role-operator{background:#fff5f8;color:#9b637b;border-color:#efd2df}
+@media(max-width:700px){
+  .staff-toolbar,.staff-edit-grid{grid-template-columns:1fr}
+  .staff-row-summary{align-items:flex-start}
+  .staff-row-actions{flex:0 0 auto}
+}
+
 </style>
 </head>
 <body>
@@ -1890,13 +1909,14 @@ tbody tr:hover td{background:#fffafb}
       </div>
     </aside>
     <main class="main">
-      <header class="topbar"><div class="topbar-title-wrap"><button id="menuToggle" class="menu-toggle" type="button" aria-label="Mở menu" aria-expanded="false">☰</button><div><h1 id="pageTitle" class="page-title">Tổng quan</h1><div id="pageSub" class="tiny"></div></div></div><div class="row"><span id="syncBadge" class="pill">v1.20.0</span></div></header>
+      <header class="topbar"><div class="topbar-title-wrap"><button id="menuToggle" class="menu-toggle" type="button" aria-label="Mở menu" aria-expanded="false">☰</button><div><h1 id="pageTitle" class="page-title">Tổng quan</h1><div id="pageSub" class="tiny"></div></div></div><div class="row"><span id="syncBadge" class="pill">v1.21.0</span></div></header>
       <div class="content">
         <section id="section-dashboard" class="section active"></section>
         <section id="section-live" class="section"></section>
         <section id="section-kpi" class="section"></section>
         <section id="section-manual-kpi" class="section"></section>
         <section id="section-users" class="section"></section>
+        <section id="section-staff" class="section"></section>
         <section id="section-tiktok" class="section"></section>
         <section id="section-export" class="section"></section>
         <section id="section-storage" class="section"></section>
@@ -2143,7 +2163,50 @@ tbody tr:hover td{background:#fffafb}
     const PREVIEW = location.pathname === '/preview' || new URLSearchParams(location.search).get('preview') === '1';
 
     const LIVE_PAGE_SIZE = 20;
-    const state = { config:null, auth:null, db:null, user:null, profile:null, sessions:[], users:[], section:'dashboard', livePage:1, rangeMode:'today', customStart:'', customEnd:'', customPickerScope:null, maintenance:{settings:{retentionDays:180,autoCleanup:true,emergencyPercent:85,firestoreSoftLimitMb:600,firestoreMaxSessions:12000,kvSoftKeyLimit:5000},github:{usedBytes:0,limitBytes:10000000000,available:false},cloudflare:{keyCount:0,lastRun:null,usedBytes:0,storageLimitBytes:1000000000,storageComplete:true},firebase:{freePlanMode:true,ttlEnabled:false,ttlRecommended:false,storageLimitBytes:1073741824}}, autoSyncStatus:null, autoSyncRefreshing:false, autoSyncWatcher:null, autoSyncVisibilityBound:false };
+    const state = { config:null, auth:null, db:null, user:null, profile:null, sessions:[], users:[], staff:[], section:'dashboard', livePage:1, rangeMode:'today', customStart:'', customEnd:'', customPickerScope:null, maintenance:{settings:{retentionDays:180,autoCleanup:true,emergencyPercent:85,firestoreSoftLimitMb:600,firestoreMaxSessions:12000,kvSoftKeyLimit:5000},github:{usedBytes:0,limitBytes:10000000000,available:false},cloudflare:{keyCount:0,lastRun:null,usedBytes:0,storageLimitBytes:1000000000,storageComplete:true},firebase:{freePlanMode:true,ttlEnabled:false,ttlRecommended:false,storageLimitBytes:1073741824}}, autoSyncStatus:null, autoSyncRefreshing:false, autoSyncWatcher:null, autoSyncVisibilityBound:false };
+
+    const DEFAULT_STAFF_MEMBERS=[
+      {id:'staff-thao-my',displayName:'Thảo My',role:'host'},
+      {id:'staff-dung',displayName:'Dung',role:'host'},
+      {id:'staff-tam',displayName:'Tâm',role:'host'},
+      {id:'staff-hung-bg',displayName:'Hùng Bắc Giang',role:'operator'},
+      {id:'staff-hung-hh',displayName:'Hùng Hiền Hoà',role:'operator'}
+    ];
+    const LEGACY_STAFF_ID_MAP={
+      'thao-my':'staff-thao-my',
+      'dung':'staff-dung',
+      'tam':'staff-tam',
+      'hung-bg':'staff-hung-bg',
+      'hung-hh':'staff-hung-hh'
+    };
+    function defaultStaffMembers(){ return DEFAULT_STAFF_MEMBERS.map((x,index)=>({...x,sortOrder:(index+1)*10})); }
+    function normalizeStaffMembers(items){
+      return (Array.isArray(items)?items:[])
+        .map((x,index)=>({
+          id:String(x?.id||'').trim()||`staff-${Date.now()}-${index}`,
+          displayName:String(x?.displayName||x?.name||'').trim(),
+          role:x?.role==='operator'?'operator':'host',
+          sortOrder:Number(x?.sortOrder||((index+1)*10))
+        }))
+        .filter(x=>x.displayName);
+    }
+    function staffForRole(role){
+      return state.staff
+        .filter(x=>x.role===role)
+        .sort((a,b)=>(a.sortOrder||0)-(b.sortOrder||0)||String(a.displayName).localeCompare(String(b.displayName),'vi'));
+    }
+    function staffDisplayRecord(uid,name=''){
+      return state.staff.find(x=>x.id===uid)
+        || state.staff.find(x=>String(x.displayName||'').localeCompare(String(name||''),'vi',{sensitivity:'base'})===0)
+        || {id:uid||'',displayName:name||'Chưa đặt tên'};
+    }
+    function staffSelectionId(role,uid,name=''){
+      const mappedUid=LEGACY_STAFF_ID_MAP[uid]||uid;
+      const exact=state.staff.find(x=>x.role===role&&x.id===mappedUid);
+      if(exact)return exact.id;
+      const byName=state.staff.find(x=>x.role===role&&String(x.displayName||'').localeCompare(String(name||''),'vi',{sensitivity:'base'})===0);
+      return byName?.id||'';
+    }
 
     const PREVIEW_STATE_KEY='sellerkbb:preview-state:v1';
     function readPreviewState(){
@@ -2156,7 +2219,8 @@ tbody tr:hover td{background:#fffafb}
         sessionEdits[x.id]={kpiMode:x.kpiMode||'auto',hostUid:x.hostUid||'',hostName:x.hostName||'',operatorUid:x.operatorUid||'',operatorName:x.operatorName||'',manualKpiEntries:Array.isArray(x.manualKpiEntries)?x.manualKpiEntries:[]};
       }
       const users=state.users.map(u=>({id:u.id,role:u.role,status:u.status,permissions:u.permissions||[]}));
-      localStorage.setItem(PREVIEW_STATE_KEY,JSON.stringify({sessionEdits,users,maintenance:state.maintenance.settings}));
+      const staff=state.staff.map(x=>({id:x.id,displayName:x.displayName,role:x.role,sortOrder:x.sortOrder||0}));
+      localStorage.setItem(PREVIEW_STATE_KEY,JSON.stringify({sessionEdits,users,staff,maintenance:state.maintenance.settings}));
     }
     function restorePreviewState(){
       if(!PREVIEW)return;
@@ -2175,11 +2239,12 @@ tbody tr:hover td{background:#fffafb}
           if(u)Object.assign(u,patch);
         }
       }
+      if(Array.isArray(saved.staff))state.staff=normalizeStaffMembers(saved.staff);
     }
 
     function previewTs(iso){ return {toDate:()=>new Date(iso)}; }
     function enterPreview(){
-      state.config={version:'1.20.0-preview',tiktokConfigured:true};
+      state.config={version:'1.21.0-preview',tiktokConfigured:true};
       state.user={uid:'preview-admin',email:'admin@sellerkbb.demo',displayName:'Quản trị viên Demo',photoURL:avatarFallbackData('Quản trị viên Demo')};
       state.profile={role:'admin',status:'approved',displayName:'Quản trị viên Demo',photoURL:state.user.photoURL,permissions:['live.read','kpi.read']};
       state.maintenance={settings:{retentionDays:180,autoCleanup:true,emergencyPercent:85,firestoreSoftLimitMb:600,firestoreMaxSessions:12000,kvSoftKeyLimit:5000},github:{usedBytes:124000,limitBytes:10000000000,available:true},cloudflare:{keyCount:5,lastRun:{ranAt:new Date().toISOString(),deleted:0},usedBytes:428000,storageLimitBytes:1000000000,storageComplete:true},firebase:{freePlanMode:true,ttlEnabled:false,ttlRecommended:false,storageLimitBytes:1073741824}};
@@ -2194,6 +2259,7 @@ tbody tr:hover td{background:#fffafb}
         {id:'preview-admin',displayName:'Quản trị viên Demo',email:'admin@sellerkbb.demo',role:'admin',status:'approved',permissions:['live.read','kpi.read']}
       ];
       state.users=state.users.map(u=>({...u,photoURL:avatarFallbackData(u.displayName||u.email)}));
+      state.staff=defaultStaffMembers();
       const base=[
         ['LIVE-202610-001','Mega Live 10.10 - Ca sáng','sellerkbb_official','743820194','2026-10-10T02:00:00+07:00',10800,186500000,1240,174320000,'thao-my','Thảo My','hung-bg','Hùng Bắc Giang'],
         ['LIVE-202610-002','Flash Sale buổi trưa','sellerkbb_official','743820194','2026-10-10T06:30:00+07:00',7200,93200000,611,88750000,'dung','Dung','hung-hh','Hùng Hiền Hòa'],
@@ -2484,8 +2550,27 @@ tbody tr:hover td{background:#fffafb}
       }
     }
 
+    async function loadStaffDirectory(){
+      const fallback=defaultStaffMembers();
+      try{
+        const snap=await getDoc(doc(state.db,'settings','staffMembers'));
+        if(snap.exists()){
+          state.staff=normalizeStaffMembers(snap.data()?.items);
+        }else{
+          state.staff=fallback;
+          if(isAdmin()){
+            await setDoc(doc(state.db,'settings','staffMembers'),{items:state.staff,updatedAt:serverTimestamp(),updatedBy:state.user?.uid||''},{merge:true});
+          }
+        }
+      }catch(error){
+        console.warn('staff directory',error);
+        state.staff=fallback;
+      }
+    }
+
     async function loadData(){
-      state.sessions=[]; state.users=[];
+      state.sessions=[]; state.users=[]; state.staff=[];
+      await loadStaffDirectory();
       if(isAdmin()&&!PREVIEW){
         try{
           const m=await api('/api/maintenance/settings');
@@ -2521,6 +2606,7 @@ tbody tr:hover td{background:#fffafb}
         ]},
         {label:'Quản trị',items:[
           {id:'users',icon:'users',label:'Quản lý tài khoản',show:isAdmin()},
+          {id:'staff',icon:'users',label:'Quản lý nhân sự',show:isAdmin()},
           {id:'tiktok',icon:'plug',label:'TikTok / API',show:isAdmin()},
           {id:'storage',icon:'database',label:'Lưu trữ',show:isAdmin()}
         ]}
@@ -2533,7 +2619,7 @@ tbody tr:hover td{background:#fffafb}
       $('#nav').querySelectorAll('button').forEach(b=>b.onclick=()=>switchSection(b.dataset.section));
     }
 
-    function switchSection(id){ state.section=id; setAccountMenu(false); setMobileMenu(false); document.querySelectorAll('.section').forEach(s=>s.classList.remove('active')); $(`#section-${id}`).classList.add('active'); renderNav(); const meta={dashboard:['Tổng quan','Báo cáo LIVE & KPI'],live:['Phiên LIVE','Gắn Host/Operator cho từng phiên'],kpi:['KPI nhân sự','Tổng hợp KPI tự động + KPI thủ công đã lưu'], 'manual-kpi':['KPI thủ công','Nhập KPI theo từng người cho các phiên tính thủ công'],users:['Quản lý tài khoản','Duyệt, chỉnh quyền hoặc xóa user'],export:['Xuất file','Xuất báo cáo theo khoảng thời gian đã chọn'],tiktok:['TikTok / API','Tự động đồng bộ LIVE và gia hạn token 24/24'],storage:['Lưu trữ & tự dọn','Giữ dữ liệu tối đa 6 tháng và bảo vệ dung lượng']}[id]; $('#pageTitle').textContent=meta[0]; $('#pageSub').textContent=meta[1]; }
+    function switchSection(id){ state.section=id; setAccountMenu(false); setMobileMenu(false); document.querySelectorAll('.section').forEach(s=>s.classList.remove('active')); $(`#section-${id}`).classList.add('active'); renderNav(); const meta={dashboard:['Tổng quan','Báo cáo LIVE & KPI'],live:['Phiên LIVE','Gắn Host/Operator cho từng phiên'],kpi:['KPI nhân sự','Tổng hợp KPI tự động + KPI thủ công đã lưu'], 'manual-kpi':['KPI thủ công','Nhập KPI theo từng người cho các phiên tính thủ công'],users:['Quản lý tài khoản','Duyệt, chỉnh quyền hoặc xóa user'],staff:['Quản lý nhân sự','Danh sách Host/Vận hành dùng chung cho toàn hệ thống'],export:['Xuất file','Xuất báo cáo theo khoảng thời gian đã chọn'],tiktok:['TikTok / API','Tự động đồng bộ LIVE và gia hạn token 24/24'],storage:['Lưu trữ & tự dọn','Giữ dữ liệu tối đa 6 tháng và bảo vệ dung lượng']}[id]; $('#pageTitle').textContent=meta[0]; $('#pageSub').textContent=meta[1]; }
 
     function finalGmv(s){ return Number(s.finalGmvAmount ?? s.currentGmvAmount ?? s.recordedGmvAmount ?? 0); }
     function liveEndTime(s){
@@ -2620,11 +2706,11 @@ tbody tr:hover td{background:#fffafb}
 
     function renderLiveTable(rows, editable){
       if(!rows.length)return `<div class="empty">Chưa có dữ liệu LIVE trong khoảng này.</div>`;
-      const approvedHosts=state.users.filter(u=>u.status==='approved'&&u.role==='host'); const operators=state.users.filter(u=>u.status==='approved'&&u.role==='operator');
+      const approvedHosts=staffForRole('host'); const operators=staffForRole('operator');
       const desktop=`<div class="table-wrap desktop-live-table"><table><thead><tr><th>Phiên / Kênh</th><th>Thời gian phiên LIVE</th><th>Thời lượng phiên LIVE</th><th>GMV đã ghi nhận</th><th>Số món bán đã ghi nhận</th><th>GMV sau hoàn/hủy</th><th>Host</th><th>Vận hành</th>${editable?'<th></th>':''}</tr></thead><tbody>${rows.map(s=>`<tr>
         <td><b>${esc(s.title||'Phiên LIVE')}</b>${isManualKpi(s)?'<div><span class="pill warn">Ngày Campaign/Mega · tính thủ công</span></div>':''}<div class="tiny">@${esc(s.channelUsername||'—')} ${s.channelId?`· ID kênh ${esc(s.channelId)}`:''}</div></td>
         <td class="live-time-cell"><b>${fmtLiveTimeRange(s)}</b></td><td>${fmtDuration(s.durationSeconds)}</td><td class="money">${fmtMoney(s.recordedGmvAmount,s.currency)}</td><td>${new Intl.NumberFormat('vi-VN').format(Number(s.currentItemsSold??s.recordedItemsSold??0))}</td><td class="money">${fmtMoney(finalGmv(s),s.currency)}</td>
-        <td>${editable?personSelect('host',s.id,s.hostUid,approvedHosts):esc(s.hostName||'—')}</td><td>${editable?personSelect('operator',s.id,s.operatorUid,operators):esc(s.operatorName||'—')}</td>${editable?`<td><label class="manual-kpi-check"><input type="checkbox" data-manual-kpi="${s.id}" ${isManualKpi(s)?'checked':''}> <span>Tính thủ công</span></label><button class="btn small" data-save-session="${s.id}">${icon('check',14)} Lưu</button></td>`:''}
+        <td>${editable?personSelect('host',s.id,s.hostUid,approvedHosts,s.hostName):esc(s.hostName||'—')}</td><td>${editable?personSelect('operator',s.id,s.operatorUid,operators,s.operatorName):esc(s.operatorName||'—')}</td>${editable?`<td><label class="manual-kpi-check"><input type="checkbox" data-manual-kpi="${s.id}" ${isManualKpi(s)?'checked':''}> <span>Tính thủ công</span></label><button class="btn small" data-save-session="${s.id}">${icon('check',14)} Lưu</button></td>`:''}
       </tr>`).join('')}</tbody></table></div>`;
       const mobile=`<div class="mobile-live-list">${rows.map(s=>`<article class="mobile-live-card">
         <div class="mobile-live-head"><div><div class="mobile-live-title">${esc(s.title||'Phiên LIVE')}</div>${isManualKpi(s)?'<span class="pill warn">Ngày Campaign/Mega · tính thủ công</span>':''}<div class="tiny">@${esc(s.channelUsername||'—')}</div><div class="mobile-live-time">${icon('clock',13)} <b>${fmtLiveTimeRange(s)}</b></div></div><span class="pill">${fmtDuration(s.durationSeconds)}</span></div>
@@ -2633,11 +2719,11 @@ tbody tr:hover td{background:#fffafb}
           <div class="mobile-field"><span class="tiny">GMV sau hoàn/hủy</span><strong>${fmtMoney(finalGmv(s),s.currency)}</strong></div>
           <div class="mobile-field"><span class="tiny">Số món bán đã ghi nhận</span><strong>${new Intl.NumberFormat('vi-VN').format(Number(s.currentItemsSold??s.recordedItemsSold??0))}</strong></div>
         </div>
-        ${editable?`<div class="mobile-assign"><label class="manual-kpi-check"><input type="checkbox" data-manual-kpi="${s.id}" ${isManualKpi(s)?'checked':''}> <span>Ngày Campaign/Mega Live · tính KPI thủ công</span></label><label><span class="tiny">Host Livestream</span>${personSelect('host',s.id,s.hostUid,approvedHosts)}</label><label><span class="tiny">Nhân viên vận hành</span>${personSelect('operator',s.id,s.operatorUid,operators)}</label><button class="btn primary" data-save-session="${s.id}">${icon('check',15)} Lưu thiết lập</button></div>`:`<div class="mobile-assign">${isManualKpi(s)?'<div class="notice warn">Phiên này không cộng vào KPI tự động.</div>':''}<div class="row space"><span class="tiny">Host</span><b>${esc(s.hostName||'—')}</b></div><div class="row space"><span class="tiny">Vận hành</span><b>${esc(s.operatorName||'—')}</b></div></div>`}
+        ${editable?`<div class="mobile-assign"><label class="manual-kpi-check"><input type="checkbox" data-manual-kpi="${s.id}" ${isManualKpi(s)?'checked':''}> <span>Ngày Campaign/Mega Live · tính KPI thủ công</span></label><label><span class="tiny">Host Livestream</span>${personSelect('host',s.id,s.hostUid,approvedHosts,s.hostName)}</label><label><span class="tiny">Nhân viên vận hành</span>${personSelect('operator',s.id,s.operatorUid,operators,s.operatorName)}</label><button class="btn primary" data-save-session="${s.id}">${icon('check',15)} Lưu thiết lập</button></div>`:`<div class="mobile-assign">${isManualKpi(s)?'<div class="notice warn">Phiên này không cộng vào KPI tự động.</div>':''}<div class="row space"><span class="tiny">Host</span><b>${esc(s.hostName||'—')}</b></div><div class="row space"><span class="tiny">Vận hành</span><b>${esc(s.operatorName||'—')}</b></div></div>`}
       </article>`).join('')}</div>`;
       return desktop+mobile;
     }
-    function personSelect(kind,id,val,users){ return `<select class="input" style="min-width:170px" data-person="${kind}" data-id="${id}"><option value="">— Chưa gán —</option>${users.map(u=>`<option value="${u.id}" ${u.id===val?'selected':''}>${esc(u.displayName||u.email)}</option>`).join('')}</select>`; }
+    function personSelect(kind,id,val,users,name=''){ const selected=staffSelectionId(kind,val,name); return `<select class="input" style="min-width:170px" data-person="${kind}" data-id="${id}"><option value="">— Chưa gán —</option>${users.map(u=>`<option value="${u.id}" ${u.id===selected?'selected':''}>${esc(u.displayName)}</option>`).join('')}</select>`; }
 
     function renderLive(){
       if(!can('live.read')){ $('#section-live').innerHTML='<div class="notice bad">Bạn không có quyền xem dữ liệu LIVE.</div>';return; }
@@ -2689,11 +2775,11 @@ tbody tr:hover td{background:#fffafb}
       if(!scopeEl){ showToast('Không xác định được phiên LIVE cần lưu'); return; }
       const h=scopeEl.querySelector('[data-person="host"]'), o=scopeEl.querySelector('[data-person="operator"]');
       const manual=scopeEl.querySelector('[data-manual-kpi]')?.checked===true;
-      const host=manual?null:state.users.find(u=>u.id===h?.value), op=manual?null:state.users.find(u=>u.id===o?.value);
+      const host=manual?null:state.staff.find(u=>u.id===h?.value), op=manual?null:state.staff.find(u=>u.id===o?.value);
       const payload={
         kpiMode:manual?'manual':'auto',
-        hostUid:manual?'':(h?.value||''), hostName:manual?'':(host?.displayName||host?.email||''),
-        operatorUid:manual?'':(o?.value||''), operatorName:manual?'':(op?.displayName||op?.email||'')
+        hostUid:manual?'':(h?.value||''), hostName:manual?'':(host?.displayName||''),
+        operatorUid:manual?'':(o?.value||''), operatorName:manual?'':(op?.displayName||'')
       };
       if(PREVIEW){
         const item=state.sessions.find(x=>x.id===id);
@@ -2846,15 +2932,13 @@ tbody tr:hover td{background:#fffafb}
     }
 
     function manualKpiPeople(role=''){
-      return state.users
-        .filter(u=>u.status==='approved'&&(u.role==='host'||u.role==='operator')&&(!role||u.role===role))
-        .sort((a,b)=>String(a.displayName||a.email||'').localeCompare(String(b.displayName||b.email||''),'vi'));
+      return role?staffForRole(role):[...staffForRole('host'),...staffForRole('operator')];
     }
 
     function manualKpiPersonOptions(role,value=''){
       const people=manualKpiPeople(role);
       return '<option value="">— Chọn '+(role==='operator'?'nhân viên vận hành':'Host')+' —</option>'+
-        people.map(u=>`<option value="${u.id}" ${u.id===value?'selected':''}>${esc(u.displayName||u.email)}</option>`).join('');
+        people.map(u=>`<option value="${u.id}" ${u.id===staffSelectionId(role,value,'')?'selected':''}>${esc(u.displayName)}</option>`).join('');
     }
 
     function manualKpiPairs(session){
@@ -2889,8 +2973,8 @@ tbody tr:hover td{background:#fffafb}
       }
 
       return `<div class="manual-kpi-entry" data-manual-entry>
-        <label><span>Host Livestream</span><select class="input" data-manual-host-person>${manualKpiPersonOptions('host',host.uid)}</select></label>
-        <label><span>Nhân viên vận hành Livestream</span><select class="input" data-manual-operator-person>${manualKpiPersonOptions('operator',operator.uid)}</select></label>
+        <label><span>Host Livestream</span><select class="input" data-manual-host-person>${manualKpiPersonOptions('host',staffSelectionId('host',host.uid,host.name))}</select></label>
+        <label><span>Nhân viên vận hành Livestream</span><select class="input" data-manual-operator-person>${manualKpiPersonOptions('operator',staffSelectionId('operator',operator.uid,operator.name))}</select></label>
         <label class="manual-host-gmv-field"><span>GMV sau hoàn/hủy của Host Livestream</span><input class="input" type="text" inputmode="numeric" autocomplete="off" data-manual-host-gmv value="${manualMoneyDisplay(gmv)}"></label>
         <label class="manual-host-kpi-field"><span>KPI thủ công của Host Livestream</span><input class="input" type="text" inputmode="numeric" autocomplete="off" data-manual-host-kpi value="${manualMoneyDisplay(host.kpi||0)}"></label>
         <label class="manual-operator-kpi-field"><span>KPI của Nhân viên vận hành Livestream (0,1%)</span><input class="input" type="text" inputmode="numeric" data-manual-operator-kpi value="${manualMoneyDisplay(operatorKpi)}" readonly></label>
@@ -2956,14 +3040,14 @@ tbody tr:hover td{background:#fffafb}
         if(!hostUid&&(gmv||hostKpi||operatorUid))throw new Error('Hãy chọn Host Livestream cho nhóm KPI đã nhập.');
         if(!hostUid&&!operatorUid)continue;
 
-        const host=state.users.find(u=>u.id===hostUid);
+        const host=state.staff.find(u=>u.id===hostUid);
         if(!host)throw new Error('Không tìm thấy Host Livestream đã chọn.');
-        entries.push({uid:hostUid,name:host.displayName||host.email||'',role:'host',gmv,kpi:hostKpi,currency:session.currency||'VND'});
+        entries.push({uid:hostUid,name:host.displayName||'',role:'host',gmv,kpi:hostKpi,currency:session.currency||'VND'});
 
         if(operatorUid){
-          const operator=state.users.find(u=>u.id===operatorUid);
+          const operator=state.staff.find(u=>u.id===operatorUid);
           if(!operator)throw new Error('Không tìm thấy Nhân viên vận hành Livestream đã chọn.');
-          entries.push({uid:operatorUid,name:operator.displayName||operator.email||'',role:'operator',gmv,kpi:operatorKpi,currency:session.currency||'VND'});
+          entries.push({uid:operatorUid,name:operator.displayName||'',role:'operator',gmv,kpi:operatorKpi,currency:session.currency||'VND'});
         }
       }
       return entries;
@@ -3061,13 +3145,98 @@ tbody tr:hover td{background:#fffafb}
       const totalManualKpi=rows.reduce((a,r)=>a+r.manualKpi,0);
       $('#section-kpi').innerHTML=`
         ${timeFilterHtml('kpi','<span class="pill">Host 0,3%</span><span class="pill">Vận hành 0,1%</span>')}
-        <div class="kpi-pair"><div class="pair-card"><b>Thảo My + Hùng Bắc Giang</b><span class="tiny">Đi theo cặp — Host / Vận hành</span></div><div class="pair-card"><b>Dung hoặc Tâm + Hùng Hiền Hòa</b><span class="tiny">Đi theo cặp — Host / Vận hành</span></div></div>
+        <div class="kpi-pair"><div class="pair-card"><b>Host Livestream</b><span class="tiny">${esc(staffForRole('host').map(x=>x.displayName).join(' · ')||'Chưa có nhân sự')}</span></div><div class="pair-card"><b>Nhân viên vận hành Livestream</b><span class="tiny">${esc(staffForRole('operator').map(x=>x.displayName).join(' · ')||'Chưa có nhân sự')}</span></div></div>
         <div class="metrics-grid metrics-4">${metricCard('users','Nhân sự có KPI',rows.length)}${metricCard('money','Tổng KPI',fmtMoney(totalKpi,currency))}${metricCard('kpi','KPI tự động',fmtMoney(totalAutoKpi,currency))}${metricCard('settings','KPI thủ công',fmtMoney(totalManualKpi,currency))}</div>
         <div class="card">
           <div class="row space"><div><h3>KPI nhân sự</h3><div class="sub">Bảng tổng hợp này tự cộng KPI tự động và KPI thủ công đã lưu của đúng từng nhân viên.</div></div><span class="pill">Tổng ${fmtMoney(totalKpi,currency)}</span></div>
-          ${rows.length?`<div class="table-wrap"><table style="min-width:920px"><thead><tr><th>Nhân sự</th><th>Vai trò</th><th>GMV tự động</th><th>GMV thủ công</th><th>KPI tự động</th><th>KPI thủ công</th><th>Tổng KPI</th></tr></thead><tbody>${rows.map(r=>`<tr><td>${userIdentityHtml(userDisplayRecord(r.uid,r.name),false)}</td><td><span class="tag ${r.roles[0]||''}">${esc(kpiRoleSummary(r))}</span></td><td class="money">${fmtMoney(r.autoGmv,r.currency)}</td><td class="money">${fmtMoney(r.manualGmv,r.currency)}</td><td class="money">${fmtMoney(r.autoKpi,r.currency)}</td><td class="money manual-kpi-value">${fmtMoney(r.manualKpi,r.currency)}</td><td class="money"><b>${fmtMoney(r.kpi,r.currency)}</b></td></tr>`).join('')}</tbody></table></div>`:'<div class="empty">Chưa có KPI trong khoảng thời gian này.</div>'}
+          ${rows.length?`<div class="table-wrap"><table style="min-width:920px"><thead><tr><th>Nhân sự</th><th>Vai trò</th><th>GMV tự động</th><th>GMV thủ công</th><th>KPI tự động</th><th>KPI thủ công</th><th>Tổng KPI</th></tr></thead><tbody>${rows.map(r=>`<tr><td>${userIdentityHtml(staffDisplayRecord(r.uid,r.name),false)}</td><td><span class="tag ${r.roles[0]||''}">${esc(kpiRoleSummary(r))}</span></td><td class="money">${fmtMoney(r.autoGmv,r.currency)}</td><td class="money">${fmtMoney(r.manualGmv,r.currency)}</td><td class="money">${fmtMoney(r.autoKpi,r.currency)}</td><td class="money manual-kpi-value">${fmtMoney(r.manualKpi,r.currency)}</td><td class="money"><b>${fmtMoney(r.kpi,r.currency)}</b></td></tr>`).join('')}</tbody></table></div>`:'<div class="empty">Chưa có KPI trong khoảng thời gian này.</div>'}
         </div>`;
       bindTimeFilter('kpi');
+    }
+
+    function staffRoleLabel(role){ return role==='operator'?'Nhân viên vận hành Livestream':'Host Livestream'; }
+
+    function renderStaff(){
+      if(!isAdmin()){ $('#section-staff').innerHTML='';return; }
+      const rows=[...state.staff].sort((a,b)=>(a.role===b.role?0:a.role==='host'?-1:1)||(a.sortOrder||0)-(b.sortOrder||0)||String(a.displayName).localeCompare(String(b.displayName),'vi'));
+      $('#section-staff').innerHTML=`
+        <div class="card">
+          <div class="row space"><div><h3 class="heading-with-icon">${icon('users',18)} Quản lý nhân sự</h3><div class="sub">Nhân sự ở đây độc lập hoàn toàn với tài khoản đăng nhập. Thêm nhân sự không tạo tài khoản và không cấp quyền xem SellerKBB.</div></div><span class="pill">${rows.length} nhân sự</span></div>
+          <div class="staff-toolbar">
+            <label><div class="tiny">Tên nhân sự</div><input id="newStaffName" class="input" placeholder="Nhập tên nhân sự"></label>
+            <label><div class="tiny">Vai trò</div><select id="newStaffRole" class="input"><option value="host">Host Livestream</option><option value="operator">Nhân viên vận hành Livestream</option></select></label>
+            <button id="addStaffBtn" class="btn primary" type="button">${icon('users',15)} Thêm nhân sự</button>
+          </div>
+          <div class="staff-list">${rows.length?rows.map(staffRowHtml).join(''):'<div class="empty">Chưa có nhân sự. Hãy thêm Host hoặc Vận hành.</div>'}</div>
+        </div>`;
+      $('#addStaffBtn')?.addEventListener('click',addStaffMember);
+      document.querySelectorAll('[data-staff-edit]').forEach(b=>b.onclick=()=>toggleStaffEditor(b.dataset.staffEdit));
+      document.querySelectorAll('[data-staff-save]').forEach(b=>b.onclick=()=>saveStaffMember(b.dataset.staffSave));
+      document.querySelectorAll('[data-staff-delete]').forEach(b=>b.onclick=()=>deleteStaffMember(b.dataset.staffDelete));
+    }
+
+    function staffRowHtml(member){
+      return `<div class="staff-row" data-staff-row="${member.id}">
+        <div class="staff-row-summary">
+          <div class="staff-row-copy"><b>${esc(member.displayName)}</b><span class="tag ${member.role==='operator'?'staff-role-operator':'staff-role-host'}">${esc(staffRoleLabel(member.role))}</span></div>
+          <div class="staff-row-actions">
+            <button class="user-icon-btn" type="button" data-staff-edit="${member.id}" aria-label="Sửa ${esc(member.displayName)}" title="Sửa nhân sự">${icon('edit',16)}</button>
+            <button class="user-icon-btn danger" type="button" data-staff-delete="${member.id}" aria-label="Xóa ${esc(member.displayName)}" title="Xóa nhân sự">${icon('close',16)}</button>
+          </div>
+        </div>
+        <div class="staff-edit-grid hidden" data-staff-editor="${member.id}">
+          <label><div class="tiny">Tên nhân sự</div><input class="input" data-staff-name="${member.id}" value="${esc(member.displayName)}"></label>
+          <label><div class="tiny">Vai trò</div><select class="input" data-staff-role="${member.id}"><option value="host" ${member.role==='host'?'selected':''}>Host Livestream</option><option value="operator" ${member.role==='operator'?'selected':''}>Nhân viên vận hành Livestream</option></select></label>
+          <button class="btn primary small" type="button" data-staff-save="${member.id}">${icon('check',14)} Lưu</button>
+        </div>
+      </div>`;
+    }
+
+    function toggleStaffEditor(id){
+      const editor=document.querySelector(`[data-staff-editor="${CSS.escape(id)}"]`);
+      if(!editor)return;
+      const open=editor.classList.contains('hidden');
+      document.querySelectorAll('[data-staff-editor]').forEach(x=>x.classList.add('hidden'));
+      if(open)editor.classList.remove('hidden');
+    }
+
+    async function persistStaffDirectory(){
+      state.staff=normalizeStaffMembers(state.staff);
+      if(PREVIEW){persistPreviewState();renderAll();return;}
+      await setDoc(doc(state.db,'settings','staffMembers'),{items:state.staff,updatedAt:serverTimestamp(),updatedBy:state.user?.uid||''},{merge:true});
+      await loadStaffDirectory();
+      renderAll();
+    }
+
+    async function addStaffMember(){
+      const name=$('#newStaffName')?.value.trim()||'';
+      const role=$('#newStaffRole')?.value==='operator'?'operator':'host';
+      if(!name){showToast('Hãy nhập tên nhân sự');return;}
+      if(state.staff.some(x=>x.role===role&&x.displayName.localeCompare(name,'vi',{sensitivity:'base'})===0)){showToast('Nhân sự này đã có trong danh sách');return;}
+      state.staff.push({id:`staff-${Date.now()}-${Math.random().toString(36).slice(2,7)}`,displayName:name,role,sortOrder:(state.staff.length+1)*10});
+      await persistStaffDirectory();
+      showToast('Đã thêm nhân sự');
+    }
+
+    async function saveStaffMember(id){
+      const member=state.staff.find(x=>x.id===id);
+      if(!member)return;
+      const name=document.querySelector(`[data-staff-name="${CSS.escape(id)}"]`)?.value.trim()||'';
+      const role=document.querySelector(`[data-staff-role="${CSS.escape(id)}"]`)?.value==='operator'?'operator':'host';
+      if(!name){showToast('Tên nhân sự không được để trống');return;}
+      if(state.staff.some(x=>x.id!==id&&x.role===role&&x.displayName.localeCompare(name,'vi',{sensitivity:'base'})===0)){showToast('Tên nhân sự này đã có trong cùng vai trò');return;}
+      member.displayName=name; member.role=role;
+      await persistStaffDirectory();
+      showToast('Đã cập nhật nhân sự');
+    }
+
+    async function deleteStaffMember(id){
+      const member=state.staff.find(x=>x.id===id);
+      if(!member)return;
+      if(!confirm(`Bạn có chắc muốn xóa nhân sự "${member.displayName}" không?\n\nNhân sự này sẽ biến mất khỏi các ô lựa chọn mới. Dữ liệu phiên LIVE đã lưu trước đó vẫn giữ tên lịch sử.`))return;
+      state.staff=state.staff.filter(x=>x.id!==id);
+      await persistStaffDirectory();
+      showToast('Đã xóa nhân sự');
     }
 
     function renderUsers(){
@@ -3421,7 +3590,7 @@ tbody tr:hover td{background:#fffafb}
       if($('#checkTikTok')) $('#checkTikTok').onclick=()=>showToast(status.connected?'Kết nối đang hoạt động · đồng bộ 24/24 đã bật':'TikTok chưa kết nối');
     }
 
-    function renderAll(){ renderNav(); renderDashboard(); renderLive(); renderKpi(); renderManualKpi(); renderExport(); renderUsers(); renderTikTok(); renderStorage(); switchSection(state.section); }
+    function renderAll(){ renderNav(); renderDashboard(); renderLive(); renderKpi(); renderManualKpi(); renderExport(); renderUsers(); renderStaff(); renderTikTok(); renderStorage(); switchSection(state.section); }
 
     init().catch(e=>showBoot(`<b>Không khởi động được ứng dụng.</b><br><br>${esc(e.message)}`));
   </script>

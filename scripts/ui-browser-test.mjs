@@ -43,6 +43,8 @@ try {
   assert(toolItems.join('|')==='export|manual-kpi',"Công cụ must contain Xuất file then KPI thủ công");
   assert(await page.$('#nav .nav-group:nth-child(3) [data-section="users"]')!==null,"Quản lý tài khoản must be inside Quản trị");
   assert(await page.$eval('#nav [data-section="users"]',e=>e.textContent.includes('Quản lý tài khoản')),"Quản lý tài khoản label is missing");
+  assert(await page.$('#nav .nav-group:nth-child(3) [data-section="staff"]')!==null,"Quản lý nhân sự must be a separate Quản trị tab");
+  assert(await page.$eval('#nav [data-section="staff"]',e=>e.textContent.includes('Quản lý nhân sự')),"Quản lý nhân sự label is missing");
   assert(await page.$('#usersDockBtn')===null,"Duplicate external Users dock must be removed");
   assert(await page.$eval('.side-brand .brand-lockup',e=>e.textContent.replace(/\s+/g,'').includes('SellerKBBLIVE')),"SellerKBB LIVE brand lockup is incorrect");
   assert(await page.$eval('html',e=>getComputedStyle(e).getPropertyValue('--accent').trim())==='#e7a3c0',"Pastel pink theme accent is not active");
@@ -85,8 +87,8 @@ try {
 
   const desktopRow='#section-live .desktop-live-table tbody tr:nth-child(1)';
   const desktopId=await page.$eval(desktopRow+' [data-save-session]',e=>e.dataset.saveSession);
-  await page.select(desktopRow+' select[data-person="host"]','thao-my');
-  await page.select(desktopRow+' select[data-person="operator"]','hung-bg');
+  await page.select(desktopRow+' select[data-person="host"]','staff-thao-my');
+  await page.select(desktopRow+' select[data-person="operator"]','staff-hung-bg');
   await page.click(desktopRow+' [data-save-session]');
   await sleep(150);
   await page.reload({waitUntil:"domcontentloaded"});
@@ -94,8 +96,8 @@ try {
   await page.click('[data-section="live"]');
   await page.click('#section-live [data-range-mode="30d"]');
   const desktopSavedRow='#section-live .desktop-live-table tbody tr:has([data-save-session="'+desktopId+'"])';
-  assert(await page.$eval(desktopSavedRow+' select[data-person="host"]',e=>e.value)==='thao-my',"Desktop Host did not persist after reload");
-  assert(await page.$eval(desktopSavedRow+' select[data-person="operator"]',e=>e.value)==='hung-bg',"Desktop Operator did not persist after reload");
+  assert(await page.$eval(desktopSavedRow+' select[data-person="host"]',e=>e.value)==='staff-thao-my',"Desktop Host did not persist after reload");
+  assert(await page.$eval(desktopSavedRow+' select[data-person="operator"]',e=>e.value)==='staff-hung-bg',"Desktop Operator did not persist after reload");
 
   await page.click(desktopSavedRow+' [data-manual-kpi]');
   assert(await page.$eval(desktopSavedRow+' select[data-person="host"]',e=>e.value)==='',"Campaign/Mega did not clear desktop Host");
@@ -122,12 +124,12 @@ try {
   assert(await page.$eval(manualCard,e=>e.textContent.includes('Thêm người')&&!e.textContent.includes('Thêm Host riêng')&&!e.textContent.includes('Thêm Vận hành riêng')),"Manual add control must match v1.18 Thêm người");
 
   const hostOptions=await page.$$eval(manualCard+' [data-manual-host-person] option',els=>els.map(e=>e.textContent.trim()));
-  assert(hostOptions.includes('Thảo My')&&hostOptions.includes('Dung')&&hostOptions.includes('Tâm')&&!hostOptions.includes('Hùng Bắc Giang'),"Host Livestream selector must show Host accounts only");
+  assert(hostOptions.includes('Thảo My')&&hostOptions.includes('Dung')&&hostOptions.includes('Tâm')&&!hostOptions.includes('Hùng Bắc Giang'),"Host Livestream selector must show Host staff only");
   const operatorOptions=await page.$$eval(manualCard+' [data-manual-operator-person] option',els=>els.map(e=>e.textContent.trim()));
-  assert(operatorOptions.includes('Hùng Bắc Giang')&&operatorOptions.includes('Hùng Hiền Hòa')&&!operatorOptions.includes('Dung'),"Operator selector must show Operator accounts only");
+  assert(operatorOptions.includes('Hùng Bắc Giang')&&operatorOptions.includes('Hùng Hiền Hòa')&&!operatorOptions.includes('Dung'),"Operator selector must show Operator staff only");
 
-  await page.select(manualCard+' [data-manual-host-person]','dung');
-  await page.select(manualCard+' [data-manual-operator-person]','hung-bg');
+  await page.select(manualCard+' [data-manual-host-person]','staff-dung');
+  await page.select(manualCard+' [data-manual-operator-person]','staff-hung-bg');
 
   await page.$eval(manualCard+' [data-manual-host-gmv]',e=>{e.value='10000';e.dispatchEvent(new Event('input',{bubbles:true}));});
   assert(await page.$eval(manualCard+' [data-manual-host-gmv]',e=>e.value)==='10.000đ',"Host GMV did not format 10000 as 10.000đ");
@@ -160,8 +162,8 @@ try {
   await page.click('[data-section="manual-kpi"]');
   await page.click('#section-manual-kpi [data-range-mode="30d"]');
   const savedManualCard='#section-manual-kpi [data-manual-session]:first-of-type';
-  assert(await page.$eval(savedManualCard+' [data-manual-host-person]',e=>e.value)==='dung',"Saved Host Livestream did not persist");
-  assert(await page.$eval(savedManualCard+' [data-manual-operator-person]',e=>e.value)==='hung-bg',"Saved Operator did not persist");
+  assert(await page.$eval(savedManualCard+' [data-manual-host-person]',e=>e.value)==='staff-dung',"Saved Host Livestream did not persist");
+  assert(await page.$eval(savedManualCard+' [data-manual-operator-person]',e=>e.value)==='staff-hung-bg',"Saved Operator did not persist");
   assert(await page.$eval(savedManualCard+' [data-manual-host-kpi]',e=>e.value)==='4.321đ',"Formatted Host KPI did not persist after reload");
   assert(await page.$eval(savedManualCard+' [data-manual-host-gmv]',e=>e.value)==='1.234.000đ',"Formatted Host GMV did not persist after reload");
   assert(await page.$eval(savedManualCard+' [data-manual-operator-kpi]',e=>e.value)==='1.234đ',"Operator auto KPI did not persist after reload");
@@ -185,8 +187,41 @@ try {
   await page.select('#retentionDays','120');
   await page.click('#saveMaintenance');
   await sleep(100);
+  await page.click('#nav [data-section="staff"]');
+  assert(await page.$eval('#section-staff',e=>e.textContent.includes('độc lập hoàn toàn với tài khoản đăng nhập')),"Staff/account separation notice missing");
+  const defaultHostStaff=await page.$eval('#section-staff',e=>[...e.querySelectorAll('[data-staff-row]')].map(x=>x.textContent.trim()));
+  assert(defaultHostStaff.some(x=>x.includes('Thảo My')&&x.includes('Host Livestream')),"Default Thảo My Host staff missing");
+  assert(defaultHostStaff.some(x=>x.includes('Dung')&&x.includes('Host Livestream')),"Default Dung Host staff missing");
+  assert(defaultHostStaff.some(x=>x.includes('Tâm')&&x.includes('Host Livestream')),"Default Tâm Host staff missing");
+  assert(defaultHostStaff.some(x=>x.includes('Hùng Bắc Giang')&&x.includes('Nhân viên vận hành Livestream')),"Default Hùng Bắc Giang Operator staff missing");
+  assert(defaultHostStaff.some(x=>x.includes('Hùng Hiền Hoà')&&x.includes('Nhân viên vận hành Livestream')),"Default Hùng Hiền Hoà Operator staff missing");
+
+  await page.$eval('#newStaffName',e=>e.value='Host Mới');
+  await page.select('#newStaffRole','host');
+  await page.click('#addStaffBtn');
+  await sleep(80);
+  assert(await page.$eval('#section-staff',e=>e.textContent.includes('Host Mới')),"Adding staff failed");
+  const hostMoiId=await page.$eval('#section-staff',e=>[...e.querySelectorAll('[data-staff-row]')].find(x=>x.textContent.includes('Host Mới'))?.dataset.staffRow||'');
+  assert(hostMoiId.startsWith('staff-'),"New staff ID must be independent from account IDs");
+  await page.click('[data-staff-edit="'+hostMoiId+'"]');
+  await page.$eval('[data-staff-name="'+hostMoiId+'"]',e=>e.value='Host Mới Sửa');
+  await page.click('[data-staff-save="'+hostMoiId+'"]');
+  await sleep(80);
+  assert(await page.$eval('#section-staff',e=>e.textContent.includes('Host Mới Sửa')),"Editing staff failed");
+
+  await page.click('[data-section="live"]');
+  await page.click('#section-live [data-range-mode="30d"]');
+  const hostDropdownText=await page.$eval('#section-live',e=>[...e.querySelectorAll('select[data-person="host"] option')].map(x=>x.textContent.trim()));
+  assert(hostDropdownText.includes('Thảo My')&&hostDropdownText.includes('Dung')&&hostDropdownText.includes('Tâm')&&hostDropdownText.includes('Host Mới Sửa'),"LIVE Host dropdown is not linked to staff directory");
+
+  await page.click('#nav [data-section="staff"]');
+  page.once('dialog',dialog=>dialog.accept());
+  await page.click('[data-staff-delete="'+hostMoiId+'"]');
+  await sleep(80);
+  assert(!(await page.$eval('#section-staff',e=>e.textContent.includes('Host Mới Sửa'))),"Deleting staff failed");
+
   await page.click('#nav [data-section="users"]');
-  assert((await page.$$eval('#section-users .user-list-avatar',els=>els.length))>=6,"User account avatars are missing from the Users page");
+  assert((await page.$eval('#section-users .user-list-avatar',els=>els.length))>=6,"User account avatars are missing from the Users page");
   assert(await page.$('#usersDockBtn')===null,"Users dock still exists");
   const approvedRoles=await page.$$eval('#section-users .approved-user-row .tag',els=>els.map(e=>e.textContent.trim()));
   const roleRank={'Quản trị viên':0,'Nhân viên vận hành livestream':1,'Host Livestream':2};
@@ -215,6 +250,10 @@ try {
   await page.click('[data-user-delete="tam"]');
   await sleep(100);
   assert(await page.$('[data-approved-user="tam"]')===null,"Confirmed delete did not remove user");
+  await page.click('[data-section="live"]');
+  await page.click('#section-live [data-range-mode="30d"]');
+  assert(await page.$eval('#section-live',e=>[...e.querySelectorAll('select[data-person="host"] option')].some(x=>x.textContent.trim()==='Tâm'),"Deleting login account Tâm must not remove staff Tâm from Host dropdown");
+  await page.click('#nav [data-section="users"]');
 
   await page.select('[data-role="pending-01"]','operator');
   await page.click('[data-approve="pending-01"]');
@@ -233,6 +272,7 @@ try {
   await page.reload({waitUntil:"domcontentloaded"});
   await page.waitForSelector("#app:not(.hidden)",{timeout:30000});
   assert(await page.$('#nav .nav-group:nth-child(3) [data-section="users"]')!==null,"Tablet Quản lý tài khoản must stay inside Quản trị");
+  assert(await page.$('#nav .nav-group:nth-child(3) [data-section="staff"]')!==null,"Tablet Quản lý nhân sự must stay inside Quản trị");
   assert(await page.$('#usersDockBtn')===null,"Tablet duplicate Users dock must be removed");
 
   await page.setViewport({width:390,height:844,deviceScaleFactor:1});
@@ -272,7 +312,7 @@ try {
   await sleep(320);
   await page.click('#section-live [data-range-mode="30d"]');
   const mobileSavedCard='#section-live .mobile-live-card:has([data-save-session="'+mobileId+'"])';
-  assert(await page.$eval(mobileSavedCard+' select[data-person="host"]',e=>e.value)==='dung',"Mobile Host save read the wrong hidden desktop selector");
+  assert(await page.$eval(mobileSavedCard+' select[data-person="host"]',e=>e.value)==='staff-dung',"Mobile Host save read the wrong hidden desktop selector");
   assert(await page.$eval(mobileSavedCard+' select[data-person="operator"]',e=>e.value)==='hung-hh',"Mobile Operator save read the wrong hidden desktop selector");
 
   await page.click(mobileSavedCard+' [data-manual-kpi]');
