@@ -154,6 +154,58 @@ jobs:
             --notes-file release-notes.md \
             --latest
 
+      - name: Backfill legacy Release descriptions
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          backfill_release() {
+            TAG="$1"
+            TITLE="$2"
+            shift 2
+            if ! gh release view "$TAG" >/dev/null 2>&1; then
+              return
+            fi
+            BODY="$(gh release view "$TAG" --json body --jq '.body')"
+            if printf '%s' "$BODY" | grep -q '## ✨ Tính năng/cập nhật trong bản này'; then
+              return
+            fi
+            FILE="/tmp/${TAG}.md"
+            {
+              printf '# SellerKBB %s\n\n' "$TAG"
+              printf '## ✨ Tính năng/cập nhật trong bản này\n\n'
+              for ITEM in "$@"; do
+                printf -- '- %s\n' "$ITEM"
+              done
+              printf '\n## 📦 Backup mã nguồn\n\n'
+              printf -- '- File backup SRC: sellerkbb-%s-src.zip\n' "$TAG"
+              printf '\n## ⚠️ Lưu ý\n\n'
+              printf '%s\n' 'Release chỉ backup mã nguồn/SRC, không chứa dữ liệu Firestore, Cloudflare KV, TikTok token hoặc secret.'
+            } > "$FILE"
+            gh release edit "$TAG" --title "$TITLE" --notes-file "$FILE"
+          }
+
+          backfill_release "v1.10.0" "SellerKBB v1.10.0" \
+            "Thêm cơ chế tự tạo Release backup sau khi test hoàn tất." \
+            "Chỉ giữ tối đa 5 Release gần nhất và đính kèm ZIP mã nguồn." \
+            "Xây lại README chi tiết dành cho người không chuyên IT."
+
+          backfill_release "v1.11.0" "SellerKBB v1.11.0" \
+            "Dùng ảnh đại diện Google/Gmail cho tài khoản người dùng." \
+            "Thêm menu hồ sơ cá nhân với tên, Gmail, vai trò, trạng thái, quyền truy cập và Đăng xuất." \
+            "Hiển thị avatar trong danh sách tài khoản và KPI khi có hồ sơ tương ứng."
+
+          backfill_release "v1.12.0" "SellerKBB v1.12.0" \
+            "Đổi giao diện sang tím pastel và chia sidebar theo Báo cáo / Công cụ / Quản trị." \
+            "Cân chỉnh logo SellerKBB LIVE và sắp xếp tài khoản theo Admin → Vận hành → Host." \
+            "Thêm khung BO_HO_SO_KPI_KHANGCHOU theo năm hiện tại ở trạng thái đang phát triển."
+
+          backfill_release "v1.13.0" "SellerKBB v1.13.0" \
+            "Thêm quy trình KPI thủ công theo từng người cho phiên Campaign/Mega." \
+            "Cho nhập GMV sau hoàn/hủy và KPI riêng của từng cá nhân, không tự chia GMV tổng." \
+            "KPI thủ công đã lưu tự cộng vào KPI nhân sự và giữ lại sau reload."
+
       - name: Keep only newest 5 Releases
         env:
           GH_TOKEN: ${{ github.token }}
