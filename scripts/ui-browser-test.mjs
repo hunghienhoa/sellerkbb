@@ -97,6 +97,8 @@ try {
   await page.waitForFunction(()=>document.querySelector('#sidebar')?.classList.contains('open'));
   await sleep(300);
   await page.$eval('#nav [data-section="live"]',e=>e.click());
+  await page.waitForFunction(()=>!document.querySelector('#sidebar')?.classList.contains('open'));
+  await sleep(320);
 
   const mobileCard='#section-live .mobile-live-card:nth-child(2)';
   const mobileId=await page.$eval(mobileCard+' [data-save-session]',e=>e.dataset.saveSession);
@@ -113,6 +115,8 @@ try {
   await page.waitForFunction(()=>document.querySelector('#sidebar')?.classList.contains('open'));
   await sleep(300);
   await page.$eval('#nav [data-section="live"]',e=>e.click());
+  await page.waitForFunction(()=>!document.querySelector('#sidebar')?.classList.contains('open'));
+  await sleep(320);
   const mobileSavedCard='#section-live .mobile-live-card:has([data-save-session="'+mobileId+'"])';
   console.log("mobile after reload",mobileId,await page.$eval(mobileSavedCard+' select[data-person="host"]',e=>e.value),await page.$eval(mobileSavedCard+' select[data-person="operator"]',e=>e.value));
   assert(await page.$eval(mobileSavedCard+' select[data-person="host"]',e=>e.value)==='dung',"Mobile Host save read the wrong hidden desktop selector");
