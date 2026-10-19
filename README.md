@@ -22,7 +22,7 @@
 - **KPI thủ công** là tab riêng trong nhóm **Công cụ**, đặt cùng nhóm với **Xuất file**.
 - **KPI nhân sự** chỉ dùng để tổng hợp KPI tự động + KPI thủ công đã lưu.
 - **Tài khoản/Users** được đưa ra khỏi nhóm Quản trị. Admin mở nhanh bằng nút riêng nằm bên phải, cùng hàng với khối avatar/tên tài khoản ở cuối sidebar.
-- Release từ bản này ghi rõ **Tính năng/cập nhật trong bản này** để dễ nhận biết mỗi phiên bản đã thay đổi gì.
+- Release từ bản này ghi rõ **Tính năng/cập nhật trong bản này** để dễ nhận biết mỗi phiên bản đã thay đổi gì. Nội dung này được lấy trực tiếp từ mục **Cập nhật mới nhất** trong README để hai nơi luôn đồng bộ.
 - Mỗi khi thêm/sửa tính năng, README cũng phải được cập nhật trong cùng phiên bản.
 
 ---
