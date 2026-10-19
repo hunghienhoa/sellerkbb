@@ -115,6 +115,7 @@ button{-webkit-tap-highlight-color:transparent}
 }
 .btn:hover{border-color:var(--line-strong);box-shadow:var(--shadow-sm)}
 .btn:active,.page-btn:active,.range-btn:active,.menu-toggle:active,.nav button:active{transform:scale(.965)}
+.btn.fx-press,.page-btn.fx-press,.range-btn.fx-press,.menu-toggle.fx-press,.nav button.fx-press{transform:scale(.97)}
 .btn.primary{
   border-color:#e79abd;
   background:linear-gradient(135deg,#f6b0d2,var(--accent));
@@ -800,24 +801,6 @@ tbody tr:hover td{background:#fffafd}
       if(hours<=0) return `${minutes} phút`;
       return `${hours} giờ ${String(minutes).padStart(2,'0')} phút`;
     };
-    const monthLabel = ym => {
-      const [year,month]=String(ym||'').split('-').map(Number);
-      return month&&year?`Tháng ${month} năm ${year}`:'Chọn tháng và năm';
-    };
-    const monthPicker = id => {
-      const currentYear=new Date().getFullYear();
-      const years=new Set([currentYear-2,currentYear-1,currentYear,currentYear+1]);
-      for(const item of state.sessions){
-        const d=item.startTime?.toDate?.();
-        if(d) years.add(d.getFullYear());
-      }
-      const options=[...years].sort((a,b)=>b-a).flatMap(year=>Array.from({length:12},(_,i)=>{
-        const value=`${year}-${String(i+1).padStart(2,'0')}`;
-        return `<option value="${value}" ${value===state.month?'selected':''}>Tháng ${i+1} năm ${year}</option>`;
-      })).join('');
-      return `<select id="${id}" class="input month-select" aria-label="Chọn tháng và năm báo cáo">${options}</select>`;
-    };
-    const monthBounds = (ym) => { const [y,m]=ym.split('-').map(Number); const start=new Date(y,m-1,1); const end=new Date(y,m,1); const iso=d=>`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; return {start:iso(start),end:iso(end)} };
     const roleLabel = r => ({admin:'Quản trị viên',host:'Host Livestream',operator:'Nhân viên vận hành livestream',pending:'Chờ duyệt'}[r]||r||'Chưa gán');
     const pad2 = n => String(n).padStart(2,'0');
     const localDateKey = d => `${d.getFullYear()}-${pad2(d.getMonth()+1)}-${pad2(d.getDate())}`;
@@ -899,11 +882,10 @@ tbody tr:hover td{background:#fffafd}
         state.livePage=1; renderAll();
       };
     }
-    const todayMonth = new Date().toISOString().slice(0,7);
     const PREVIEW = location.pathname === '/preview' || new URLSearchParams(location.search).get('preview') === '1';
 
     const LIVE_PAGE_SIZE = 20;
-    const state = { config:null, auth:null, db:null, user:null, profile:null, sessions:[], users:[], month:todayMonth, section:'dashboard', livePage:1, rangeMode:'30d', customStart:'', customEnd:'' };
+    const state = { config:null, auth:null, db:null, user:null, profile:null, sessions:[], users:[], section:'dashboard', livePage:1, rangeMode:'30d', customStart:'', customEnd:'' };
 
     function previewTs(iso){ return {toDate:()=>new Date(iso)}; }
     function enterPreview(){
@@ -1185,8 +1167,8 @@ tbody tr:hover td{background:#fffafd}
     }
 
     function exportCsv(rows){
-      const header=['live_id','title','channel_username','channel_id','start_time','duration_seconds','gmv_recorded','items_sold','gmv_final','currency','host','operator'];
-      const lines=[header,...rows.map(s=>[s.liveId||s.id,s.title||'',s.channelUsername||'',s.channelId||'',s.startTime?.toDate?.().toISOString?.()||'',s.durationSeconds||0,s.recordedGmvAmount||0,s.currentItemsSold??s.recordedItemsSold??0,finalGmv(s),s.currency||'',s.hostName||'',s.operatorName||''])];
+      const header=['title','channel_username','channel_id','start_time','duration_seconds','gmv_recorded','items_sold','gmv_final','currency','host','operator'];
+      const lines=[header,...rows.map(s=>[s.title||'',s.channelUsername||'',s.channelId||'',s.startTime?.toDate?.().toISOString?.()||'',s.durationSeconds||0,s.recordedGmvAmount||0,s.currentItemsSold??s.recordedItemsSold??0,finalGmv(s),s.currency||'',s.hostName||'',s.operatorName||''])];
       const csv=lines.map(r=>r.map(v=>`"${String(v??'').replaceAll('"','""')}"`).join(',')).join('\n'); const blob=new Blob(['\ufeff'+csv],{type:'text/csv;charset=utf-8'}); const a=document.createElement('a');a.href=URL.createObjectURL(blob);const range=selectedRange();a.download=`tiktok-live-${range.startKey}_${range.endKey}.csv`;a.click();URL.revokeObjectURL(a.href);
     }
 
