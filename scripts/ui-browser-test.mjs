@@ -126,7 +126,7 @@ try {
   const hostOptions=await page.$$eval(manualCard+' [data-manual-host-person] option',els=>els.map(e=>e.textContent.trim()));
   assert(hostOptions.includes('Thảo My')&&hostOptions.includes('Dung')&&hostOptions.includes('Tâm')&&!hostOptions.includes('Hùng Bắc Giang'),"Host Livestream selector must show Host staff only");
   const operatorOptions=await page.$$eval(manualCard+' [data-manual-operator-person] option',els=>els.map(e=>e.textContent.trim()));
-  assert(operatorOptions.includes('Hùng Bắc Giang')&&operatorOptions.includes('Hùng Hiền Hòa')&&!operatorOptions.includes('Dung'),"Operator selector must show Operator staff only");
+  assert(operatorOptions.includes('Hùng Bắc Giang')&&operatorOptions.includes('Hùng Hiền Hoà')&&!operatorOptions.includes('Dung'),"Operator selector must show Operator staff only");
 
   await page.select(manualCard+' [data-manual-host-person]','staff-dung');
   await page.select(manualCard+' [data-manual-operator-person]','staff-hung-bg');
@@ -221,7 +221,7 @@ try {
   assert(!(await page.$eval('#section-staff',e=>e.textContent.includes('Host Mới Sửa'))),"Deleting staff failed");
 
   await page.click('#nav [data-section="users"]');
-  assert((await page.$eval('#section-users .user-list-avatar',els=>els.length))>=6,"User account avatars are missing from the Users page");
+  assert(await page.$eval('#section-users',e=>e.querySelectorAll('.user-list-avatar').length>=6),"User account avatars are missing from the Users page");
   assert(await page.$('#usersDockBtn')===null,"Users dock still exists");
   const approvedRoles=await page.$$eval('#section-users .approved-user-row .tag',els=>els.map(e=>e.textContent.trim()));
   const roleRank={'Quản trị viên':0,'Nhân viên vận hành livestream':1,'Host Livestream':2};
@@ -285,6 +285,7 @@ try {
   assert(mobileNavGroups.join('|')==='Báo cáo|Công cụ|Quản trị',"Mobile sidebar groups are missing");
   assert(await page.$('#nav [data-section="manual-kpi"]')!==null,"Mobile KPI thủ công tab missing");
   assert(await page.$('#nav .nav-group:nth-child(3) [data-section="users"]')!==null,"Mobile Quản lý tài khoản must stay inside Quản trị");
+  assert(await page.$('#nav .nav-group:nth-child(3) [data-section="staff"]')!==null,"Mobile Quản lý nhân sự must stay inside Quản trị");
   assert(await page.$('#usersDockBtn')===null,"Mobile duplicate Users dock must be removed");
   await page.click('#userMenuBtn');
   assert(!(await page.$eval('#accountPopover',e=>e.classList.contains('hidden'))),"Mobile account popover did not open");
@@ -298,8 +299,8 @@ try {
   const mobileCard='#section-live .mobile-live-card:nth-child(2)';
   assert(await page.$eval(mobileCard+' .mobile-live-time',e=>/^\d{2}\/\d{2}\/\d{4}  \d{2}:\d{2}-/.test(e.textContent.trim())),"Mobile compact LIVE time range not rendered");
   const mobileId=await page.$eval(mobileCard+' [data-save-session]',e=>e.dataset.saveSession);
-  await page.select(mobileCard+' select[data-person="host"]','dung');
-  await page.select(mobileCard+' select[data-person="operator"]','hung-hh');
+  await page.select(mobileCard+' select[data-person="host"]','staff-dung');
+  await page.select(mobileCard+' select[data-person="operator"]','staff-hung-hh');
   await page.click(mobileCard+' [data-save-session]');
   await sleep(150);
   await page.reload({waitUntil:"domcontentloaded"});
@@ -313,7 +314,7 @@ try {
   await page.click('#section-live [data-range-mode="30d"]');
   const mobileSavedCard='#section-live .mobile-live-card:has([data-save-session="'+mobileId+'"])';
   assert(await page.$eval(mobileSavedCard+' select[data-person="host"]',e=>e.value)==='staff-dung',"Mobile Host save read the wrong hidden desktop selector");
-  assert(await page.$eval(mobileSavedCard+' select[data-person="operator"]',e=>e.value)==='hung-hh',"Mobile Operator save read the wrong hidden desktop selector");
+  assert(await page.$eval(mobileSavedCard+' select[data-person="operator"]',e=>e.value)==='staff-hung-hh',"Mobile Operator save read the wrong hidden desktop selector");
 
   await page.click(mobileSavedCard+' [data-manual-kpi]');
   assert(await page.$eval(mobileSavedCard+' select[data-person="host"]',e=>e.value)==='',"Mobile Campaign/Mega did not clear Host");
