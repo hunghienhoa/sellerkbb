@@ -270,7 +270,7 @@
       <div class="side-bottom"><div class="userbox row"><img id="userAvatar" class="avatar" alt=""><div class="usertext" style="min-width:0"><div id="userName" style="font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis"></div><div id="userRole" class="tiny"></div></div></div></div>
     </aside>
     <main class="main">
-      <header class="topbar"><div><h1 id="pageTitle" class="page-title">Tổng quan</h1><div id="pageSub" class="tiny"></div></div><div class="row"><span id="syncBadge" class="pill">v1.1.3</span><button id="logoutBtn" class="btn ghost small">Đăng xuất</button></div></header>
+      <header class="topbar"><div><h1 id="pageTitle" class="page-title">Tổng quan</h1><div id="pageSub" class="tiny"></div></div><div class="row"><span id="syncBadge" class="pill">v1.1.4</span><button id="logoutBtn" class="btn ghost small">Đăng xuất</button></div></header>
       <div class="content">
         <section id="section-dashboard" class="section active"></section>
         <section id="section-live" class="section"></section>
@@ -291,16 +291,16 @@
     const esc = (v="") => String(v).replace(/[&<>'"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;","'":"&#39;",'"':"&quot;"}[c]));
     const fmtMoney = (v,currency="VND") => {
       const n=Number(v||0), code=currency||'VND';
-      if(code==='VND') return `${new Intl.NumberFormat('vi-VN',{maximumFractionDigits:0}).format(n)} đồng`;
+      if(code==='VND') return `${new Intl.NumberFormat('vi-VN',{maximumFractionDigits:0}).format(n)} đ`;
       try{return new Intl.NumberFormat('vi-VN',{style:'currency',currency:code,currencyDisplay:'name',maximumFractionDigits:2}).format(n)}
       catch{return `${new Intl.NumberFormat('vi-VN').format(n)} ${code}`}
     };
     const fmtDate = (ts) => {
       if(!ts)return '—';
       const d=ts?.toDate?ts.toDate():new Date(Number(ts)*1000);
-      const day=d.getDate(), month=d.getMonth()+1, year=d.getFullYear();
+      const day=String(d.getDate()).padStart(2,'0'), month=String(d.getMonth()+1).padStart(2,'0'), year=d.getFullYear();
       const hour=String(d.getHours()).padStart(2,'0'), minute=String(d.getMinutes()).padStart(2,'0');
-      return `${day} tháng ${month} năm ${year} lúc ${hour} giờ ${minute} phút`;
+      return `${day}/${month}/${year} lúc ${hour} giờ ${minute} phút`;
     };
     const fmtDuration = seconds => {
       const total=Math.max(0,Number(seconds||0));
@@ -335,7 +335,7 @@
 
     function previewTs(iso){ return {toDate:()=>new Date(iso)}; }
     function enterPreview(){
-      state.config={version:'1.1.3-preview',tiktokConfigured:true};
+      state.config={version:'1.1.4-preview',tiktokConfigured:true};
       state.user={uid:'preview-admin',email:'admin@sellerkbb.demo',displayName:'Quản trị viên Demo',photoURL:''};
       state.profile={role:'admin',status:'approved',displayName:'Quản trị viên Demo',permissions:['live.read','kpi.read']};
       state.users=[
