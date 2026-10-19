@@ -110,32 +110,24 @@ jobs:
         run: |
           git archive --format=zip --output="sellerkbb-v${VERSION}-src.zip" HEAD
 
-      - name: Write release notes with changes
+      - name: Write release notes from README
         env:
-          GH_TOKEN: ${{ github.token }}
           VERSION: ${{ steps.version.outputs.version }}
-          TAG: ${{ steps.version.outputs.tag }}
         shell: bash
         run: |
           set -euo pipefail
-          PREV_TAG="$(gh release list --limit 100 --json tagName --jq '.[].tagName' | grep -v "^$TAG$" | head -n 1 || true)"
-          if [ -n "$PREV_TAG" ]; then
-            RANGE="$PREV_TAG..HEAD"
-          else
-            RANGE="HEAD"
+          awk -v ver="$VERSION" '
+            $0 == "## 🆕 Cập nhật mới nhất — v" ver { capture=1; next }
+            capture && /^---$/ { exit }
+            capture { print }
+          ' README.md > release-changes.md
+          if ! grep -q '^- ' release-changes.md; then
+            echo "- Cập nhật SellerKBB v$VERSION." > release-changes.md
           fi
-          mapfile -t CHANGES < <(git log "$RANGE" --pretty=format:%s | grep -E '^(feat|fix)(\([^)]*\))?:' || true)
           {
             printf '# SellerKBB v%s\n\n' "$VERSION"
             printf '## ✨ Tính năng/cập nhật trong bản này\n\n'
-            if [ "${#CHANGES[@]}" -eq 0 ]; then
-              printf '%s\n' '- Cập nhật kỹ thuật và hoàn thiện độ ổn định của SellerKBB.'
-            else
-              for ITEM in "${CHANGES[@]}"; do
-                CLEAN="$(printf '%s' "$ITEM" | sed -E 's/^(feat|fix)(\([^)]*\))?:[[:space:]]*//')"
-                printf -- '- %s\n' "$CLEAN"
-              done
-            fi
+            cat release-changes.md
             printf '\n## 📦 Backup mã nguồn\n\n'
             printf -- '- Source code đúng theo commit: %s\n' "$GITHUB_SHA"
             printf -- '- File: sellerkbb-v%s-src.zip\n' "$VERSION"
