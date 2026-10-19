@@ -4,7 +4,7 @@
 
 ### Báo cáo TikTok LIVE · KPI nhân sự · Tự đồng bộ 24/24
 
-**Phiên bản hiện tại: v1.17.0**
+**Phiên bản hiện tại: v1.18.0**
 
 [![GitHub Release](https://img.shields.io/github/v/release/hunghienhoa/sellerkbb?label=Release)](https://github.com/hunghienhoa/sellerkbb/releases)
 [![GitHub Actions](https://img.shields.io/github/actions/workflow/status/hunghienhoa/sellerkbb/deploy.yml?branch=main&label=Ki%E1%BB%83m%20tra%20%26%20Backup)](https://github.com/hunghienhoa/sellerkbb/actions)
@@ -17,14 +17,13 @@
 
 ---
 
-## 🆕 Cập nhật mới nhất — v1.17.0
+## 🆕 Cập nhật mới nhất — v1.18.0
 
-- Đổi tên mục **Duyệt tài khoản** thành **Quản lý tài khoản** trong nhóm **Quản trị**.
-- Danh sách **Tài khoản đã duyệt** được thu gọn: mặc định chỉ hiển thị hồ sơ, vai trò/quyền tóm tắt và hai nút biểu tượng **Cây bút** / **X**.
-- Bấm **Cây bút** mới mở bảng chỉnh **Vai trò** và **Quyền truy cập**; có nút **Đóng** và **Lưu quyền**.
-- Bấm **X** luôn hiện hộp xác nhận. Chỉ khi chọn **Đồng ý** tài khoản mới bị xóa; chọn **Hủy** thì không thay đổi dữ liệu.
-- Tài khoản Admin đang đăng nhập vẫn bị khóa thao tác tự sửa/xóa để tránh tự mất quyền quản trị.
-- Bản **preview/demo** và website được đồng bộ cùng source mỗi lần cập nhật.
+- Chấm xanh của trạng thái **Đang hoạt động** được thêm hiệu ứng **pulse/nhấp nháy** theo video mẫu.
+- Chấm xanh giữ tâm rõ, hơi co giãn và phát một vòng sáng xanh lan ra rồi mờ dần, lặp liên tục với nhịp nhẹ.
+- Hiệu ứng chỉ áp dụng cho trạng thái **OK/Đang hoạt động**; trạng thái cảnh báo không nhấp nháy.
+- Có hỗ trợ `prefers-reduced-motion`: nếu thiết bị tắt chuyển động, chấm xanh vẫn hiển thị rõ nhưng không chạy animation.
+- Bản **preview/demo** và website được đồng bộ cùng source sau khi test đạt.
 - README và GitHub Release tiếp tục được cập nhật cùng phiên bản.
 
 ---
