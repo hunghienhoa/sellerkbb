@@ -232,6 +232,29 @@
       .page-title{font-size:20px}
     }
 
+
+    .pagination-wrap{
+      display:flex;align-items:center;justify-content:space-between;gap:16px;
+      padding:14px 16px;background:rgba(255,255,255,.78);border:1px solid var(--line);
+      border-radius:16px;box-shadow:0 8px 24px rgba(156,91,124,.06)
+    }
+    .pagination-info{font-size:12px;color:var(--muted)}
+    .pagination{display:flex;align-items:center;justify-content:flex-end;gap:6px;flex-wrap:wrap}
+    .page-btn{
+      min-width:36px;height:36px;padding:0 10px;border:1px solid var(--line);
+      border-radius:10px;background:#fff;color:#74465c;font-weight:700;cursor:pointer
+    }
+    .page-btn:hover:not(:disabled){border-color:var(--line-strong);background:#fff5fa}
+    .page-btn.active{background:var(--accent-soft);border-color:#e8acc8;color:#9a4d72}
+    .page-btn:disabled{opacity:.38;cursor:not-allowed}
+    .page-ellipsis{min-width:24px;text-align:center;color:var(--muted)}
+    @media(max-width:700px){
+      .pagination-wrap{flex-direction:column;align-items:stretch;gap:12px;padding:13px}
+      .pagination-info{text-align:center}
+      .pagination{justify-content:center}
+      .page-btn{min-width:38px;height:38px}
+    }
+
   </style>
 </head>
 <body>
@@ -243,7 +266,7 @@
       <div class="side-bottom"><div class="userbox row"><img id="userAvatar" class="avatar" alt=""><div class="usertext" style="min-width:0"><div id="userName" style="font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis"></div><div id="userRole" class="tiny"></div></div></div></div>
     </aside>
     <main class="main">
-      <header class="topbar"><div><h1 id="pageTitle" class="page-title">Tổng quan</h1><div id="pageSub" class="tiny"></div></div><div class="row"><span id="syncBadge" class="pill">v1.1.1</span><button id="logoutBtn" class="btn ghost small">Đăng xuất</button></div></header>
+      <header class="topbar"><div><h1 id="pageTitle" class="page-title">Tổng quan</h1><div id="pageSub" class="tiny"></div></div><div class="row"><span id="syncBadge" class="pill">v1.1.2</span><button id="logoutBtn" class="btn ghost small">Đăng xuất</button></div></header>
       <div class="content">
         <section id="section-dashboard" class="section active"></section>
         <section id="section-live" class="section"></section>
@@ -270,11 +293,12 @@
     const todayMonth = new Date().toISOString().slice(0,7);
     const PREVIEW = location.pathname === '/preview' || new URLSearchParams(location.search).get('preview') === '1';
 
-    const state = { config:null, auth:null, db:null, user:null, profile:null, sessions:[], users:[], month:todayMonth, section:'dashboard' };
+    const LIVE_PAGE_SIZE = 20;
+    const state = { config:null, auth:null, db:null, user:null, profile:null, sessions:[], users:[], month:todayMonth, section:'dashboard', livePage:1 };
 
     function previewTs(iso){ return {toDate:()=>new Date(iso)}; }
     function enterPreview(){
-      state.config={version:'1.1.1-preview',tiktokConfigured:true};
+      state.config={version:'1.1.2-preview',tiktokConfigured:true};
       state.user={uid:'preview-admin',email:'admin@sellerkbb.demo',displayName:'Quản trị viên Demo',photoURL:''};
       state.profile={role:'admin',status:'approved',displayName:'Quản trị viên Demo',permissions:['live.read','kpi.read']};
       state.users=[
@@ -295,6 +319,13 @@
         ['LIVE-202610-006','Live chốt đơn cuối ngày','sellerkbb_beauty','881003522','2026-10-18T13:00:00+07:00',9000,128600000,802,121970000,'tam','Tâm','hung-bg','Hùng Bắc Giang']
       ];
       state.sessions=base.map(x=>({id:x[0],liveId:x[0],title:x[1],channelUsername:x[2],channelId:x[3],startTime:previewTs(x[4]),durationSeconds:x[5],recordedGmvAmount:x[6],recordedItemsSold:x[7],currentItemsSold:x[7],currentGmvAmount:x[8],finalGmvAmount:x[8],currency:'VND',hostUid:x[9],hostName:x[10],operatorUid:x[11],operatorName:x[12]}));
+      for(let i=7;i<=34;i++){
+        const d=String(((i-1)%19)+1).padStart(2,'0');
+        const host=i%3===0?['tam','Tâm']:i%2===0?['dung','Dung']:['thao-my','Thảo My'];
+        const op=i%2===0?['hung-hh','Hùng Hiền Hòa']:['hung-bg','Hùng Bắc Giang'];
+        const gmv=72000000+i*4200000, final=Math.round(gmv*(.91+(i%5)*.01)), items=420+i*37;
+        state.sessions.push({id:`LIVE-202610-${String(i).padStart(3,'0')}`,liveId:`LIVE-202610-${String(i).padStart(3,'0')}`,title:`Phiên LIVE mẫu #${i}`,channelUsername:i%2?'sellerkbb_official':'sellerkbb_beauty',channelId:i%2?'743820194':'881003522',startTime:previewTs(`2026-10-${d}T12:30:00+07:00`),durationSeconds:7200+(i%4)*1800,recordedGmvAmount:gmv,recordedItemsSold:items,currentItemsSold:items,currentGmvAmount:final,finalGmvAmount:final,currency:'VND',hostUid:host[0],hostName:host[1],operatorUid:op[0],operatorName:op[1]});
+      }
       showApp(); bindShell(); renderAll();
       const bar=document.createElement('div');
       bar.style.cssText='position:fixed;left:50%;transform:translateX(-50%);bottom:88px;z-index:99;background:#f7c5dc;color:#653a50;padding:9px 14px;border:1px solid #edb4cf;border-radius:999px;font-weight:800;font-size:11px;box-shadow:0 8px 24px rgba(156,91,124,.18);white-space:nowrap';
@@ -431,8 +462,36 @@
     function renderLive(){
       if(!can('live.read')){ $('#section-live').innerHTML='<div class="notice bad">Bạn không có quyền xem dữ liệu LIVE.</div>';return; }
       const ss=sessionsForMonth();
-      $('#section-live').innerHTML=`<div class="toolbar"><input id="liveMonth" class="input" type="month" value="${state.month}">${isAdmin()?'<button id="syncMonthBtn" class="btn primary">Đồng bộ tháng này từ TikTok</button>':''}<button id="csvBtn" class="btn">Xuất CSV</button></div><div class="card">${renderLiveTable(ss,isAdmin())}</div>`;
-      $('#liveMonth').onchange=e=>{state.month=e.target.value;renderAll()}; $('#csvBtn').onclick=()=>exportCsv(ss);
+      const totalPages=Math.max(1,Math.ceil(ss.length/LIVE_PAGE_SIZE));
+      state.livePage=Math.min(Math.max(1,state.livePage),totalPages);
+      const start=(state.livePage-1)*LIVE_PAGE_SIZE;
+      const pageRows=ss.slice(start,start+LIVE_PAGE_SIZE);
+      const from=ss.length?start+1:0, to=Math.min(start+LIVE_PAGE_SIZE,ss.length);
+      const pageButtons=Array.from({length:totalPages},(_,i)=>i+1)
+        .filter(p=>p===1||p===totalPages||Math.abs(p-state.livePage)<=1)
+        .reduce((arr,p,idx,list)=>{ if(idx&&p-list[idx-1]>1) arr.push('…'); arr.push(p); return arr; },[])
+        .map(p=>p==='…'?'<span class="page-ellipsis">…</span>':`<button class="page-btn ${p===state.livePage?'active':''}" data-page="${p}">${p}</button>`).join('');
+      $('#section-live').innerHTML=`
+        <div class="toolbar">
+          <input id="liveMonth" class="input" type="month" value="${state.month}">
+          ${isAdmin()?'<button id="syncMonthBtn" class="btn primary">Đồng bộ tháng này từ TikTok</button>':''}
+          <button id="csvBtn" class="btn">Xuất CSV</button>
+        </div>
+        <div class="card live-list-card">${renderLiveTable(pageRows,isAdmin())}</div>
+        <div class="pagination-wrap">
+          <div class="pagination-info">Hiển thị <b>${from}–${to}</b> / ${ss.length} phiên · 20 phiên/trang</div>
+          <div class="pagination">
+            <button class="page-btn nav-page" data-page="${state.livePage-1}" ${state.livePage<=1?'disabled':''}>‹</button>
+            ${pageButtons}
+            <button class="page-btn nav-page" data-page="${state.livePage+1}" ${state.livePage>=totalPages?'disabled':''}>›</button>
+          </div>
+        </div>`;
+      $('#liveMonth').onchange=e=>{state.month=e.target.value;state.livePage=1;renderAll()};
+      $('#csvBtn').onclick=()=>exportCsv(ss);
+      document.querySelectorAll('[data-page]').forEach(b=>b.onclick=()=>{
+        const p=Number(b.dataset.page); if(!p||p===state.livePage||p<1||p>totalPages)return;
+        state.livePage=p; renderLive(); document.querySelector('#section-live')?.scrollIntoView({behavior:'smooth',block:'start'});
+      });
       if(isAdmin()){
         $('#syncMonthBtn').onclick=syncMonth;
         document.querySelectorAll('[data-save-session]').forEach(b=>b.onclick=()=>saveAssignment(b.dataset.saveSession));
