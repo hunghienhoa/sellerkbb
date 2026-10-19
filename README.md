@@ -4,7 +4,7 @@
 
 ### Báo cáo TikTok LIVE · KPI nhân sự · Tự đồng bộ 24/24
 
-**Phiên bản hiện tại: v1.14.0**
+**Phiên bản hiện tại: v1.14.1**
 
 [![GitHub Release](https://img.shields.io/github/v/release/hunghienhoa/sellerkbb?label=Release)](https://github.com/hunghienhoa/sellerkbb/releases)
 [![GitHub Actions](https://img.shields.io/github/actions/workflow/status/hunghienhoa/sellerkbb/deploy.yml?branch=main&label=Ki%E1%BB%83m%20tra%20%26%20Backup)](https://github.com/hunghienhoa/sellerkbb/actions)
@@ -17,13 +17,14 @@
 
 ---
 
-## 🆕 Cập nhật mới nhất — v1.14.0
+## 🆕 Cập nhật mới nhất — v1.14.1
 
-- **KPI thủ công** là tab riêng trong nhóm **Công cụ**, đặt cùng nhóm với **Xuất file**.
-- **KPI nhân sự** chỉ dùng để tổng hợp KPI tự động + KPI thủ công đã lưu.
-- **Tài khoản/Users** được đưa ra khỏi nhóm Quản trị. Admin mở nhanh bằng nút riêng nằm bên phải, cùng hàng với khối avatar/tên tài khoản ở cuối sidebar.
-- Release từ bản này ghi rõ **Tính năng/cập nhật trong bản này** để dễ nhận biết mỗi phiên bản đã thay đổi gì. Nội dung này được lấy trực tiếp từ mục **Cập nhật mới nhất** trong README để hai nơi luôn đồng bộ. Các Release cũ đang được giữ (`v1.10.0`–`v1.13.0`) cũng được bổ sung mô tả tính năng một lần để dễ đối chiếu.
-- Mỗi khi thêm/sửa tính năng, README cũng phải được cập nhật trong cùng phiên bản.
+- **KPI thủ công** nằm trong nhóm **Công cụ**, ngay cùng nhóm với **Xuất file**.
+- **Users/Tài khoản** của Admin là nút độc lập bên phải khối avatar/tên tài khoản ở cuối sidebar; không nằm trong nhóm **Quản trị**.
+- Ở chế độ sidebar thu gọn trên tablet, nút **Users** vẫn giữ **cùng hàng với avatar** thay vì tụt xuống dưới.
+- Bổ sung kiểm tra giao diện để bảo đảm nút Users luôn nằm bên phải và thẳng hàng với khối hồ sơ.
+- README và GitHub Release tiếp tục dùng cùng nội dung cập nhật để mỗi phiên bản đều ghi rõ thay đổi.
+- Mỗi lần thêm/sửa tính năng hoặc bố cục, README phải được cập nhật cùng phiên bản trước khi Release được tạo.
 
 ---
 
@@ -100,7 +101,7 @@ Nếu một phiên kéo dài nhiều giờ và nhiều người thay ca:
 3. Bấm **Lưu**.
 4. Phiên vẫn xuất hiện trong doanh thu/báo cáo nhưng không cộng KPI tự động.
 
-5. Phiên được đưa vào tab riêng **KPI thủ công** trong nhóm Báo cáo.
+5. Phiên được đưa vào tab riêng **KPI thủ công** trong nhóm **Công cụ**, cùng với **Xuất file**.
 6. Admin chỉ thêm những người thực sự cần tính KPI, nhập **GMV sau hoàn/hủy của cá nhân** và **KPI thủ công của cá nhân**.
 7. SellerKBB không tự chia GMV tổng phiên; KPI thủ công đã lưu sẽ tự cộng vào tab **KPI nhân sự** của đúng người.
 

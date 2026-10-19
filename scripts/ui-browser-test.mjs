@@ -43,6 +43,12 @@ try {
   assert(toolItems.join('|')==='export|manual-kpi',"Công cụ must contain Xuất file then KPI thủ công");
   assert(await page.$('#nav [data-section="users"]')===null,"Users must not remain inside sidebar navigation groups");
   assert(!(await page.$eval('#usersQuickBtn',e=>e.classList.contains('hidden'))),"Admin Users quick button is hidden");
+  const desktopUsersPlacement=await page.evaluate(()=>{
+    const account=document.querySelector('#userMenuBtn')?.getBoundingClientRect();
+    const users=document.querySelector('#usersQuickBtn')?.getBoundingClientRect();
+    return account&&users?{right:users.left>=account.right-1,aligned:Math.abs((users.top+users.bottom-account.top-account.bottom)/2)<=2}:null;
+  });
+  assert(desktopUsersPlacement?.right&&desktopUsersPlacement?.aligned,"Desktop Users button must sit to the right and align with the account row");
   assert(await page.$eval('.side-brand .brand-lockup',e=>e.textContent.replace(/\s+/g,'').includes('SellerKBBLIVE')),"SellerKBB LIVE brand lockup is incorrect");
   assert(await page.$eval('html',e=>getComputedStyle(e).getPropertyValue('--accent').trim())==='#a88bd7',"Pastel purple theme accent is not active");
   await page.click('#userMenuBtn');
@@ -166,6 +172,16 @@ try {
   assert(await page.$eval('#retentionDays',e=>e.value)==='120',"Storage settings did not persist in Preview");
   await page.click('#usersQuickBtn');
   assert(await page.$('[data-role="pending-01"]')===null,"Approved Preview user returned to pending after reload");
+
+  await page.setViewport({width:900,height:844,deviceScaleFactor:1});
+  await page.reload({waitUntil:"domcontentloaded"});
+  await page.waitForSelector("#app:not(.hidden)",{timeout:30000});
+  const tabletUsersPlacement=await page.evaluate(()=>{
+    const account=document.querySelector('#userMenuBtn')?.getBoundingClientRect();
+    const users=document.querySelector('#usersQuickBtn')?.getBoundingClientRect();
+    return account&&users?{right:users.left>=account.right-1,aligned:Math.abs((users.top+users.bottom-account.top-account.bottom)/2)<=2}:null;
+  });
+  assert(tabletUsersPlacement?.right&&tabletUsersPlacement?.aligned,"Tablet Users button must stay to the right and on the same row as the avatar");
 
   await page.setViewport({width:390,height:844,deviceScaleFactor:1});
   await page.reload({waitUntil:"domcontentloaded"});
