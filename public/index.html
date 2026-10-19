@@ -1583,36 +1583,36 @@ tbody tr:hover td{background:#fcfafb}
 }
 
 
-/* v1.12 lavender pastel theme + grouped navigation */
+/* v1.16 pink pastel theme + grouped navigation */
 :root{
-  --bg:#f6f4fb;
-  --bg-soft:#f2eef9;
+  --bg:#fff8fb;
+  --bg-soft:#fff1f6;
   --surface:#ffffff;
-  --surface-soft:#faf8ff;
-  --surface-strong:#eee7f8;
-  --line:#e3dced;
-  --line-strong:#d2c5e6;
-  --text:#3e344c;
-  --muted:#7b7088;
-  --accent:#a88bd7;
-  --accent-strong:#8262b8;
-  --accent-soft:#eee7fa;
-  --shadow-sm:0 1px 4px rgba(86,66,116,.06);
-  --shadow-md:0 10px 28px rgba(86,66,116,.09);
+  --surface-soft:#fff7fa;
+  --surface-strong:#fde8f1;
+  --line:#f0dbe5;
+  --line-strong:#e5bfd1;
+  --text:#46323d;
+  --muted:#88717d;
+  --accent:#e7a3c0;
+  --accent-strong:#d77ca5;
+  --accent-soft:#fdeaf2;
+  --shadow-sm:0 1px 4px rgba(151,88,117,.055);
+  --shadow-md:0 10px 28px rgba(151,88,117,.09);
 }
 html,body{background:var(--bg)}
 body{
   color:var(--text);
   background:
-    radial-gradient(circle at 88% -12%,rgba(190,171,228,.25),transparent 30%),
-    radial-gradient(circle at 4% 10%,rgba(224,215,244,.24),transparent 24%),
-    linear-gradient(180deg,#faf9fd 0,#f6f4fb 55%,#f4f1f9 100%);
+    radial-gradient(circle at 88% -12%,rgba(247,205,224,.34),transparent 30%),
+    radial-gradient(circle at 4% 10%,rgba(255,229,240,.42),transparent 24%),
+    linear-gradient(180deg,#fffafb 0,#fff7fa 55%,#fff4f8 100%);
 }
 .brand-lockup{
   display:flex;
   align-items:center;
   gap:0;
-  color:#514267;
+  color:#5b3e4c;
   font-size:24px;
   font-weight:850;
   line-height:1;
@@ -1624,10 +1624,10 @@ body{
 .brand-lockup .brand-live{
   margin-left:7px;
   padding:4px 6px;
-  border:1px solid #ddd1ef;
+  border:1px solid #f0cfdd;
   border-radius:6px;
-  background:#f3eefb;
-  color:#76608f;
+  background:#fff0f6;
+  color:#995d79;
   font-size:9px;
   font-weight:850;
   letter-spacing:.08em;
@@ -1635,14 +1635,14 @@ body{
 .boot-card{border-color:var(--line);background:rgba(255,255,255,.96)}
 .sidebar{
   border-right-color:var(--line);
-  background:rgba(249,247,253,.96);
+  background:rgba(255,249,252,.96);
 }
 .side-brand{padding:9px 10px 23px}
 .nav{display:grid;gap:18px}
 .nav-group{display:grid;gap:5px}
 .nav-group-title{
   padding:0 11px;
-  color:#9a8daa;
+  color:#b0889a;
   font-size:9px;
   line-height:1.3;
   font-weight:800;
@@ -1650,68 +1650,86 @@ body{
   text-transform:uppercase;
 }
 .nav-group-items{display:grid;gap:4px}
-.nav button{color:#746a80}
-.nav button:hover{background:#f5f1fb;color:#554567}
+.nav button{color:#806c76}
+.nav button:hover{background:#fff1f6;color:#644553}
 .nav button.active{
-  background:#eee7f7;
-  color:#7654a6;
+  background:#fde8f1;
+  color:#a65379;
 }
 .nav button.active::before{background:var(--accent-strong)}
 .topbar{
-  border-bottom-color:rgba(220,211,233,.85);
-  background:rgba(249,248,252,.91);
+  border-bottom-color:rgba(238,214,225,.9);
+  background:rgba(255,250,252,.93);
 }
-.page-title{color:#40354f}
+.page-title{color:#533944}
 .section.active{
   border-color:var(--line);
-  background:rgba(255,255,255,.91);
-  box-shadow:0 1px 3px rgba(79,61,103,.025);
+  background:rgba(255,255,255,.92);
+  box-shadow:0 1px 3px rgba(111,64,85,.025);
 }
-.card h3,.export-row b,.api-hero-copy h3{color:#493d59}
+.card h3,.export-row b,.api-hero-copy h3{color:#583d4a}
 .metric-card{
-  border-color:#e9e2f1;
-  background:linear-gradient(145deg,#fff 0,#faf8fe 100%);
+  border-color:#f2e0e8;
+  background:linear-gradient(145deg,#fff 0,#fff8fb 100%);
 }
 .metric-icon,.export-icon,.api-hero-icon,.storage-provider-icon{
   background:var(--accent-soft);
-  color:#8061b1;
+  color:#b45e85;
 }
-.metric-copy>strong,.stat-value,.money{color:#594472}
-.range-tabs{border-color:var(--line);background:#f4f1f8}
-.range-btn{color:#746a80}
-.range-btn:hover{background:#fff;color:#594b69}
-.range-btn.active{background:#fff;color:#7957a8;box-shadow:0 1px 4px rgba(86,66,116,.09)}
-.custom-range{background:#f8f6fc}
-.date-pick.active{border-color:#bda8df;box-shadow:0 0 0 3px rgba(150,119,200,.11)}
-.calendar-nav{background:#f7f4fb;color:#705d88}
-.calendar-nav:hover{background:#f0eafb}
-.calendar-day:hover,.calendar-day.in-range{background:#f1ebfa}
-.pill,.tag{border-color:#ded3ee;background:var(--accent-soft);color:#72568f}
-.tag.admin{border-color:#d8c9ef;background:#f2ecfb;color:#684d91}
-.tag.operator{border-color:#d7d6ef;background:#f1f0fb;color:#5d598d}
-.tag.host{border-color:#e1d6f0;background:#f7f2fc;color:#7c5e99}
-.btn{color:#51455f}
-.btn:hover{border-color:#cfc0e4;background:#fbf9fe}
+.metric-copy>strong,.stat-value,.money{color:#70495b}
+.range-tabs{border-color:var(--line);background:#fff0f5}
+.range-btn{color:#806c76}
+.range-btn:hover{background:#fff;color:#684b58}
+.range-btn.active{background:#fff;color:#ad5a80;box-shadow:0 1px 4px rgba(151,88,117,.09)}
+.custom-range{background:#fff6f9}
+.date-pick.active{border-color:#e2a9c1;box-shadow:0 0 0 3px rgba(215,124,165,.11)}
+.calendar-nav{background:#fff2f7;color:#94627a}
+.calendar-nav:hover{background:#fde8f1}
+.calendar-day:hover,.calendar-day.in-range{background:#fdebf3}
+.pill,.tag{border-color:#efcede;background:var(--accent-soft);color:#985b77}
+.tag.admin{border-color:#ecc6d8;background:#fff0f6;color:#9d5375}
+.tag.operator{border-color:#efd2df;background:#fff5f8;color:#9b637b}
+.tag.host{border-color:#f0cbdc;background:#fff1f7;color:#a6567c}
+.btn{color:#59434e}
+.btn:hover{border-color:#e4bfd0;background:#fffafb}
 .btn.primary{border-color:var(--accent-strong);background:var(--accent-strong);color:#fff}
-.btn.primary:hover{border-color:#7354a8;background:#7354a8}
-.btn::after,.nav button::after,.page-btn::after,.range-btn::after,.menu-toggle::after{background:rgba(130,98,184,.18)}
-th{background:#f7f4fb;color:#71677d}
-tbody tr:hover td{background:#fbf9fe}
-.pair-card b,.status-item b,.api-foot b,.sync-status b,.live-time-cell b,.mobile-live-time b{color:#554663}
-.status-item{color:#7b5aa3}
-.eyebrow,.heading-with-icon .ui-icon,.data-note .ui-icon,.mobile-live-time .ui-icon{color:#8061b1}
-.toggle-row{border-left-color:#c9b7e1;background:#f8f6fc}
-.storage-quota-card{background:linear-gradient(145deg,#fff 0,#faf8fe 100%)}
-.storage-quota-head>strong,.storage-usage-line b{color:#58456b}
-.storage-quota-foot>span{color:#76549c}
-.storage-progress{background:#eee9f5}
-.storage-progress i{background:linear-gradient(90deg,#b69add,#8666bd)}
-.account-trigger:hover{background:#f5f1fa}
-.account-trigger.open{background:#eee8f7;border-top-color:#d6cae5}
-.account-chevron{color:#88789a}
-.user-list-avatar{border-color:#ded3eb}
-.account-popover{border-color:var(--line);box-shadow:0 16px 40px rgba(75,57,99,.14)}
-.mobile-menu-overlay{background:rgba(58,45,76,.27)}
+.btn.primary:hover{border-color:#c96e98;background:#c96e98}
+.btn::after,.nav button::after,.page-btn::after,.range-btn::after,.menu-toggle::after{background:rgba(215,124,165,.18)}
+th{background:#fff4f8;color:#7b6670}
+tbody tr:hover td{background:#fffafb}
+.pair-card b,.status-item b,.api-foot b,.sync-status b,.live-time-cell b,.mobile-live-time b{color:#654854}
+.status-item{color:#a15d7c}
+.eyebrow,.heading-with-icon .ui-icon,.data-note .ui-icon,.mobile-live-time .ui-icon{color:#b45e85}
+.toggle-row{border-left-color:#e5b8cc;background:#fff6f9}
+.storage-quota-card{background:linear-gradient(145deg,#fff 0,#fff8fb 100%)}
+.storage-quota-head>strong,.storage-usage-line b{color:#694958}
+.storage-quota-foot>span{color:#a7557a}
+.storage-progress{background:#f8e7ef}
+.storage-progress i{background:linear-gradient(90deg,#efb8cf,#da82a8)}
+.account-trigger:hover{background:#fff1f6}
+.account-trigger.open{background:#fdebf3;border-top-color:#e8c8d7}
+.account-chevron{color:#a47b8e}
+.user-list-avatar{border-color:#efd5e0}
+.account-popover{border-color:var(--line);box-shadow:0 16px 40px rgba(117,68,91,.14)}
+.mobile-menu-overlay{background:rgba(78,49,63,.25)}
+.approved-user-card{
+  padding:14px 0;
+  border-bottom:1px solid var(--line);
+}
+.approved-user-card:last-child{border-bottom:0;padding-bottom:0}
+.user-access-grid{
+  display:grid;
+  grid-template-columns:minmax(180px,.7fr) minmax(260px,1.3fr);
+  gap:14px;
+  align-items:start;
+  margin-top:12px;
+  padding:12px;
+  border:1px solid var(--line);
+  border-radius:10px;
+  background:var(--surface-soft);
+}
+.user-access-actions{margin-top:10px;justify-content:flex-end}
+.user-self-note{color:var(--muted);font-size:10.5px}
 @media(max-width:1100px) and (min-width:701px){
   .nav{gap:12px}
   .nav-group{gap:0}
@@ -1722,11 +1740,11 @@ tbody tr:hover td{background:#fbf9fe}
   .side-brand .brand-lockup b{font-size:18px}
 }
 @media(max-width:700px){
-  body{background:#f7f5fb}
-  .topbar{background:rgba(250,249,253,.95)}
+  body{background:#fff7fa}
+  .topbar{background:rgba(255,250,252,.96)}
   .sidebar{
-    background:rgba(249,247,253,.995)!important;
-    box-shadow:18px 0 42px rgba(75,57,99,.16)!important;
+    background:rgba(255,249,252,.995)!important;
+    box-shadow:18px 0 42px rgba(117,68,91,.16)!important;
   }
   .side-brand .brand-seller,.side-brand .brand-live{display:inline-flex!important}
   .nav{gap:17px!important}
@@ -1734,6 +1752,9 @@ tbody tr:hover td{background:#fbf9fe}
   .nav-group-title{display:block!important;padding:0 12px}
   .nav-group-items{display:grid!important;gap:4px!important}
   .section.active{background:#fff;border-color:var(--line)}
+  .user-access-grid{grid-template-columns:1fr}
+  .user-access-actions{justify-content:stretch}
+  .user-access-actions .btn{flex:1}
 }
 
 
@@ -1796,47 +1817,6 @@ tbody tr:hover td{background:#fbf9fe}
 
 
 
-/* v1.15 Users quick access outside the sidebar */
-.users-dock-btn{
-  position:fixed;
-  left:252px;
-  bottom:23px;
-  z-index:32;
-  min-height:42px;
-  display:flex;
-  align-items:center;
-  gap:7px;
-  padding:0 12px;
-  border:1px solid var(--line);
-  border-radius:10px;
-  background:rgba(255,255,255,.97);
-  color:#765aa0;
-  font:inherit;
-  font-size:11px;
-  font-weight:750;
-  cursor:pointer;
-  box-shadow:0 8px 24px rgba(80,54,68,.10);
-}
-.users-dock-btn:hover{background:#f8f3fc;border-color:#d8cbe9}
-.users-dock-btn.hidden{display:none}
-@media(max-width:700px){
-  .users-dock-btn{
-    left:calc(min(82vw,300px) + 8px);
-    bottom:calc(28px + env(safe-area-inset-bottom));
-    z-index:41;
-    min-width:42px;
-    width:42px;
-    padding:0;
-    justify-content:center;
-    opacity:0;
-    visibility:hidden;
-    pointer-events:none;
-    transform:translateX(-8px);
-    transition:opacity .2s ease,transform .2s ease,visibility .2s ease;
-  }
-  .users-dock-btn span{display:none}
-  .sidebar.open + .users-dock-btn{opacity:1;visibility:visible;pointer-events:auto;transform:none}
-}
 
 </style>
 </head>
@@ -1856,11 +1836,8 @@ tbody tr:hover td{background:#fbf9fe}
         <div id="accountPopover" class="account-popover hidden" role="dialog" aria-label="Thông tin tài khoản"></div>
       </div>
     </aside>
-    <button id="usersDockBtn" class="users-dock-btn hidden" type="button" aria-label="Mở Users" title="Users">
-      <svg class="ui-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg><span>Users</span>
-    </button>
     <main class="main">
-      <header class="topbar"><div class="topbar-title-wrap"><button id="menuToggle" class="menu-toggle" type="button" aria-label="Mở menu" aria-expanded="false">☰</button><div><h1 id="pageTitle" class="page-title">Tổng quan</h1><div id="pageSub" class="tiny"></div></div></div><div class="row"><span id="syncBadge" class="pill">v1.15.0</span></div></header>
+      <header class="topbar"><div class="topbar-title-wrap"><button id="menuToggle" class="menu-toggle" type="button" aria-label="Mở menu" aria-expanded="false">☰</button><div><h1 id="pageTitle" class="page-title">Tổng quan</h1><div id="pageSub" class="tiny"></div></div></div><div class="row"><span id="syncBadge" class="pill">v1.16.0</span></div></header>
       <div class="content">
         <section id="section-dashboard" class="section active"></section>
         <section id="section-live" class="section"></section>
@@ -1878,7 +1855,7 @@ tbody tr:hover td{background:#fbf9fe}
     const FIREBASE_VERSION = "12.19.0";
     const { initializeApp } = await import(`https://www.gstatic.com/firebasejs/${FIREBASE_VERSION}/firebase-app.js`);
     const { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } = await import(`https://www.gstatic.com/firebasejs/${FIREBASE_VERSION}/firebase-auth.js`);
-    const { getFirestore, doc, getDoc, setDoc, updateDoc, getDocs, collection, query, orderBy, where, limit, writeBatch, serverTimestamp, Timestamp } = await import(`https://www.gstatic.com/firebasejs/${FIREBASE_VERSION}/firebase-firestore.js`);
+    const { getFirestore, doc, getDoc, setDoc, updateDoc, deleteDoc, getDocs, collection, query, orderBy, where, limit, writeBatch, serverTimestamp, Timestamp } = await import(`https://www.gstatic.com/firebasejs/${FIREBASE_VERSION}/firebase-firestore.js`);
 
     const $ = (s) => document.querySelector(s);
     const esc = (v="") => String(v).replace(/[&<>'"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;","'":"&#39;",'"':"&quot;"}[c]));
@@ -2138,6 +2115,8 @@ tbody tr:hover td{background:#fbf9fe}
         }
       }
       if(Array.isArray(saved.users)){
+        const savedIds=new Set(saved.users.map(x=>x.id));
+        state.users=state.users.filter(u=>savedIds.has(u.id));
         for(const patch of saved.users){
           const u=state.users.find(x=>x.id===patch.id);
           if(u)Object.assign(u,patch);
@@ -2147,7 +2126,7 @@ tbody tr:hover td{background:#fbf9fe}
 
     function previewTs(iso){ return {toDate:()=>new Date(iso)}; }
     function enterPreview(){
-      state.config={version:'1.15.0-preview',tiktokConfigured:true};
+      state.config={version:'1.16.0-preview',tiktokConfigured:true};
       state.user={uid:'preview-admin',email:'admin@sellerkbb.demo',displayName:'Quản trị viên Demo',photoURL:avatarFallbackData('Quản trị viên Demo')};
       state.profile={role:'admin',status:'approved',displayName:'Quản trị viên Demo',photoURL:state.user.photoURL,permissions:['live.read','kpi.read']};
       state.maintenance={settings:{retentionDays:180,autoCleanup:true,emergencyPercent:85,firestoreSoftLimitMb:600,firestoreMaxSessions:12000,kvSoftKeyLimit:5000},github:{usedBytes:124000,limitBytes:10000000000,available:true},cloudflare:{keyCount:5,lastRun:{ranAt:new Date().toISOString(),deleted:0},usedBytes:428000,storageLimitBytes:1000000000,storageComplete:true},firebase:{freePlanMode:true,ttlEnabled:false,ttlRecommended:false,storageLimitBytes:1073741824}};
@@ -2258,17 +2237,6 @@ tbody tr:hover td{background:#fbf9fe}
       await setDoc(uref,{uid:user.uid,email:user.email||'',displayName:user.displayName||user.email||'',photoURL:user.photoURL||'',role:'pending',status:'pending',permissions:[],createdAt:serverTimestamp(),lastLoginAt:serverTimestamp(),updatedAt:serverTimestamp()});
     }
 
-    function positionUsersDock(){
-      const dock=$('#usersDockBtn'), sidebar=$('#sidebar'), avatar=$('#userAvatar');
-      if(!dock||!sidebar||!avatar||dock.classList.contains('hidden'))return;
-      const sideRect=sidebar.getBoundingClientRect();
-      const avatarRect=avatar.getBoundingClientRect();
-      const dockHeight=dock.getBoundingClientRect().height||42;
-      dock.style.left=Math.round(sideRect.right+8)+'px';
-      dock.style.top=Math.round(avatarRect.top+avatarRect.height/2-dockHeight/2)+'px';
-      dock.style.bottom='auto';
-    }
-
     function setMobileMenu(open){
       const sidebar=$('#sidebar'), overlay=$('#mobileMenuOverlay'), toggle=$('#menuToggle');
       if(!sidebar||!overlay||!toggle)return;
@@ -2277,8 +2245,6 @@ tbody tr:hover td{background:#fbf9fe}
       toggle.setAttribute('aria-expanded',String(open));
       toggle.setAttribute('aria-label',open?'Đóng menu':'Mở menu');
       document.body.classList.toggle('menu-open',open);
-      requestAnimationFrame(positionUsersDock);
-      if(open)setTimeout(positionUsersDock,280);
     }
 
     function showToast(message){
@@ -2417,17 +2383,6 @@ tbody tr:hover td{background:#fbf9fe}
       $('#userRole').textContent=roleLabel(state.profile.role);
       renderAccountPopover();
       $('#userMenuBtn').onclick=e=>{ e.stopPropagation(); setAccountMenu($('#accountPopover').classList.contains('hidden')); };
-      const usersDock=$('#usersDockBtn');
-      if(usersDock){
-        usersDock.classList.toggle('hidden',!isAdmin());
-        usersDock.onclick=e=>{ e.stopPropagation(); switchSection('users'); };
-        if(document.documentElement.dataset.usersDockBound!=='1'){
-          document.documentElement.dataset.usersDockBound='1';
-          window.addEventListener('resize',positionUsersDock);
-          $('#sidebar')?.addEventListener('scroll',positionUsersDock,{passive:true});
-        }
-        requestAnimationFrame(positionUsersDock);
-      }
       $('#syncBadge').textContent=`v${state.config.version||'1.0.0'}`;
     }
 
@@ -2525,7 +2480,7 @@ tbody tr:hover td{background:#fbf9fe}
       $('#nav').querySelectorAll('button').forEach(b=>b.onclick=()=>switchSection(b.dataset.section));
     }
 
-    function switchSection(id){ state.section=id; setAccountMenu(false); setMobileMenu(false); document.querySelectorAll('.section').forEach(s=>s.classList.remove('active')); $(`#section-${id}`).classList.add('active'); renderNav(); const meta={dashboard:['Tổng quan','Báo cáo LIVE & KPI'],live:['Phiên LIVE','Gắn Host/Operator cho từng phiên'],kpi:['KPI nhân sự','Tổng hợp KPI tự động + KPI thủ công đã lưu'], 'manual-kpi':['KPI thủ công','Nhập KPI theo từng người cho các phiên tính thủ công'],users:['Duyệt tài khoản','Phân vai trò và nội dung được phép xem'],export:['Xuất file','Xuất báo cáo theo khoảng thời gian đã chọn'],tiktok:['TikTok / API','Tự động đồng bộ LIVE và gia hạn token 24/24'],storage:['Lưu trữ & tự dọn','Giữ dữ liệu tối đa 6 tháng và bảo vệ dung lượng']}[id]; $('#pageTitle').textContent=meta[0]; $('#pageSub').textContent=meta[1]; }
+    function switchSection(id){ state.section=id; setAccountMenu(false); setMobileMenu(false); document.querySelectorAll('.section').forEach(s=>s.classList.remove('active')); $(`#section-${id}`).classList.add('active'); renderNav(); const meta={dashboard:['Tổng quan','Báo cáo LIVE & KPI'],live:['Phiên LIVE','Gắn Host/Operator cho từng phiên'],kpi:['KPI nhân sự','Tổng hợp KPI tự động + KPI thủ công đã lưu'], 'manual-kpi':['KPI thủ công','Nhập KPI theo từng người cho các phiên tính thủ công'],users:['Duyệt tài khoản','Duyệt, chỉnh quyền hoặc xóa user'],export:['Xuất file','Xuất báo cáo theo khoảng thời gian đã chọn'],tiktok:['TikTok / API','Tự động đồng bộ LIVE và gia hạn token 24/24'],storage:['Lưu trữ & tự dọn','Giữ dữ liệu tối đa 6 tháng và bảo vệ dung lượng']}[id]; $('#pageTitle').textContent=meta[0]; $('#pageSub').textContent=meta[1]; }
 
     function finalGmv(s){ return Number(s.finalGmvAmount ?? s.currentGmvAmount ?? s.recordedGmvAmount ?? 0); }
     function liveEndTime(s){
@@ -2996,14 +2951,79 @@ tbody tr:hover td{background:#fbf9fe}
       const pending=state.users.filter(u=>u.status==='pending');
       const roleOrder={admin:0,operator:1,host:2};
       const approved=state.users.filter(u=>u.status==='approved').sort((a,b)=>(roleOrder[a.role]??9)-(roleOrder[b.role]??9)||String(a.displayName||a.email||'').localeCompare(String(b.displayName||b.email||''),'vi'));
-      $('#section-users').innerHTML=`<div class="card"><h3 class="heading-with-icon">${icon('users',18)} Tài khoản chờ duyệt <span class="pill warn">${pending.length}</span></h3>${pending.length?pending.map(userApprovalCard).join(''):'<div class="empty">Không có tài khoản đang chờ.</div>'}</div><div class="card"><h3 class="heading-with-icon">${icon('shield',18)} Tài khoản đã duyệt</h3>${approved.map(userApprovedRow).join('')}</div>`;
+      $('#section-users').innerHTML=`<div class="card"><h3 class="heading-with-icon">${icon('users',18)} Tài khoản chờ duyệt <span class="pill warn">${pending.length}</span></h3>${pending.length?pending.map(userApprovalCard).join(''):'<div class="empty">Không có tài khoản đang chờ.</div>'}</div><div class="card"><div class="row space"><div><h3 class="heading-with-icon">${icon('shield',18)} Tài khoản đã duyệt</h3><div class="sub">Có thể thay đổi vai trò, quyền truy cập hoặc xóa user khỏi SellerKBB.</div></div><span class="pill">${approved.length} user</span></div>${approved.length?approved.map(userApprovedRow).join(''):'<div class="empty">Chưa có tài khoản đã duyệt.</div>'}</div>`;
       document.querySelectorAll('[data-approve]').forEach(b=>b.onclick=()=>approveUser(b.dataset.approve));
+      document.querySelectorAll('[data-user-save]').forEach(b=>b.onclick=()=>saveUserAccess(b.dataset.userSave));
+      document.querySelectorAll('[data-user-delete]').forEach(b=>b.onclick=()=>deleteUserAccount(b.dataset.userDelete));
+      document.querySelectorAll('[data-approved-role]').forEach(s=>{
+        s.onchange=()=>syncApprovedPermissionControls(s.dataset.approvedRole);
+        syncApprovedPermissionControls(s.dataset.approvedRole);
+      });
     }
 
-    function userApprovalCard(u){return `<div class="approval-item"><div class="row space">${userIdentityHtml(u,true)}<span class="pill warn">Chờ duyệt</span></div><div class="form-grid" style="margin-top:16px"><label><div class="tiny">Vai trò</div><select class="input" style="width:100%" data-role="${u.id}"><option value="host">Host Livestream</option><option value="operator">Nhân viên vận hành livestream</option><option value="admin">Quản trị viên</option></select></label><div><div class="tiny">Nội dung được phép xem</div><label class="checkline"><input type="checkbox" data-perm="live.read" data-uid="${u.id}" checked> Phiên LIVE</label><label class="checkline"><input type="checkbox" data-perm="kpi.read" data-uid="${u.id}" checked> KPI cá nhân / báo cáo</label></div></div><div class="row" style="margin-top:16px"><button class="btn primary" data-approve="${u.id}">${icon('check',15)} Duyệt tài khoản</button></div></div>`;}
-    function userApprovedRow(u){return `<div class="row space approved-user-row">${userIdentityHtml(u,true)}<div class="approved-user-meta"><span class="tag ${u.role}">${roleLabel(u.role)}</span><span class="tiny">${esc(permissionSummary(u))}</span></div></div>`;}
-    async function approveUser(uid){ const role=document.querySelector(`[data-role="${CSS.escape(uid)}"]`).value; const permissions=[...document.querySelectorAll(`[data-uid="${CSS.escape(uid)}"][data-perm]:checked`)].map(x=>x.dataset.perm); if(role==='admin'){permissions.splice(0,permissions.length,'live.read','kpi.read')} if(PREVIEW){ const u=state.users.find(x=>x.id===uid); Object.assign(u,{role,status:'approved',permissions}); persistPreviewState(); showToast('Đã duyệt tài khoản'); renderAll(); return; } await updateDoc(doc(state.db,'users',uid),{role,status:'approved',permissions,approvedAt:serverTimestamp(),approvedBy:state.user.uid,updatedAt:serverTimestamp()}); showToast('Đã duyệt tài khoản'); await loadData(); renderAll(); }
+    function userRoleOptions(role){
+      return [['host','Host Livestream'],['operator','Nhân viên vận hành livestream'],['admin','Quản trị viên']].map(([value,label])=>`<option value="${value}" ${role===value?'selected':''}>${label}</option>`).join('');
+    }
 
+    function userApprovalCard(u){
+      return `<div class="approval-item"><div class="row space">${userIdentityHtml(u,true)}<span class="pill warn">Chờ duyệt</span></div><div class="form-grid" style="margin-top:16px"><label><div class="tiny">Vai trò</div><select class="input" style="width:100%" data-role="${u.id}">${userRoleOptions('host')}</select></label><div><div class="tiny">Nội dung được phép xem</div><label class="checkline"><input type="checkbox" data-perm="live.read" data-uid="${u.id}" checked> Phiên LIVE</label><label class="checkline"><input type="checkbox" data-perm="kpi.read" data-uid="${u.id}" checked> KPI cá nhân / báo cáo</label></div></div><div class="row space" style="margin-top:16px"><button class="btn danger small" data-user-delete="${u.id}">${icon('logout',14)} Xóa user</button><button class="btn primary" data-approve="${u.id}">${icon('check',15)} Duyệt tài khoản</button></div></div>`;
+    }
+
+    function userApprovedRow(u){
+      const self=u.id===state.user?.uid;
+      const permissions=Array.isArray(u.permissions)?u.permissions:[];
+      const liveChecked=u.role==='admin'||permissions.includes('live.read');
+      const kpiChecked=u.role==='admin'||permissions.includes('kpi.read');
+      return `<div class="approved-user-card approved-user-row" data-approved-user="${u.id}"><div class="row space">${userIdentityHtml(u,true)}<div class="approved-user-meta"><span class="tag ${u.role}">${roleLabel(u.role)}</span><span class="tiny">${esc(permissionSummary(u))}</span></div></div><div class="user-access-grid"><label><div class="tiny">Vai trò</div><select class="input" style="width:100%" data-approved-role="${u.id}" ${self?'disabled':''}>${userRoleOptions(u.role)}</select></label><div><div class="tiny">Quyền truy cập</div><label class="checkline"><input type="checkbox" data-approved-perm="live.read" data-approved-uid="${u.id}" ${liveChecked?'checked':''} ${self?'disabled':''}> Phiên LIVE</label><label class="checkline"><input type="checkbox" data-approved-perm="kpi.read" data-approved-uid="${u.id}" ${kpiChecked?'checked':''} ${self?'disabled':''}> KPI nhân sự / báo cáo</label></div></div><div class="row user-access-actions">${self?'<span class="user-self-note">Tài khoản đang đăng nhập được khóa thao tác để tránh tự mất quyền Admin.</span>':''}<button class="btn danger small" data-user-delete="${u.id}" ${self?'disabled':''}>${icon('logout',14)} Xóa user</button><button class="btn primary small" data-user-save="${u.id}" ${self?'disabled':''}>${icon('check',14)} Lưu quyền</button></div></div>`;
+    }
+
+    function syncApprovedPermissionControls(uid){
+      const role=document.querySelector(`[data-approved-role="${CSS.escape(uid)}"]`)?.value;
+      const boxes=[...document.querySelectorAll(`[data-approved-uid="${CSS.escape(uid)}"][data-approved-perm]`)];
+      if(uid===state.user?.uid)return;
+      const full=role==='admin';
+      boxes.forEach(x=>{ x.disabled=full; if(full)x.checked=true; });
+    }
+
+    async function approveUser(uid){
+      const role=document.querySelector(`[data-role="${CSS.escape(uid)}"]`).value;
+      const permissions=[...document.querySelectorAll(`[data-uid="${CSS.escape(uid)}"][data-perm]:checked`)].map(x=>x.dataset.perm);
+      if(role==='admin')permissions.splice(0,permissions.length,'live.read','kpi.read');
+      if(PREVIEW){
+        const u=state.users.find(x=>x.id===uid);
+        Object.assign(u,{role,status:'approved',permissions});
+        persistPreviewState(); showToast('Đã duyệt tài khoản'); renderAll(); return;
+      }
+      await updateDoc(doc(state.db,'users',uid),{role,status:'approved',permissions,approvedAt:serverTimestamp(),approvedBy:state.user.uid,updatedAt:serverTimestamp()});
+      showToast('Đã duyệt tài khoản'); await loadData(); renderAll();
+    }
+
+    async function saveUserAccess(uid){
+      if(uid===state.user?.uid){ showToast('Không thể tự thay đổi quyền của tài khoản đang đăng nhập'); return; }
+      const role=document.querySelector(`[data-approved-role="${CSS.escape(uid)}"]`)?.value||'host';
+      const permissions=[...document.querySelectorAll(`[data-approved-uid="${CSS.escape(uid)}"][data-approved-perm]:checked`)].map(x=>x.dataset.approvedPerm);
+      if(role==='admin')permissions.splice(0,permissions.length,'live.read','kpi.read');
+      if(PREVIEW){
+        const u=state.users.find(x=>x.id===uid);
+        if(u)Object.assign(u,{role,status:'approved',permissions});
+        persistPreviewState(); showToast('Đã cập nhật quyền user'); renderAll(); return;
+      }
+      await updateDoc(doc(state.db,'users',uid),{role,status:'approved',permissions,updatedAt:serverTimestamp(),updatedBy:state.user.uid});
+      showToast('Đã cập nhật quyền user'); await loadData(); renderAll();
+    }
+
+    async function deleteUserAccount(uid){
+      if(uid===state.user?.uid){ showToast('Không thể tự xóa tài khoản đang đăng nhập'); return; }
+      const user=state.users.find(x=>x.id===uid);
+      const name=user?.displayName||user?.email||uid;
+      if(!confirm(`Xóa user "${name}" khỏi SellerKBB? Nếu họ đăng nhập lại, tài khoản sẽ quay về trạng thái chờ duyệt.`))return;
+      if(PREVIEW){
+        state.users=state.users.filter(x=>x.id!==uid);
+        persistPreviewState(); showToast('Đã xóa user'); renderAll(); return;
+      }
+      await deleteDoc(doc(state.db,'users',uid));
+      showToast('Đã xóa user'); await loadData(); renderAll();
+    }
 
     function estimateSessionBytes(session){
       try{
