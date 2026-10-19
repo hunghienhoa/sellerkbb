@@ -40,12 +40,12 @@ try {
   await page.click('#section-dashboard [data-range-mode="7d"]');
   assert(await page.$eval('#section-dashboard [data-range-mode="7d"]',e=>e.classList.contains('active')),"7-day filter did not activate");
   await page.click('#section-dashboard [data-range-mode="30d"]');
-  assert(await page.$eval('#section-dashboard [data-range-mode="30d"]',e=>e.classList.contains('active')),"1-month filter did not activate");
+  assert(await page.$eval('#section-dashboard [data-range-mode="30d"]',e=>e.classList.contains('active')),"30-day filter did not activate");
   assert(await page.$eval('#section-dashboard .dashboard-range-note',e=>e.textContent.includes('chỉ hiển thị 7 ngày gần nhất')),"Monthly Dashboard 7-day preview note missing");
   assert(await page.$('#dashboardViewMore')!==null,"Monthly Dashboard View More button missing");
   await page.click('#dashboardViewMore');
   assert(await page.$eval('#section-live',e=>e.classList.contains('active')),"View More did not switch to LIVE section");
-  assert(await page.$eval('#section-live [data-range-mode="30d"]',e=>e.classList.contains('active')),"View More did not preserve the 1-month filter");
+  assert(await page.$eval('#section-live [data-range-mode="30d"]',e=>e.classList.contains('active')),"View More did not preserve the 30-day filter");
   assert(await page.$eval('#section-live .desktop-live-table thead',e=>e.textContent.includes('Thời gian phiên LIVE')),"Desktop LIVE time header missing");
   assert(await page.$eval('#section-live .desktop-live-table tbody tr:first-child .live-time-cell',e=>/^\d{2}\/\d{2}\/\d{4}  \d{2}:\d{2}-/.test(e.textContent.trim())),"Desktop compact LIVE time range not rendered");
   await page.click('#section-live [data-range-mode="custom"]');
