@@ -81,6 +81,9 @@ assert(html.includes('id="accountLogoutBtn"'), "Account popover logout missing")
 assert(!html.includes('id="logoutBtn"'), "Legacy topbar logout button should be removed");
 assert(readme.includes("Hồ sơ Google & đăng xuất"), "README Google profile/logout guide missing");
 assert(html.includes("v1.16 pink pastel theme + grouped navigation"), "Pink pastel theme override missing");
+assert(html.includes("@keyframes statusDotPulse"), "Active status pulse keyframes missing");
+assert(html.includes(".status-dot.ok::before"), "Active status pulse selector missing");
+assert(html.includes("prefers-reduced-motion: reduce"), "Reduced-motion status fallback missing");
 assert(html.includes("--accent:#e7a3c0"), "Pastel pink accent missing");
 assert(!html.includes("--accent:#a88bd7"), "Legacy purple accent must be removed");
 assert(html.includes("nav-group-title"), "Grouped navigation labels missing");

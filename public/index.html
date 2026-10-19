@@ -1135,10 +1135,23 @@ tbody tr:hover td{background:#fcfafb}
   width:7px;height:7px;
   border-radius:50%;
   background:currentColor;
-  box-shadow:0 0 0 4px currentColor;
-  opacity:.8;
+  box-shadow:0 0 0 0 rgba(63,132,109,0);
+  opacity:.92;
+  transform:scale(.94);
 }
 .status-dot.ok{color:#3f846d;background:#eff8f4}
+.status-dot.ok::before{
+  animation:statusDotPulse 1.45s cubic-bezier(.22,.61,.36,1) infinite;
+}
+@keyframes statusDotPulse{
+  0%{transform:scale(.9);box-shadow:0 0 0 0 rgba(63,132,109,.42);opacity:.82}
+  42%{transform:scale(1.08);box-shadow:0 0 0 5px rgba(63,132,109,.16);opacity:1}
+  72%{transform:scale(1);box-shadow:0 0 0 8px rgba(63,132,109,0);opacity:.96}
+  100%{transform:scale(.9);box-shadow:0 0 0 0 rgba(63,132,109,0);opacity:.82}
+}
+@media (prefers-reduced-motion: reduce){
+  .status-dot.ok::before{animation:none;box-shadow:0 0 0 3px rgba(63,132,109,.14);transform:none}
+}
 .status-dot.warn{color:#9a6d26;background:#fbf6e9}
 .status-grid{
   display:grid;
@@ -1874,7 +1887,7 @@ tbody tr:hover td{background:#fffafb}
       </div>
     </aside>
     <main class="main">
-      <header class="topbar"><div class="topbar-title-wrap"><button id="menuToggle" class="menu-toggle" type="button" aria-label="Mở menu" aria-expanded="false">☰</button><div><h1 id="pageTitle" class="page-title">Tổng quan</h1><div id="pageSub" class="tiny"></div></div></div><div class="row"><span id="syncBadge" class="pill">v1.17.0</span></div></header>
+      <header class="topbar"><div class="topbar-title-wrap"><button id="menuToggle" class="menu-toggle" type="button" aria-label="Mở menu" aria-expanded="false">☰</button><div><h1 id="pageTitle" class="page-title">Tổng quan</h1><div id="pageSub" class="tiny"></div></div></div><div class="row"><span id="syncBadge" class="pill">v1.18.0</span></div></header>
       <div class="content">
         <section id="section-dashboard" class="section active"></section>
         <section id="section-live" class="section"></section>
@@ -2163,7 +2176,7 @@ tbody tr:hover td{background:#fffafb}
 
     function previewTs(iso){ return {toDate:()=>new Date(iso)}; }
     function enterPreview(){
-      state.config={version:'1.17.0-preview',tiktokConfigured:true};
+      state.config={version:'1.18.0-preview',tiktokConfigured:true};
       state.user={uid:'preview-admin',email:'admin@sellerkbb.demo',displayName:'Quản trị viên Demo',photoURL:avatarFallbackData('Quản trị viên Demo')};
       state.profile={role:'admin',status:'approved',displayName:'Quản trị viên Demo',photoURL:state.user.photoURL,permissions:['live.read','kpi.read']};
       state.maintenance={settings:{retentionDays:180,autoCleanup:true,emergencyPercent:85,firestoreSoftLimitMb:600,firestoreMaxSessions:12000,kvSoftKeyLimit:5000},github:{usedBytes:124000,limitBytes:10000000000,available:true},cloudflare:{keyCount:5,lastRun:{ranAt:new Date().toISOString(),deleted:0},usedBytes:428000,storageLimitBytes:1000000000,storageComplete:true},firebase:{freePlanMode:true,ttlEnabled:false,ttlRecommended:false,storageLimitBytes:1073741824}};
