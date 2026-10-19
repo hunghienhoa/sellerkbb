@@ -151,7 +151,7 @@ try {
   assert(await page.$eval('#section-tiktok .status-dot.ok',e=>getComputedStyle(e,'::before').animationName==='statusDotPulse'),"Active TikTok status dot pulse is not running");
   assert(await page.$eval('#section-tiktok .status-dot.ok',e=>getComputedStyle(e,'::before').animationDuration==='1.45s'),"Active TikTok pulse duration is incorrect");
   await page.click('#nav [data-section="storage"]');
-  assert((await page.$('#section-storage .storage-progress')).length===3,"Storage progress bars missing");
+  assert(await page.$eval('#section-storage',e=>e.querySelectorAll('.storage-progress').length===3),"Storage progress bars missing");
   assert(await page.$eval('#section-storage .storage-quota-grid',e=>e.textContent.includes('% / 100%')),"Storage percentage text missing");
   await page.select('#retentionDays','120');
   await page.click('#saveMaintenance');
