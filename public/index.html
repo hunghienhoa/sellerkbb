@@ -613,6 +613,22 @@
       body.menu-open{overflow:hidden}
     }
 
+    /* v1.2.1 interaction feedback */
+    .btn,.nav button,.page-btn,.menu-toggle{position:relative;overflow:hidden;touch-action:manipulation;-webkit-tap-highlight-color:transparent;transition:transform .15s ease,box-shadow .18s ease,border-color .18s ease,background-color .18s ease,opacity .18s ease}
+    .btn:active,.nav button:active,.page-btn:active,.menu-toggle:active{transform:scale(.965)}
+    .btn.fx-press,.nav button.fx-press,.page-btn.fx-press,.menu-toggle.fx-press{transform:scale(.97)}
+    .btn::after,.nav button::after,.page-btn::after,.menu-toggle::after{content:'';position:absolute;left:var(--tap-x,50%);top:var(--tap-y,50%);width:12px;height:12px;border-radius:50%;background:rgba(217,109,164,.22);transform:translate(-50%,-50%) scale(0);opacity:0;pointer-events:none}
+    .btn.fx-ripple::after,.nav button.fx-ripple::after,.page-btn.fx-ripple::after,.menu-toggle.fx-ripple::after{animation:fx-ripple .48s ease-out}
+    @keyframes fx-ripple{0%{transform:translate(-50%,-50%) scale(0);opacity:.65}100%{transform:translate(-50%,-50%) scale(18);opacity:0}}
+    .section.active{animation:section-enter .22s ease-out both}
+    @keyframes section-enter{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+    .input{transition:border-color .18s ease,box-shadow .18s ease,background-color .18s ease}
+    .input:focus{box-shadow:0 0 0 4px rgba(238,147,189,.12)}
+    .action-toast{position:fixed;left:50%;bottom:24px;z-index:120;transform:translate(-50%,14px);max-width:min(88vw,420px);padding:10px 14px;border:1px solid #cbe5dc;border-radius:13px;background:rgba(246,253,250,.98);color:#397964;box-shadow:0 12px 34px rgba(106,62,84,.18);font-weight:700;text-align:center;opacity:0;pointer-events:none;transition:opacity .2s ease,transform .2s ease}
+    .action-toast.show{opacity:1;transform:translate(-50%,0)}
+    @media(hover:hover){.card{transition:box-shadow .2s ease,transform .2s ease}.card:hover{box-shadow:0 12px 30px rgba(156,91,124,.10)}.nav button:hover{transform:translateX(2px)}}
+    @media(max-width:700px){.action-toast{bottom:18px}}
+    @media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.001ms!important;animation-iteration-count:1!important;transition-duration:.001ms!important;scroll-behavior:auto!important}}
   </style>
 </head>
 <body>
@@ -625,7 +641,7 @@
       <div class="side-bottom"><div class="userbox row"><img id="userAvatar" class="avatar" alt=""><div class="usertext" style="min-width:0"><div id="userName" style="font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis"></div><div id="userRole" class="tiny"></div></div></div></div>
     </aside>
     <main class="main">
-      <header class="topbar"><div class="topbar-title-wrap"><button id="menuToggle" class="menu-toggle" type="button" aria-label="Mở menu" aria-expanded="false">☰</button><div><h1 id="pageTitle" class="page-title">Tổng quan</h1><div id="pageSub" class="tiny"></div></div></div><div class="row"><span id="syncBadge" class="pill">v1.2.0</span><button id="logoutBtn" class="btn ghost small">Đăng xuất</button></div></header>
+      <header class="topbar"><div class="topbar-title-wrap"><button id="menuToggle" class="menu-toggle" type="button" aria-label="Mở menu" aria-expanded="false">☰</button><div><h1 id="pageTitle" class="page-title">Tổng quan</h1><div id="pageSub" class="tiny"></div></div></div><div class="row"><span id="syncBadge" class="pill">v1.2.1</span><button id="logoutBtn" class="btn ghost small">Đăng xuất</button></div></header>
       <div class="content">
         <section id="section-dashboard" class="section active"></section>
         <section id="section-live" class="section"></section>
@@ -690,7 +706,7 @@
 
     function previewTs(iso){ return {toDate:()=>new Date(iso)}; }
     function enterPreview(){
-      state.config={version:'1.2.0-preview',tiktokConfigured:true};
+      state.config={version:'1.2.1-preview',tiktokConfigured:true};
       state.user={uid:'preview-admin',email:'admin@sellerkbb.demo',displayName:'Quản trị viên Demo',photoURL:''};
       state.profile={role:'admin',status:'approved',displayName:'Quản trị viên Demo',permissions:['live.read','kpi.read']};
       state.users=[
@@ -799,7 +815,36 @@
       document.body.classList.toggle('menu-open',open);
     }
 
+    function showToast(message){
+      let el=$('#actionToast');
+      if(!el){ el=document.createElement('div'); el.id='actionToast'; el.className='action-toast'; document.body.appendChild(el); }
+      el.textContent=message;
+      el.classList.remove('show');
+      requestAnimationFrame(()=>el.classList.add('show'));
+      clearTimeout(showToast.timer);
+      showToast.timer=setTimeout(()=>el.classList.remove('show'),1800);
+    }
+
+    function bindInteractionEffects(){
+      if(document.documentElement.dataset.fxBound==='1') return;
+      document.documentElement.dataset.fxBound='1';
+      document.addEventListener('pointerdown',e=>{
+        const target=e.target.closest('.btn,.nav button,.page-btn,.menu-toggle');
+        if(!target||target.disabled)return;
+        const rect=target.getBoundingClientRect();
+        target.style.setProperty('--tap-x',(e.clientX-rect.left)+'px');
+        target.style.setProperty('--tap-y',(e.clientY-rect.top)+'px');
+        target.classList.add('fx-press');
+        target.classList.remove('fx-ripple');
+        void target.offsetWidth;
+        target.classList.add('fx-ripple');
+      });
+      const clear=()=>document.querySelectorAll('.fx-press').forEach(x=>x.classList.remove('fx-press'));
+      document.addEventListener('pointerup',clear);
+      document.addEventListener('pointercancel',clear);
+    }
     function bindShell(){
+      bindInteractionEffects();
       $('#menuToggle').onclick=()=>setMobileMenu(!$('#sidebar').classList.contains('open'));
       $('#mobileMenuOverlay').onclick=()=>setMobileMenu(false);
       document.addEventListener('keydown',e=>{ if(e.key==='Escape') setMobileMenu(false); });
@@ -907,10 +952,12 @@
       if(PREVIEW){
         const host=state.users.find(u=>u.id===h.value), op=state.users.find(u=>u.id===o.value), item=state.sessions.find(x=>x.id===id);
         Object.assign(item,{hostUid:h.value||'',hostName:host?.displayName||'',operatorUid:o.value||'',operatorName:op?.displayName||''});
+        showToast('Đã lưu nhân sự cho phiên LIVE');
         renderAll(); return;
       }
       const host=state.users.find(u=>u.id===h.value), op=state.users.find(u=>u.id===o.value);
       await updateDoc(doc(state.db,'liveSessions',id),{hostUid:h.value||'',hostName:host?.displayName||host?.email||'',operatorUid:o.value||'',operatorName:op?.displayName||op?.email||'',updatedAt:serverTimestamp()});
+      showToast('Đã lưu nhân sự cho phiên LIVE');
       await loadData(); renderAll();
     }
 
@@ -970,7 +1017,7 @@
 
     function userApprovalCard(u){return `<div class="approval-item"><div class="row space"><div><b>${esc(u.displayName||u.email)}</b><div class="tiny">${esc(u.email||'')}</div></div><span class="pill warn">Chờ duyệt</span></div><div class="form-grid" style="margin-top:16px"><label><div class="tiny">Vai trò</div><select class="input" style="width:100%" data-role="${u.id}"><option value="host">Host Livestream</option><option value="operator">Nhân viên vận hành livestream</option><option value="admin">Quản trị viên</option></select></label><div><div class="tiny">Nội dung được phép xem</div><label class="checkline"><input type="checkbox" data-perm="live.read" data-uid="${u.id}" checked> Phiên LIVE</label><label class="checkline"><input type="checkbox" data-perm="kpi.read" data-uid="${u.id}" checked> KPI cá nhân / báo cáo</label></div></div><div class="row" style="margin-top:16px"><button class="btn primary" data-approve="${u.id}">Duyệt tài khoản</button></div></div>`;}
     function userApprovedRow(u){return `<div class="row space approved-user-row"><div><b>${esc(u.displayName||u.email)}</b><div class="tiny">${esc(u.email||'')} · ${(u.permissions||[]).join(', ')||'full/admin'}</div></div><span class="tag ${u.role}">${roleLabel(u.role)}</span></div>`;}
-    async function approveUser(uid){ const role=document.querySelector(`[data-role="${CSS.escape(uid)}"]`).value; const permissions=[...document.querySelectorAll(`[data-uid="${CSS.escape(uid)}"][data-perm]:checked`)].map(x=>x.dataset.perm); if(role==='admin'){permissions.splice(0,permissions.length,'live.read','kpi.read')} if(PREVIEW){ const u=state.users.find(x=>x.id===uid); Object.assign(u,{role,status:'approved',permissions}); renderAll(); return; } await updateDoc(doc(state.db,'users',uid),{role,status:'approved',permissions,approvedAt:serverTimestamp(),approvedBy:state.user.uid,updatedAt:serverTimestamp()}); await loadData(); renderAll(); }
+    async function approveUser(uid){ const role=document.querySelector(`[data-role="${CSS.escape(uid)}"]`).value; const permissions=[...document.querySelectorAll(`[data-uid="${CSS.escape(uid)}"][data-perm]:checked`)].map(x=>x.dataset.perm); if(role==='admin'){permissions.splice(0,permissions.length,'live.read','kpi.read')} if(PREVIEW){ const u=state.users.find(x=>x.id===uid); Object.assign(u,{role,status:'approved',permissions}); showToast('Đã duyệt tài khoản'); renderAll(); return; } await updateDoc(doc(state.db,'users',uid),{role,status:'approved',permissions,approvedAt:serverTimestamp(),approvedBy:state.user.uid,updatedAt:serverTimestamp()}); showToast('Đã duyệt tài khoản'); await loadData(); renderAll(); }
 
     async function renderTikTok(){
       if(!isAdmin()){ $('#section-tiktok').innerHTML='';return; }
