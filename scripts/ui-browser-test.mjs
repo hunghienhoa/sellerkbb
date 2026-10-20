@@ -280,6 +280,19 @@ try {
   await page.setViewport({width:390,height:844,deviceScaleFactor:1});
   await page.reload({waitUntil:"domcontentloaded"});
   await page.waitForSelector("#app:not(.hidden)",{timeout:30000});
+  await page.click('#section-dashboard [data-range-mode="30d"]');
+  const mobileMetrics=await page.$eval('#section-dashboard',root=>[...root.querySelectorAll('.metric-card')].map(card=>{
+    const label=card.querySelector('.metric-copy>span')?.textContent.trim()||'';
+    const value=card.querySelector('.metric-copy>strong');
+    if(!value)return {label,lines:0,whiteSpace:'',text:''};
+    const range=document.createRange();
+    range.selectNodeContents(value);
+    return {label,text:value.textContent.trim(),lines:range.getClientRects().length,whiteSpace:getComputedStyle(value).whiteSpace,fits:value.scrollWidth<=value.clientWidth+1};
+  }));
+  assert(mobileMetrics.length===4,"Mobile Dashboard metric cards missing");
+  assert(mobileMetrics.every(x=>x.lines===1&&x.whiteSpace==='nowrap'&&x.fits),"Mobile Dashboard metric values must stay on one line without clipping");
+  const mobileGmv=mobileMetrics.find(x=>x.label==='GMV cuối kỳ');
+  assert(mobileGmv&&mobileGmv.text.endsWith('đ')&&mobileGmv.lines===1,"Mobile GMV cuối kỳ must display the full amount and đ on one line");
   await page.click('#menuToggle');
   await page.waitForFunction(()=>document.querySelector('#sidebar')?.classList.contains('open'));
   await sleep(300);
