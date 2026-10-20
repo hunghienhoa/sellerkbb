@@ -4,7 +4,7 @@
 
 ### Báo cáo TikTok LIVE · KPI nhân sự · Tự đồng bộ 24/24
 
-**Phiên bản hiện tại: v1.36.1**
+**Phiên bản hiện tại: v1.37.0**
 
 [![GitHub Release](https://img.shields.io/github/v/release/hunghienhoa/sellerkbb?label=Release)](https://github.com/hunghienhoa/sellerkbb/releases)
 [![GitHub Actions](https://img.shields.io/github/actions/workflow/status/hunghienhoa/sellerkbb/deploy.yml?branch=main&label=Ki%E1%BB%83m%20tra%20%26%20Backup)](https://github.com/hunghienhoa/sellerkbb/actions)
@@ -17,24 +17,24 @@
 
 ---
 
-## 🆕 Cập nhật mới nhất — v1.36.1
+## 🆕 Cập nhật mới nhất — v1.37.0
 
-- Sửa triệt để cơ chế **KPI tự động**: không còn lấy **GMV LIVE TikTok gộp** để tính KPI.
-- Bổ sung lớp an toàn khi chốt KPI: phiên có đơn chỉ **Khớp theo thời gian** vẫn được hiển thị **KPI tạm tính**, nhưng **không tự chuyển thành KPI đã chốt** cho tới khi liên kết LIVE đủ chắc chắn.
-- KPI tự động nay dùng **GMV đối soát cấp đơn sau hủy/hoàn đã biết**.
-- Host Livestream = **0,3%** GMV đối soát; Nhân viên vận hành Livestream = **0,1%** GMV đối soát của cùng phiên.
-- Tách rõ 3 trạng thái:
-  - **KPI tạm tính**: đối soát đã có nhưng vẫn còn đơn/hậu mãi chưa kết thúc.
-  - **KPI đã chốt**: toàn bộ đơn đối soát đã ở trạng thái kết thúc và không còn hậu mãi đang xử lý.
-  - **Chờ đối soát**: thiếu Orders/Return & Refund hoặc chưa lấy đủ dữ liệu; SellerKBB **không lấy GMV gộp để tính thay**.
-- KPI thủ công được coi là phần **đã chốt** vì Admin tự nhập GMV sau hoàn/hủy của từng Host.
-- Trang KPI nhân sự hiển thị riêng **KPI đã chốt / KPI tạm tính / KPI dự kiến / phiên chờ đối soát**.
-- CSV KPI xuất riêng các cột GMV/KPI đã chốt, tạm tính, thủ công và số phiên chờ đối soát.
-- CSV phiên LIVE đổi tên cột GMV gộp rõ ràng và bổ sung **GMV đối soát dùng KPI + trạng thái KPI**.
-- Backend tự đối soát KPI khi cron chạy: ưu tiên phiên gần đây mỗi giờ và tiếp tục rà phiên chưa chốt trong vòng bảo vệ 60 ngày ở lượt hằng ngày.
-- Tối ưu Return/Refund API bằng cách tra nhiều order ID theo batch thay vì gọi từng đơn, giảm số request và giúp đối soát tự động ổn định hơn.
-- Khi bấm **Xem đơn / Làm mới**, kết quả đối soát cũng cập nhật ngay GMV dùng KPI của phiên.
-- README, kiểm thử và GitHub Release được cập nhật cùng phiên bản.
+- Chuẩn hóa tên GMV để tránh hiểu nhầm:
+  - **GMV đã ghi nhận** = số TikTok cập nhật mới nhất của đúng phiên LIVE; nếu TikTok xác nhận thêm đơn sau khi LIVE kết thúc thì SellerKBB tiếp tục cập nhật số này.
+  - **GMV chờ đối soát** = số tạm tính sau hủy/hoàn đã biết của **các đơn có tín hiệu LIVE chắc chắn**.
+  - **GMV sau khi hoàn hủy** = số cuối cùng đã chốt; đây là GMV dùng để chốt KPI.
+- Bổ sung **GMV sau khi hoàn hủy** trực tiếp vào bảng/card Phiên LIVE trên PC và mobile.
+- Đơn chỉ **Khớp theo thời gian** vẫn hiển thị trong đối soát để Admin kiểm tra nhưng **không được cộng vào KPI tự động**, kể cả KPI tạm tính.
+- Popup Đối soát hiển thị riêng **GMV đã ghi nhận / GMV chờ đối soát / GMV sau khi hoàn hủy** và số đơn khớp thời gian bị loại khỏi KPI.
+- KPI tự động chỉ áp dụng cho phiên **không tích Tính KPI thủ công**.
+- KPI thủ công có kiểm soát cân bằng GMV:
+  - Tổng GMV Host bằng GMV sau khi hoàn hủy → báo xanh, đủ điều kiện.
+  - Tổng GMV Host nhỏ hơn → báo vàng số còn chưa phân bổ nhưng vẫn cho lưu.
+  - Tổng GMV Host lớn hơn → báo đỏ số vượt và **chặn lưu**.
+  - Phiên chưa có GMV sau khi hoàn hủy → cho **Lưu nháp**, chưa cộng vào KPI đã chốt.
+- KPI thủ công đã lưu nháp sẽ tự được kiểm tra lại khi phiên có số chốt; nếu hợp lệ thì được tính, nếu vượt thì yêu cầu Admin sửa.
+- README bổ sung phần giải thích 3 loại GMV, ví dụ tính chi tiết, quy tắc KPI tự động/thủ công và lịch sử các phiên bản gần đây.
+- README, kiểm thử PC/mobile và GitHub Release được cập nhật cùng phiên bản.
 
 ---
 
@@ -67,7 +67,7 @@ Bạn không cần hiểu hết code. Chỉ cần nhớ 4 nơi chính:
 - KPI mặc định:
   - Host Livestream: **0,3% GMV dùng KPI**.
   - Livestream operator: **0,1% GMV dùng KPI**.
-- **Từ v1.36.0:** LIVE Analytics GMV của TikTok chỉ còn là số tham khảo. KPI tự động lấy **GMV đối soát cấp đơn**; không fallback sang GMV gộp nếu đối soát chưa đủ dữ liệu.
+- **Từ v1.37.0:** giao diện dùng 3 tên rõ ràng: **GMV đã ghi nhận / GMV chờ đối soát / GMV sau khi hoàn hủy**. KPI tự động chỉ dùng đơn có tín hiệu LIVE chắc chắn; đơn chỉ khớp thời gian không được tính KPI.
 - **Ngày Campaign/Mega Live** có thể bật chế độ KPI thủ công; Host/Operator được để trống và phiên đó không cộng KPI tự động.
 - Bộ lọc: **Hôm nay / 7 ngày / 30 Ngày / Chọn ngày**.
 - Có trang Xuất file riêng.
@@ -108,28 +108,75 @@ Phiên LIVE tự đồng bộ mới luôn để Host/Operator **trống** để 
 Nếu một phiên kéo dài nhiều giờ và nhiều người thay ca:
 
 1. Tích **Ngày Campaign/Mega Live · tính KPI thủ công**.
-2. SellerKBB tự xóa lựa chọn Host/Operator của phiên đó.
+2. SellerKBB tự xóa lựa chọn Host/Operator tự động của phiên đó.
 3. Bấm **Lưu**.
-4. Phiên vẫn xuất hiện trong doanh thu/báo cáo nhưng không cộng KPI tự động.
+4. Phiên vẫn xuất hiện trong doanh thu/báo cáo nhưng **không cộng KPI tự động**.
+5. Phiên được đưa vào tab **KPI thủ công** trong nhóm **Công cụ**.
+6. Admin thêm những Host/Operator thực sự cần tính và nhập **GMV sau hoàn/hủy của từng Host**.
+7. KPI Host tự tính = GMV Host × **0,3%**; KPI Vận hành đi cùng Host = GMV Host × **0,1%**.
+8. SellerKBB không tự chia GMV tổng phiên cho các Host.
 
-5. Phiên được đưa vào tab riêng **KPI thủ công** trong nhóm **Công cụ**, cùng với **Xuất file**.
-6. Admin chỉ thêm những người thực sự cần tính KPI, nhập **GMV sau hoàn/hủy của cá nhân** và **KPI thủ công của cá nhân**.
-7. SellerKBB không tự chia GMV tổng phiên; KPI thủ công đã lưu sẽ tự cộng vào tab **KPI nhân sự** của đúng người.
+#### Kiểm soát GMV thủ công
+
+SellerKBB so sánh **tổng GMV các Host đã nhập** với **GMV sau khi hoàn hủy đã chốt của cả phiên**:
+
+- ✅ **Bằng nhau:** hợp lệ hoàn toàn.
+- 🟡 **Nhỏ hơn:** vẫn cho lưu; hiển thị số GMV còn chưa phân bổ.
+- 🔴 **Lớn hơn:** chặn lưu và hiển thị chính xác số tiền vượt.
+- 🟣 **Phiên chưa có số chốt:** cho **Lưu nháp**; dữ liệu chưa cộng vào KPI đã chốt.
+
+Khi một bản nháp sau đó có GMV sau khi hoàn hủy:
+- nếu tổng Host ≤ số chốt → dữ liệu đủ điều kiện tính KPI;
+- nếu tổng Host > số chốt → không cộng KPI và yêu cầu Admin chỉnh lại.
 
 ### 5. Xem KPI
 
-Trang **KPI nhân sự** từ v1.36.0 dùng GMV đối soát cấp đơn:
+#### Ba loại GMV cần phân biệt
+
+| Tên trên SellerKBB | Ý nghĩa | Dùng tính KPI? |
+|---|---|---|
+| **GMV đã ghi nhận** | Số TikTok cập nhật mới nhất của đúng phiên LIVE. Sau khi LIVE kết thúc, nếu TikTok tiếp tục xác nhận dữ liệu của phiên thì số này vẫn được cập nhật. | Không dùng trực tiếp |
+| **GMV chờ đối soát** | GMV tạm tính sau hủy/hoàn đã biết của **các đơn có tín hiệu LIVE**. Có thể thay đổi khi đơn giao, hủy hoặc hoàn tiền. | Có, nhưng chỉ là KPI tạm tính |
+| **GMV sau khi hoàn hủy** | GMV cuối cùng của các đơn có tín hiệu LIVE sau khi trạng thái đơn/hậu mãi đã kết thúc. | Có, dùng chốt KPI |
+
+Đơn **Khớp theo thời gian** chỉ dùng để đối chiếu và cảnh báo. Từ v1.37.0, giá trị của các đơn này **không được cộng vào KPI tự động**.
+
+#### Ví dụ tính GMV
+
+Một phiên có các đơn có tín hiệu LIVE:
 
 ```text
-Host KPI       = GMV đối soát sau hủy/hoàn × 0,3%
-Operator KPI   = GMV đối soát sau hủy/hoàn × 0,1%
+Đơn A: 40.000.000đ · hoàn tất                  → 40.000.000đ
+Đơn B: 30.000.000đ · đã hủy                    →          0đ
+Đơn C: 25.000.000đ · đã hoàn 10.000.000đ       → 15.000.000đ
+Đơn D: 15.000.000đ · đang vận chuyển            → 15.000.000đ tạm tính
 ```
 
-- **KPI tạm tính:** đã có dữ liệu Orders + Return/Refund nhưng còn đơn chưa kết thúc.
-- **KPI đã chốt:** toàn bộ đơn đã ở trạng thái kết thúc, không còn hậu mãi đang xử lý và liên kết LIVE đủ chắc chắn; đơn chỉ khớp thời gian không làm phiên tự chốt.
-- **Chờ đối soát:** SellerKBB chưa có đủ dữ liệu để tính; hệ thống không lấy GMV Analytics gộp để thay thế.
+**GMV chờ đối soát = 40 + 0 + 15 + 15 = 70.000.000đ.**
+
+Nếu sau đó Đơn D bị hủy thì số giảm còn **55.000.000đ**.  
+Nếu Đơn D hoàn tất và không còn hậu mãi thì số cuối cùng là **70.000.000đ**.
+
+#### KPI tự động
+
+Chỉ áp dụng cho phiên **không tích Tính KPI thủ công**:
+
+```text
+Host KPI       = GMV đối soát có tín hiệu LIVE × 0,3%
+Operator KPI   = GMV đối soát có tín hiệu LIVE × 0,1%
+```
+
+- **KPI tạm tính:** đã có GMV chờ đối soát nhưng còn đơn/hậu mãi chưa kết thúc.
+- **KPI đã chốt:** đã có GMV sau khi hoàn hủy cuối cùng.
+- **Chờ đối soát:** chưa đủ dữ liệu Orders/Return & Refund hoặc chưa có đơn đủ tín hiệu LIVE; hệ thống không dùng GMV đã ghi nhận để tính thay.
 - **KPI dự kiến = KPI đã chốt + KPI tạm tính.**
-- **KPI thủ công** được cộng vào phần đã chốt vì Admin nhập trực tiếp GMV sau hoàn/hủy của cá nhân.
+
+#### KPI thủ công
+
+- Phiên đã tích **Tính KPI thủ công** không chạy KPI tự động.
+- Chỉ GMV của **Host** được dùng làm phần phân bổ; Operator đi cùng Host dùng cùng nền GMV đó để tính 0,1%.
+- KPI thủ công chỉ được cộng vào KPI đã chốt khi phiên có **GMV sau khi hoàn hủy** và tổng GMV Host không vượt số chốt.
+- Bản nháp chưa có số chốt không được cộng vào KPI đã chốt.
 
 ### 6. Xuất file
 
@@ -149,8 +196,10 @@ Vào tab **Đối soát đơn LIVE**:
 8. Nếu chỉ khớp theo giờ tạo đơn, hệ thống ghi **Khớp theo thời gian** để tránh hiểu nhầm là đã xác minh tuyệt đối.
 9. Dùng các thẻ trạng thái phía trên danh sách để lọc nhanh đơn cần kiểm tra.
 10. Đóng popup bằng nút **×**; khi đóng, nút **Xem đơn** của phiên đó hiện lại.
-11. Số **GMV dùng tính KPI** trong popup chính là GMV đối soát cấp đơn. Nếu còn đơn/hậu mãi chưa kết thúc thì KPI ở trạng thái **Tạm tính**; khi đủ điều kiện sẽ tự chuyển **Đã chốt**.
-12. Nếu thiếu quyền/dữ liệu Return & Refund, phiên chuyển sang **Chờ đối soát** và không cộng GMV gộp vào KPI.
+11. Popup hiển thị riêng **GMV đã ghi nhận / GMV chờ đối soát / GMV sau khi hoàn hủy**.
+12. Chỉ đơn **Có tín hiệu LIVE** mới được cộng vào GMV dùng KPI.
+13. Đơn **Khớp theo thời gian** vẫn hiển thị để kiểm tra nhưng được ghi rõ **không tính KPI**.
+14. Nếu thiếu quyền/dữ liệu Return & Refund, phiên chuyển sang **Chờ đối soát** và không lấy GMV đã ghi nhận để tính thay.
 
 > **Vì sao chưa chốt ngay sau khi giao?** Người mua vẫn có thể mở yêu cầu trả/hoàn sau khi đơn ở trạng thái Delivered. Với chính sách TikTok Shop Việt Nam hiện hành, cửa sổ này có thể tới 15 ngày với đa số nhóm hàng và 6 ngày với một số nhóm hàng. Vì vậy muốn gọi là “GMV đã chốt” phải dựa trên trạng thái đơn + hậu mãi, không chỉ dựa vào ngày LIVE.
 
@@ -162,6 +211,24 @@ Vào tab **Đối soát đơn LIVE**:
 - Bấm avatar để mở popup **ở chính giữa màn hình** với thông tin cơ bản: tên, Gmail, vai trò và trạng thái tài khoản.
 - Popup có nút **Đăng xuất**; không có mũi tên hay biểu tượng cài đặt trên top bar.
 - Nếu Google không có ảnh hoặc ảnh không tải được, SellerKBB dùng avatar chữ cái dự phòng.
+
+---
+
+## 🧾 Lịch sử thay đổi gần đây
+
+README giữ lại phần này để nhân sự có thể biết **vì sao giao diện/cách tính hiện tại khác bản cũ**.
+
+| Phiên bản | Thay đổi chính |
+|---|---|
+| **v1.37.0** | Chuẩn hóa 3 loại GMV; loại đơn chỉ khớp thời gian khỏi KPI; thêm kiểm soát thiếu/vượt cho KPI thủ công và chế độ Lưu nháp. |
+| **v1.36.1** | KPI tự động chuyển sang GMV đối soát; thêm lớp an toàn không chốt khi liên kết LIVE chưa chắc chắn. |
+| **v1.36.0** | Tách KPI Đã chốt / Tạm tính / Chờ đối soát / Dự kiến; cron tự cập nhật KPI đối soát. |
+| **v1.35.0** | Xem đơn bằng popup riêng; mobile full-screen; khóa cuộn nền để tránh vuốt nhầm sang phiên khác. |
+| **v1.34.0** | Thiết kế lại giao diện đối soát, thêm thẻ trạng thái đơn và bảo vệ dữ liệu phiên LIVE tối thiểu 60 ngày. |
+| **v1.33.0** | Thêm đối soát đơn theo từng phiên LIVE; làm rõ LIVE Analytics GMV là số gộp, không phải GMV sau hoàn/hủy. |
+| **v1.32.0** | Hoàn thiện KPI thủ công theo tab riêng, avatar tài khoản trên top bar và các fix mobile/iPhone Safari chống tự zoom khi nhập liệu. |
+
+> Từ các bản sau, mỗi lần thêm hoặc đổi nghiệp vụ phải cập nhật đồng thời **Cập nhật mới nhất**, **Hướng dẫn sử dụng hiện tại** và **Lịch sử thay đổi** trong README.
 
 ---
 

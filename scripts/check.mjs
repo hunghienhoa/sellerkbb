@@ -67,8 +67,10 @@ assert(worker.includes("function summarizeLiveReconciliation"), "Reconciliation 
 assert(worker.includes("async function refreshKpiReconciliations"), "Scheduled KPI reconciliation refresher missing");
 assert(worker.includes('status === "COMPLETED" && active.length === 0'), "Completed-order finalization rule missing");
 assert(worker.includes("const finalized = cancelled ||"), "Cancelled orders must finalize reconciliation");
-assert(worker.includes("const attributionConfirmed = orders.length === 0 || timeWindowOrders === 0;"), "KPI finalization must require confirmed LIVE attribution");
-assert(worker.includes("!attributionConfirmed"), "Ambiguous time-window orders must keep KPI provisional");
+assert(worker.includes("const liveSignalOrderRows = orders.filter(order => order?.attribution === \"live_signal\")"), "KPI reconciliation must isolate confirmed LIVE orders");
+assert(worker.includes("gmvAmount: usableForKpi ? confirmedLiveSignalAmount : 0"), "Automatic KPI GMV must use confirmed LIVE signal amount only");
+assert(worker.includes("timeWindowNetAmount"), "Time-window-only GMV exclusion summary missing");
+assert(worker.includes("các đơn chỉ khớp theo thời gian không được cộng vào KPI"), "Backend must explain time-window orders are excluded from KPI");
 assert(worker.includes("reconciliation: previous?.reconciliation"), "Auto-sync must preserve reconciliation summary");
 assert(worker.includes("await refreshKpiReconciliations(env, token.access_token, merged, reason)"), "Auto-sync must refresh reconciled KPI basis");
 assert(worker.includes("await persistReconciliationSummary(env, liveId, result.kpiSummary)"), "Manual reconciliation must persist KPI summary");
@@ -172,11 +174,13 @@ assert(html.includes("cur.waitingSessions++"), "KPI waiting-session tracking mis
 assert(html.includes("cur.finalAutoGmv+=basis.gmv"), "Final reconciled GMV aggregation missing");
 assert(html.includes("cur.provisionalAutoGmv+=basis.gmv"), "Provisional reconciled GMV aggregation missing");
 assert(html.includes("KPI đã chốt")&&html.includes("KPI tạm tính")&&html.includes("KPI dự kiến")&&html.includes("Chờ đối soát"), "KPI final/provisional/waiting labels missing");
-assert(html.includes("KPI tự động không dùng GMV LIVE TikTok gộp"), "KPI guide must state gross GMV is not used");
+assert(html.includes("KPI tự động chỉ dùng đơn có tín hiệu LIVE"), "KPI guide must state only confirmed LIVE orders are used");
 assert(!html.includes("KPI tự động đang tạm dùng GMV LIVE gộp"), "Legacy gross-GMV KPI warning must be removed");
-assert(html.includes("gmv_reconciled_for_kpi")&&html.includes("kpi_status"), "LIVE CSV reconciled KPI fields missing");
+assert(html.includes("gmv_recorded_latest")&&html.includes("gmv_pending_reconciliation")&&html.includes("gmv_after_cancel_refund_final")&&html.includes("gmv_time_window_excluded")&&html.includes("kpi_status"), "LIVE CSV three-stage GMV fields missing");
 assert(html.includes("gmv_auto_final")&&html.includes("gmv_auto_provisional"), "KPI CSV final/provisional fields missing");
-assert(readme.includes("không còn lấy **GMV LIVE TikTok gộp**"), "README must document reconciled automatic KPI basis");
+assert(readme.includes("**GMV đã ghi nhận**")&&readme.includes("**GMV chờ đối soát**")&&readme.includes("**GMV sau khi hoàn hủy**"), "README must document the three GMV stages");
+assert(readme.includes("không được cộng vào KPI tự động"), "README must document time-window order exclusion from KPI");
+assert(readme.includes("Lịch sử thay đổi gần đây"), "README version history missing");
 assert(html.includes("Phiên KPI thủ công"), "Manual KPI section missing");
 assert(html.includes("GMV sau hoàn/hủy của Host Livestream"), "Host manual GMV field missing");
 assert(html.includes("function manualMoneyDisplay(value)"), "Manual KPI VND formatter missing");
@@ -207,6 +211,18 @@ assert(html.includes("Không bắt buộc đủ số người tham gia"), "Manua
 assert(html.includes("SellerKBB không tự chia GMV tổng phiên"), "No-equal-split rule missing");
 assert(html.includes("manualKpiEntries:Array.isArray"), "Preview manual KPI persistence missing");
 assert(html.includes("manualKpiEntries:entries"), "Firestore manual KPI persistence missing");
+assert(html.includes("function manualKpiBalance(session,hostTotal)"), "Manual KPI balance validator missing");
+assert(html.includes("function manualKpiValidation(session"), "Manual KPI validation helper missing");
+assert(html.includes("data-manual-validation-status"), "Manual KPI validation status UI missing");
+assert(html.includes("GMV các Host đang vượt GMV sau khi hoàn hủy"), "Manual KPI excess-GMV warning missing");
+assert(html.includes("Hệ thống chặn lưu cho tới khi sửa lại"), "Manual KPI over-allocation block explanation missing");
+assert(html.includes("Dữ liệu được lưu nháp và chưa cộng vào KPI đã chốt"), "Manual KPI draft explanation missing");
+assert(html.includes("if(validation.status==='excess')"), "Manual KPI save must block excess allocation");
+assert(html.includes("if(validation.countable)"), "Manual KPI aggregation must exclude drafts/excess");
+assert(html.includes("manualKpiHostTotal"), "Manual KPI must compare Host-only GMV total");
+assert(html.includes("GMV đã ghi nhận")&&html.includes("GMV chờ đối soát")&&html.includes("GMV sau khi hoàn hủy"), "Three GMV labels missing from LIVE UI");
+assert(!html.includes("GMV lần đầu ghi nhận"), "Legacy first-recorded GMV label must be removed");
+
 assert(html.includes("manualKpi:0"), "Manual KPI aggregate field missing");
 assert(html.includes('id="section-manual-kpi"'), "Dedicated manual KPI section missing");
 assert(html.includes("{id:'manual-kpi',icon:'settings',label:'KPI thủ công',show:isAdmin()}"), "Manual KPI nav tab missing");

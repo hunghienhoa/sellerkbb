@@ -648,47 +648,48 @@ function summarizeLiveReconciliation(result) {
   const orders = Array.isArray(result?.orders) ? result.orders : [];
   const analyticsGmvAmount = moneyNumber(result?.live?.analyticsGmvAmount);
   const orderWindowAmount = moneyNumber(result?.totals?.orderWindowAmount);
-  const netAmount = moneyNumber(result?.totals?.provisionalNetAmount);
+  const confirmedLiveSignalAmount = moneyNumber(result?.totals?.confirmedLiveSignalAmount);
   const aftersalesAvailable = result?.scope?.aftersalesAvailable !== false;
-  const hasOrderData = orders.length > 0 || analyticsGmvAmount === 0;
-  const amountDataAvailable = orderWindowAmount > 0 || analyticsGmvAmount === 0;
-  const usableForKpi = aftersalesAvailable && hasOrderData && amountDataAvailable;
-  const liveSignalOrders = orders.filter(order => order?.attribution === "live_signal").length;
-  const timeWindowOrders = Math.max(0, orders.length - liveSignalOrders);
-  const attributionConfirmed = orders.length === 0 || timeWindowOrders === 0;
-  const allFinal = usableForKpi && attributionConfirmed && orders.every(order => order?.finalized === true);
+  const liveSignalOrderRows = orders.filter(order => order?.attribution === "live_signal");
+  const timeWindowOrderRows = orders.filter(order => order?.attribution !== "live_signal");
+  const liveSignalOrders = liveSignalOrderRows.length;
+  const timeWindowOrders = timeWindowOrderRows.length;
+  const timeWindowNetAmount = timeWindowOrderRows.reduce((sum, order) => sum + moneyNumber(order?.netAmount), 0);
+  const hasConfirmedOrderData = liveSignalOrders > 0 || analyticsGmvAmount === 0;
+  const usableForKpi = aftersalesAvailable && hasConfirmedOrderData;
+  const allFinal = usableForKpi && liveSignalOrderRows.every(order => order?.finalized === true);
   let status = "provisional";
   let reason = "";
   if (!aftersalesAvailable) {
     status = "blocked";
     reason = "Thiếu quyền hoặc dữ liệu Return/Refund; chưa dùng số này để tính KPI.";
-  } else if (!hasOrderData || !amountDataAvailable) {
+  } else if (!hasConfirmedOrderData) {
     status = "waiting";
-    reason = "Chưa lấy đủ dữ liệu đơn để tính KPI.";
-  } else if (!attributionConfirmed) {
-    reason = "KPI đang tạm tính vì còn đơn chỉ khớp theo thời gian; SellerKBB chưa tự chốt cho tới khi liên kết LIVE đủ chắc chắn.";
+    reason = "Chưa có đơn đủ tín hiệu LIVE để tính KPI; các đơn chỉ khớp theo thời gian không được cộng vào KPI.";
   } else if (allFinal) {
     status = "final";
-    reason = "Tất cả đơn đã có tín hiệu LIVE, ở trạng thái kết thúc và không còn hậu mãi đang xử lý.";
+    reason = "Toàn bộ đơn có tín hiệu LIVE dùng cho KPI đã kết thúc và không còn hậu mãi đang xử lý.";
   } else {
-    reason = "KPI đang tạm tính và sẽ tự thay đổi khi đơn giao, hủy hoặc hoàn tiền cập nhật.";
+    reason = "GMV chờ đối soát chỉ gồm đơn có tín hiệu LIVE và sẽ tự cập nhật khi đơn giao, hủy hoặc hoàn tiền thay đổi.";
   }
   return {
     status,
     usableForKpi,
-    gmvAmount: usableForKpi ? netAmount : 0,
+    gmvAmount: usableForKpi ? confirmedLiveSignalAmount : 0,
     analyticsGmvAmount,
     orderWindowAmount,
-    confirmedLiveSignalAmount: moneyNumber(result?.totals?.confirmedLiveSignalAmount),
+    confirmedLiveSignalAmount,
+    timeWindowNetAmount,
     orderCount: orders.length,
-    pendingOrderCount: orders.filter(order => order?.finalized !== true).length,
+    kpiOrderCount: liveSignalOrders,
+    pendingOrderCount: liveSignalOrderRows.filter(order => order?.finalized !== true).length,
     cancelledCount: Number(result?.counts?.cancelled || 0),
     returningCount: Number(result?.counts?.returning || 0),
     refundedCount: Number(result?.counts?.refunded || 0),
     aftersalesAvailable,
     liveSignalOrders,
     timeWindowOrders,
-    attribution: timeWindowOrders === 0 && liveSignalOrders > 0 ? "live_signal" : (liveSignalOrders > 0 ? "mixed" : "time_window"),
+    attribution: liveSignalOrders > 0 ? (timeWindowOrders > 0 ? "mixed" : "live_signal") : "time_window",
     generatedAt: result?.generatedAt || new Date().toISOString(),
     finalizedAt: allFinal ? (result?.generatedAt || new Date().toISOString()) : "",
     reason
