@@ -76,7 +76,7 @@ assert(html.includes('id="accountPopover"'), "Account information popover missin
 assert(html.includes("function avatarSrc(user={})"), "Google avatar helper missing");
 assert(html.includes("state.user.photoURL||state.profile.photoURL"), "Current Google photoURL wiring missing");
 assert(html.includes("userIdentityHtml(u,true)"), "User-list avatar identity missing");
-assert(html.includes("userIdentityHtml(userDisplayRecord(r.uid,r.name),false)"), "KPI avatar identity missing");
+assert(html.includes("userIdentityHtml(staffDisplayRecord(r.uid,r.name),false)"), "KPI staff avatar identity missing");
 assert(html.includes('id="accountLogoutBtn"'), "Account popover logout missing");
 assert(!html.includes('id="logoutBtn"'), "Legacy topbar logout button should be removed");
 assert(readme.includes("Hồ sơ Google & đăng xuất"), "README Google profile/logout guide missing");
