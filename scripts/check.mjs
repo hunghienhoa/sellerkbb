@@ -90,6 +90,8 @@ assert(worker.includes("const kpiOrderRows = [...liveSignalOrderRows, ...provisi
 assert(worker.includes("gmvAmount: usableForKpi ? kpiGmvAmount : 0"), "Automatic KPI GMV must use reconciled KPI rows");
 assert(worker.includes("provisionalTimeWindowAmount")&&worker.includes("excludedTimeWindowAmount"), "Time-window provisional/excluded totals missing");
 assert(worker.includes("Chỉ có một kênh nội bộ LIVE trong khung giờ"), "Backend must explain single-LIVE provisional KPI rule");
+assert(worker.includes("overlapProrated")&&worker.includes("overlapAdjustmentRatio")&&worker.includes("overlapAdjustedGmvAmount"), "Overlapping internal LIVE must use analytics GMV with aftersales ratio instead of blocking");
+assert(!worker.includes('status = "blocked";\n    reason = "Có " + overlapCount + " phiên LIVE nội bộ chồng thời gian'), "Overlapping internal LIVE must not hard-block KPI");
 assert(worker.includes("reconciliation: previous?.reconciliation"), "Auto-sync must preserve reconciliation summary");
 assert(worker.includes("await refreshKpiReconciliations(env, token.access_token, merged, reason)"), "Auto-sync must refresh reconciled KPI basis");
 assert(worker.includes("await persistReconciliationSummary(env, liveId, result.kpiSummary)"), "Manual reconciliation must persist KPI summary");
@@ -360,6 +362,8 @@ assert(worker.includes("order_ids: ids")&&!worker.includes('order_ids: ids.join(
 assert(worker.includes("const query = { shop_cipher: shopCipher, page_size: 50 };"), "Return/Refund page_size must stay within TikTok maximum 50");
 assert(html.includes("Chưa kiểm tra được"), "Order aftersales UI must distinguish API failure from no aftersales");
 assert(html.includes("KPI tạm tính"), "Single-LIVE provisional KPI badge missing");
+assert(html.includes("đối soát chồng LIVE")&&html.includes("dùng tính tỷ lệ hủy/hoàn"), "Overlap reconciliation UI labels missing");
+assert(html.includes("Tỷ lệ hủy/hoàn hiện tại"), "Overlap aftersales ratio explanation missing");
 assert(worker.includes("SELLERKBB_ALLOWED_LIVE_CHANNELS"), "SellerKBB LIVE channel whitelist missing");
 assert(worker.includes("parsed.filter(isAllowedSellerKbbLiveChannel)"), "Cached LIVE data must be whitelist-filtered");
 assert(worker.includes("insideRefreshedWindow")&&worker.includes("freshIds.has(id)"), "Refreshed sync window must prune stale affiliate sessions");
