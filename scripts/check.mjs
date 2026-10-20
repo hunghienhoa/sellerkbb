@@ -99,6 +99,8 @@ assert(html.includes("setTimeout(()=>el.classList.remove('show'),3200)"), "Toast
 assert(html.includes("el.setAttribute('role','status')")&&html.includes("el.setAttribute('aria-live','polite')"), "Toast accessibility semantics missing");
 assert(html.includes("white-space:nowrap;")&&html.includes("font-variant-numeric:tabular-nums"), "Mobile metric one-line numeric styling missing");
 assert(html.includes("font-size:clamp(12.5px,3.6vw,16px)"), "Mobile metric responsive font sizing missing");
+assert(html.includes("Mobile form controls: keep text >=16px to prevent iOS Safari focus zoom"), "Mobile iOS focus-zoom guard comment missing");
+assert(html.includes("input,\n  select,\n  textarea{\n    font-size:16px!important;"), "Mobile form controls must be forced to 16px");
 assert(html.includes(".metric-card{padding:10px;gap:7px;align-items:center;overflow:hidden}"), "Mobile metric compact card layout missing");
 assert(html.includes("@keyframes statusDotPulse"), "Active status pulse keyframes missing");
 assert(html.includes(".status-dot.ok::before"), "Active status pulse selector missing");
