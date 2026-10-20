@@ -241,6 +241,10 @@ assert(html.includes("if(validation.status==='excess')"), "Manual KPI save must 
 assert(html.includes("if(validation.countable)"), "Manual KPI aggregation must exclude drafts/excess");
 assert(html.includes("manualKpiHostTotal"), "Manual KPI must compare Host-only GMV total");
 assert(html.includes("GMV đã ghi nhận")&&html.includes("GMV chờ đối soát")&&html.includes("GMV sau khi hoàn hủy"), "Three GMV labels missing from LIVE UI");
+assert(html.includes("data-dashboard-final-gmv"), "Dashboard finalized GMV summary missing");
+assert(html.includes("const finalizedSessions=ss.filter(s=>sessionGmvFigures(s).final!==null)"), "Dashboard must aggregate finalized sessions only");
+assert(html.includes("const finalizedGmv=finalizedSessions.reduce"), "Dashboard finalized GMV aggregation missing");
+assert(html.includes("Chỉ cộng số cuối cùng của các phiên đã chốt/đã đối soát"), "Dashboard finalized GMV explanation missing");
 assert(!html.includes("GMV lần đầu ghi nhận"), "Legacy first-recorded GMV label must be removed");
 
 assert(html.includes("manualKpi:0"), "Manual KPI aggregate field missing");
