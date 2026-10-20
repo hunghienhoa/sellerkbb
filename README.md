@@ -4,7 +4,7 @@
 
 ### Báo cáo TikTok LIVE · KPI nhân sự · Tự đồng bộ 24/24
 
-**Phiên bản hiện tại: v1.46.3**
+**Phiên bản hiện tại: v1.46.4**
 
 [![GitHub Release](https://img.shields.io/github/v/release/hunghienhoa/sellerkbb?label=Release)](https://github.com/hunghienhoa/sellerkbb/releases)
 [![GitHub Actions](https://img.shields.io/github/actions/workflow/status/hunghienhoa/sellerkbb/deploy.yml?branch=main&label=Ki%E1%BB%83m%20tra%20%26%20Backup)](https://github.com/hunghienhoa/sellerkbb/actions)
@@ -17,14 +17,15 @@
 
 ---
 
-## 🆕 Cập nhật mới nhất — v1.46.3
+## 🆕 Cập nhật mới nhất — v1.46.4
 
-- Sửa trạng thái TikTok gây hiểu nhầm: sau khi đã kết nối Seller và đồng bộ thành công, lỗi cũ `tiktok_not_connected` giờ được xóa khỏi trạng thái đồng bộ.
-- Nút **Kết nối TikTok Seller** chỉ hiện khi chưa có Seller Token; khi đã kết nối, giao diện chuyển sang **Đồng bộ ngay 30 ngày** và **Kiểm tra trạng thái**.
-- Không thay đổi Seller Token/Refresh Token hiện có và không xóa dữ liệu LIVE đã đồng bộ.
-- Hotfix đối soát: TikTok Return/Refund nhận `order_ids` đúng dạng danh sách.
-- Chỉ đồng bộ và hiển thị LIVE của `shopkhangbaby` và `mekhangsua`; các kênh affiliate khác bị loại khỏi dữ liệu KPI.
-- Tách riêng cảnh báo `LIVE chồng thời gian` và `Thiếu dữ liệu hậu mãi`.
+- Sửa lỗi TikTok Return/Refund: `page_size` giảm từ 100 xuống 50 đúng giới hạn API; `order_ids` tiếp tục gửi dạng danh sách.
+- SellerKBB chỉ đồng bộ/hiển thị LIVE của đúng hai kênh nội bộ: `shopkhangbaby` và `mekhangsua`; các phiên affiliate khác không tham gia đối soát/KPI.
+- Nếu trong thời điểm tạo đơn chỉ có **một** trong hai kênh nội bộ đang LIVE, đơn không có `auto_combine_order_id` được tính vào **KPI tạm tính theo thời gian**.
+- Nếu hai kênh nội bộ LIVE chồng giờ, các đơn không xác định được phiên sẽ bị khóa khỏi KPI để tránh gán nhầm.
+- GMV KPI tạm tính tự giảm khi đơn hủy/hoàn; chỉ chuyển sang **GMV sau khi hoàn hủy / Đã chốt** khi các đơn dùng cho KPI đã kết thúc và không còn hậu mãi đang xử lý.
+- Giao diện hậu mãi phân biệt rõ **Không có** với **Chưa kiểm tra được** khi TikTok Return/Refund lỗi.
+- Không ép GMV đơn phải bằng GMV Analytics của TikTok; Analytics vẫn là số TikTok ghi nhận, còn KPI dùng dữ liệu đơn sau hủy/hoàn theo quy tắc đối soát trên.
 
 
 ---
@@ -74,6 +75,16 @@ Bạn không cần hiểu hết code. Chỉ cần nhớ 4 nơi chính:
 ### 1. Mở website
 
 Vào website SellerKBB. Mặc định hệ thống luôn chọn **Hôm nay**.
+
+### Quy tắc KPI tự động cho 2 kênh nội bộ
+
+SellerKBB chỉ dùng `shopkhangbaby` và `mekhangsua`.
+
+- Chỉ một kênh đang LIVE trong thời điểm đơn phát sinh → đơn khớp thời gian được cộng vào **GMV/KPI tạm tính**.
+- Hai kênh LIVE chồng giờ → đơn không có tín hiệu LIVE riêng bị khóa để tránh gán nhầm.
+- Đơn hủy có GMV KPI = 0; đơn hoàn tiền được trừ theo dữ liệu Return/Refund.
+- Khi đơn còn chờ đóng/giao/hậu mãi → chỉ là **tạm tính**.
+- Khi toàn bộ đơn dùng KPI đã kết thúc và không còn hậu mãi đang xử lý → phiên chuyển **Đã chốt**.
 
 ### 2. Kiểm tra Tổng quan
 
