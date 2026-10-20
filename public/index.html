@@ -2823,7 +2823,7 @@ tbody tr:hover td{background:#fffafb}
       <header class="topbar">
         <div class="topbar-title-wrap"><button id="menuToggle" class="menu-toggle" type="button" aria-label="Mở menu" aria-expanded="false">☰</button><div><h1 id="pageTitle" class="page-title">Tổng quan</h1><div id="pageSub" class="tiny"></div></div></div>
         <div class="topbar-right">
-          <span id="syncBadge" class="pill">v1.46.3</span>
+          <span id="syncBadge" class="pill">v1.46.4</span>
           <div class="account-menu-wrap">
             <button id="topbarAccountBtn" class="topbar-account-btn" type="button" aria-expanded="false" aria-controls="accountPopover" aria-label="Mở thông tin tài khoản">
               <img id="userAvatar" class="avatar topbar-account-avatar" alt="Ảnh đại diện Google">
@@ -3195,7 +3195,7 @@ tbody tr:hover td{background:#fffafb}
 
     function previewTs(iso){ return {toDate:()=>new Date(iso)}; }
     function enterPreview(){
-      state.config={version:'1.46.3-preview',tiktokConfigured:true};
+      state.config={version:'1.46.4-preview',tiktokConfigured:true};
       state.user={uid:'preview-admin',email:'admin@sellerkbb.demo',displayName:'Quản trị viên Demo',photoURL:avatarFallbackData('Quản trị viên Demo')};
       state.profile={role:'admin',status:'approved',displayName:'Quản trị viên Demo',photoURL:state.user.photoURL,permissions:['live.read','kpi.read']};
       state.maintenance={settings:{retentionDays:180,autoCleanup:true,emergencyPercent:85,firestoreSoftLimitMb:600,firestoreMaxSessions:FIRESTORE_TOTAL_SESSION_CAP,kvSoftKeyLimit:5000},github:{usedBytes:124000,limitBytes:10000000000,available:true},cloudflare:{keyCount:5,lastRun:{ranAt:new Date().toISOString(),deleted:0},usedBytes:428000,storageLimitBytes:1000000000,storageComplete:true},firebase:{freePlanMode:true,ttlEnabled:false,ttlRecommended:false,storageLimitBytes:1073741824}};
@@ -3672,8 +3672,15 @@ tbody tr:hover td{background:#fffafb}
       return figures.final!==null?fmtMoney(figures.final,session.currency):'Chưa chốt';
     }
 
-    function kpiStatusLabel(status){
-      return status==='final'?'Đã chốt':status==='provisional'?'Tạm tính':status==='blocked'?'Thiếu dữ liệu hậu mãi':'Chờ đối soát';
+    function kpiStatusLabel(status,summary=null){
+      if(status==='final')return 'Đã chốt';
+      if(status==='provisional')return 'Tạm tính';
+      if(status==='blocked'){
+        if(summary?.overlapAmbiguous===true)return 'LIVE chồng thời gian';
+        if(summary?.aftersalesAvailable===false)return 'Thiếu dữ liệu hậu mãi';
+        return 'Bị chặn đối soát';
+      }
+      return 'Chờ đối soát';
     }
 
     function kpiStatusPill(session){
@@ -3682,7 +3689,7 @@ tbody tr:hover td{background:#fffafb}
       const cls=basis.status==='final'?'kpi-status-final':basis.status==='provisional'?'kpi-status-provisional':'kpi-status-waiting';
       const value=basis.usable?' · '+fmtMoney(basis.gmv,session.currency):'';
       const mark=basis.status==='final'?'✓ ':''; 
-      return '<span class="pill '+cls+'">'+mark+esc(kpiStatusLabel(basis.status))+value+'</span>';
+      return '<span class="pill '+cls+'">'+mark+esc(kpiStatusLabel(basis.status,session?.reconciliation||null))+value+'</span>';
     }
 
     function deriveKpiSummaryFromReconciliation(result){
@@ -3890,7 +3897,7 @@ tbody tr:hover td{background:#fffafb}
           <div class="reconcile-overview-card"><span>GMV chờ đối soát</span><b>${result?.kpiSummary?.usableForKpi&&result?.kpiSummary?.status!=='final'?fmtMoney(result.kpiSummary.gmvAmount,session.currency):result?.kpiSummary?.status==='final'?'Đã chốt':'Chờ dữ liệu'}</b></div>
           <div class="reconcile-overview-card primary"><span>GMV sau khi hoàn hủy</span><b>${result?.kpiSummary?.status==='final'?fmtMoney(result.kpiSummary.gmvAmount,session.currency):'Chưa chốt'}</b></div>
         </div>
-        <div class="notice ${result?.kpiSummary?.status==='final'?'ok':result?.kpiSummary?.usableForKpi?'warn':'bad'} kpi-summary-note"><strong>KPI tự động: ${esc(kpiStatusLabel(result?.kpiSummary?.status||'waiting'))}.</strong> ${esc(result?.kpiSummary?.reason||'')} ${Number(result?.kpiSummary?.timeWindowOrders||0)>0?'Có '+new Intl.NumberFormat('vi-VN').format(Number(result.kpiSummary.timeWindowOrders||0))+' đơn chỉ khớp theo thời gian ('+fmtMoney(Number(result.kpiSummary.timeWindowNetAmount||0),session.currency)+') và không được cộng vào KPI.':''}</div>
+        <div class="notice ${result?.kpiSummary?.status==='final'?'ok':result?.kpiSummary?.usableForKpi?'warn':'bad'} kpi-summary-note"><strong>KPI tự động: ${esc(kpiStatusLabel(result?.kpiSummary?.status||'waiting',result?.kpiSummary||null))}.</strong> ${esc(result?.kpiSummary?.reason||'')} ${Number(result?.kpiSummary?.timeWindowOrders||0)>0?'Có '+new Intl.NumberFormat('vi-VN').format(Number(result.kpiSummary.timeWindowOrders||0))+' đơn chỉ khớp theo thời gian ('+fmtMoney(Number(result.kpiSummary.timeWindowNetAmount||0),session.currency)+') và không được cộng vào KPI.':''}</div>
         <div class="reconcile-filter-wrap">
           <div class="reconcile-filter-label">Lọc nhanh theo trạng thái đơn</div>
           <div class="reconcile-filterbar">${filters.map((x,i)=>`<button type="button" class="reconcile-filter-chip ${i===0?'active':''}" data-reconcile-filter="${x.key}"><span>${esc(x.label)}</span><b>${x.count}</b></button>`).join('')}</div>
