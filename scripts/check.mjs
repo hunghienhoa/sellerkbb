@@ -37,6 +37,12 @@ assert(html.includes('data-assignment-editor'), "Mobile Host/Operator editor wra
 assert(html.includes('data-edit-assignment="${s.id}"'), "Mobile Host/Operator edit control missing");
 assert(html.includes("querySelectorAll('[data-edit-assignment]')"), "Mobile Host/Operator edit binding missing");
 assert(html.includes("card.querySelector('[data-assignment-editor]')?.classList.remove('hidden')"), "Mobile Sửa action must reopen Host/Operator selectors");
+assert(html.includes("function hasSavedManualKpiType(session)"), "Saved Campaign/Mega compact-state helper missing");
+assert(html.includes("data-manual-type-summary"), "Saved Campaign/Mega summary missing");
+assert(html.includes("data-edit-manual-type"), "Campaign/Mega edit control missing");
+assert(html.includes("data-manual-kpi-session-summary"), "Saved manual KPI session summary missing");
+assert(html.includes("data-manual-kpi-session-editor"), "Manual KPI session editor wrapper missing");
+assert(html.includes("data-manual-kpi-edit"), "Manual KPI session edit control missing");
 assert(html.includes("PREVIEW_STATE_KEY='sellerkbb:preview-state:v1'"), "Preview persistence missing");
 assert(html.includes("persistPreviewState();"), "Preview save persistence call missing");
 assert(html.includes("restorePreviewState();"), "Preview restore missing");

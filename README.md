@@ -4,7 +4,7 @@
 
 ### Báo cáo TikTok LIVE · KPI nhân sự · Tự đồng bộ 24/24
 
-**Phiên bản hiện tại: v1.44.0**
+**Phiên bản hiện tại: v1.45.0**
 
 [![GitHub Release](https://img.shields.io/github/v/release/hunghienhoa/sellerkbb?label=Release)](https://github.com/hunghienhoa/sellerkbb/releases)
 [![GitHub Actions](https://img.shields.io/github/actions/workflow/status/hunghienhoa/sellerkbb/deploy.yml?branch=main&label=Ki%E1%BB%83m%20tra%20%26%20Backup)](https://github.com/hunghienhoa/sellerkbb/actions)
@@ -17,14 +17,14 @@
 
 ---
 
-## 🆕 Cập nhật mới nhất — v1.44.0
+## 🆕 Cập nhật mới nhất — v1.45.0
 
-- Trên điện thoại, sau khi đã lưu đủ **Host Livestream** và **Nhân viên vận hành**, SellerKBB tự thu gọn phần chọn người để card LIVE gọn hơn.
-- Trạng thái đã lưu chỉ còn hiển thị tên **Host / Vận hành** và nút **Sửa**.
-- Bấm **Sửa** sẽ mở lại hai ô chọn và nút **Lưu thiết lập**; lưu xong tự thu gọn lại.
-- Nếu mới gán thiếu Host hoặc Vận hành thì phần chọn vẫn mở để Admin hoàn tất.
-- Chế độ **Ngày Campaign/Mega Live · tính KPI thủ công** vẫn giữ nguyên: khi bật sẽ ẩn Host/Vận hành tự động và vẫn có nút lưu loại phiên.
-- README, kiểm thử mobile và GitHub Release được cập nhật cùng phiên bản.
+- Sau khi lưu **Ngày Campaign** hoặc **Mega Live**, ô chọn loại phiên và nút lưu tự thu gọn; chỉ còn loại phiên đã lưu và nút **Sửa**.
+- Bấm **Sửa** sẽ mở lại ô chọn Campaign/Mega và nút **Lưu/Lưu thiết lập** để đổi loại phiên.
+- Sau khi bấm **Lưu KPI thủ công**, cả khối nhập KPI của phiên tự thu gọn thành trạng thái **✓ KPI thủ công đã lưu** kèm GMV Host, số nhóm và nút **Sửa KPI**.
+- Bấm **Sửa KPI** mở lại phần nhập; từng cặp Host/Vận hành đã lưu vẫn tiếp tục có nút **Chi tiết** riêng như trước.
+- Cả hai trạng thái thu gọn vẫn giữ sau khi reload trang trên PC/mobile.
+- Quy trình cập nhật được ghi thành quy tắc dự án: mỗi bản phải cập nhật README, kiểm thử, đưa bản chính + bản demo lên web và chỉ giữ **5 GitHub Releases mới nhất**.
 
 ---
 
@@ -107,17 +107,19 @@ Nếu một phiên kéo dài nhiều giờ và nhiều người thay ca:
 2. SellerKBB hiện thêm ô **Gắn thẻ loại phiên**.
 3. Chọn **Ngày Campaign** hoặc **Mega Live**. Đây là lựa chọn bắt buộc trước khi lưu.
 4. SellerKBB tự xóa lựa chọn Host/Operator tự động của phiên đó và **ẩn hẳn hai ô Host Livestream / Nhân viên vận hành** khỏi card phiên LIVE.
-5. Bấm **Lưu**. Sau khi lưu, thẻ loại phiên sẽ hiển thị ngay trên phiên LIVE và trong tab KPI thủ công. Nếu bỏ tích KPI thủ công, hai ô Host/Vận hành sẽ hiện lại.
-6. Phiên vẫn xuất hiện trong doanh thu/báo cáo nhưng **không cộng KPI tự động**.
-7. Phiên được đưa vào tab **KPI thủ công** trong nhóm **Công cụ**.
-8. Admin thêm những Host/Operator thực sự cần tính và nhập **GMV sau hoàn/hủy của từng Host**.
-9. KPI Host tự tính = GMV Host × **0,3%**; KPI Vận hành đi cùng Host = GMV Host × **0,1%**.
-10. SellerKBB không tự chia GMV tổng phiên cho các Host.
+5. Bấm **Lưu/Lưu thiết lập**. Sau khi lưu, ô chọn loại phiên tự thu gọn, chỉ còn loại đã chọn và nút **Sửa**. Bấm **Sửa** để mở lại ô chọn khi cần đổi Campaign/Mega.
+6. Thẻ loại phiên vẫn hiển thị ngay trên phiên LIVE và trong tab KPI thủ công. Nếu bỏ tích KPI thủ công, hai ô Host/Vận hành sẽ hiện lại để cấu hình lại chế độ KPI tự động.
+7. Phiên vẫn xuất hiện trong doanh thu/báo cáo nhưng **không cộng KPI tự động**.
+8. Phiên được đưa vào tab **KPI thủ công** trong nhóm **Công cụ**.
+9. Admin thêm những Host/Operator thực sự cần tính và nhập **GMV sau hoàn/hủy của từng Host**.
+10. KPI Host tự tính = GMV Host × **0,3%**; KPI Vận hành đi cùng Host = GMV Host × **0,1%**.
+11. SellerKBB không tự chia GMV tổng phiên cho các Host.
 
 #### Cách nhập từng cặp Host / Vận hành
 
 - Khi thêm người mới, SellerKBB mở đầy đủ ô **Host / Vận hành / GMV sau hoàn hủy của Host / KPI Host / KPI Vận hành**.
 - Sau khi bấm **Lưu KPI thủ công**, cặp đã lưu được thu gọn thành một dòng chỉ còn tên **Host**, tên **Vận hành** và nút **Chi tiết**.
+- Đồng thời, cả khối KPI của phiên được thu gọn thành **✓ KPI thủ công đã lưu**. Bấm **Sửa KPI** để mở lại phần nhập; sau đó từng cặp đã lưu vẫn dùng nút **Chi tiết** để chỉnh đúng người.
 - Bấm **Chi tiết** để mở lại phần tính KPI và chỉnh sửa.
 - Ô GMV chỉ chứa phần số; chữ **đ** được giữ cố định bên phải nên có thể đặt con trỏ/xóa số bình thường.
 - Nút **Xóa người** nằm ở cuối phần Chi tiết của đúng cặp, tránh bấm nhầm khi đang nhập người mới.
@@ -234,6 +236,7 @@ README giữ lại phần này để nhân sự có thể biết **vì sao giao 
 
 | Phiên bản | Thay đổi chính |
 |---|---|
+| **v1.45.0** | Thu gọn loại Campaign/Mega sau khi lưu và thu gọn toàn bộ khối KPI thủ công sau khi lưu; thêm nút **Sửa** / **Sửa KPI** để mở lại khi cần chỉnh. |
 | **v1.44.0** | Mobile Phiên LIVE tự thu gọn Host/Vận hành sau khi lưu đủ, hiển thị tên đã gán và nút **Sửa** để mở lại bộ chọn khi cần đổi người. |
 | **v1.43.0** | Phiên LIVE đã chốt trên Tổng quan/Phiên LIVE dùng **✓ xanh + nền/viền xanh nhẹ**, không còn nhìn như trạng thái hồng tạm tính. |
 | **v1.42.0** | KPI thủ công thu gọn người đã lưu, sửa ô tiền với hậu tố **đ** cố định, bố trí lại nút xóa và thêm trạng thái xanh **Đã đối soát**. |
@@ -249,7 +252,7 @@ README giữ lại phần này để nhân sự có thể biết **vì sao giao 
 | **v1.33.0** | Thêm đối soát đơn theo từng phiên LIVE; làm rõ LIVE Analytics GMV là số gộp, không phải GMV sau hoàn/hủy. |
 | **v1.32.0** | Hoàn thiện KPI thủ công theo tab riêng, avatar tài khoản trên top bar và các fix mobile/iPhone Safari chống tự zoom khi nhập liệu. |
 
-> Từ các bản sau, mỗi lần thêm hoặc đổi nghiệp vụ phải cập nhật đồng thời **Cập nhật mới nhất**, **Hướng dẫn sử dụng hiện tại** và **Lịch sử thay đổi** trong README.
+> **Quy tắc bắt buộc cho mọi bản cập nhật sau:** cập nhật đồng thời **Cập nhật mới nhất + Hướng dẫn sử dụng hiện tại + Lịch sử thay đổi** trong README; chạy kiểm thử PC/mobile; đẩy bản chính lên website và kiểm tra **Bản xem thử /preview**; tạo GitHub Release có mô tả rõ thay đổi; chỉ giữ **5 Releases mới nhất**. Không coi một bản là hoàn tất nếu source đã lên GitHub nhưng website chưa chạy đúng version mới.
 
 ---
 

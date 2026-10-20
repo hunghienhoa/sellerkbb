@@ -210,6 +210,12 @@ try {
   const desktopManualRow='#section-live .desktop-live-table tbody tr:has([data-save-session="'+desktopId+'"])';
   assert(await page.$eval(desktopManualRow+' [data-manual-kpi]',e=>e.checked),"Campaign/Mega flag did not persist");
   assert(await page.$eval(desktopManualRow+' [data-manual-type]',e=>e.value)==='mega',"Mega Live classification did not persist");
+  assert(await page.$eval(desktopManualRow+' [data-manual-type-summary]',e=>getComputedStyle(e).display!=='none'&&e.textContent.includes('Mega Live')&&e.textContent.includes('Sửa')),"Saved Mega Live type must collapse into a summary");
+  assert(await page.$eval(desktopManualRow+' [data-manual-type-wrap]',e=>e.classList.contains('hidden')||getComputedStyle(e).display==='none'),"Saved Mega Live selector must stay hidden");
+  assert(await page.$eval(desktopManualRow+' [data-save-session]',e=>e.classList.contains('hidden')||getComputedStyle(e).display==='none'),"Saved manual type must hide the LIVE save button");
+  await page.click(desktopManualRow+' [data-edit-manual-type]');
+  assert(await page.$eval(desktopManualRow+' [data-manual-type-wrap]',e=>!e.classList.contains('hidden')&&getComputedStyle(e).display!=='none'),"Sửa manual type must reopen Campaign/Mega selector");
+  assert(await page.$eval(desktopManualRow+' [data-save-session]',e=>!e.classList.contains('hidden')&&getComputedStyle(e).display!=='none'),"Sửa manual type must restore the LIVE save button");
   assert(await page.$eval(desktopManualRow+' [data-auto-person-wrap]',e=>getComputedStyle(e).display==='none'),"Persisted manual desktop row must keep Host/Operator hidden");
   assert(await page.$eval(desktopManualRow,e=>e.textContent.includes('Mega Live · tính thủ công')),"Saved Mega Live badge missing on LIVE row");
   assert(await page.$eval(desktopManualRow+' select[data-person="host"]',e=>e.value)==='',"Campaign/Mega Host was restored unexpectedly");
@@ -273,6 +279,10 @@ try {
 
   await page.click(manualCard+' [data-manual-save]');
   await sleep(150);
+  assert(await page.$eval(manualCard+' [data-manual-kpi-session-summary]',e=>getComputedStyle(e).display!=='none'&&e.textContent.includes('KPI thủ công đã lưu')&&e.textContent.includes('Sửa KPI')),"Saved manual KPI session must collapse into a compact summary");
+  assert(await page.$eval(manualCard+' [data-manual-kpi-session-editor]',e=>e.classList.contains('hidden')||getComputedStyle(e).display==='none'),"Saved manual KPI editor must hide after save");
+  await page.click(manualCard+' [data-manual-kpi-edit]');
+  assert(await page.$eval(manualCard+' [data-manual-kpi-session-editor]',e=>!e.classList.contains('hidden')&&getComputedStyle(e).display!=='none'),"Sửa KPI must reopen the manual KPI editor");
   await page.click('[data-section="kpi"]');
   assert(await page.$eval('#section-kpi .kpi-rate-guide',e=>e.textContent.includes('Cách tính KPI')&&e.textContent.includes('Host Livestream = 0,3%')&&e.textContent.includes('Nhân viên vận hành Livestream = 0,1%')),"KPI rate explanation guide missing");
   assert(await page.$('#section-kpi .range-actions .pill')===null,"Old KPI rate pills must not remain in the time filter");
@@ -289,6 +299,9 @@ try {
   await page.click('[data-section="manual-kpi"]');
   await page.click('#section-manual-kpi [data-range-mode="30d"]');
   const savedManualCard='#section-manual-kpi [data-manual-session="'+manualSessionId+'"]';
+  assert(await page.$eval(savedManualCard+' [data-manual-kpi-session-summary]',e=>getComputedStyle(e).display!=='none'&&e.textContent.includes('Sửa KPI')),"Saved manual KPI session must remain collapsed after reload");
+  assert(await page.$eval(savedManualCard+' [data-manual-kpi-session-editor]',e=>e.classList.contains('hidden')||getComputedStyle(e).display==='none'),"Reloaded manual KPI editor must stay hidden");
+  await page.click(savedManualCard+' [data-manual-kpi-edit]');
   assert((await page.$$(savedManualCard+' [data-manual-entry-saved="1"]')).length>=1,"Saved manual KPI people must render as compact rows after save");
   assert(await page.$eval(savedManualCard+' [data-manual-entry-saved="1"] [data-manual-entry-details]',e=>e.classList.contains('hidden')),"Saved manual KPI details must start collapsed after reload");
   assert(await page.$eval(savedManualCard+' [data-manual-entry-saved="1"] .manual-kpi-entry-summary',e=>e.textContent.includes('Host:')&&e.textContent.includes('Vận hành:')&&e.textContent.includes('Chi tiết')),"Collapsed manual KPI summary must show Host Operator and Chi tiết");
