@@ -210,6 +210,17 @@ assert(!html.includes('data-manual-add-role="host"')&&!html.includes('data-manua
 assert(html.includes("Không bắt buộc đủ số người tham gia"), "Manual KPI optional-person rule missing");
 assert(html.includes("SellerKBB không tự chia GMV tổng phiên"), "No-equal-split rule missing");
 assert(html.includes("manualKpiEntries:Array.isArray"), "Preview manual KPI persistence missing");
+assert(html.includes("function manualKpiType(s)"), "Manual Campaign/Mega type normalizer missing");
+assert(html.includes("function manualKpiTypeSelect(session)"), "Manual Campaign/Mega selector missing");
+assert(html.includes('data-manual-type'), "Manual Campaign/Mega select control missing");
+assert(html.includes('value="campaign"')&&html.includes("Ngày Campaign"), "Campaign option missing");
+assert(html.includes('value="mega"')&&html.includes("Mega Live"), "Mega Live option missing");
+assert(html.includes("manualKpiType:manualKpiType(x)"), "Preview Campaign/Mega type persistence missing");
+assert(html.includes("manualKpiType:manualType"), "Firestore Campaign/Mega type persistence missing");
+assert(html.includes("Hãy chọn loại phiên: Ngày Campaign hoặc Mega Live"), "Manual type required validation missing");
+assert(html.includes("manual-live-type-pill"), "Campaign/Mega saved badge missing");
+assert(html.includes("manual_live_type"), "LIVE CSV Campaign/Mega type field missing");
+assert(readme.includes("Gắn thẻ loại phiên")&&readme.includes("Ngày Campaign")&&readme.includes("Mega Live"), "README Campaign/Mega classification guide missing");
 assert(html.includes("manualKpiEntries:entries"), "Firestore manual KPI persistence missing");
 assert(html.includes("function manualKpiBalance(session,hostTotal)"), "Manual KPI balance validator missing");
 assert(html.includes("function manualKpiValidation(session"), "Manual KPI validation helper missing");
