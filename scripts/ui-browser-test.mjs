@@ -60,11 +60,13 @@ try {
   assert(topbarAccountGeometry.accountLeft>=topbarAccountGeometry.titleRight,"Avatar must sit to the right of the page title");
   assert(topbarAccountGeometry.barRight-topbarAccountGeometry.accountRight<40,"Avatar must stay at the right edge");
   await page.click('#topbarAccountBtn');
-  assert(!(await page.$eval('#accountPopover',e=>e.classList.contains('hidden'))),"Account popup did not open from avatar");
+  assert(!(await page.$eval('#accountModalBackdrop',e=>e.classList.contains('hidden'))),"Account modal did not open from avatar");
   assert(await page.$eval('#accountPopover',e=>e.textContent.includes('Quản trị viên Demo')&&e.textContent.includes('admin@sellerkbb.demo')&&e.textContent.includes('Quản trị viên')&&e.textContent.includes('Đã duyệt')),"Account popup basic information missing");
-  assert(await page.$('#accountLogoutBtn')!==null,"Account popup logout button missing");
-  await page.click('#topbarAccountBtn');
-  assert(await page.$eval('#accountPopover',e=>e.classList.contains('hidden')),"Account popup did not close");
+  assert(await page.$('#accountLogoutBtn')!==null&&await page.$('#accountModalClose')!==null,"Account modal logout/close controls missing");
+  const desktopModal=await page.$eval('#accountPopover',e=>{const r=e.getBoundingClientRect();return {cx:r.left+r.width/2,cy:r.top+r.height/2,vw:innerWidth,vh:innerHeight};});
+  assert(Math.abs(desktopModal.cx-desktopModal.vw/2)<3&&Math.abs(desktopModal.cy-desktopModal.vh/2)<3,"Desktop account modal must be centered in the viewport");
+  await page.click('#accountModalClose');
+  assert(await page.$eval('#accountModalBackdrop',e=>e.classList.contains('hidden')),"Account modal did not close");
 
   assert(await page.$eval('#section-dashboard [data-range-mode="today"]',e=>e.classList.contains('active')),"Dashboard must default to Today");
   await page.click('#section-dashboard [data-range-mode="7d"]');
@@ -325,11 +327,11 @@ try {
   assert(await page.$('#topbarAccountBtn #userAvatar')!==null,"Mobile topbar avatar trigger missing");
   assert(await page.$eval('#topbarAccountBtn',e=>e.textContent.trim()===''&&!!e.querySelector('#userAvatar')),"Mobile topbar must show avatar only");
   await page.click('#topbarAccountBtn');
-  assert(!(await page.$eval('#accountPopover',e=>e.classList.contains('hidden'))),"Mobile account popup did not open");
+  assert(!(await page.$eval('#accountModalBackdrop',e=>e.classList.contains('hidden'))),"Mobile account modal did not open");
   assert(await page.$eval('#accountPopover',e=>e.textContent.includes('admin@sellerkbb.demo')&&(e.textContent.includes('Đăng xuất')||e.textContent.includes('Thoát Preview'))),"Mobile account popup information/logout missing");
-  const mobilePopup=await page.$eval('#accountPopover',e=>{const r=e.getBoundingClientRect();return {right:r.right,width:r.width,viewport:innerWidth};});
-  assert(mobilePopup.right<=mobilePopup.viewport&&mobilePopup.width<=mobilePopup.viewport-12,"Mobile account popup must fit viewport");
-  await page.click('#topbarAccountBtn');
+  const mobilePopup=await page.$eval('#accountPopover',e=>{const r=e.getBoundingClientRect();return {cx:r.left+r.width/2,cy:r.top+r.height/2,width:r.width,vw:innerWidth,vh:innerHeight};});
+  assert(mobilePopup.width<=mobilePopup.vw-20&&Math.abs(mobilePopup.cx-mobilePopup.vw/2)<3&&Math.abs(mobilePopup.cy-mobilePopup.vh/2)<3,"Mobile account modal must fit and stay centered");
+  await page.$eval('#accountModalBackdrop',e=>e.click());
   await page.$eval('#nav [data-section="live"]',e=>e.click());
   await page.waitForFunction(()=>!document.querySelector('#sidebar')?.classList.contains('open'));
   await sleep(320);

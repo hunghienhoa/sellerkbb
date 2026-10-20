@@ -4,7 +4,7 @@
 
 ### Báo cáo TikTok LIVE · KPI nhân sự · Tự đồng bộ 24/24
 
-**Phiên bản hiện tại: v1.29.0**
+**Phiên bản hiện tại: v1.30.0**
 
 [![GitHub Release](https://img.shields.io/github/v/release/hunghienhoa/sellerkbb?label=Release)](https://github.com/hunghienhoa/sellerkbb/releases)
 [![GitHub Actions](https://img.shields.io/github/actions/workflow/status/hunghienhoa/sellerkbb/deploy.yml?branch=main&label=Ki%E1%BB%83m%20tra%20%26%20Backup)](https://github.com/hunghienhoa/sellerkbb/actions)
@@ -17,14 +17,13 @@
 
 ---
 
-## 🆕 Cập nhật mới nhất — v1.29.0
+## 🆕 Cập nhật mới nhất — v1.30.0
 
-- Top bar giờ **chỉ hiển thị ảnh avatar của user đang đăng nhập** ở góc phải; ẩn hoàn toàn tên và vai trò khỏi thanh bar.
-- Xóa đường phân cách dọc cạnh user để top bar gọn đúng bố cục yêu cầu.
-- Bấm trực tiếp vào **avatar** sẽ mở popup thông tin tài khoản cơ bản gồm **ảnh, tên, email, vai trò, trạng thái**.
-- Popup có nút **Đăng xuất** (Preview hiển thị **Thoát Preview**).
-- Không có mũi tên, không có biểu tượng cài đặt và không có chữ user nằm thường trực trên top bar.
-- Popup tự đóng khi bấm ra ngoài, bấm Escape hoặc chuyển tab.
+- Khi bấm **avatar user trên top bar**, popup thông tin tài khoản giờ hiển thị **chính giữa màn hình** thay vì bám cạnh avatar.
+- Bổ sung lớp nền mờ hồng nhẹ phía sau để popup nổi bật và dễ tập trung.
+- Popup vẫn hiển thị ảnh, tên, email, vai trò, trạng thái và nút **Đăng xuất / Thoát Preview**.
+- Có nút **×** để đóng; đồng thời có thể đóng bằng cách bấm ra vùng nền hoặc nhấn Escape.
+- Desktop và mobile dùng cùng một bố cục modal giữa màn hình, tự co chiều rộng theo viewport.
 - Bản **preview/demo** và website được đồng bộ cùng source sau khi test đạt.
 - README và GitHub Release tiếp tục được cập nhật cùng phiên bản.
 
@@ -125,7 +124,7 @@ Vào tab **Xuất file**. File xuất dùng đúng khoảng thời gian đang ch
 - SellerKBB dùng **ảnh đại diện Google/Gmail** của tài khoản đã đăng nhập.
 - Ảnh được lưu cùng hồ sơ người dùng trong Firestore để Admin nhận diện tài khoản ở trang **Quản lý tài khoản**.
 - Trên top bar chỉ hiển thị **avatar**, không hiển thị tên/vai trò và không có thanh phân cách.
-- Bấm avatar để mở popup thông tin cơ bản: tên, Gmail, vai trò và trạng thái tài khoản.
+- Bấm avatar để mở popup **ở chính giữa màn hình** với thông tin cơ bản: tên, Gmail, vai trò và trạng thái tài khoản.
 - Popup có nút **Đăng xuất**; không có mũi tên hay biểu tượng cài đặt trên top bar.
 - Nếu Google không có ảnh hoặc ảnh không tải được, SellerKBB dùng avatar chữ cái dự phòng.
 
