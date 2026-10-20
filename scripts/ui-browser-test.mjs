@@ -101,7 +101,9 @@ try {
   assert(await page.$('#nav [data-section="reconcile"]')!==null,"Đối soát đơn LIVE nav tab missing");
   await page.click('#nav [data-section="reconcile"]');
   await page.click('#section-reconcile [data-range-mode="30d"]');
-  assert((await page.$('#section-reconcile [data-reconcile-session]')).length>=1,"LIVE reconciliation session cards missing");
+  const reconcileDebug=await page.$eval('#section-reconcile',e=>({text:e.textContent.trim().slice(0,500),html:e.innerHTML.slice(0,1000),active:e.classList.contains('active')}));
+  const reconcileCount=(await page.$('#section-reconcile [data-reconcile-session]')).length;
+  assert(reconcileCount>=1,"LIVE reconciliation session cards missing: "+JSON.stringify(reconcileDebug));
   const reconcileCard='#section-reconcile [data-reconcile-session]:first-of-type';
   await page.click(reconcileCard+' [data-reconcile-load]');
   await page.waitForSelector(reconcileCard+' .reconcile-summary');
