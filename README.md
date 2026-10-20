@@ -4,7 +4,7 @@
 
 ### Báo cáo TikTok LIVE · KPI nhân sự · Tự đồng bộ 24/24
 
-**Phiên bản hiện tại: v1.24.0**
+**Phiên bản hiện tại: v1.25.0**
 
 [![GitHub Release](https://img.shields.io/github/v/release/hunghienhoa/sellerkbb?label=Release)](https://github.com/hunghienhoa/sellerkbb/releases)
 [![GitHub Actions](https://img.shields.io/github/actions/workflow/status/hunghienhoa/sellerkbb/deploy.yml?branch=main&label=Ki%E1%BB%83m%20tra%20%26%20Backup)](https://github.com/hunghienhoa/sellerkbb/actions)
@@ -17,14 +17,14 @@
 
 ---
 
-## 🆕 Cập nhật mới nhất — v1.24.0
+## 🆕 Cập nhật mới nhất — v1.25.0
 
-- Tối ưu các thẻ số liệu **Tổng quan** trên giao diện điện thoại để số dài không tự xuống dòng.
-- Các giá trị như **5.177.296.000 đ** được giữ nguyên trên **một dòng**, không còn tách đơn vị `đ` xuống hàng dưới.
-- Vẫn giữ bố cục **2 × 2** trên điện thoại thông thường; icon, khoảng cách và cỡ chữ được co giãn hợp lý theo chiều rộng màn hình.
-- Giá trị số dùng chữ số tabular, `white-space: nowrap` và tắt `overflow-wrap:anywhere` trên mobile để tránh bẻ số giữa chừng.
-- Với màn hình cực hẹp dưới 340px, hệ thống vẫn tự chuyển về một cột để bảo đảm đọc đủ dữ liệu.
-- Bản **preview/demo** và website được đồng bộ cùng source sau khi kiểm tra.
+- Hai giá trị **KPI của Host Livestream (0,3%)** và **KPI của Nhân viên vận hành Livestream (0,1%)** không còn là ô input/readonly.
+- Chuyển thành **khối hiển thị tĩnh hoàn toàn**: không focus, không mở bàn phím, không xuất hiện con trỏ nhập và không thể chỉnh sửa.
+- Khắc phục hiện tượng iPhone/Safari tự **zoom màn hình khi chạm** vào hai giá trị KPI tự tính.
+- Hai khối vẫn tự cập nhật ngay theo GMV Host: Host = **0,3%**, Vận hành = **0,1%**.
+- Giao diện giữ nguyên phong cách ô KPI màu hồng để người dùng vẫn nhận biết đây là giá trị tự động.
+- Bản **preview/demo** và website được đồng bộ cùng source sau khi test đạt.
 - README và GitHub Release tiếp tục được cập nhật cùng phiên bản.
 
 ---

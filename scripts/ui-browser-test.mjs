@@ -134,15 +134,15 @@ try {
   assert(await page.$eval(manualCard,e=>e.textContent.includes('KPI của Host Livestream (0,3%)')),"Host 0.3% KPI label is missing");
   await page.$eval(manualCard+' [data-manual-host-gmv]',e=>{e.value='10000';e.dispatchEvent(new Event('input',{bubbles:true}));});
   assert(await page.$eval(manualCard+' [data-manual-host-gmv]',e=>e.value)==='10.000đ',"Host GMV did not format 10000 as 10.000đ");
-  assert(await page.$eval(manualCard+' [data-manual-host-kpi]',e=>e.value)==='30đ',"Host KPI did not auto-calculate 0.3% from Host GMV");
-  assert(await page.$eval(manualCard+' [data-manual-host-kpi]',e=>e.readOnly),"Host KPI field must be read-only");
-  assert(await page.$eval(manualCard+' [data-manual-operator-kpi]',e=>e.value)==='10đ',"Operator KPI did not auto-calculate 0.1% from Host GMV");
-  assert(await page.$eval(manualCard+' [data-manual-operator-kpi]',e=>e.readOnly),"Operator KPI field must be read-only");
+  assert(await page.$eval(manualCard+' [data-manual-host-kpi]',e=>e.textContent.trim())==='30đ',"Host KPI did not auto-calculate 0.3% from Host GMV");
+  assert(await page.$eval(manualCard+' [data-manual-host-kpi]',e=>e.tagName==='DIV'&&getComputedStyle(e).pointerEvents==='none'&&e.tabIndex===-1),"Host KPI must be a non-interactive static output");
+  assert(await page.$eval(manualCard+' [data-manual-operator-kpi]',e=>e.textContent.trim())==='10đ',"Operator KPI did not auto-calculate 0.1% from Host GMV");
+  assert(await page.$eval(manualCard+' [data-manual-operator-kpi]',e=>e.tagName==='DIV'&&getComputedStyle(e).pointerEvents==='none'&&e.tabIndex===-1),"Operator KPI must be a non-interactive static output");
 
   await page.$eval(manualCard+' [data-manual-host-gmv]',e=>{e.value='1234000';e.dispatchEvent(new Event('input',{bubbles:true}));});
   assert(await page.$eval(manualCard+' [data-manual-host-gmv]',e=>e.value)==='1.234.000đ',"Formatted Host GMV is incorrect");
-  assert(await page.$eval(manualCard+' [data-manual-host-kpi]',e=>e.value)==='3.702đ',"Host KPI 0.3% is incorrect");
-  assert(await page.$eval(manualCard+' [data-manual-operator-kpi]',e=>e.value)==='1.234đ',"Operator KPI 0.1% is incorrect");
+  assert(await page.$eval(manualCard+' [data-manual-host-kpi]',e=>e.textContent.trim())==='3.702đ',"Host KPI 0.3% is incorrect");
+  assert(await page.$eval(manualCard+' [data-manual-operator-kpi]',e=>e.textContent.trim())==='1.234đ',"Operator KPI 0.1% is incorrect");
 
   await page.click(manualCard+' [data-manual-add]');
   assert((await page.$$(manualCard+' [data-manual-entry]')).length===2,"Thêm người did not add a new paired Host/Operator block");
@@ -166,9 +166,9 @@ try {
   const savedManualCard='#section-manual-kpi [data-manual-session]:first-of-type';
   assert(await page.$eval(savedManualCard+' [data-manual-host-person]',e=>e.value)==='staff-dung',"Saved Host Livestream did not persist");
   assert(await page.$eval(savedManualCard+' [data-manual-operator-person]',e=>e.value)==='staff-hung-bg',"Saved Operator did not persist");
-  assert(await page.$eval(savedManualCard+' [data-manual-host-kpi]',e=>e.value)==='3.702đ',"Computed Host KPI did not persist after reload");
+  assert(await page.$eval(savedManualCard+' [data-manual-host-kpi]',e=>e.textContent.trim())==='3.702đ',"Computed Host KPI did not persist after reload");
   assert(await page.$eval(savedManualCard+' [data-manual-host-gmv]',e=>e.value)==='1.234.000đ',"Formatted Host GMV did not persist after reload");
-  assert(await page.$eval(savedManualCard+' [data-manual-operator-kpi]',e=>e.value)==='1.234đ',"Operator auto KPI did not persist after reload");
+  assert(await page.$eval(savedManualCard+' [data-manual-operator-kpi]',e=>e.textContent.trim())==='1.234đ',"Operator auto KPI did not persist after reload");
 
   await page.click('[data-section="export"]');
   assert(await page.$eval('#section-export',e=>e.textContent.includes('BO_HO_SO_KPI_KHANGCHOU_'+new Date().getFullYear())),"Khangchou KPI dossier export item missing");
@@ -310,6 +310,24 @@ try {
   await page.waitForFunction(()=>!document.querySelector('#sidebar')?.classList.contains('open'));
   await sleep(320);
   await page.click('#section-live [data-range-mode="30d"]');
+
+  await page.click('#menuToggle');
+  await page.waitForFunction(()=>document.querySelector('#sidebar')?.classList.contains('open'));
+  await page.$eval('#nav [data-section="manual-kpi"]',e=>e.click());
+  await page.waitForFunction(()=>!document.querySelector('#sidebar')?.classList.contains('open'));
+  await sleep(200);
+  await page.click('#section-manual-kpi [data-range-mode="30d"]');
+  const mobileManualCard='#section-manual-kpi [data-manual-session]:first-of-type';
+  const focusBefore=await page.evaluate(()=>document.activeElement?.tagName||'');
+  await page.$eval(mobileManualCard+' [data-manual-host-kpi]',e=>e.dispatchEvent(new PointerEvent('pointerdown',{bubbles:true})));
+  await page.$eval(mobileManualCard+' [data-manual-operator-kpi]',e=>e.dispatchEvent(new PointerEvent('pointerdown',{bubbles:true})));
+  const focusAfter=await page.evaluate(()=>document.activeElement?.tagName||'');
+  assert(focusAfter===focusBefore||focusAfter==='BODY',"Static KPI outputs must not receive focus on mobile");
+  await page.click('#menuToggle');
+  await page.waitForFunction(()=>document.querySelector('#sidebar')?.classList.contains('open'));
+  await page.$eval('#nav [data-section="live"]',e=>e.click());
+  await page.waitForFunction(()=>!document.querySelector('#sidebar')?.classList.contains('open'));
+  await sleep(200);
 
   const mobileCard='#section-live .mobile-live-card:nth-child(2)';
   assert(await page.$eval(mobileCard+' .mobile-live-time',e=>/^\d{2}\/\d{2}\/\d{4} Vào lúc \d{2}:\d{2}-/.test(e.textContent.trim())),"Mobile compact LIVE time range not rendered");
