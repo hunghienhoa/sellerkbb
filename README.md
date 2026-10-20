@@ -4,7 +4,7 @@
 
 ### Báo cáo TikTok LIVE · KPI nhân sự · Tự đồng bộ 24/24
 
-**Phiên bản hiện tại: v1.28.0**
+**Phiên bản hiện tại: v1.29.0**
 
 [![GitHub Release](https://img.shields.io/github/v/release/hunghienhoa/sellerkbb?label=Release)](https://github.com/hunghienhoa/sellerkbb/releases)
 [![GitHub Actions](https://img.shields.io/github/actions/workflow/status/hunghienhoa/sellerkbb/deploy.yml?branch=main&label=Ki%E1%BB%83m%20tra%20%26%20Backup)](https://github.com/hunghienhoa/sellerkbb/actions)
@@ -17,13 +17,14 @@
 
 ---
 
-## 🆕 Cập nhật mới nhất — v1.28.0
+## 🆕 Cập nhật mới nhất — v1.29.0
 
-- Chuyển **khối tài khoản đang đăng nhập** ra khỏi cuối sidebar và đặt ở **mép phải top bar màn hình chính**, cùng hàng với tiêu đề trang.
-- Khối top bar chỉ hiển thị **avatar + tên + vai trò**; **không có mũi tên**, **không có biểu tượng cài đặt** và **không có menu xổ xuống**.
-- Desktop/tablet hiển thị avatar + tên + vai trò. Mobile thu gọn tên/vai trò theo chiều rộng; màn hình hẹp hiển thị avatar ở góc phải để không chèn tiêu đề.
-- Sidebar giờ chỉ dành cho điều hướng, không còn khối user ở phía dưới.
-- TAB **Quản lý tài khoản** trong nhóm **Quản trị** vẫn giữ nguyên chức năng quản lý user/phân quyền.
+- Top bar giờ **chỉ hiển thị ảnh avatar của user đang đăng nhập** ở góc phải; ẩn hoàn toàn tên và vai trò khỏi thanh bar.
+- Xóa đường phân cách dọc cạnh user để top bar gọn đúng bố cục yêu cầu.
+- Bấm trực tiếp vào **avatar** sẽ mở popup thông tin tài khoản cơ bản gồm **ảnh, tên, email, vai trò, trạng thái**.
+- Popup có nút **Đăng xuất** (Preview hiển thị **Thoát Preview**).
+- Không có mũi tên, không có biểu tượng cài đặt và không có chữ user nằm thường trực trên top bar.
+- Popup tự đóng khi bấm ra ngoài, bấm Escape hoặc chuyển tab.
 - Bản **preview/demo** và website được đồng bộ cùng source sau khi test đạt.
 - README và GitHub Release tiếp tục được cập nhật cùng phiên bản.
 
@@ -123,9 +124,9 @@ Vào tab **Xuất file**. File xuất dùng đúng khoảng thời gian đang ch
 
 - SellerKBB dùng **ảnh đại diện Google/Gmail** của tài khoản đã đăng nhập.
 - Ảnh được lưu cùng hồ sơ người dùng trong Firestore để Admin nhận diện tài khoản ở trang **Quản lý tài khoản**.
-- Hồ sơ hiện tại được hiển thị **tĩnh ở mép phải top bar** bằng avatar + tên + vai trò.
-- Khối hồ sơ top bar **không có mũi tên, không có cài đặt và không mở menu xổ xuống**.
-- Trên màn hình điện thoại hẹp, khối này tự thu gọn còn avatar để giữ đủ không gian cho tiêu đề trang.
+- Trên top bar chỉ hiển thị **avatar**, không hiển thị tên/vai trò và không có thanh phân cách.
+- Bấm avatar để mở popup thông tin cơ bản: tên, Gmail, vai trò và trạng thái tài khoản.
+- Popup có nút **Đăng xuất**; không có mũi tên hay biểu tượng cài đặt trên top bar.
 - Nếu Google không có ảnh hoặc ảnh không tải được, SellerKBB dùng avatar chữ cái dự phòng.
 
 ---

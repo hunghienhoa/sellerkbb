@@ -49,17 +49,22 @@ try {
   assert(await page.$eval('.side-brand .brand-lockup',e=>e.textContent.replace(/\s+/g,'').includes('SellerKBBLIVE')),"SellerKBB LIVE brand lockup is incorrect");
   assert(await page.$eval('html',e=>getComputedStyle(e).getPropertyValue('--accent').trim())==='#e7a3c0',"Pastel pink theme accent is not active");
   assert(await page.$('#sidebar #userAvatar')===null,"Current user must no longer be inside the sidebar");
-  assert(await page.$('#topbarAccount #userAvatar')!==null,"Current user avatar must be in the topbar");
-  assert(await page.$('#userMenuBtn')===null&&await page.$('#accountPopover')===null,"Topbar account must not have a dropdown trigger/popover");
-  assert(await page.$eval('#topbarAccount',e=>e.tagName==='DIV'&&!e.querySelector('button')&&!e.querySelector('.account-chevron')&&!e.querySelector('[data-icon="settings"]')),"Topbar account must be static with no arrow/settings/buttons");
-  assert(await page.$eval('#topbarAccount',e=>e.textContent.includes('Quản trị viên Demo')&&e.textContent.includes('Quản trị viên')),"Topbar account name/role missing");
+  assert(await page.$('#topbarAccountBtn #userAvatar')!==null,"Current user avatar must be the topbar trigger");
+  assert(await page.$eval('.topbar-right',e=>!e.textContent.includes('Quản trị viên Demo')&&!e.textContent.includes('Quản trị viên')),"Topbar must hide persistent account name/role");
+  assert(await page.$eval('#topbarAccountBtn',e=>!e.querySelector('.account-chevron')&&!e.querySelector('[data-icon="settings"]')),"Avatar trigger must have no arrow or settings icon");
   const topbarAccountGeometry=await page.$eval('.topbar',e=>{
     const title=e.querySelector('.topbar-title-wrap').getBoundingClientRect();
-    const account=e.querySelector('#topbarAccount').getBoundingClientRect();
+    const account=e.querySelector('#topbarAccountBtn').getBoundingClientRect();
     return {titleRight:title.right,accountLeft:account.left,accountRight:account.right,barRight:e.getBoundingClientRect().right};
   });
-  assert(topbarAccountGeometry.accountLeft>=topbarAccountGeometry.titleRight,"Topbar account must sit to the right of the page title");
-  assert(topbarAccountGeometry.barRight-topbarAccountGeometry.accountRight<40,"Topbar account must stay at the right edge");
+  assert(topbarAccountGeometry.accountLeft>=topbarAccountGeometry.titleRight,"Avatar must sit to the right of the page title");
+  assert(topbarAccountGeometry.barRight-topbarAccountGeometry.accountRight<40,"Avatar must stay at the right edge");
+  await page.click('#topbarAccountBtn');
+  assert(!(await page.$eval('#accountPopover',e=>e.classList.contains('hidden'))),"Account popup did not open from avatar");
+  assert(await page.$eval('#accountPopover',e=>e.textContent.includes('Quản trị viên Demo')&&e.textContent.includes('admin@sellerkbb.demo')&&e.textContent.includes('Quản trị viên')&&e.textContent.includes('Đã duyệt')),"Account popup basic information missing");
+  assert(await page.$('#accountLogoutBtn')!==null,"Account popup logout button missing");
+  await page.click('#topbarAccountBtn');
+  assert(await page.$eval('#accountPopover',e=>e.classList.contains('hidden')),"Account popup did not close");
 
   assert(await page.$eval('#section-dashboard [data-range-mode="today"]',e=>e.classList.contains('active')),"Dashboard must default to Today");
   await page.click('#section-dashboard [data-range-mode="7d"]');
@@ -315,10 +320,14 @@ try {
   assert(await page.$('#nav .nav-group:nth-child(3) [data-section="staff"]')!==null,"Mobile Quản lý nhân sự must stay inside Quản trị");
   assert(await page.$('#usersDockBtn')===null,"Mobile duplicate Users dock must be removed");
   assert(await page.$('#sidebar #userAvatar')===null,"Mobile sidebar must not contain the current-user block");
-  assert(await page.$('#topbarAccount #userAvatar')!==null,"Mobile topbar account avatar missing");
-  assert(await page.$('#userMenuBtn')===null&&await page.$('#accountPopover')===null,"Mobile topbar account must not open a dropdown");
-  assert(await page.$eval('#topbarAccount',e=>getComputedStyle(e).display==='flex'&&getComputedStyle(e).cursor==='default'),"Mobile topbar account must be a static display");
-  assert(await page.$eval('#topbarAccount .topbar-account-copy',e=>getComputedStyle(e).display==='none'),"390px mobile must use avatar-only account layout");
+  assert(await page.$('#topbarAccountBtn #userAvatar')!==null,"Mobile topbar avatar trigger missing");
+  assert(await page.$eval('.topbar-right',e=>!e.textContent.includes('Quản trị viên Demo')),"Mobile topbar must show avatar only");
+  await page.click('#topbarAccountBtn');
+  assert(!(await page.$eval('#accountPopover',e=>e.classList.contains('hidden'))),"Mobile account popup did not open");
+  assert(await page.$eval('#accountPopover',e=>e.textContent.includes('admin@sellerkbb.demo')&&(e.textContent.includes('Đăng xuất')||e.textContent.includes('Thoát Preview'))),"Mobile account popup information/logout missing");
+  const mobilePopup=await page.$eval('#accountPopover',e=>{const r=e.getBoundingClientRect();return {right:r.right,width:r.width,viewport:innerWidth};});
+  assert(mobilePopup.right<=mobilePopup.viewport&&mobilePopup.width<=mobilePopup.viewport-12,"Mobile account popup must fit viewport");
+  await page.click('#topbarAccountBtn');
   await page.$eval('#nav [data-section="live"]',e=>e.click());
   await page.waitForFunction(()=>!document.querySelector('#sidebar')?.classList.contains('open'));
   await sleep(320);
