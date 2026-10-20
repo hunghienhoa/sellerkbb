@@ -319,6 +319,8 @@ try {
   assert(await page.$('#nav .nav-group:nth-child(3) [data-section="users"]')!==null,"Mobile Quản lý tài khoản must stay inside Quản trị");
   assert(await page.$('#nav .nav-group:nth-child(3) [data-section="staff"]')!==null,"Mobile Quản lý nhân sự must stay inside Quản trị");
   assert(await page.$('#usersDockBtn')===null,"Mobile duplicate Users dock must be removed");
+  await page.click('#mobileMenuOverlay');
+  await page.waitForFunction(()=>!document.querySelector('#sidebar')?.classList.contains('open'));
   assert(await page.$('#sidebar #userAvatar')===null,"Mobile sidebar must not contain the current-user block");
   assert(await page.$('#topbarAccountBtn #userAvatar')!==null,"Mobile topbar avatar trigger missing");
   assert(await page.$eval('#topbarAccountBtn',e=>e.textContent.trim()===''&&!!e.querySelector('#userAvatar')),"Mobile topbar must show avatar only");
