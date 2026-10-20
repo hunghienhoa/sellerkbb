@@ -166,6 +166,8 @@ try {
   await page.click(manualCard+' [data-manual-save]');
   await sleep(150);
   await page.click('[data-section="kpi"]');
+  assert(await page.$eval('#section-kpi .kpi-rate-guide',e=>e.textContent.includes('Cách tính KPI')&&e.textContent.includes('Host Livestream = 0,3%')&&e.textContent.includes('Nhân viên vận hành Livestream = 0,1%')),"KPI rate explanation guide missing");
+  assert(await page.$('#section-kpi .range-actions .pill')===null,"Old KPI rate pills must not remain in the time filter");
   await page.click('#section-kpi [data-range-mode="30d"]');
   assert(await page.$eval('#section-kpi',e=>e.textContent.includes('3.702')),"Host 0.3% KPI was not added to KPI nhân sự");
   assert(await page.$eval('#section-kpi',e=>e.textContent.includes('1.234')),"Operator 0.1% KPI was not added to KPI nhân sự");

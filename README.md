@@ -4,7 +4,7 @@
 
 ### Báo cáo TikTok LIVE · KPI nhân sự · Tự đồng bộ 24/24
 
-**Phiên bản hiện tại: v1.30.0**
+**Phiên bản hiện tại: v1.31.0**
 
 [![GitHub Release](https://img.shields.io/github/v/release/hunghienhoa/sellerkbb?label=Release)](https://github.com/hunghienhoa/sellerkbb/releases)
 [![GitHub Actions](https://img.shields.io/github/actions/workflow/status/hunghienhoa/sellerkbb/deploy.yml?branch=main&label=Ki%E1%BB%83m%20tra%20%26%20Backup)](https://github.com/hunghienhoa/sellerkbb/actions)
@@ -17,13 +17,13 @@
 
 ---
 
-## 🆕 Cập nhật mới nhất — v1.30.0
+## 🆕 Cập nhật mới nhất — v1.31.0
 
-- Khi bấm **avatar user trên top bar**, popup thông tin tài khoản giờ hiển thị **chính giữa màn hình** thay vì bám cạnh avatar.
-- Bổ sung lớp nền mờ hồng nhẹ phía sau để popup nổi bật và dễ tập trung.
-- Popup vẫn hiển thị ảnh, tên, email, vai trò, trạng thái và nút **Đăng xuất / Thoát Preview**.
-- Có nút **×** để đóng; đồng thời có thể đóng bằng cách bấm ra vùng nền hoặc nhấn Escape.
-- Desktop và mobile dùng cùng một bố cục modal giữa màn hình, tự co chiều rộng theo viewport.
+- Thay hai pill **“Host 0,3%”** và **“Vận hành 0,1%”** ở tab KPI nhân sự bằng một **khung giải thích rõ ràng**.
+- Khung mới dùng phong cách giống notice/data-note trong hệ thống: icon khiên, nền hồng rất nhẹ, đường nhấn rose bên trái và nội dung dễ đọc.
+- Nội dung giải thích trực tiếp công thức: **Host Livestream = 0,3% GMV sau hoàn/hủy**; **Nhân viên vận hành Livestream = 0,1% GMV sau hoàn/hủy của Host**.
+- Nêu rõ hệ thống tự tính các tỷ lệ này và cộng vào **KPI nhân sự**, giúp người dùng mới không phải đoán ý nghĩa của hai con số.
+- Hai thẻ danh sách **Host Livestream / Nhân viên vận hành Livestream** phía dưới vẫn giữ nguyên.
 - Bản **preview/demo** và website được đồng bộ cùng source sau khi test đạt.
 - README và GitHub Release tiếp tục được cập nhật cùng phiên bản.
 
