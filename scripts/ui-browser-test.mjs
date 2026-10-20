@@ -299,7 +299,7 @@ try {
   await page.click('#section-live [data-range-mode="30d"]');
 
   const mobileCard='#section-live .mobile-live-card:nth-child(2)';
-  assert(await page.$eval(mobileCard+' .mobile-live-time',e=>/^\d{2}\/\d{2}\/\d{4}  \d{2}:\d{2}-/.test(e.textContent.trim())),"Mobile compact LIVE time range not rendered");
+  assert(await page.$eval(mobileCard+' .mobile-live-time',e=>/^\d{2}\/\d{2}\/\d{4} Vào lúc \d{2}:\d{2}-/.test(e.textContent.trim())),"Mobile compact LIVE time range not rendered");
   const mobileId=await page.$eval(mobileCard+' [data-save-session]',e=>e.dataset.saveSession);
   await page.select(mobileCard+' select[data-person="host"]','staff-dung');
   await page.select(mobileCard+' select[data-person="operator"]','staff-hung-hh');
