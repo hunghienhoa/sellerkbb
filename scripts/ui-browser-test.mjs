@@ -518,6 +518,9 @@ try {
   await sleep(200);
   await page.click('#section-manual-kpi [data-range-mode="30d"]');
   const mobileManualCard='#section-manual-kpi [data-manual-session]:first-of-type';
+  assert(await page.$eval(mobileManualCard+' [data-manual-entry-saved="1"] [data-manual-entry-details]',e=>e.classList.contains('hidden')),"Mobile saved KPI row must start collapsed");
+  await page.click(mobileManualCard+' [data-manual-entry-saved="1"] [data-manual-detail-toggle]');
+  assert(!(await page.$eval(mobileManualCard+' [data-manual-entry-saved="1"] [data-manual-entry-details]',e=>e.classList.contains('hidden'))),"Mobile Chi tiết must expand KPI row");
   assert(await page.$eval(mobileManualCard+' [data-manual-host-gmv]',e=>parseFloat(getComputedStyle(e).fontSize)>=16),"Mobile Host GMV input must be >=16px to prevent focus zoom");
   const focusBefore=await page.evaluate(()=>document.activeElement?.tagName||'');
   await page.$eval(mobileManualCard+' [data-manual-host-kpi]',e=>e.dispatchEvent(new PointerEvent('pointerdown',{bubbles:true})));
