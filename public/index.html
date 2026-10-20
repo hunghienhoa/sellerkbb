@@ -3751,13 +3751,51 @@ tbody tr:hover td{background:#fffafb}
         if(!key)return null;
         let cur=map.get(key);
         if(!cur){
-          cur={uid:uid||'',name:name||'',roles:new Set(),autoGmv:0,manualGmv:0,autoKpi:0,manualKpi:0,currency:currency||'VND'};
+          cur={
+            uid:uid||'',
+            name:name||'',
+            roles:new Set(),
+            finalAutoGmv:0,
+            provisionalAutoGmv:0,
+            manualGmv:0,
+            waitingGrossGmv:0,
+            finalAutoKpi:0,
+            provisionalAutoKpi:0,
+            manualKpi:0,
+            finalSessions:0,
+            provisionalSessions:0,
+            waitingSessions:0,
+            currency:currency||'VND'
+          };
           map.set(key,cur);
         }
         if(name&&!cur.name)cur.name=name;
         if(currency)cur.currency=currency;
         return cur;
       };
+
+      const applyAuto=(cur,role,session)=>{
+        if(!cur)return;
+        cur.roles.add(role);
+        const rate=role==='operator'?.001:.003;
+        const basis=automaticKpiBasis(session);
+        if(!basis.usable){
+          cur.waitingSessions++;
+          cur.waitingGrossGmv+=basis.gross;
+          return;
+        }
+        const kpi=basis.gmv*rate;
+        if(basis.status==='final'){
+          cur.finalSessions++;
+          cur.finalAutoGmv+=basis.gmv;
+          cur.finalAutoKpi+=kpi;
+        }else{
+          cur.provisionalSessions++;
+          cur.provisionalAutoGmv+=basis.gmv;
+          cur.provisionalAutoKpi+=kpi;
+        }
+      };
+
       for(const session of sessionsForRange()){
         if(isManualKpi(session)){
           for(const entry of normalizedManualKpiEntries(session)){
@@ -3769,22 +3807,32 @@ tbody tr:hover td{background:#fffafb}
           }
           continue;
         }
-        const g=finalGmv(session);
         if(session.hostUid||session.hostName){
-          const cur=ensure(session.hostUid,session.hostName,session.currency);
-          if(cur){cur.roles.add('host');cur.autoGmv+=g;cur.autoKpi+=g*.003;}
+          applyAuto(ensure(session.hostUid,session.hostName,session.currency),'host',session);
         }
         if(session.operatorUid||session.operatorName){
-          const cur=ensure(session.operatorUid,session.operatorName,session.currency);
-          if(cur){cur.roles.add('operator');cur.autoGmv+=g;cur.autoKpi+=g*.001;}
+          applyAuto(ensure(session.operatorUid,session.operatorName,session.currency),'operator',session);
         }
       }
-      return [...map.values()].map(row=>({
-        ...row,
-        roles:[...row.roles],
-        gmv:row.autoGmv+row.manualGmv,
-        kpi:row.autoKpi+row.manualKpi
-      })).sort((a,b)=>b.kpi-a.kpi);
+
+      return [...map.values()].map(row=>{
+        const finalGmvAmount=row.finalAutoGmv+row.manualGmv;
+        const finalKpi=row.finalAutoKpi+row.manualKpi;
+        const provisionalGmv=row.provisionalAutoGmv;
+        const provisionalKpi=row.provisionalAutoKpi;
+        return {
+          ...row,
+          roles:[...row.roles],
+          autoGmv:row.finalAutoGmv+row.provisionalAutoGmv,
+          autoKpi:row.finalAutoKpi+row.provisionalAutoKpi,
+          finalGmv:finalGmvAmount,
+          provisionalGmv,
+          gmv:finalGmvAmount+provisionalGmv,
+          finalKpi,
+          provisionalKpi,
+          kpi:finalKpi+provisionalKpi
+        };
+      }).sort((a,b)=>b.kpi-a.kpi);
     }
 
     function kpiRoleSummary(row){
@@ -3800,8 +3848,20 @@ tbody tr:hover td{background:#fffafb}
 
     function exportKpiCsv(){
       const rows=kpiRowsForExport();
-      const header=['name','role','gmv_auto','gmv_manual','gmv_total','kpi_auto','kpi_manual','kpi_total','currency'];
-      const lines=[header,...rows.map(x=>[x.name,kpiRoleSummary(x),x.autoGmv,x.manualGmv,x.gmv,x.autoKpi,x.manualKpi,x.kpi,x.currency])];
+      const header=[
+        'name','role',
+        'gmv_auto_final','gmv_auto_provisional','gmv_manual_final',
+        'kpi_auto_final','kpi_auto_provisional','kpi_manual_final',
+        'kpi_final','kpi_provisional','kpi_projected',
+        'waiting_sessions','waiting_gross_gmv','currency'
+      ];
+      const lines=[header,...rows.map(x=>[
+        x.name,kpiRoleSummary(x),
+        x.finalAutoGmv,x.provisionalAutoGmv,x.manualGmv,
+        x.finalAutoKpi,x.provisionalAutoKpi,x.manualKpi,
+        x.finalKpi,x.provisionalKpi,x.kpi,
+        x.waitingSessions,x.waitingGrossGmv,x.currency
+      ])];
       const csv=lines.map(row=>row.map(v=>'"'+String(v??'').replaceAll('"','""')+'"').join(',')).join('\n');
       const blob=new Blob(['\ufeff'+csv],{type:'text/csv;charset=utf-8'});
       const a=document.createElement('a');
@@ -3821,7 +3881,7 @@ tbody tr:hover td{background:#fffafb}
         html+='<div class="export-row"><div class="export-icon">'+icon('live',20)+'</div><div class="export-copy"><b>Phiên LIVE</b><div class="sub">'+ss.length+' phiên trong khoảng đã chọn · bao gồm dữ liệu Ngày Campaign/Mega Live.</div></div><button id="exportLiveCsv" class="btn primary">'+icon('export',16)+' Xuất CSV phiên LIVE</button></div>';
       }
       if(can('kpi.read')){
-        html+='<div class="export-row"><div class="export-icon">'+icon('kpi',20)+'</div><div class="export-copy"><b>KPI nhân sự</b><div class="sub">Chỉ xuất KPI tự động · '+manualCount+' phiên tính thủ công được loại khỏi bảng KPI.</div></div><button id="exportKpiCsv" class="btn">'+icon('export',16)+' Xuất CSV KPI</button></div>';
+        html+='<div class="export-row"><div class="export-icon">'+icon('kpi',20)+'</div><div class="export-copy"><b>KPI nhân sự</b><div class="sub">Xuất riêng KPI đã chốt, KPI tạm tính, KPI thủ công và số phiên còn chờ đối soát · '+manualCount+' phiên KPI thủ công.</div></div><button id="exportKpiCsv" class="btn">'+icon('export',16)+' Xuất CSV KPI</button></div>';
         const dossierYear=new Date().getFullYear();
         html+='<div class="export-row export-coming-soon"><div class="export-icon">'+icon('file',20)+'</div><div class="export-copy"><b>BO_HO_SO_KPI_KHANGCHOU_'+dossierYear+'</b><div class="sub">Hồ sơ KPI cá nhân · sau khi hoàn thiện sẽ chọn 1 nhân viên/lần, chỉ lấy GMV sau hoàn/hủy + KPI cá nhân, không gộp dữ liệu người khác.</div><span class="pill">Đang phát triển</span></div><button id="exportKhangchouDossier" class="btn">'+icon('export',16)+' Xuất hồ sơ</button></div>';
       }
@@ -4052,26 +4112,41 @@ tbody tr:hover td{background:#fffafb}
 
     function renderKpi(){
       if(!can('kpi.read')){ $('#section-kpi').innerHTML='<div class="notice bad">Bạn không có quyền xem KPI.</div>';return; }
+      const rangeSessions=sessionsForRange();
       const rows=buildKpiRows();
-      const manualSessions=sessionsForRange().filter(isManualKpi);
-      const currency=rows[0]?.currency||manualSessions[0]?.currency||'VND';
-      const totalKpi=rows.reduce((a,r)=>a+r.kpi,0);
-      const totalAutoKpi=rows.reduce((a,r)=>a+r.autoKpi,0);
+      const manualSessions=rangeSessions.filter(isManualKpi);
+      const autoSessions=rangeSessions.filter(s=>!isManualKpi(s));
+      const currency=rows[0]?.currency||manualSessions[0]?.currency||autoSessions[0]?.currency||'VND';
+
+      const totalFinalKpi=rows.reduce((a,r)=>a+r.finalKpi,0);
+      const totalProvisionalKpi=rows.reduce((a,r)=>a+r.provisionalKpi,0);
+      const totalProjectedKpi=totalFinalKpi+totalProvisionalKpi;
       const totalManualKpi=rows.reduce((a,r)=>a+r.manualKpi,0);
+      const waitingSessions=autoSessions.filter(s=>!automaticKpiBasis(s).usable).length;
+      const provisionalSessions=autoSessions.filter(s=>{const b=automaticKpiBasis(s);return b.usable&&b.status!=='final';}).length;
+      const finalSessions=autoSessions.filter(s=>{const b=automaticKpiBasis(s);return b.usable&&b.status==='final';}).length;
+
       $('#section-kpi').innerHTML=`
         ${timeFilterHtml('kpi')}
         <div class="kpi-rate-guide">
           <div class="kpi-rate-guide-icon">${icon('shield',16)}</div>
           <div class="kpi-rate-guide-copy">
-            <b>Cách tính KPI</b>
-            <span>KPI được tính theo GMV sau hoàn/hủy của Host: <strong>Host Livestream = 0,3%</strong> GMV; <strong>Nhân viên vận hành Livestream = 0,1%</strong> GMV của Host. Hệ thống tự tính và cộng vào KPI nhân sự.</span>
+            <b>Cách tính KPI mới</b>
+            <span><strong>KPI tự động không dùng GMV LIVE TikTok gộp.</strong> SellerKBB lấy GMV đối soát cấp đơn sau hủy/hoàn đã biết. Host Livestream = <strong>0,3%</strong>; Nhân viên vận hành Livestream = <strong>0,1%</strong>. Phiên còn đơn chưa kết thúc là <strong>KPI tạm tính</strong>; khi toàn bộ đơn đã hoàn tất/hủy và không còn hậu mãi đang xử lý thì chuyển thành <strong>KPI đã chốt</strong>.</span>
           </div>
         </div>
+        <div class="notice ok"><b>KPI thủ công được coi là đã chốt</b> vì bạn tự nhập GMV sau hoàn/hủy cho từng Host. Các phiên tự động thiếu dữ liệu Orders/Return & Refund sẽ nằm ở “Chờ đối soát” và <b>không lấy GMV gộp để tính thay</b>.</div>
         <div class="kpi-pair"><div class="pair-card"><b>Host Livestream</b><span class="tiny">${esc(staffForRole('host').map(x=>x.displayName).join(' · ')||'Chưa có nhân sự')}</span></div><div class="pair-card"><b>Nhân viên vận hành Livestream</b><span class="tiny">${esc(staffForRole('operator').map(x=>x.displayName).join(' · ')||'Chưa có nhân sự')}</span></div></div>
-        <div class="metrics-grid metrics-4">${metricCard('users','Nhân sự có KPI',rows.length)}${metricCard('money','Tổng KPI',fmtMoney(totalKpi,currency))}${metricCard('kpi','KPI tự động',fmtMoney(totalAutoKpi,currency))}${metricCard('settings','KPI thủ công',fmtMoney(totalManualKpi,currency))}</div>
+        <div class="metrics-grid metrics-4">
+          ${metricCard('check','KPI đã chốt',fmtMoney(totalFinalKpi,currency),finalSessions+' phiên tự động đã chốt · gồm KPI thủ công')}
+          ${metricCard('clock','KPI tạm tính',fmtMoney(totalProvisionalKpi,currency),provisionalSessions+' phiên còn theo dõi')}
+          ${metricCard('money','KPI dự kiến',fmtMoney(totalProjectedKpi,currency),'Đã chốt + tạm tính')}
+          ${metricCard('history','Chờ đối soát',waitingSessions+' phiên','Không dùng GMV gộp để tính KPI')}
+        </div>
         <div class="card">
-          <div class="row space"><div><h3>KPI nhân sự</h3><div class="sub">Bảng tổng hợp này tự cộng KPI tự động và KPI thủ công đã lưu của đúng từng nhân viên.</div></div><span class="pill">Tổng ${fmtMoney(totalKpi,currency)}</span></div>
-          ${rows.length?`<div class="table-wrap"><table style="min-width:920px"><thead><tr><th>Nhân sự</th><th>Vai trò</th><th>GMV tự động</th><th>GMV thủ công</th><th>KPI tự động</th><th>KPI thủ công</th><th>Tổng KPI</th></tr></thead><tbody>${rows.map(r=>`<tr><td>${userIdentityHtml(staffDisplayRecord(r.uid,r.name),false)}</td><td><span class="tag ${r.roles[0]||''}">${esc(kpiRoleSummary(r))}</span></td><td class="money">${fmtMoney(r.autoGmv,r.currency)}</td><td class="money">${fmtMoney(r.manualGmv,r.currency)}</td><td class="money">${fmtMoney(r.autoKpi,r.currency)}</td><td class="money manual-kpi-value">${fmtMoney(r.manualKpi,r.currency)}</td><td class="money"><b>${fmtMoney(r.kpi,r.currency)}</b></td></tr>`).join('')}</tbody></table></div>`:'<div class="empty">Chưa có KPI trong khoảng thời gian này.</div>'}
+          <div class="row space"><div><h3>KPI nhân sự</h3><div class="sub">KPI đã chốt là số có thể dùng để thanh toán; KPI tạm tính vẫn có thể giảm/tăng khi TikTok cập nhật hủy, hoàn hoặc trạng thái đơn.</div></div><div class="row"><span class="pill ok">Chốt ${fmtMoney(totalFinalKpi,currency)}</span><span class="pill warn">Dự kiến ${fmtMoney(totalProjectedKpi,currency)}</span></div></div>
+          ${rows.length?`<div class="table-wrap"><table style="min-width:1120px"><thead><tr><th>Nhân sự</th><th>Vai trò</th><th>GMV đã chốt</th><th>GMV tạm tính</th><th>GMV thủ công</th><th>KPI đã chốt</th><th>KPI tạm tính</th><th>KPI dự kiến</th><th>Chờ đối soát</th></tr></thead><tbody>${rows.map(r=>`<tr><td>${userIdentityHtml(staffDisplayRecord(r.uid,r.name),false)}</td><td><span class="tag ${r.roles[0]||''}">${esc(kpiRoleSummary(r))}</span></td><td class="money">${fmtMoney(r.finalAutoGmv,r.currency)}</td><td class="money">${fmtMoney(r.provisionalAutoGmv,r.currency)}</td><td class="money manual-kpi-value">${fmtMoney(r.manualGmv,r.currency)}</td><td class="money"><b>${fmtMoney(r.finalKpi,r.currency)}</b></td><td class="money">${fmtMoney(r.provisionalKpi,r.currency)}</td><td class="money"><b>${fmtMoney(r.kpi,r.currency)}</b></td><td>${r.waitingSessions?'<span class="pill warn">'+r.waitingSessions+' phiên</span>':'<span class="pill ok">0</span>'}</td></tr>`).join('')}</tbody></table></div>`:'<div class="empty">Chưa có KPI trong khoảng thời gian này.</div>'}
+          ${totalManualKpi?'<div class="tiny" style="margin-top:10px">KPI thủ công đã lưu và được tính vào KPI đã chốt: <b>'+fmtMoney(totalManualKpi,currency)+'</b>.</div>':''}
         </div>`;
       bindTimeFilter('kpi');
     }
