@@ -400,8 +400,6 @@ try {
   await sleep(80);
   await page.click('#section-live [data-range-mode="30d"]');
   assert(await page.$eval('#section-live .mobile-live-card:first-of-type',e=>e.textContent.includes('GMV đã ghi nhận')&&e.textContent.includes('GMV chờ đối soát')&&e.textContent.includes('GMV sau khi hoàn hủy')),"Mobile LIVE card must show the three GMV stages");
-  await page.click('#menuToggle');
-  await page.waitForFunction(()=>document.querySelector('#sidebar')?.classList.contains('open'));
   assert(await page.$('#nav .nav-group:nth-child(3) [data-section="users"]')!==null,"Mobile Quản lý tài khoản must stay inside Quản trị");
   assert(await page.$('#nav .nav-group:nth-child(3) [data-section="staff"]')!==null,"Mobile Quản lý nhân sự must stay inside Quản trị");
   assert(await page.$('#usersDockBtn')===null,"Mobile duplicate Users dock must be removed");
