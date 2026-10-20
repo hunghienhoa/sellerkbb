@@ -3099,7 +3099,7 @@ tbody tr:hover td{background:#fffafb}
       restorePreviewState();
       showApp(); bindShell(); renderAll(); startAutoSyncWatcher();
       const bar=document.createElement('div');
-      bar.style.cssText='position:fixed;left:50%;transform:translateX(-50%);bottom:18px;z-index:15;background:#f7c5dc;color:#653a50;padding:8px 12px;border:1px solid #edb4cf;border-radius:999px;font-weight:800;font-size:10px;box-shadow:0 8px 24px rgba(156,91,124,.16);white-space:nowrap';
+      bar.style.cssText='position:fixed;left:50%;transform:translateX(-50%);bottom:18px;z-index:15;background:#f7c5dc;color:#653a50;padding:8px 12px;border:1px solid #edb4cf;border-radius:999px;font-weight:800;font-size:10px;box-shadow:0 8px 24px rgba(156,91,124,.16);white-space:nowrap;pointer-events:none';
       bar.textContent='PREVIEW MODE · Dữ liệu mẫu · Không ảnh hưởng hệ thống thật';
       document.body.appendChild(bar);
     }
