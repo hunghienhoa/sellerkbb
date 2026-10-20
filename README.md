@@ -4,7 +4,7 @@
 
 ### Báo cáo TikTok LIVE · KPI nhân sự · Tự đồng bộ 24/24
 
-**Phiên bản hiện tại: v1.40.0**
+**Phiên bản hiện tại: v1.41.0**
 
 [![GitHub Release](https://img.shields.io/github/v/release/hunghienhoa/sellerkbb?label=Release)](https://github.com/hunghienhoa/sellerkbb/releases)
 [![GitHub Actions](https://img.shields.io/github/actions/workflow/status/hunghienhoa/sellerkbb/deploy.yml?branch=main&label=Ki%E1%BB%83m%20tra%20%26%20Backup)](https://github.com/hunghienhoa/sellerkbb/actions)
@@ -17,13 +17,13 @@
 
 ---
 
-## 🆕 Cập nhật mới nhất — v1.40.0
+## 🆕 Cập nhật mới nhất — v1.41.0
 
-- Khi tích **Ngày Campaign/Mega Live · tính KPI thủ công**, hai phần **Host Livestream** và **Nhân viên vận hành** được **ẩn hẳn** khỏi giao diện thay vì chỉ bị khóa/mờ.
-- Khi bật KPI thủ công, SellerKBB vẫn tự xóa Host/Operator đã gán trước đó để tránh dữ liệu nhân sự tự động còn sót lại.
-- Khi bỏ tích KPI thủ công, hai phần Host/Vận hành tự hiện lại để Admin có thể gán nhân sự theo cơ chế KPI tự động.
-- Áp dụng đồng nhất trên **PC và mobile**.
-- Các phần **Gắn thẻ loại phiên / Ngày Campaign / Mega Live / Lưu thiết lập** giữ nguyên.
+- Bổ sung **GMV sau khi hoàn hủy** ngay trên trang **Tổng quan**.
+- Không nhét thêm thành ô thứ 5 trong hàng metric cũ; SellerKBB dùng một thẻ ngang full-width riêng để bố cục không bị lệch trên PC/mobile.
+- Số này chỉ cộng **GMV cuối cùng của các phiên đã chốt/đã đối soát**, không cộng GMV chờ đối soát.
+- Thẻ hiển thị thêm **số phiên đã chốt / tổng số phiên** trong khoảng thời gian đang chọn để Admin biết số GMV này đã phủ được bao nhiêu phiên.
+- Hàng 4 ô cũ **Phiên LIVE / GMV đã ghi nhận / Sản phẩm bán / Tổng thời lượng** giữ nguyên.
 - README, kiểm thử PC/mobile và GitHub Release được cập nhật cùng phiên bản.
 
 ---
@@ -75,6 +75,8 @@ Bạn không cần hiểu hết code. Chỉ cần nhớ 4 nơi chính:
 Vào website SellerKBB. Mặc định hệ thống luôn chọn **Hôm nay**.
 
 ### 2. Kiểm tra Tổng quan
+
+Tổng quan hiển thị 4 ô chỉ số chính như cũ và thêm một thẻ ngang **GMV sau khi hoàn hủy** ngay bên dưới. Số GMV này chỉ cộng những phiên đã chốt/đã đối soát; các phiên còn tạm tính không được cộng vào đây.
 
 - **Hôm nay:** chỉ xem các phiên của hôm nay.
 - **7 ngày:** tính từ hôm nay lùi 7 ngày.
@@ -218,6 +220,7 @@ README giữ lại phần này để nhân sự có thể biết **vì sao giao 
 
 | Phiên bản | Thay đổi chính |
 |---|---|
+| **v1.41.0** | Tổng quan bổ sung thẻ full-width **GMV sau khi hoàn hủy** chỉ cộng các phiên đã chốt/đã đối soát. |
 | **v1.40.0** | Khi bật KPI thủ công, ẩn hẳn Host/Vận hành tự động trên PC/mobile; bỏ tích thì hiện lại. |
 | **v1.39.0** | Tách KPI nhân sự thành **KPI chưa chốt** và **KPI đã chốt** để không trộn số tạm tính với số dùng thanh toán. |
 | **v1.38.0** | KPI thủ công bắt buộc gắn thẻ **Ngày Campaign** hoặc **Mega Live**; lưu cùng phiên, hiển thị lại sau reload và xuất CSV. |
