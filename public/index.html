@@ -1318,6 +1318,10 @@ body.reconcile-modal-open .reconcile-modal-body{touch-action:pan-y}
 .manual-type-choice .input{width:100%;min-width:145px;padding:7px 8px}
 td .manual-type-choice+.btn{width:100%}
 .manual-live-type-pill{font-weight:800}
+.auto-person-wrap{display:block}
+.manual-session .auto-person-wrap{display:none!important}
+.mobile-auto-person-fields{display:grid;gap:8px}
+.manual-session .mobile-auto-person-fields{display:none!important}
 @media(max-width:700px){
   .manual-type-choice{margin:2px 0 4px}
   .manual-type-choice .input{width:100%}
@@ -3740,8 +3744,8 @@ tbody tr:hover td{background:#fffafb}
         <td class="money">${gmvPendingDisplay(s)}<div class="tiny">${sessionGmvFigures(s).pending!==null?'Tạm tính · chỉ đơn có tín hiệu LIVE':sessionGmvFigures(s).final!==null?'Đã chuyển sang số chốt':'Chưa đủ dữ liệu đối soát'}</div></td>
         <td class="money"><b>${gmvFinalDisplay(s)}</b><div class="tiny">${sessionGmvFigures(s).final!==null?'Số cuối cùng dùng chốt KPI':'Chưa đủ điều kiện chốt'}</div></td>
         <td>${new Intl.NumberFormat('vi-VN').format(Number(s.currentItemsSold??s.recordedItemsSold??0))}</td>
-        <td>${editable?personSelect('host',s.id,s.hostUid,approvedHosts,s.hostName):esc(s.hostName||'—')}</td>
-        <td>${editable?personSelect('operator',s.id,s.operatorUid,operators,s.operatorName):esc(s.operatorName||'—')}</td>
+        <td>${editable?'<div class="auto-person-wrap" data-auto-person-wrap>'+personSelect('host',s.id,s.hostUid,approvedHosts,s.hostName)+'</div>':esc(s.hostName||'—')}</td>
+        <td>${editable?'<div class="auto-person-wrap" data-auto-person-wrap>'+personSelect('operator',s.id,s.operatorUid,operators,s.operatorName)+'</div>':esc(s.operatorName||'—')}</td>
         ${editable?`<td><label class="manual-kpi-check"><input type="checkbox" data-manual-kpi="${s.id}" ${isManualKpi(s)?'checked':''}> <span>Ngày Campaign/Mega Live · tính KPI thủ công</span></label>${manualKpiTypeSelect(s)}<button class="btn small" data-save-session="${s.id}">${icon('check',14)} Lưu</button></td>`:''}
       </tr>`).join('')}</tbody></table></div>`;
       const mobile=`<div class="mobile-live-list">${rows.map(s=>`<article class="mobile-live-card">
@@ -3752,7 +3756,7 @@ tbody tr:hover td{background:#fffafb}
           <div class="mobile-field"><span class="tiny">GMV sau khi hoàn hủy</span><strong>${gmvFinalDisplay(s)}</strong><small>Số đã chốt để tính KPI</small></div>
           <div class="mobile-field"><span class="tiny">Số món bán đã ghi nhận</span><strong>${new Intl.NumberFormat('vi-VN').format(Number(s.currentItemsSold??s.recordedItemsSold??0))}</strong></div>
         </div>
-        ${editable?`<div class="mobile-assign"><label class="manual-kpi-check"><input type="checkbox" data-manual-kpi="${s.id}" ${isManualKpi(s)?'checked':''}> <span>Ngày Campaign/Mega Live · tính KPI thủ công</span></label>${manualKpiTypeSelect(s)}<label><span class="tiny">Host Livestream</span>${personSelect('host',s.id,s.hostUid,approvedHosts,s.hostName)}</label><label><span class="tiny">Nhân viên vận hành</span>${personSelect('operator',s.id,s.operatorUid,operators,s.operatorName)}</label><button class="btn primary" data-save-session="${s.id}">${icon('check',15)} Lưu thiết lập</button></div>`:`<div class="mobile-assign">${isManualKpi(s)?'<div class="notice warn">'+esc(manualKpiTypeLabel(s))+' · phiên này không cộng vào KPI tự động.</div>':''}<div class="row space"><span class="tiny">Host</span><b>${esc(s.hostName||'—')}</b></div><div class="row space"><span class="tiny">Vận hành</span><b>${esc(s.operatorName||'—')}</b></div></div>`}
+        ${editable?`<div class="mobile-assign"><label class="manual-kpi-check"><input type="checkbox" data-manual-kpi="${s.id}" ${isManualKpi(s)?'checked':''}> <span>Ngày Campaign/Mega Live · tính KPI thủ công</span></label>${manualKpiTypeSelect(s)}<div class="mobile-auto-person-fields auto-person-wrap" data-auto-person-wrap><label><span class="tiny">Host Livestream</span>${personSelect('host',s.id,s.hostUid,approvedHosts,s.hostName)}</label><label><span class="tiny">Nhân viên vận hành</span>${personSelect('operator',s.id,s.operatorUid,operators,s.operatorName)}</label></div><button class="btn primary" data-save-session="${s.id}">${icon('check',15)} Lưu thiết lập</button></div>`:`<div class="mobile-assign">${isManualKpi(s)?'<div class="notice warn">'+esc(manualKpiTypeLabel(s))+' · phiên này không cộng vào KPI tự động.</div>':''}<div class="row space"><span class="tiny">Host</span><b>${esc(s.hostName||'—')}</b></div><div class="row space"><span class="tiny">Vận hành</span><b>${esc(s.operatorName||'—')}</b></div></div>`}
       </article>`).join('')}</div>`;
       return desktop+mobile;
     }
