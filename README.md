@@ -4,7 +4,7 @@
 
 ### Báo cáo TikTok LIVE · KPI nhân sự · Tự đồng bộ 24/24
 
-**Phiên bản hiện tại: v1.42.0**
+**Phiên bản hiện tại: v1.43.0**
 
 [![GitHub Release](https://img.shields.io/github/v/release/hunghienhoa/sellerkbb?label=Release)](https://github.com/hunghienhoa/sellerkbb/releases)
 [![GitHub Actions](https://img.shields.io/github/actions/workflow/status/hunghienhoa/sellerkbb/deploy.yml?branch=main&label=Ki%E1%BB%83m%20tra%20%26%20Backup)](https://github.com/hunghienhoa/sellerkbb/actions)
@@ -17,15 +17,17 @@
 
 ---
 
-## 🆕 Cập nhật mới nhất — v1.42.0
+## 🆕 Cập nhật mới nhất — v1.43.0
 
-- Tab **KPI thủ công** gọn hơn: sau khi một cặp Host/Vận hành đã được lưu, dòng đó tự **thu gọn** và chỉ hiện **Host / Vận hành / Chi tiết**.
-- Bấm **Chi tiết** mới mở lại phần GMV sau hoàn/hủy và các KPI 0,3% / 0,1% để xem hoặc sửa.
-- Ô nhập GMV được sửa cách nhập tiền: chữ **đ** là hậu tố cố định bên ngoài ô số; con trỏ chỉ nằm trong phần số, bấm Backspace ở cuối vẫn xóa được số và không bao giờ xóa mất chữ **đ**.
-- Nút xóa được chuyển xuống cuối phần chi tiết, có nhãn rõ **Xóa người** thay vì nút × nằm lệch bố cục.
-- Phiên đã đối soát/chốt thành công được chuyển sang nền trắng/viền xanh nhẹ và có thẻ **✓ Đã đối soát**, tránh toàn bộ card đều mang màu hồng.
-- Danh sách **Đối soát đơn LIVE** cũng dùng trạng thái xanh **Đã đối soát** cho phiên đã chốt.
-- Không bổ sung giờ riêng cho từng người; KPI thủ công vẫn quản lý theo cặp Host + Vận hành của phiên.
+- Sửa trạng thái phiên **đã chốt/đã đối soát** trên danh sách LIVE ở **Tổng quan** và **Phiên LIVE** để không còn nhìn như phiên màu hồng/tạm tính.
+- Phiên đã chốt nay có:
+  - thẻ xanh **✓ Đã đối soát**;
+  - KPI **✓ Đã chốt** màu xanh;
+  - nền/viền xanh rất nhẹ trên card mobile;
+  - các ô GMV trên card đã chốt chuyển sang tông xanh nhạt;
+  - dòng desktop đã chốt cũng có nền xanh nhẹ.
+- Dòng **GMV sau khi hoàn hủy** trên card đã chốt hiển thị rõ **✓ Đã đối soát · số chốt để tính KPI**.
+- Phiên chưa chốt vẫn giữ trạng thái tạm tính/cảnh báo hiện tại để phân biệt ngay bằng màu sắc.
 - README, kiểm thử PC/mobile và GitHub Release được cập nhật cùng phiên bản.
 
 ---
@@ -79,6 +81,8 @@ Vào website SellerKBB. Mặc định hệ thống luôn chọn **Hôm nay**.
 ### 2. Kiểm tra Tổng quan
 
 Tổng quan hiển thị 4 ô chỉ số chính như cũ và thêm một thẻ ngang **GMV sau khi hoàn hủy** ngay bên dưới. Số GMV này chỉ cộng những phiên đã chốt/đã đối soát; các phiên còn tạm tính không được cộng vào đây.
+
+Trong danh sách phiên bên dưới, phiên đã chốt được đánh dấu bằng **✓ Đã đối soát** và tông xanh nhẹ để không bị nhầm với phiên tạm tính màu hồng/vàng.
 
 - **Hôm nay:** chỉ xem các phiên của hôm nay.
 - **7 ngày:** tính từ hôm nay lùi 7 ngày.
@@ -232,6 +236,7 @@ README giữ lại phần này để nhân sự có thể biết **vì sao giao 
 
 | Phiên bản | Thay đổi chính |
 |---|---|
+| **v1.43.0** | Phiên LIVE đã chốt trên Tổng quan/Phiên LIVE dùng **✓ xanh + nền/viền xanh nhẹ**, không còn nhìn như trạng thái hồng tạm tính. |
 | **v1.42.0** | KPI thủ công thu gọn người đã lưu, sửa ô tiền với hậu tố **đ** cố định, bố trí lại nút xóa và thêm trạng thái xanh **Đã đối soát**. |
 | **v1.41.0** | Tổng quan bổ sung thẻ full-width **GMV sau khi hoàn hủy** chỉ cộng các phiên đã chốt/đã đối soát. |
 | **v1.40.0** | Khi bật KPI thủ công, ẩn hẳn Host/Vận hành tự động trên PC/mobile; bỏ tích thì hiện lại. |
