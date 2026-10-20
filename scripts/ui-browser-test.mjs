@@ -172,6 +172,13 @@ try {
   assert(await page.$eval(desktopSavedRow+' select[data-person="host"]',e=>e.value)==='',"Campaign/Mega did not clear desktop Host");
   assert(await page.$eval(desktopSavedRow+' select[data-person="operator"]',e=>e.value)==='',"Campaign/Mega did not clear desktop Operator");
   assert(await page.$eval(desktopSavedRow+' select[data-person="host"]',e=>e.disabled),"Campaign/Mega did not disable desktop Host");
+  assert(!(await page.$eval(desktopSavedRow+' [data-manual-type-wrap]',e=>e.classList.contains('hidden'))),"Campaign/Mega type selector must appear after enabling manual KPI");
+  const manualTypeOptions=await page.$eval(desktopSavedRow+' [data-manual-type] option',els=>els.map(e=>e.textContent.trim()));
+  assert(manualTypeOptions.includes('Ngày Campaign')&&manualTypeOptions.includes('Mega Live'),"Campaign/Mega type options missing");
+  await page.click(desktopSavedRow+' [data-save-session]');
+  await sleep(80);
+  assert(await page.$eval('#actionToast',e=>e.textContent.includes('Hãy chọn loại phiên: Ngày Campaign hoặc Mega Live')),"Manual KPI must require Campaign or Mega Live classification");
+  await page.select(desktopSavedRow+' [data-manual-type]','mega');
   await page.click(desktopSavedRow+' [data-save-session]');
   await sleep(150);
   await page.reload({waitUntil:"domcontentloaded"});
@@ -180,6 +187,8 @@ try {
   await page.click('#section-live [data-range-mode="30d"]');
   const desktopManualRow='#section-live .desktop-live-table tbody tr:has([data-save-session="'+desktopId+'"])';
   assert(await page.$eval(desktopManualRow+' [data-manual-kpi]',e=>e.checked),"Campaign/Mega flag did not persist");
+  assert(await page.$eval(desktopManualRow+' [data-manual-type]',e=>e.value)==='mega',"Mega Live classification did not persist");
+  assert(await page.$eval(desktopManualRow,e=>e.textContent.includes('Mega Live · tính thủ công')),"Saved Mega Live badge missing on LIVE row");
   assert(await page.$eval(desktopManualRow+' select[data-person="host"]',e=>e.value)==='',"Campaign/Mega Host was restored unexpectedly");
 
   assert(await page.$('#nav [data-section="manual-kpi"]')!==null,"Dedicated KPI thủ công nav tab missing");
@@ -188,6 +197,7 @@ try {
   assert((await page.$$('#section-manual-kpi [data-manual-session]')).length>=1,"Manual KPI session section missing");
   assert(await page.$('#section-kpi [data-manual-session]')===null,"Manual KPI editor must not remain inside KPI nhân sự");
   const manualCard='#section-manual-kpi [data-manual-session]:first-of-type';
+  assert(await page.$eval(manualCard,e=>e.textContent.includes('Mega Live')),"Manual KPI card must show saved Mega Live classification");
   assert(await page.$eval(manualCard,e=>e.textContent.includes('không tự chia GMV tổng')),"Manual KPI no-equal-split notice missing");
   assert(await page.$eval(manualCard,e=>e.textContent.includes('Host Livestream')&&e.textContent.includes('Nhân viên vận hành Livestream')),"Paired Host/Operator labels missing");
   assert(await page.$eval(manualCard,e=>e.textContent.includes('Thêm người')&&!e.textContent.includes('Thêm Host riêng')&&!e.textContent.includes('Thêm Vận hành riêng')),"Manual add control must match v1.18 Thêm người");
@@ -512,8 +522,11 @@ try {
   await page.click(mobileSavedCard+' [data-manual-kpi]');
   assert(await page.$eval(mobileSavedCard+' select[data-person="host"]',e=>e.value)==='',"Mobile Campaign/Mega did not clear Host");
   assert(await page.$eval(mobileSavedCard+' select[data-person="operator"]',e=>e.value)==='',"Mobile Campaign/Mega did not clear Operator");
+  assert(!(await page.$eval(mobileSavedCard+' [data-manual-type-wrap]',e=>e.classList.contains('hidden'))),"Mobile Campaign/Mega type selector must appear");
+  await page.select(mobileSavedCard+' [data-manual-type]','campaign');
   await page.click(mobileSavedCard+' [data-save-session]');
   await sleep(100);
+  assert(await page.$eval('#actionToast',e=>e.textContent.includes('Ngày Campaign')&&e.textContent.includes('KPI thủ công')),"Mobile Campaign classification save toast missing");
 
   await page.click('#section-live [data-range-mode="custom"]');
   await page.waitForSelector('#section-live [data-date-calendar="live"] [data-calendar-day]');
