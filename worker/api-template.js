@@ -653,9 +653,10 @@ function summarizeLiveReconciliation(result) {
   const hasOrderData = orders.length > 0 || analyticsGmvAmount === 0;
   const amountDataAvailable = orderWindowAmount > 0 || analyticsGmvAmount === 0;
   const usableForKpi = aftersalesAvailable && hasOrderData && amountDataAvailable;
-  const allFinal = usableForKpi && orders.every(order => order?.finalized === true);
   const liveSignalOrders = orders.filter(order => order?.attribution === "live_signal").length;
   const timeWindowOrders = Math.max(0, orders.length - liveSignalOrders);
+  const attributionConfirmed = orders.length === 0 || timeWindowOrders === 0;
+  const allFinal = usableForKpi && attributionConfirmed && orders.every(order => order?.finalized === true);
   let status = "provisional";
   let reason = "";
   if (!aftersalesAvailable) {
@@ -664,9 +665,11 @@ function summarizeLiveReconciliation(result) {
   } else if (!hasOrderData || !amountDataAvailable) {
     status = "waiting";
     reason = "Chưa lấy đủ dữ liệu đơn để tính KPI.";
+  } else if (!attributionConfirmed) {
+    reason = "KPI đang tạm tính vì còn đơn chỉ khớp theo thời gian; SellerKBB chưa tự chốt cho tới khi liên kết LIVE đủ chắc chắn.";
   } else if (allFinal) {
     status = "final";
-    reason = "Tất cả đơn trong đối soát đã ở trạng thái kết thúc và không còn hậu mãi đang xử lý.";
+    reason = "Tất cả đơn đã có tín hiệu LIVE, ở trạng thái kết thúc và không còn hậu mãi đang xử lý.";
   } else {
     reason = "KPI đang tạm tính và sẽ tự thay đổi khi đơn giao, hủy hoặc hoàn tiền cập nhật.";
   }
