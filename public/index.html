@@ -579,24 +579,45 @@ tbody tr:hover td{background:#fffafd}
 .action-toast{
   position:fixed;
   left:50%;
-  top:calc(env(safe-area-inset-top, 0px) + 14px);
+  top:calc(env(safe-area-inset-top, 0px) + 18px);
   bottom:auto;
   z-index:120;
-  max-width:min(88vw,420px);
-  padding:10px 14px;
-  border:1px solid #cbe5dc;
-  border-radius:8px;
-  background:rgba(246,253,250,.98);
-  color:#397964;
-  box-shadow:0 12px 34px rgba(106,62,84,.18);
-  font-weight:700;
-  text-align:center;
+  width:max-content;
+  min-width:min(280px,calc(100vw - 32px));
+  max-width:min(90vw,440px);
+  display:flex;
+  align-items:center;
+  gap:10px;
+  padding:11px 15px 11px 12px;
+  border:1px solid #efcbdc;
+  border-radius:13px;
+  background:linear-gradient(135deg,rgba(255,253,254,.985),rgba(255,241,247,.985));
+  color:#6b4657;
+  box-shadow:
+    inset 3px 0 0 #d77ca5,
+    0 14px 38px rgba(151,88,117,.15),
+    0 3px 10px rgba(126,72,97,.08);
+  backdrop-filter:blur(14px);
+  -webkit-backdrop-filter:blur(14px);
+  font-size:12.5px;
+  line-height:1.4;
+  font-weight:750;
+  text-align:left;
   opacity:0;
   pointer-events:none;
-  transform:translate(-50%,-12px);
-  transition:opacity .2s ease,transform .2s ease;
+  transform:translate(-50%,-9px) scale(.985);
+  transition:opacity .2s ease,transform .22s cubic-bezier(.22,.61,.36,1);
 }
-.action-toast.show{opacity:1;transform:translate(-50%,0)}
+.action-toast::before{
+  content:'';
+  width:10px;
+  height:10px;
+  flex:0 0 10px;
+  border-radius:50%;
+  background:#d77ca5;
+  box-shadow:0 0 0 6px rgba(215,124,165,.13);
+}
+.action-toast.show{opacity:1;transform:translate(-50%,0) scale(1)}
 
 @media(hover:hover){
   .card:hover{box-shadow:0 11px 28px rgba(144,77,111,.09)}
@@ -1302,7 +1323,14 @@ tbody tr:hover td{background:#fcfafb}
 .manual-session .manual-kpi-check{color:#8a6829}
 .manual-session select[data-person]{border-color:#e6d9df;background:#f5f2f4;color:#9b9095;cursor:not-allowed}
 @media(max-width:700px){
-  .action-toast{top:calc(env(safe-area-inset-top, 0px) + 10px);max-width:calc(100vw - 24px)}
+  .action-toast{
+    top:calc(env(safe-area-inset-top, 0px) + 72px);
+    min-width:min(300px,calc(100vw - 28px));
+    max-width:calc(100vw - 28px);
+    padding:11px 14px 11px 12px;
+    border-radius:12px;
+    font-size:12px;
+  }
 }
 .sync-status{min-height:22px}
 .sync-status b{color:#5b414e}
@@ -1944,7 +1972,7 @@ tbody tr:hover td{background:#fffafb}
       </div>
     </aside>
     <main class="main">
-      <header class="topbar"><div class="topbar-title-wrap"><button id="menuToggle" class="menu-toggle" type="button" aria-label="Mở menu" aria-expanded="false">☰</button><div><h1 id="pageTitle" class="page-title">Tổng quan</h1><div id="pageSub" class="tiny"></div></div></div><div class="row"><span id="syncBadge" class="pill">v1.25.0</span></div></header>
+      <header class="topbar"><div class="topbar-title-wrap"><button id="menuToggle" class="menu-toggle" type="button" aria-label="Mở menu" aria-expanded="false">☰</button><div><h1 id="pageTitle" class="page-title">Tổng quan</h1><div id="pageSub" class="tiny"></div></div></div><div class="row"><span id="syncBadge" class="pill">v1.26.0</span></div></header>
       <div class="content">
         <section id="section-dashboard" class="section active"></section>
         <section id="section-live" class="section"></section>
@@ -2279,7 +2307,7 @@ tbody tr:hover td{background:#fffafb}
 
     function previewTs(iso){ return {toDate:()=>new Date(iso)}; }
     function enterPreview(){
-      state.config={version:'1.25.0-preview',tiktokConfigured:true};
+      state.config={version:'1.26.0-preview',tiktokConfigured:true};
       state.user={uid:'preview-admin',email:'admin@sellerkbb.demo',displayName:'Quản trị viên Demo',photoURL:avatarFallbackData('Quản trị viên Demo')};
       state.profile={role:'admin',status:'approved',displayName:'Quản trị viên Demo',photoURL:state.user.photoURL,permissions:['live.read','kpi.read']};
       state.maintenance={settings:{retentionDays:180,autoCleanup:true,emergencyPercent:85,firestoreSoftLimitMb:600,firestoreMaxSessions:12000,kvSoftKeyLimit:5000},github:{usedBytes:124000,limitBytes:10000000000,available:true},cloudflare:{keyCount:5,lastRun:{ranAt:new Date().toISOString(),deleted:0},usedBytes:428000,storageLimitBytes:1000000000,storageComplete:true},firebase:{freePlanMode:true,ttlEnabled:false,ttlRecommended:false,storageLimitBytes:1073741824}};
@@ -2403,12 +2431,20 @@ tbody tr:hover td{background:#fffafb}
 
     function showToast(message){
       let el=$('#actionToast');
-      if(!el){ el=document.createElement('div'); el.id='actionToast'; el.className='action-toast'; document.body.appendChild(el); }
+      if(!el){
+        el=document.createElement('div');
+        el.id='actionToast';
+        el.className='action-toast';
+        el.setAttribute('role','status');
+        el.setAttribute('aria-live','polite');
+        el.setAttribute('aria-atomic','true');
+        document.body.appendChild(el);
+      }
       el.textContent=message;
       el.classList.remove('show');
       requestAnimationFrame(()=>el.classList.add('show'));
       clearTimeout(showToast.timer);
-      showToast.timer=setTimeout(()=>el.classList.remove('show'),1800);
+      showToast.timer=setTimeout(()=>el.classList.remove('show'),2200);
     }
 
     function fmtSyncMoment(iso){

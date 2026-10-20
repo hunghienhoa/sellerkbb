@@ -81,6 +81,11 @@ assert(html.includes('id="accountLogoutBtn"'), "Account popover logout missing")
 assert(!html.includes('id="logoutBtn"'), "Legacy topbar logout button should be removed");
 assert(readme.includes("Hồ sơ Google & đăng xuất"), "README Google profile/logout guide missing");
 assert(html.includes("v1.16 pink pastel theme + grouped navigation"), "Pink pastel theme override missing");
+assert(html.includes("background:linear-gradient(135deg,rgba(255,253,254,.985),rgba(255,241,247,.985))"), "Pastel pink toast background missing");
+assert(html.includes("border:1px solid #efcbdc")&&html.includes("inset 3px 0 0 #d77ca5"), "Pastel pink toast border/accent missing");
+assert(html.includes(".action-toast::before")&&html.includes("box-shadow:0 0 0 6px rgba(215,124,165,.13)"), "Toast rose indicator missing");
+assert(html.includes("top:calc(env(safe-area-inset-top, 0px) + 72px)"), "Mobile toast must sit below the sticky topbar");
+assert(html.includes("el.setAttribute('role','status')")&&html.includes("el.setAttribute('aria-live','polite')"), "Toast accessibility semantics missing");
 assert(html.includes("white-space:nowrap;")&&html.includes("font-variant-numeric:tabular-nums"), "Mobile metric one-line numeric styling missing");
 assert(html.includes("font-size:clamp(12.5px,3.6vw,16px)"), "Mobile metric responsive font sizing missing");
 assert(html.includes(".metric-card{padding:10px;gap:7px;align-items:center;overflow:hidden}"), "Mobile metric compact card layout missing");
