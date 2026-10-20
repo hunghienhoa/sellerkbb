@@ -127,6 +127,10 @@ assert(html.includes("Nhân viên vận hành Livestream</span><select"), "Opera
 assert(html.includes('data-manual-host-gmv'), "Host GMV field missing");
 assert(html.includes('data-manual-host-kpi'), "Host computed KPI field missing");
 assert(html.includes("KPI của Host Livestream (0,3%)"), "Host 0.3% KPI label missing");
+assert(html.includes('class="kpi-rate-guide"'), "KPI rate explanation guide missing");
+assert(html.includes("<b>Cách tính KPI</b>"), "KPI rate guide title missing");
+assert(html.includes("Host Livestream = 0,3%")&&html.includes("Nhân viên vận hành Livestream = 0,1%"), "KPI rate formulas missing from explanation");
+assert(!html.includes('<span class="pill">Host 0,3%</span>')&&!html.includes('<span class="pill">Vận hành 0,1%</span>'), "Old KPI rate pills must be removed");
 assert(html.includes("Math.round(gmv*.003)"), "Host 0.3% KPI calculation missing");
 assert(html.includes("setManualMoneyInput(hostKpiInput,Math.round(gmv*.003))"), "Host KPI live recalculation missing");
 assert(html.includes('class="manual-kpi-output" data-manual-host-kpi'), "Host KPI must be a static output");
