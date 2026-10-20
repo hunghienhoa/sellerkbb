@@ -177,7 +177,7 @@ assert(html.includes("cur.provisionalAutoGmv+=basis.gmv"), "Provisional reconcil
 assert(html.includes("KPI đã chốt")&&html.includes("KPI tạm tính")&&html.includes("KPI dự kiến")&&html.includes("Chờ đối soát"), "KPI final/provisional/waiting labels missing");
 assert(html.includes("KPI tự động chỉ dùng đơn có tín hiệu LIVE"), "KPI guide must state only confirmed LIVE orders are used");
 assert(!html.includes("KPI tự động đang tạm dùng GMV LIVE gộp"), "Legacy gross-GMV KPI warning must be removed");
-assert(html.includes("gmv_reconciled_for_kpi")&&html.includes("kpi_status"), "LIVE CSV reconciled KPI fields missing");
+assert(html.includes("gmv_recorded_latest")&&html.includes("gmv_pending_reconciliation")&&html.includes("gmv_after_cancel_refund_final")&&html.includes("gmv_time_window_excluded")&&html.includes("kpi_status"), "LIVE CSV three-stage GMV fields missing");
 assert(html.includes("gmv_auto_final")&&html.includes("gmv_auto_provisional"), "KPI CSV final/provisional fields missing");
 assert(readme.includes("**GMV đã ghi nhận**")&&readme.includes("**GMV chờ đối soát**")&&readme.includes("**GMV sau khi hoàn hủy**"), "README must document the three GMV stages");
 assert(readme.includes("không được cộng vào KPI tự động"), "README must document time-window order exclusion from KPI");
