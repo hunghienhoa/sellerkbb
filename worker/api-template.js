@@ -15,6 +15,8 @@ const KPI_RECONCILE_HOURLY_MAX_SESSIONS = 2;
 const KPI_RECONCILE_DAILY_MAX_SESSIONS = 6;
 const KPI_RECONCILE_HOURLY_LOOKBACK_SECONDS = 3 * 86400;
 const KPI_RECONCILE_DAILY_LOOKBACK_SECONDS = RECONCILIATION_PROTECTION_DAYS * 86400;
+const MAX_ORDER_SEARCH_PAGES = 200;
+const REQUIRED_TIKTOK_SCOPES = ["data.shop_analytics.public.read", "seller.order.info", "seller.return_refund.basic"];
 const DEFAULT_MAINTENANCE = {
   retentionDays: 180,
   autoCleanup: true,
@@ -156,18 +158,26 @@ function html(body, status = 200) {
 }
 
 function publicConfig(env) {
+  const firebase = {
+    apiKey: env.FIREBASE_API_KEY || "",
+    authDomain: env.FIREBASE_AUTH_DOMAIN || "",
+    projectId: env.FIREBASE_PROJECT_ID || "",
+    storageBucket: env.FIREBASE_STORAGE_BUCKET || "",
+    messagingSenderId: env.FIREBASE_MESSAGING_SENDER_ID || "",
+    appId: env.FIREBASE_APP_ID || ""
+  };
   return {
     version: env.APP_VERSION || "1.0.0",
-    firebase: {
-      apiKey: env.FIREBASE_API_KEY || "",
-      authDomain: env.FIREBASE_AUTH_DOMAIN || "",
-      projectId: env.FIREBASE_PROJECT_ID || "",
-      storageBucket: env.FIREBASE_STORAGE_BUCKET || "",
-      messagingSenderId: env.FIREBASE_MESSAGING_SENDER_ID || "",
-      appId: env.FIREBASE_APP_ID || ""
-    },
+    firebase,
+    firebaseConfigured: Boolean(firebase.apiKey && firebase.authDomain && firebase.projectId && firebase.storageBucket && firebase.messagingSenderId && firebase.appId),
     tiktokConfigured: Boolean(env.TIKTOK_APP_KEY && env.TIKTOK_APP_SECRET && env.TIKTOK_SERVICE_ID && env.TIKTOK_SELLER_AUTH_URL && env.TIKTOK_KV)
   };
+}
+
+function normalizeScopes(raw) {
+  if (Array.isArray(raw)) return [...new Set(raw.map(x => String(x || "").trim()).filter(Boolean))];
+  if (typeof raw === "string") return [...new Set(raw.split(/[\s,]+/).map(x => x.trim()).filter(Boolean))];
+  return [];
 }
 
 function bearer(request) {
@@ -436,8 +446,14 @@ async function searchOrdersForLiveWindow(env, accessToken, session) {
   if (!session?.shopCipher) throw new Error("Phiên LIVE chưa có shop_cipher để đối soát đơn.");
 
   const found = [];
+  const seenOrderIds = new Set();
+  const seenPageTokens = new Set();
   let pageToken = "";
+  let pages = 0;
   do {
+    if (pages >= MAX_ORDER_SEARCH_PAGES) {
+      throw new Error("Đơn trong phiên vượt giới hạn quét an toàn " + MAX_ORDER_SEARCH_PAGES + " trang. SellerKBB đã dừng đối soát để không cắt thiếu đơn và không chốt KPI sai.");
+    }
     const query = { shop_cipher: session.shopCipher, page_size: 100 };
     if (pageToken) query.page_token = pageToken;
     const result = await tiktokCall(env, accessToken, "/order/202309/orders/search", query, "POST", {
@@ -446,15 +462,25 @@ async function searchOrdersForLiveWindow(env, accessToken, session) {
     });
     if (result.payload?.code !== 0) {
       const detail = result.payload?.message || "Không lấy được danh sách đơn";
-      throw new Error(`TikTok Orders API: ${detail}. Hãy kiểm tra quyền seller.order.info.`);
+      throw new Error("TikTok Orders API: " + detail + ". Hãy kiểm tra quyền seller.order.info.");
     }
+    pages++;
     const data = result.payload?.data || {};
-    found.push(...(Array.isArray(data.orders) ? data.orders : []));
-    pageToken = data.next_page_token || "";
-  } while (pageToken && found.length < 1000);
-  return found.slice(0, 1000);
+    for (const order of (Array.isArray(data.orders) ? data.orders : [])) {
+      const id = String(order?.id || "");
+      if (id && seenOrderIds.has(id)) continue;
+      if (id) seenOrderIds.add(id);
+      found.push(order);
+    }
+    const nextPageToken = String(data.next_page_token || "");
+    if (nextPageToken && seenPageTokens.has(nextPageToken)) {
+      throw new Error("TikTok Orders API trả lại page_token lặp. SellerKBB đã dừng an toàn để tránh vòng lặp và không chốt KPI thiếu dữ liệu.");
+    }
+    if (nextPageToken) seenPageTokens.add(nextPageToken);
+    pageToken = nextPageToken;
+  } while (pageToken);
+  return found;
 }
-
 async function hydrateOrderDetails(env, accessToken, shopCipher, orders) {
   const byId = new Map((orders || []).filter(o => o?.id).map(o => [String(o.id), o]));
   const ids = [...byId.keys()];
@@ -531,9 +557,25 @@ function normalizeReconcileOrder(order, aftersales, fallbackCurrency) {
   };
 }
 
+function findOverlappingLiveSessions(session, allSessions = []) {
+  const start = Number(session?.startTimeSeconds || 0);
+  const end = Number(session?.endTimeSeconds || 0) || (start + Math.max(1, Number(session?.durationSeconds || 0)));
+  const shopCipher = String(session?.shopCipher || "");
+  const liveId = String(session?.liveId || "");
+  if (!start || end <= start || !shopCipher) return [];
+  return (Array.isArray(allSessions) ? allSessions : []).filter(other => {
+    if (!other || String(other?.liveId || "") === liveId) return false;
+    if (String(other?.shopCipher || "") !== shopCipher) return false;
+    const otherStart = Number(other?.startTimeSeconds || 0);
+    const otherEnd = Number(other?.endTimeSeconds || 0) || (otherStart + Math.max(1, Number(other?.durationSeconds || 0)));
+    if (!otherStart || otherEnd <= otherStart) return false;
+    return otherStart < end && otherEnd > start;
+  });
+}
 async function buildLiveReconciliationForSession(env, accessToken, session, options = {}) {
   if (!session) throw new Error("Không tìm thấy phiên LIVE trong dữ liệu TikTok đang lưu.");
   const hydrateDetails = options.hydrateDetails !== false;
+  const overlappingSessions = findOverlappingLiveSessions(session, options.allSessions || []);
   const listedOrders = await searchOrdersForLiveWindow(env, accessToken, session);
   const orders = hydrateDetails
     ? await hydrateOrderDetails(env, accessToken, session.shopCipher, listedOrders)
@@ -630,7 +672,10 @@ async function buildLiveReconciliationForSession(env, accessToken, session, opti
     scope: {
       orderWindow: "Đơn tạo trong đúng khoảng thời gian phiên LIVE",
       attribution: "auto_combine_order_id là tín hiệu LIVE; nếu không có, SellerKBB chỉ đánh dấu khớp theo thời gian.",
-      aftersalesAvailable: !aftersalesPermissionMissing
+      aftersalesAvailable: !aftersalesPermissionMissing,
+      overlapAmbiguous: overlappingSessions.length > 0,
+      overlapCount: overlappingSessions.length,
+      overlapLiveIds: overlappingSessions.slice(0, 20).map(x => String(x?.liveId || "")).filter(Boolean)
     },
     counts,
     totals: {
@@ -650,19 +695,24 @@ function summarizeLiveReconciliation(result) {
   const orderWindowAmount = moneyNumber(result?.totals?.orderWindowAmount);
   const confirmedLiveSignalAmount = moneyNumber(result?.totals?.confirmedLiveSignalAmount);
   const aftersalesAvailable = result?.scope?.aftersalesAvailable !== false;
+  const overlapAmbiguous = result?.scope?.overlapAmbiguous === true;
+  const overlapCount = Number(result?.scope?.overlapCount || 0);
   const liveSignalOrderRows = orders.filter(order => order?.attribution === "live_signal");
   const timeWindowOrderRows = orders.filter(order => order?.attribution !== "live_signal");
   const liveSignalOrders = liveSignalOrderRows.length;
   const timeWindowOrders = timeWindowOrderRows.length;
   const timeWindowNetAmount = timeWindowOrderRows.reduce((sum, order) => sum + moneyNumber(order?.netAmount), 0);
   const hasConfirmedOrderData = liveSignalOrders > 0 || analyticsGmvAmount === 0;
-  const usableForKpi = aftersalesAvailable && hasConfirmedOrderData;
+  const usableForKpi = !overlapAmbiguous && aftersalesAvailable && hasConfirmedOrderData;
   const allFinal = usableForKpi && liveSignalOrderRows.every(order => order?.finalized === true);
   let status = "provisional";
   let reason = "";
-  if (!aftersalesAvailable) {
+  if (overlapAmbiguous) {
     status = "blocked";
-    reason = "Thiếu quyền hoặc dữ liệu Return/Refund; chưa dùng số này để tính KPI.";
+    reason = "Phát hiện " + overlapCount + " phiên LIVE cùng shop bị chồng thời gian. auto_combine_order_id chỉ xác nhận đơn có tín hiệu LIVE nhưng không xác định duy nhất phiên nào, nên SellerKBB khóa KPI tự động để tránh tính nhầm.";
+  } else if (!aftersalesAvailable) {
+    status = "blocked";
+    reason = "Thiếu quyền hoặc dữ liệu Return/Refund; chưa dùng số này để tính KPI."
   } else if (!hasConfirmedOrderData) {
     status = "waiting";
     reason = "Chưa có đơn đủ tín hiệu LIVE để tính KPI; các đơn chỉ khớp theo thời gian không được cộng vào KPI.";
@@ -687,6 +737,8 @@ function summarizeLiveReconciliation(result) {
     returningCount: Number(result?.counts?.returning || 0),
     refundedCount: Number(result?.counts?.refunded || 0),
     aftersalesAvailable,
+    overlapAmbiguous,
+    overlapCount,
     liveSignalOrders,
     timeWindowOrders,
     attribution: liveSignalOrders > 0 ? (timeWindowOrders > 0 ? "mixed" : "live_signal") : "time_window",
@@ -700,7 +752,7 @@ async function buildLiveReconciliation(env, accessToken, liveId, options = {}) {
   const sessions = await getAutoSyncData(env);
   const session = sessions.find(x => String(x?.liveId || "") === String(liveId || ""));
   if (!session) throw new Error("Không tìm thấy phiên LIVE trong dữ liệu TikTok đang lưu.");
-  return buildLiveReconciliationForSession(env, accessToken, session, options);
+  return buildLiveReconciliationForSession(env, accessToken, session, { ...options, allSessions: sessions });
 }
 
 async function persistReconciliationSummary(env, liveId, summary) {
@@ -730,7 +782,7 @@ async function refreshKpiReconciliations(env, accessToken, sessions, reason = "h
       const end = Number(session?.endTimeSeconds || 0);
       if (!session?.liveId || !session?.shopCipher || !end || end > nowSeconds) return false;
       if (nowSeconds - end > lookback) return false;
-      if (session?.reconciliation?.status === "final") return false;
+      if (session?.reconciliation?.status === "final" && findOverlappingLiveSessions(session, sessions).length === 0) return false;
       const last = reconciliationGeneratedMs(session?.reconciliation);
       return !last || Date.now() - last >= minRefreshMs;
     })
@@ -748,7 +800,7 @@ async function refreshKpiReconciliations(env, accessToken, sessions, reason = "h
   const errors = [];
   for (const session of candidates) {
     try {
-      const result = await buildLiveReconciliationForSession(env, accessToken, session, { hydrateDetails: false });
+      const result = await buildLiveReconciliationForSession(env, accessToken, session, { hydrateDetails: true, allSessions: sessions });
       session.reconciliation = result.kpiSummary;
       refreshed++;
       if (result.kpiSummary?.status === "final") finalized++;
@@ -996,8 +1048,21 @@ async function handleApi(request, env) {
       const raw = await env.TIKTOK_KV.get(AUTO_SYNC_STATUS_KEY);
       try { autoSync = raw ? JSON.parse(raw) : null; } catch {}
     }
+    const config = publicConfig(env);
+    const grantedScopes = normalizeScopes(token?.granted_scopes || token?.scope || token?.scopes || []);
+    const missingScopes = grantedScopes.length ? REQUIRED_TIKTOK_SCOPES.filter(scope => !grantedScopes.includes(scope)) : [];
+    const readinessChecks = {
+      firebaseConfig: config.firebaseConfigured === true,
+      tiktokConfig: config.tiktokConfigured === true,
+      kvBinding: Boolean(env.TIKTOK_KV),
+      sellerToken: Boolean(token?.access_token),
+      refreshToken: Boolean(token?.refresh_token),
+      autoSync: autoSync?.ok === true
+    };
+    const coreReady = Object.values(readinessChecks).every(Boolean);
+    const scopeState = grantedScopes.length ? (missingScopes.length ? "missing" : "verified") : "unreported";
     return json({
-      configured: publicConfig(env).tiktokConfigured,
+      configured: config.tiktokConfigured,
       connected: Boolean(token?.access_token),
       autoRefresh: Boolean(token?.refresh_token),
       autoSyncEnabled: true,
@@ -1005,11 +1070,27 @@ async function handleApi(request, env) {
       accessTokenExpiresAt: accessExpiresAt || null,
       refreshTokenExpiresAt: refreshExpiresAt || null,
       lastRefreshedAt: token?.refreshed_at || null,
-      grantedScopes: token?.granted_scopes || []
+      grantedScopes,
+      readiness: {
+        readyForLiveData: coreReady && missingScopes.length === 0,
+        state: coreReady ? (scopeState === "missing" ? "missing_scopes" : scopeState === "unreported" ? "verify_scopes" : "ready") : "not_ready",
+        checks: readinessChecks,
+        requiredScopes: REQUIRED_TIKTOK_SCOPES,
+        missingScopes,
+        scopesReported: grantedScopes.length > 0
+      }
     });
   }
 
   if (url.pathname === "/api/tiktok/oauth/start" && request.method === "POST") return handleOAuthStart(request, env);
+
+  if (url.pathname === "/api/tiktok/autosync/run" && request.method === "POST") {
+    await requireAdmin(request, env);
+    const body = await request.json().catch(() => ({}));
+    const days = Math.max(1, Math.min(30, Number(body?.days || 30)));
+    const result = await runAutoSync(env, days, "manual");
+    return json(result, result.ok ? 200 : 502);
+  }
 
   if (url.pathname === "/api/tiktok/autosync/status" && request.method === "GET") {
     await requireReportAccess(request, env);
