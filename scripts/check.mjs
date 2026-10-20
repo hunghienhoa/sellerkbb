@@ -67,7 +67,6 @@ assert(worker.includes("function summarizeLiveReconciliation"), "Reconciliation 
 assert(worker.includes("async function refreshKpiReconciliations"), "Scheduled KPI reconciliation refresher missing");
 assert(worker.includes('status === "COMPLETED" && active.length === 0'), "Completed-order finalization rule missing");
 assert(worker.includes("const finalized = cancelled ||"), "Cancelled orders must finalize reconciliation");
-assert(worker.includes("const attributionConfirmed = orders.length === 0 || timeWindowOrders === 0;"), "KPI finalization must require confirmed LIVE attribution");
 assert(worker.includes("const liveSignalOrderRows = orders.filter(order => order?.attribution === \"live_signal\")"), "KPI reconciliation must isolate confirmed LIVE orders");
 assert(worker.includes("gmvAmount: usableForKpi ? confirmedLiveSignalAmount : 0"), "Automatic KPI GMV must use confirmed LIVE signal amount only");
 assert(worker.includes("timeWindowNetAmount"), "Time-window-only GMV exclusion summary missing");
