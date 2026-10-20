@@ -2909,9 +2909,9 @@ tbody tr:hover td{background:#fffafb}
       $('#section-dashboard').innerHTML=`
         ${timeFilterHtml('dashboard')}
         <div class="data-note sync-status ${state.autoSyncRefreshing?'is-refreshing':''}">${icon('sync',16)}<span>Dữ liệu Tiktok được đồng bộ lúc: <b>${fmtSyncMoment(state.autoSyncStatus?.finishedAt)}</b></span></div>
-        <div class="metrics-grid">${metricCard('live','Phiên LIVE',ss.length)}${metricCard('money','GMV cuối kỳ',fmtMoney(gmv,currency))}${metricCard('box','Sản phẩm bán',new Intl.NumberFormat('vi-VN').format(items))}${metricCard('clock','Tổng thời lượng',fmtDuration(totalSec))}</div>
+        <div class="metrics-grid">${metricCard('live','Phiên LIVE',ss.length)}${metricCard('money','GMV LIVE TikTok',fmtMoney(gmv,currency),'Gộp · chưa trừ hoàn/hủy')}${metricCard('box','Sản phẩm bán',new Intl.NumberFormat('vi-VN').format(items))}${metricCard('clock','Tổng thời lượng',fmtDuration(totalSec))}</div>
         ${monthlyHint}
-        <div class="card dashboard-live-card"><div class="row space dashboard-live-head"><div><h3>${listTitle}</h3>${monthly?`<div class="tiny">Đang hiển thị ${visibleSessions.length} phiên thuộc 7 ngày gần nhất trên tổng ${ss.length} phiên của 30 ngày.</div>`:''}</div><div class="row"><span class="pill">GMV dùng KPI = GMV cuối kỳ</span>${moreAction}</div></div>${renderLiveTable(visibleSessions,false)}</div>`;
+        <div class="card dashboard-live-card"><div class="row space dashboard-live-head"><div><h3>${listTitle}</h3>${monthly?`<div class="tiny">Đang hiển thị ${visibleSessions.length} phiên thuộc 7 ngày gần nhất trên tổng ${ss.length} phiên của 30 ngày.</div>`:''}</div><div class="row"><span class="pill warn">KPI tự động đang tạm dùng GMV LIVE gộp</span>${moreAction}</div></div>${renderLiveTable(visibleSessions,false)}</div>`;
       bindTimeFilter('dashboard');
       const more=$('#dashboardViewMore');
       if(more)more.onclick=()=>{
@@ -2924,7 +2924,7 @@ tbody tr:hover td{background:#fffafb}
     function renderLiveTable(rows, editable){
       if(!rows.length)return `<div class="empty">Chưa có dữ liệu LIVE trong khoảng này.</div>`;
       const approvedHosts=staffForRole('host'); const operators=staffForRole('operator');
-      const desktop=`<div class="table-wrap desktop-live-table"><table><thead><tr><th>Phiên / Kênh</th><th>Thời gian phiên LIVE</th><th>Thời lượng phiên LIVE</th><th>GMV đã ghi nhận</th><th>Số món bán đã ghi nhận</th><th>GMV sau hoàn/hủy</th><th>Host</th><th>Vận hành</th>${editable?'<th></th>':''}</tr></thead><tbody>${rows.map(s=>`<tr>
+      const desktop=`<div class="table-wrap desktop-live-table"><table><thead><tr><th>Phiên / Kênh</th><th>Thời gian phiên LIVE</th><th>Thời lượng phiên LIVE</th><th>GMV lần đầu ghi nhận</th><th>Số món bán đã ghi nhận</th><th>GMV LIVE TikTok (gộp)</th><th>Host</th><th>Vận hành</th>${editable?'<th></th>':''}</tr></thead><tbody>${rows.map(s=>`<tr>
         <td><b>${esc(s.title||'Phiên LIVE')}</b>${isManualKpi(s)?'<div><span class="pill warn">Ngày Campaign/Mega · tính thủ công</span></div>':''}<div class="tiny">@${esc(s.channelUsername||'—')} ${s.channelId?`· ID kênh ${esc(s.channelId)}`:''}</div></td>
         <td class="live-time-cell"><b>${fmtLiveTimeRange(s)}</b></td><td>${fmtDuration(s.durationSeconds)}</td><td class="money">${fmtMoney(s.recordedGmvAmount,s.currency)}</td><td>${new Intl.NumberFormat('vi-VN').format(Number(s.currentItemsSold??s.recordedItemsSold??0))}</td><td class="money">${fmtMoney(finalGmv(s),s.currency)}</td>
         <td>${editable?personSelect('host',s.id,s.hostUid,approvedHosts,s.hostName):esc(s.hostName||'—')}</td><td>${editable?personSelect('operator',s.id,s.operatorUid,operators,s.operatorName):esc(s.operatorName||'—')}</td>${editable?`<td><label class="manual-kpi-check"><input type="checkbox" data-manual-kpi="${s.id}" ${isManualKpi(s)?'checked':''}> <span>Tính thủ công</span></label><button class="btn small" data-save-session="${s.id}">${icon('check',14)} Lưu</button></td>`:''}
@@ -2932,8 +2932,8 @@ tbody tr:hover td{background:#fffafb}
       const mobile=`<div class="mobile-live-list">${rows.map(s=>`<article class="mobile-live-card">
         <div class="mobile-live-head"><div><div class="mobile-live-title">${esc(s.title||'Phiên LIVE')}</div>${isManualKpi(s)?'<span class="pill warn">Ngày Campaign/Mega · tính thủ công</span>':''}<div class="tiny">@${esc(s.channelUsername||'—')}</div><div class="mobile-live-time">${icon('clock',13)} <b>${fmtLiveTimeRange(s)}</b></div></div><span class="pill">${fmtDuration(s.durationSeconds)}</span></div>
         <div class="mobile-grid">
-          <div class="mobile-field"><span class="tiny">GMV đã ghi nhận</span><strong>${fmtMoney(s.recordedGmvAmount,s.currency)}</strong></div>
-          <div class="mobile-field"><span class="tiny">GMV sau hoàn/hủy</span><strong>${fmtMoney(finalGmv(s),s.currency)}</strong></div>
+          <div class="mobile-field"><span class="tiny">GMV lần đầu ghi nhận</span><strong>${fmtMoney(s.recordedGmvAmount,s.currency)}</strong></div>
+          <div class="mobile-field"><span class="tiny">GMV LIVE TikTok (gộp)</span><strong>${fmtMoney(finalGmv(s),s.currency)}</strong></div>
           <div class="mobile-field"><span class="tiny">Số món bán đã ghi nhận</span><strong>${new Intl.NumberFormat('vi-VN').format(Number(s.currentItemsSold??s.recordedItemsSold??0))}</strong></div>
         </div>
         ${editable?`<div class="mobile-assign"><label class="manual-kpi-check"><input type="checkbox" data-manual-kpi="${s.id}" ${isManualKpi(s)?'checked':''}> <span>Ngày Campaign/Mega Live · tính KPI thủ công</span></label><label><span class="tiny">Host Livestream</span>${personSelect('host',s.id,s.hostUid,approvedHosts,s.hostName)}</label><label><span class="tiny">Nhân viên vận hành</span>${personSelect('operator',s.id,s.operatorUid,operators,s.operatorName)}</label><button class="btn primary" data-save-session="${s.id}">${icon('check',15)} Lưu thiết lập</button></div>`:`<div class="mobile-assign">${isManualKpi(s)?'<div class="notice warn">Phiên này không cộng vào KPI tự động.</div>':''}<div class="row space"><span class="tiny">Host</span><b>${esc(s.hostName||'—')}</b></div><div class="row space"><span class="tiny">Vận hành</span><b>${esc(s.operatorName||'—')}</b></div></div>`}
@@ -2956,7 +2956,7 @@ tbody tr:hover td{background:#fffafb}
         .map(p=>p==='…'?'<span class="page-ellipsis">…</span>':`<button class="page-btn ${p===state.livePage?'active':''}" data-page="${p}">${p}</button>`).join('');
       $('#section-live').innerHTML=`
         ${timeFilterHtml('live')}
-        <div class="card live-list-card">${renderLiveTable(pageRows,isAdmin())}</div>
+        <div class="notice warn">GMV LIVE do Analytics TikTok trả về là GMV gộp, có thể vẫn bao gồm đơn hủy/hoàn. Muốn biết GMV thực sau hậu mãi, hãy dùng tab <b>Đối soát đơn LIVE</b>. KPI tự động hiện vẫn là tạm tính cho tới khi phiên được đối soát chắc chắn.</div><div class="card live-list-card">${renderLiveTable(pageRows,isAdmin())}</div>
         <div class="pagination-wrap">
           <div class="pagination-info">Đang hiển thị từ phiên <b>${from}</b> đến phiên <b>${to}</b> trên tổng số <b>${ss.length}</b> phiên · Mỗi trang hiển thị 20 phiên</div>
           <div class="pagination">
