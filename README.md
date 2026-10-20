@@ -22,6 +22,9 @@
 - Sửa trạng thái TikTok gây hiểu nhầm: sau khi đã kết nối Seller và đồng bộ thành công, lỗi cũ `tiktok_not_connected` giờ được xóa khỏi trạng thái đồng bộ.
 - Nút **Kết nối TikTok Seller** chỉ hiện khi chưa có Seller Token; khi đã kết nối, giao diện chuyển sang **Đồng bộ ngay 30 ngày** và **Kiểm tra trạng thái**.
 - Không thay đổi Seller Token/Refresh Token hiện có và không xóa dữ liệu LIVE đã đồng bộ.
+- Hotfix đối soát: TikTok Return/Refund nhận `order_ids` đúng dạng danh sách.
+- Chỉ đồng bộ và hiển thị LIVE của `shopkhangbaby` và `mekhangsua`; các kênh affiliate khác bị loại khỏi dữ liệu KPI.
+- Tách riêng cảnh báo `LIVE chồng thời gian` và `Thiếu dữ liệu hậu mãi`.
 
 
 ---
