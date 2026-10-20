@@ -4,7 +4,7 @@
 
 ### Báo cáo TikTok LIVE · KPI nhân sự · Tự đồng bộ 24/24
 
-**Phiên bản hiện tại: v1.22.0**
+**Phiên bản hiện tại: v1.23.0**
 
 [![GitHub Release](https://img.shields.io/github/v/release/hunghienhoa/sellerkbb?label=Release)](https://github.com/hunghienhoa/sellerkbb/releases)
 [![GitHub Actions](https://img.shields.io/github/actions/workflow/status/hunghienhoa/sellerkbb/deploy.yml?branch=main&label=Ki%E1%BB%83m%20tra%20%26%20Backup)](https://github.com/hunghienhoa/sellerkbb/actions)
@@ -17,15 +17,12 @@
 
 ---
 
-## 🆕 Cập nhật mới nhất — v1.22.0
+## 🆕 Cập nhật mới nhất — v1.23.0
 
-- Sửa **KPI thủ công** để KPI Host không còn phải nhập tay.
-- **KPI của Host Livestream (0,3%)** tự tính ngay từ **GMV sau hoàn/hủy của Host Livestream**.
-- **KPI của Nhân viên vận hành Livestream (0,1%)** tiếp tục tự tính từ cùng GMV Host.
-- Khi thay đổi GMV Host, cả hai ô KPI **0,3%** và **0,1%** cập nhật ngay và đều ở trạng thái chỉ đọc để tránh sửa sai công thức.
-- Ví dụ GMV Host **1.000.000đ** → KPI Host **3.000đ**, KPI Vận hành **1.000đ**.
-- Dữ liệu KPI thủ công đã lưu từ các bản cũ cũng được tính lại theo đúng tỷ lệ 0,3% / 0,1% khi hiển thị và tổng hợp KPI nhân sự.
-- Giữ nguyên TAB **Quản lý nhân sự** độc lập với tài khoản đăng nhập.
+- Điều chỉnh cách hiển thị **Thời gian phiên LIVE** để dễ đọc hơn.
+- Định dạng cũ: **15/10/2026 12:30-17:00**.
+- Định dạng mới: **15/10/2026 Vào lúc 12:30-17:00**.
+- Cách hiển thị này được dùng thống nhất ở bảng Phiên LIVE, giao diện mobile và các nơi tái sử dụng cùng bộ định dạng thời gian phiên.
 - Bản **preview/demo** và website được đồng bộ cùng source sau khi kiểm tra.
 - README và GitHub Release tiếp tục được cập nhật cùng phiên bản.
 
