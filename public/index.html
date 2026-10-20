@@ -3663,30 +3663,30 @@ tbody tr:hover td{background:#fffafb}
     }
 
     function renderLiveTable(rows, editable){
-      if(!rows.length)return \`<div class="empty">Chưa có dữ liệu LIVE trong khoảng này.</div>\`;
+      if(!rows.length)return `<div class="empty">Chưa có dữ liệu LIVE trong khoảng này.</div>`;
       const approvedHosts=staffForRole('host'); const operators=staffForRole('operator');
-      const desktop=\`<div class="table-wrap desktop-live-table"><table><thead><tr><th>Phiên / Kênh</th><th>Thời gian phiên LIVE</th><th>Thời lượng phiên LIVE</th><th>GMV đã ghi nhận</th><th>GMV chờ đối soát</th><th>GMV sau khi hoàn hủy</th><th>Số món bán đã ghi nhận</th><th>Host</th><th>Vận hành</th>\${editable?'<th></th>':''}</tr></thead><tbody>\${rows.map(s=>\`<tr>
-        <td><b>\${esc(s.title||'Phiên LIVE')}</b><div class="kpi-state-line">\${isManualKpi(s)?'<span class="pill warn">Ngày Campaign/Mega · tính thủ công</span>':kpiStatusPill(s)}</div><div class="tiny">@\${esc(s.channelUsername||'—')} \${s.channelId?\`· ID kênh \${esc(s.channelId)}\`:''}</div></td>
-        <td class="live-time-cell"><b>\${fmtLiveTimeRange(s)}</b></td>
-        <td>\${fmtDuration(s.durationSeconds)}</td>
-        <td class="money"><b>\${fmtMoney(sessionGmvFigures(s).recorded,s.currency)}</b><div class="tiny">TikTok cập nhật mới nhất</div></td>
-        <td class="money">\${gmvPendingDisplay(s)}<div class="tiny">\${sessionGmvFigures(s).pending!==null?'Tạm tính · chỉ đơn có tín hiệu LIVE':sessionGmvFigures(s).final!==null?'Đã chuyển sang số chốt':'Chưa đủ dữ liệu đối soát'}</div></td>
-        <td class="money"><b>\${gmvFinalDisplay(s)}</b><div class="tiny">\${sessionGmvFigures(s).final!==null?'Số cuối cùng dùng chốt KPI':'Chưa đủ điều kiện chốt'}</div></td>
-        <td>\${new Intl.NumberFormat('vi-VN').format(Number(s.currentItemsSold??s.recordedItemsSold??0))}</td>
-        <td>\${editable?personSelect('host',s.id,s.hostUid,approvedHosts,s.hostName):esc(s.hostName||'—')}</td>
-        <td>\${editable?personSelect('operator',s.id,s.operatorUid,operators,s.operatorName):esc(s.operatorName||'—')}</td>
-        \${editable?\`<td><label class="manual-kpi-check"><input type="checkbox" data-manual-kpi="\${s.id}" \${isManualKpi(s)?'checked':''}> <span>Tính thủ công</span></label><button class="btn small" data-save-session="\${s.id}">\${icon('check',14)} Lưu</button></td>\`:''}
-      </tr>\`).join('')}</tbody></table></div>\`;
-      const mobile=\`<div class="mobile-live-list">\${rows.map(s=>\`<article class="mobile-live-card">
-        <div class="mobile-live-head"><div><div class="mobile-live-title">\${esc(s.title||'Phiên LIVE')}</div><div class="kpi-state-line">\${isManualKpi(s)?'<span class="pill warn">Ngày Campaign/Mega · tính thủ công</span>':kpiStatusPill(s)}</div><div class="tiny">@\${esc(s.channelUsername||'—')}</div><div class="mobile-live-time">\${icon('clock',13)} <b>\${fmtLiveTimeRange(s)}</b></div></div><span class="pill">\${fmtDuration(s.durationSeconds)}</span></div>
+      const desktop=`<div class="table-wrap desktop-live-table"><table><thead><tr><th>Phiên / Kênh</th><th>Thời gian phiên LIVE</th><th>Thời lượng phiên LIVE</th><th>GMV đã ghi nhận</th><th>GMV chờ đối soát</th><th>GMV sau khi hoàn hủy</th><th>Số món bán đã ghi nhận</th><th>Host</th><th>Vận hành</th>${editable?'<th></th>':''}</tr></thead><tbody>${rows.map(s=>`<tr>
+        <td><b>${esc(s.title||'Phiên LIVE')}</b><div class="kpi-state-line">${isManualKpi(s)?'<span class="pill warn">Ngày Campaign/Mega · tính thủ công</span>':kpiStatusPill(s)}</div><div class="tiny">@${esc(s.channelUsername||'—')} ${s.channelId?`· ID kênh ${esc(s.channelId)}`:''}</div></td>
+        <td class="live-time-cell"><b>${fmtLiveTimeRange(s)}</b></td>
+        <td>${fmtDuration(s.durationSeconds)}</td>
+        <td class="money"><b>${fmtMoney(sessionGmvFigures(s).recorded,s.currency)}</b><div class="tiny">TikTok cập nhật mới nhất</div></td>
+        <td class="money">${gmvPendingDisplay(s)}<div class="tiny">${sessionGmvFigures(s).pending!==null?'Tạm tính · chỉ đơn có tín hiệu LIVE':sessionGmvFigures(s).final!==null?'Đã chuyển sang số chốt':'Chưa đủ dữ liệu đối soát'}</div></td>
+        <td class="money"><b>${gmvFinalDisplay(s)}</b><div class="tiny">${sessionGmvFigures(s).final!==null?'Số cuối cùng dùng chốt KPI':'Chưa đủ điều kiện chốt'}</div></td>
+        <td>${new Intl.NumberFormat('vi-VN').format(Number(s.currentItemsSold??s.recordedItemsSold??0))}</td>
+        <td>${editable?personSelect('host',s.id,s.hostUid,approvedHosts,s.hostName):esc(s.hostName||'—')}</td>
+        <td>${editable?personSelect('operator',s.id,s.operatorUid,operators,s.operatorName):esc(s.operatorName||'—')}</td>
+        ${editable?`<td><label class="manual-kpi-check"><input type="checkbox" data-manual-kpi="${s.id}" ${isManualKpi(s)?'checked':''}> <span>Tính thủ công</span></label><button class="btn small" data-save-session="${s.id}">${icon('check',14)} Lưu</button></td>`:''}
+      </tr>`).join('')}</tbody></table></div>`;
+      const mobile=`<div class="mobile-live-list">${rows.map(s=>`<article class="mobile-live-card">
+        <div class="mobile-live-head"><div><div class="mobile-live-title">${esc(s.title||'Phiên LIVE')}</div><div class="kpi-state-line">${isManualKpi(s)?'<span class="pill warn">Ngày Campaign/Mega · tính thủ công</span>':kpiStatusPill(s)}</div><div class="tiny">@${esc(s.channelUsername||'—')}</div><div class="mobile-live-time">${icon('clock',13)} <b>${fmtLiveTimeRange(s)}</b></div></div><span class="pill">${fmtDuration(s.durationSeconds)}</span></div>
         <div class="mobile-grid">
-          <div class="mobile-field"><span class="tiny">GMV đã ghi nhận</span><strong>\${fmtMoney(sessionGmvFigures(s).recorded,s.currency)}</strong><small>TikTok cập nhật mới nhất</small></div>
-          <div class="mobile-field"><span class="tiny">GMV chờ đối soát</span><strong>\${gmvPendingDisplay(s)}</strong><small>Tạm tính · chỉ đơn có tín hiệu LIVE</small></div>
-          <div class="mobile-field"><span class="tiny">GMV sau khi hoàn hủy</span><strong>\${gmvFinalDisplay(s)}</strong><small>Số đã chốt để tính KPI</small></div>
-          <div class="mobile-field"><span class="tiny">Số món bán đã ghi nhận</span><strong>\${new Intl.NumberFormat('vi-VN').format(Number(s.currentItemsSold??s.recordedItemsSold??0))}</strong></div>
+          <div class="mobile-field"><span class="tiny">GMV đã ghi nhận</span><strong>${fmtMoney(sessionGmvFigures(s).recorded,s.currency)}</strong><small>TikTok cập nhật mới nhất</small></div>
+          <div class="mobile-field"><span class="tiny">GMV chờ đối soát</span><strong>${gmvPendingDisplay(s)}</strong><small>Tạm tính · chỉ đơn có tín hiệu LIVE</small></div>
+          <div class="mobile-field"><span class="tiny">GMV sau khi hoàn hủy</span><strong>${gmvFinalDisplay(s)}</strong><small>Số đã chốt để tính KPI</small></div>
+          <div class="mobile-field"><span class="tiny">Số món bán đã ghi nhận</span><strong>${new Intl.NumberFormat('vi-VN').format(Number(s.currentItemsSold??s.recordedItemsSold??0))}</strong></div>
         </div>
-        \${editable?\`<div class="mobile-assign"><label class="manual-kpi-check"><input type="checkbox" data-manual-kpi="\${s.id}" \${isManualKpi(s)?'checked':''}> <span>Ngày Campaign/Mega Live · tính KPI thủ công</span></label><label><span class="tiny">Host Livestream</span>\${personSelect('host',s.id,s.hostUid,approvedHosts,s.hostName)}</label><label><span class="tiny">Nhân viên vận hành</span>\${personSelect('operator',s.id,s.operatorUid,operators,s.operatorName)}</label><button class="btn primary" data-save-session="\${s.id}">\${icon('check',15)} Lưu thiết lập</button></div>\`:\`<div class="mobile-assign">\${isManualKpi(s)?'<div class="notice warn">Phiên này không cộng vào KPI tự động.</div>':''}<div class="row space"><span class="tiny">Host</span><b>\${esc(s.hostName||'—')}</b></div><div class="row space"><span class="tiny">Vận hành</span><b>\${esc(s.operatorName||'—')}</b></div></div>\`}
-      </article>\`).join('')}</div>\`;
+        ${editable?`<div class="mobile-assign"><label class="manual-kpi-check"><input type="checkbox" data-manual-kpi="${s.id}" ${isManualKpi(s)?'checked':''}> <span>Ngày Campaign/Mega Live · tính KPI thủ công</span></label><label><span class="tiny">Host Livestream</span>${personSelect('host',s.id,s.hostUid,approvedHosts,s.hostName)}</label><label><span class="tiny">Nhân viên vận hành</span>${personSelect('operator',s.id,s.operatorUid,operators,s.operatorName)}</label><button class="btn primary" data-save-session="${s.id}">${icon('check',15)} Lưu thiết lập</button></div>`:`<div class="mobile-assign">${isManualKpi(s)?'<div class="notice warn">Phiên này không cộng vào KPI tự động.</div>':''}<div class="row space"><span class="tiny">Host</span><b>${esc(s.hostName||'—')}</b></div><div class="row space"><span class="tiny">Vận hành</span><b>${esc(s.operatorName||'—')}</b></div></div>`}
+      </article>`).join('')}</div>`;
       return desktop+mobile;
     }
 
