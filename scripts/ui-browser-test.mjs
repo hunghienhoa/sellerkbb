@@ -217,11 +217,6 @@ try {
   assert(await page.$eval(manualCard,e=>e.textContent.includes('không tự chia GMV tổng')),"Manual KPI no-equal-split notice missing");
   assert(await page.$eval(manualCard,e=>e.textContent.includes('Host Livestream')&&e.textContent.includes('Nhân viên vận hành Livestream')),"Paired Host/Operator labels missing");
   assert(await page.$eval(manualCard,e=>e.textContent.includes('Thêm người')&&!e.textContent.includes('Thêm Host riêng')&&!e.textContent.includes('Thêm Vận hành riêng')),"Manual add control must match v1.18 Thêm người");
-  assert((await page.$$(manualCard+' [data-manual-entry-saved="1"]')).length>=1,"Saved manual KPI people must render as compact rows");
-  assert(await page.$eval(manualCard+' [data-manual-entry-saved="1"] [data-manual-entry-details]',e=>e.classList.contains('hidden')),"Saved manual KPI details must start collapsed");
-  assert(await page.$eval(manualCard+' [data-manual-entry-saved="1"] .manual-kpi-entry-summary',e=>e.textContent.includes('Host:')&&e.textContent.includes('Vận hành:')&&e.textContent.includes('Chi tiết')),"Collapsed manual KPI summary must show Host Operator and Chi tiết");
-  await page.click(manualCard+' [data-manual-entry-saved="1"] [data-manual-detail-toggle]');
-  assert(!(await page.$eval(manualCard+' [data-manual-entry-saved="1"] [data-manual-entry-details]',e=>e.classList.contains('hidden'))),"Chi tiết must expand saved manual KPI row");
 
   const hostOptions=await page.$$eval(manualCard+' [data-manual-host-person] option',els=>els.map(e=>e.textContent.trim()));
   assert(hostOptions.includes('Thảo My')&&hostOptions.includes('Dung')&&hostOptions.includes('Tâm')&&!hostOptions.includes('Hùng Bắc Giang'),"Host Livestream selector must show Host staff only");
@@ -285,11 +280,15 @@ try {
   await page.click('[data-section="manual-kpi"]');
   await page.click('#section-manual-kpi [data-range-mode="30d"]');
   const savedManualCard='#section-manual-kpi [data-manual-session]:first-of-type';
+  assert((await page.$(savedManualCard+' [data-manual-entry-saved="1"]')).length>=1,"Saved manual KPI people must render as compact rows after save");
+  assert(await page.$eval(savedManualCard+' [data-manual-entry-saved="1"] [data-manual-entry-details]',e=>e.classList.contains('hidden')),"Saved manual KPI details must start collapsed after reload");
+  assert(await page.$eval(savedManualCard+' [data-manual-entry-saved="1"] .manual-kpi-entry-summary',e=>e.textContent.includes('Host:')&&e.textContent.includes('Vận hành:')&&e.textContent.includes('Chi tiết')),"Collapsed manual KPI summary must show Host Operator and Chi tiết");
+  await page.click(savedManualCard+' [data-manual-entry-saved="1"] [data-manual-detail-toggle]');
+  assert(!(await page.$eval(savedManualCard+' [data-manual-entry-saved="1"] [data-manual-entry-details]',e=>e.classList.contains('hidden'))),"Chi tiết must expand saved KPI row");
   assert(await page.$eval(savedManualCard+' [data-manual-host-person]',e=>e.value)==='staff-dung',"Saved Host Livestream did not persist");
   assert(await page.$eval(savedManualCard+' [data-manual-operator-person]',e=>e.value)==='staff-hung-bg',"Saved Operator did not persist");
   assert(await page.$eval(savedManualCard+' [data-manual-host-kpi]',e=>e.textContent.trim())==='3.702đ',"Computed Host KPI did not persist after reload");
   assert(await page.$eval(savedManualCard+' [data-manual-host-gmv]',e=>e.value)==='1.234.000',"Formatted Host GMV did not persist after reload");
-  assert(await page.$eval(savedManualCard+' [data-manual-entry-saved="1"] [data-manual-entry-details]',e=>e.classList.contains('hidden')),"Saved KPI row must return collapsed after reload");
   assert(await page.$eval(savedManualCard+' [data-manual-operator-kpi]',e=>e.textContent.trim())==='1.234đ',"Operator auto KPI did not persist after reload");
 
   await page.click('[data-section="export"]');
