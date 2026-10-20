@@ -114,7 +114,8 @@ try {
   assert(await page.$eval('#reconcileModalBody',e=>e.textContent.includes('Đang hoàn / trả')&&e.textContent.includes('Đã hoàn tiền')&&e.textContent.includes('Đã hủy')&&e.textContent.includes('Hoàn tất')),"Aftersale/final-state chips missing");
   assert(await page.$eval('#reconcileModalBody',e=>e.textContent.includes('Có tín hiệu LIVE')&&e.textContent.includes('Khớp theo thời gian')),"LIVE attribution confidence labels missing");
   assert(await page.$eval('#reconcileModalBody',e=>e.textContent.includes('Bảo vệ đối soát 60 ngày')&&e.textContent.includes('15 ngày')&&e.textContent.includes('6 ngày')),"Reconciliation retention/return-window explanation missing");
-  assert(await page.$eval('#reconcileModalBody',e=>e.textContent.includes('GMV dùng tính KPI')&&e.textContent.includes('KPI tự động:')),"Reconciliation popup KPI basis/status missing");
+  assert(await page.$eval('#reconcileModalBody',e=>e.textContent.includes('GMV đã ghi nhận')&&e.textContent.includes('GMV chờ đối soát')&&e.textContent.includes('GMV sau khi hoàn hủy')&&e.textContent.includes('KPI tự động:')),"Reconciliation popup three-stage GMV/status missing");
+  assert(await page.$eval('#reconcileModalBody',e=>e.textContent.includes('Khớp theo thời gian · không tính KPI')&&e.textContent.includes('Có tín hiệu LIVE · tính KPI')),"Reconciliation attribution must show KPI inclusion/exclusion");
   const returnFilter=[...await page.$$('#reconcileModalBody [data-reconcile-filter]')];
   assert(returnFilter.length>=8,"Reconciliation filter chips missing");
   await page.$$eval('#reconcileModalBody [data-reconcile-filter]',els=>els.find(e=>e.textContent.includes('Đang hoàn'))?.click());
@@ -148,13 +149,13 @@ try {
     const status=e.querySelector('.kpi-state-line')?.textContent.trim()||'';
     const gmv=Number((status.split('·')[1]||'').replace(/[^0-9]/g,'')||0);
     const grossCells=[...e.querySelectorAll('td.money')].map(x=>Number(x.textContent.replace(/[^0-9]/g,'')||0));
-    return {status,gmv,gross:grossCells[grossCells.length-1]||0};
+    return {status,gmv,gross:grossCells[0]||0};
   });
   assert(autoKpiBasis.status.includes('Đã chốt')&&autoKpiBasis.gmv>0,"Preview auto session must expose a finalized reconciled KPI basis");
   assert(autoKpiBasis.gmv!==autoKpiBasis.gross,"Automatic KPI basis must differ from gross LIVE GMV in Preview");
   await page.click('#nav [data-section="kpi"]');
   await page.click('#section-kpi [data-range-mode="30d"]');
-  assert(await page.$eval('#section-kpi .kpi-rate-guide',e=>e.textContent.includes('KPI tự động không dùng GMV LIVE TikTok gộp')),"KPI guide must reject gross LIVE GMV");
+  assert(await page.$eval('#section-kpi .kpi-rate-guide',e=>e.textContent.includes('KPI tự động chỉ dùng đơn có tín hiệu LIVE')&&e.textContent.includes('Đơn chỉ khớp theo thời gian không được cộng vào KPI')),"KPI guide must use confirmed LIVE orders only");
   assert(await page.$eval('#section-kpi',e=>e.textContent.includes('KPI đã chốt')&&e.textContent.includes('KPI tạm tính')&&e.textContent.includes('KPI dự kiến')&&e.textContent.includes('Chờ đối soát')),"KPI final/provisional/waiting summary labels missing");
   const autoKpiRows=await page.$$eval('#section-kpi tbody tr',rows=>rows.map(row=>{
     const cells=[...row.querySelectorAll('td')].map(x=>x.textContent.trim());
@@ -211,6 +212,15 @@ try {
   assert(await page.$eval(manualCard+' [data-manual-host-gmv]',e=>e.value)==='1.234.000đ',"Formatted Host GMV is incorrect");
   assert(await page.$eval(manualCard+' [data-manual-host-kpi]',e=>e.textContent.trim())==='3.702đ',"Host KPI 0.3% is incorrect");
   assert(await page.$eval(manualCard+' [data-manual-operator-kpi]',e=>e.textContent.trim())==='1.234đ',"Operator KPI 0.1% is incorrect");
+  assert(await page.$eval(manualCard+' [data-manual-validation-status]',e=>['under','matched'].includes(e.dataset.manualValidationStatus)),"Valid manual GMV should be under or matched against finalized GMV");
+
+  await page.$eval(manualCard+' [data-manual-host-gmv]',e=>{e.value='999999999999';e.dispatchEvent(new Event('input',{bubbles:true}));});
+  assert(await page.$eval(manualCard+' [data-manual-validation-status]',e=>e.dataset.manualValidationStatus)==='excess',"Manual GMV over-allocation warning missing");
+  await page.click(manualCard+' [data-manual-save]');
+  await sleep(100);
+  assert(await page.$eval('#actionToast',e=>e.textContent.includes('Không thể lưu')&&e.textContent.includes('vượt GMV sau khi hoàn hủy')),"Manual excess GMV must be blocked with a clear toast");
+  await page.$eval(manualCard+' [data-manual-host-gmv]',e=>{e.value='1234000';e.dispatchEvent(new Event('input',{bubbles:true}));});
+  assert(await page.$eval(manualCard+' [data-manual-validation-status]',e=>e.dataset.manualValidationStatus)==='under',"Manual under-allocation should show warning but remain savable");
 
   await page.click(manualCard+' [data-manual-add]');
   assert((await page.$$(manualCard+' [data-manual-entry]')).length===2,"Thêm người did not add a new paired Host/Operator block");
@@ -227,7 +237,7 @@ try {
   assert(await page.$eval('#section-kpi',e=>e.textContent.includes('3.702')),"Host 0.3% KPI was not added to KPI nhân sự");
   assert(await page.$eval('#section-kpi',e=>e.textContent.includes('1.234')),"Operator 0.1% KPI was not added to KPI nhân sự");
   assert(await page.$eval('#section-kpi',e=>e.textContent.includes('1.234.000')),"Manual Host GMV was not added to KPI nhân sự");
-  assert(await page.$eval('#section-kpi',e=>e.textContent.includes('KPI thủ công được coi là đã chốt')),"Manual KPI must be described as finalized");
+  assert(await page.$eval('#section-kpi',e=>e.textContent.includes('KPI thủ công chỉ được coi là đã chốt khi đã kiểm tra được GMV sau khi hoàn hủy')),"Manual KPI finalization rule missing");
   assert(await page.$('#section-kpi [data-manual-save]')===null,"KPI nhân sự must not contain manual KPI save controls");
 
   await page.reload({waitUntil:"domcontentloaded"});
@@ -377,8 +387,8 @@ try {
   }));
   assert(mobileMetrics.length===4,"Mobile Dashboard metric cards missing");
   assert(mobileMetrics.every(x=>x.lines===1&&x.whiteSpace==='nowrap'&&x.fits),"Mobile Dashboard metric values must stay on one line without clipping");
-  const mobileGmv=mobileMetrics.find(x=>x.label==='GMV LIVE TikTok');
-  assert(mobileGmv&&mobileGmv.text.endsWith('đ')&&mobileGmv.lines===1,"Mobile GMV LIVE TikTok must display the full amount and đ on one line");
+  const mobileGmv=mobileMetrics.find(x=>x.label==='GMV đã ghi nhận');
+  assert(mobileGmv&&mobileGmv.text.endsWith('đ')&&mobileGmv.lines===1,"Mobile GMV đã ghi nhận must display the full amount and đ on one line");
   await page.click('#menuToggle');
   await page.waitForFunction(()=>document.querySelector('#sidebar')?.classList.contains('open'));
   await sleep(300);
@@ -386,6 +396,12 @@ try {
   assert(mobileNavGroups.join('|')==='Báo cáo|Công cụ|Quản trị',"Mobile sidebar groups are missing");
   assert(await page.$('#nav [data-section="manual-kpi"]')!==null,"Mobile KPI thủ công tab missing");
   assert(await page.$('#nav [data-section="reconcile"]')!==null,"Mobile Đối soát đơn LIVE tab missing");
+  await page.$eval('#nav [data-section="live"]',e=>e.click());
+  await sleep(80);
+  await page.click('#section-live [data-range-mode="30d"]');
+  assert(await page.$eval('#section-live .mobile-live-card:first-of-type',e=>e.textContent.includes('GMV đã ghi nhận')&&e.textContent.includes('GMV chờ đối soát')&&e.textContent.includes('GMV sau khi hoàn hủy')),"Mobile LIVE card must show the three GMV stages");
+  await page.click('#menuToggle');
+  await page.waitForFunction(()=>document.querySelector('#sidebar')?.classList.contains('open'));
   assert(await page.$('#nav .nav-group:nth-child(3) [data-section="users"]')!==null,"Mobile Quản lý tài khoản must stay inside Quản trị");
   assert(await page.$('#nav .nav-group:nth-child(3) [data-section="staff"]')!==null,"Mobile Quản lý nhân sự must stay inside Quản trị");
   assert(await page.$('#usersDockBtn')===null,"Mobile duplicate Users dock must be removed");
