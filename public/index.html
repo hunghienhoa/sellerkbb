@@ -2900,7 +2900,7 @@ tbody tr:hover td{background:#fffafb}
         }
         const gmv=Math.round(gross*(.72+(index%4)*.055));
         const status=index%3===0?'final':'provisional';
-        session.reconciliation={status,usableForKpi:true,gmvAmount:gmv,analyticsGmvAmount:gross,orderWindowAmount:Math.round(gross*.94),orderCount:9+(index%5),pendingOrderCount:status==='final'?0:3+(index%4),cancelledCount:index%3,returningCount:status==='final'?0:1,refundedCount:index%2,aftersalesAvailable:true,liveSignalOrders:status==='final'?(9+(index%5)):5,timeWindowOrders:status==='final'?0:4,attribution:status==='final'?'live_signal':'mixed',generatedAt:new Date().toISOString(),finalizedAt:status==='final'?new Date().toISOString():'',reason:status==='final'?'Đã chốt đối soát và liên kết LIVE.':'KPI đang tạm tính và sẽ tự thay đổi khi đơn cập nhật.'};
+        session.reconciliation={status,usableForKpi:true,gmvAmount:gmv,analyticsGmvAmount:gross,orderWindowAmount:Math.round(gross*.94),orderCount:9+(index%5),pendingOrderCount:status==='final'?0:3+(index%4),cancelledCount:index%3,returningCount:status==='final'?0:1,refundedCount:index%2,aftersalesAvailable:true,liveSignalOrders:status==='final'?(9+(index%5)):5,timeWindowOrders:status==='final'?0:4,timeWindowNetAmount:status==='final'?0:Math.round(gross*.08),attribution:status==='final'?'live_signal':'mixed',generatedAt:new Date().toISOString(),finalizedAt:status==='final'?new Date().toISOString():'',reason:status==='final'?'GMV sau khi hoàn hủy đã chốt từ các đơn có tín hiệu LIVE.':'GMV chờ đối soát chỉ gồm đơn có tín hiệu LIVE; đơn chỉ khớp thời gian không tính KPI.'};
       });
       restorePreviewState();
       showApp(); bindShell(); renderAll(); startAutoSyncWatcher();
@@ -3416,7 +3416,7 @@ tbody tr:hover td{background:#fffafb}
           <div class="reconcile-session-copy">
             <div class="reconcile-session-title">${esc(session.title||'Phiên LIVE')}</div>
             <div class="reconcile-session-meta"><span>@${esc(session.channelUsername||'—')}</span><span>${fmtLiveTimeRange(session)}</span></div>
-            <div class="reconcile-session-gmv">${icon('money',13)} GMV LIVE gộp: ${fmtMoney(finalGmv(session),session.currency)}</div>
+            <div class="reconcile-session-gmv">${icon('money',13)} GMV đã ghi nhận: ${fmtMoney(finalGmv(session),session.currency)}</div>
             ${isOpen?'<div class="reconcile-card-open-note">Đang mở chi tiết đơn trong popup</div>':''}
           </div>
           <div class="reconcile-actions">
@@ -3453,7 +3453,7 @@ tbody tr:hover td{background:#fffafb}
         </div>
         <div class="reconcile-badges">
           <span class="order-status ${meta.tone}">${esc(meta.label)}</span>
-          <span class="order-status attribution">${esc(reconcileAttributionLabel(order))}</span>
+          <span class="order-status attribution">${esc(reconcileAttributionLabel(order))}${order?.attribution==='live_signal'?' · tính KPI':' · không tính KPI'}</span>
         </div>
         <div class="reconcile-order-bottom">
           <div><span>Sau hủy/hoàn đã biết</span><b>${fmtMoney(order.netAmount,order.currency||session.currency)}</b></div>
@@ -3503,7 +3503,7 @@ tbody tr:hover td{background:#fffafb}
         if(btn.dataset.reconcileOpen===sessionId)btn.classList.add('hidden');
       });
       $('#reconcileModalTitle').textContent=session.title||'Phiên LIVE';
-      $('#reconcileModalMeta').innerHTML=`<span>@${esc(session.channelUsername||'—')}</span><span>${esc(fmtLiveTimeRange(session))}</span><span>GMV LIVE gộp: <b>${fmtMoney(finalGmv(session),session.currency)}</b></span>`;
+      $('#reconcileModalMeta').innerHTML=`<span>@${esc(session.channelUsername||'—')}</span><span>${esc(fmtLiveTimeRange(session))}</span><span>GMV đã ghi nhận: <b>${fmtMoney(finalGmv(session),session.currency)}</b></span>`;
       setReconcileModalOpen(true);
       $('#reconcileModalClose')?.focus({preventScroll:true});
       loadReconciliation(sessionId,false);
@@ -3518,10 +3518,11 @@ tbody tr:hover td{background:#fffafb}
         <div class="reconcile-retention-note">${icon('shield',15)}<span><b>Bảo vệ đối soát 60 ngày:</b> tự dọn không được xóa phiên LIVE trong 60 ngày gần nhất, kể cả khi hệ thống chạm ngưỡng khẩn cấp.</span></div>
         <div class="reconcile-overview">
           <div class="reconcile-overview-card"><span>Đơn trong phiên</span><b>${new Intl.NumberFormat('vi-VN').format(orders.length)}</b></div>
-          <div class="reconcile-overview-card"><span>GMV LIVE TikTok · gộp</span><b>${fmtMoney(result?.live?.analyticsGmvAmount,session.currency)}</b></div>
-          <div class="reconcile-overview-card primary"><span>GMV dùng tính KPI</span><b>${fmtMoney(result?.kpiSummary?.usableForKpi?result.kpiSummary.gmvAmount:0,session.currency)}</b></div>
+          <div class="reconcile-overview-card"><span>GMV đã ghi nhận</span><b>${fmtMoney(result?.live?.analyticsGmvAmount,session.currency)}</b></div>
+          <div class="reconcile-overview-card"><span>GMV chờ đối soát</span><b>${result?.kpiSummary?.usableForKpi&&result?.kpiSummary?.status!=='final'?fmtMoney(result.kpiSummary.gmvAmount,session.currency):result?.kpiSummary?.status==='final'?'Đã chốt':'Chờ dữ liệu'}</b></div>
+          <div class="reconcile-overview-card primary"><span>GMV sau khi hoàn hủy</span><b>${result?.kpiSummary?.status==='final'?fmtMoney(result.kpiSummary.gmvAmount,session.currency):'Chưa chốt'}</b></div>
         </div>
-        <div class="notice ${result?.kpiSummary?.status==='final'?'ok':result?.kpiSummary?.usableForKpi?'warn':'bad'} kpi-summary-note"><strong>KPI tự động: ${esc(kpiStatusLabel(result?.kpiSummary?.status||'waiting'))}.</strong> ${esc(result?.kpiSummary?.reason||'')}</div>
+        <div class="notice ${result?.kpiSummary?.status==='final'?'ok':result?.kpiSummary?.usableForKpi?'warn':'bad'} kpi-summary-note"><strong>KPI tự động: ${esc(kpiStatusLabel(result?.kpiSummary?.status||'waiting'))}.</strong> ${esc(result?.kpiSummary?.reason||'')} ${Number(result?.kpiSummary?.timeWindowOrders||0)>0?'Có '+new Intl.NumberFormat('vi-VN').format(Number(result.kpiSummary.timeWindowOrders||0))+' đơn chỉ khớp theo thời gian ('+fmtMoney(Number(result.kpiSummary.timeWindowNetAmount||0),session.currency)+') và không được cộng vào KPI.':''}</div>
         <div class="reconcile-filter-wrap">
           <div class="reconcile-filter-label">Lọc nhanh theo trạng thái đơn</div>
           <div class="reconcile-filterbar">${filters.map((x,i)=>`<button type="button" class="reconcile-filter-chip ${i===0?'active':''}" data-reconcile-filter="${x.key}"><span>${esc(x.label)}</span><b>${x.count}</b></button>`).join('')}</div>
