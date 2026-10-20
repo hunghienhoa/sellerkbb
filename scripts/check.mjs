@@ -355,4 +355,9 @@ assert(!html.includes("limit(maxDocs)"), "Firestore must not send a total sessio
 assert(!html.includes("Math.min(12000,Number(state.maintenance.settings.firestoreMaxSessions"), "Firestore total-session cap must use the centralized safe constant");
 assert(html.includes("auth startup")&&html.includes("retryBoot"), "Startup error boundary missing");
 assert(worker.includes("error: null")&&worker.includes("const status = {\n      ok: true"), "Successful TikTok auto-sync must clear stale error state");
+assert(worker.includes("order_ids: ids")&&!worker.includes('order_ids: ids.join(",")'), "Return/Refund order_ids must be sent as a JSON list");
+assert(worker.includes('SELLERKBB_LIVE_ACCOUNT_TYPES = ["OFFICIAL_ACCOUNTS", "MARKETING_ACCOUNTS"]'), "SellerKBB LIVE source policy must be official + marketing accounts");
+assert(!worker.includes('account_type: "ALL"'), "Affiliate LIVE must never be pulled into SellerKBB KPI sync");
+assert(worker.includes("insideRefreshedWindow")&&worker.includes("freshIds.has(id)"), "Refreshed sync window must prune stale affiliate sessions");
+assert(html.includes("LIVE chồng thời gian")&&html.includes("Thiếu dữ liệu hậu mãi"), "Blocked KPI reasons must be labeled separately");
 console.log("Project structure, syntax, persistence, calendar, storage/backup, Google profiles, pink pastel UI, overlap-safe reconciliation, full pagination, readiness, descriptive Releases, README, and auto-sync checks OK");
