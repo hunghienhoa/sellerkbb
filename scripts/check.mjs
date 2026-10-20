@@ -174,6 +174,12 @@ assert(html.includes("cur.waitingSessions++"), "KPI waiting-session tracking mis
 assert(html.includes("cur.finalAutoGmv+=basis.gmv"), "Final reconciled GMV aggregation missing");
 assert(html.includes("cur.provisionalAutoGmv+=basis.gmv"), "Provisional reconciled GMV aggregation missing");
 assert(html.includes("KPI đã chốt")&&html.includes("KPI tạm tính")&&html.includes("KPI dự kiến")&&html.includes("Chờ đối soát"), "KPI final/provisional/waiting labels missing");
+assert(html.includes('data-kpi-table="pending"'), "Pending KPI table missing");
+assert(html.includes('data-kpi-table="final"'), "Finalized KPI table missing");
+assert(html.includes("<h3>KPI chưa chốt</h3>"), "Pending KPI table title missing");
+assert(html.includes("<h3>KPI đã chốt</h3>"), "Final KPI table title missing");
+assert(html.includes("GMV chờ đối soát")&&html.includes("Tổng KPI đã chốt"), "Split KPI table columns missing");
+assert(html.includes("Cùng một nhân sự có thể xuất hiện ở cả hai bảng"), "Split KPI explanation missing");
 assert(html.includes("KPI tự động chỉ dùng đơn có tín hiệu LIVE"), "KPI guide must state only confirmed LIVE orders are used");
 assert(!html.includes("KPI tự động đang tạm dùng GMV LIVE gộp"), "Legacy gross-GMV KPI warning must be removed");
 assert(html.includes("gmv_recorded_latest")&&html.includes("gmv_pending_reconciliation")&&html.includes("gmv_after_cancel_refund_final")&&html.includes("gmv_time_window_excluded")&&html.includes("kpi_status"), "LIVE CSV three-stage GMV fields missing");
