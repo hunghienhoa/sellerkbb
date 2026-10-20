@@ -167,7 +167,7 @@ function publicConfig(env) {
     appId: env.FIREBASE_APP_ID || ""
   };
   return {
-    version: env.APP_VERSION || "1.0.0",
+    version: "1.46.4",
     firebase,
     firebaseConfigured: Boolean(firebase.apiKey && firebase.authDomain && firebase.projectId && firebase.storageBucket && firebase.messagingSenderId && firebase.appId),
     tiktokConfigured: Boolean(env.TIKTOK_APP_KEY && env.TIKTOK_APP_SECRET && env.TIKTOK_SERVICE_ID && env.TIKTOK_SELLER_AUTH_URL && env.TIKTOK_KV)
@@ -821,44 +821,58 @@ async function refreshKpiReconciliations(env, accessToken, sessions, reason = "h
   return { checked: candidates.length, refreshed, finalized, blocked, errors: errors.slice(0, 5) };
 }
 
-const SELLERKBB_LIVE_ACCOUNT_TYPES = ["OFFICIAL_ACCOUNTS", "MARKETING_ACCOUNTS"];
+const SELLERKBB_ALLOWED_LIVE_CHANNELS = new Set(["shopkhangbaby", "mekhangsua"]);
+
+function sellerKbbChannelKey(session) {
+  return String(session?.channelUsername || session?.username || "").trim().toLowerCase();
+}
+
+function isAllowedSellerKbbLiveChannel(session) {
+  return SELLERKBB_ALLOWED_LIVE_CHANNELS.has(sellerKbbChannelKey(session));
+}
 
 async function syncLivePerformance(env, accessToken, startDate, endDate) {
   const shops = await getAuthorizedShops(env, accessToken);
   const byLiveId = new Map();
-  for (const shop of shops) {
-    for (const accountType of SELLERKBB_LIVE_ACCOUNT_TYPES) {
-      let pageToken = "";
-      do {
-        const query = {
-          start_date_ge: startDate,
-          end_date_lt: endDate,
-          page_size: 100,
-          sort_field: "gmv",
-          sort_order: "DESC",
-          currency: "LOCAL",
-          account_type: accountType,
-          shop_cipher: shop.cipher
-        };
-        if (pageToken) query.page_token = pageToken;
-        const result = await tiktokCall(env, accessToken, "/analytics/202509/shop_lives/performance", query);
-        if (result.payload?.code === 105002) {
-          const refreshed = await refreshTikTokToken(env, await getTikTokToken(env));
-          return syncLivePerformance(env, refreshed.access_token, startDate, endDate);
-        }
-        if (result.payload?.code !== 0) throw new Error(result.payload?.message || "Không lấy được dữ liệu LIVE");
-        const data = result.payload?.data || {};
-        for (const session of data.live_stream_sessions || []) {
-          const normalized = normalizeLiveSession(session, shop, accountType);
-          if (normalized.liveId) byLiveId.set(String(normalized.liveId), normalized);
-        }
-        pageToken = data.next_page_token || data.page_token || "";
-      } while (pageToken);
-    }
-  }
-  return { shops, accountTypes: [...SELLERKBB_LIVE_ACCOUNT_TYPES], sessions: [...byLiveId.values()] };
-}
 
+  for (const shop of shops) {
+    let pageToken = "";
+    do {
+      const query = {
+        start_date_ge: startDate,
+        end_date_lt: endDate,
+        page_size: 100,
+        sort_field: "gmv",
+        sort_order: "DESC",
+        currency: "LOCAL",
+        account_type: "ALL",
+        shop_cipher: shop.cipher
+      };
+      if (pageToken) query.page_token = pageToken;
+
+      const result = await tiktokCall(env, accessToken, "/analytics/202509/shop_lives/performance", query);
+      if (result.payload?.code === 105002) {
+        const refreshed = await refreshTikTokToken(env, await getTikTokToken(env));
+        return syncLivePerformance(env, refreshed.access_token, startDate, endDate);
+      }
+      if (result.payload?.code !== 0) throw new Error(result.payload?.message || "Không lấy được dữ liệu LIVE");
+
+      const data = result.payload?.data || {};
+      for (const session of data.live_stream_sessions || []) {
+        const normalized = normalizeLiveSession(session, shop, "ALL");
+        if (!normalized.liveId || !isAllowedSellerKbbLiveChannel(normalized)) continue;
+        byLiveId.set(String(normalized.liveId), normalized);
+      }
+      pageToken = data.next_page_token || data.page_token || "";
+    } while (pageToken);
+  }
+
+  return {
+    shops,
+    allowedChannels: [...SELLERKBB_ALLOWED_LIVE_CHANNELS],
+    sessions: [...byLiveId.values()]
+  };
+}
 
 function vnDateKey(ms = Date.now()) {
   return new Date(ms + 7 * 3600000).toISOString().slice(0, 10);
@@ -874,7 +888,7 @@ async function getAutoSyncData(env) {
   if (!raw) return [];
   try {
     const parsed = JSON.parse(raw);
-    return Array.isArray(parsed) ? parsed : [];
+    return Array.isArray(parsed) ? parsed.filter(isAllowedSellerKbbLiveChannel) : [];
   } catch {
     return [];
   }
@@ -953,7 +967,7 @@ async function runAutoSync(env, lookbackDays = 2, reason = "hourly") {
       windowEndExclusive: endDate,
       fetched: Number(data.sessions?.length || 0),
       cached: merged.length,
-      liveAccountTypes: data.accountTypes || [...SELLERKBB_LIVE_ACCOUNT_TYPES],
+      allowedChannels: data.allowedChannels || [...SELLERKBB_ALLOWED_LIVE_CHANNELS],
       tokenRefreshed: Boolean(tokenResult.refreshed),
       reconciliation
     };
@@ -1007,7 +1021,7 @@ function escapeHtml(s) {
 async function handleApi(request, env) {
   const url = new URL(request.url);
   if (url.pathname === "/api/config") return json(publicConfig(env));
-  if (url.pathname === "/api/health") return json({ ok: true, version: env.APP_VERSION || "1.0.0" });
+  if (url.pathname === "/api/health") return json({ ok: true, version: "1.46.4" });
 
   if (url.pathname === "/api/tiktok/oauth/callback") return handleOAuthCallback(request, env);
 
