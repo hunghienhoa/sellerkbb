@@ -91,7 +91,7 @@ assert(!html.includes('data-reconcile-load="'), "Legacy inline reconciliation lo
 assert(!html.includes('data-reconcile-result="'), "Legacy inline reconciliation result container must be removed");
 assert(html.includes("state.reconcileModalSessionId===session.id"), "Open reconciliation card must hide its Xem đơn button");
 assert(html.includes("if(state.reconcileModalSessionId&&id!==state.section)closeReconciliationModal()"), "Section navigation must close reconciliation modal safely without interrupting same-section refreshes");
-assert(read("README.md").includes("popup riêng")&&read("README.md").includes("khóa cuộn nền"), "README popup behavior missing");
+assert(read("README.md").includes("popup riêng")&&(read("README.md").includes("khóa cuộn nền")||read("README.md").includes("khóa cuộn trang phía sau")), "README popup behavior missing");
 const hoverMediaStart=html.indexOf("@media(hover:hover){");
 const globalReconCss=html.indexOf(".reconcile-list{display:grid;gap:12px}");
 const firstHoverClose=html.indexOf("\n}",hoverMediaStart);
