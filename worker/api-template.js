@@ -167,7 +167,7 @@ function publicConfig(env) {
     appId: env.FIREBASE_APP_ID || ""
   };
   return {
-    version: "1.46.4",
+    version: env.APP_VERSION || "1.0.0",
     firebase,
     firebaseConfigured: Boolean(firebase.apiKey && firebase.authDomain && firebase.projectId && firebase.storageBucket && firebase.messagingSenderId && firebase.appId),
     tiktokConfigured: Boolean(env.TIKTOK_APP_KEY && env.TIKTOK_APP_SECRET && env.TIKTOK_SERVICE_ID && env.TIKTOK_SELLER_AUTH_URL && env.TIKTOK_KV)
@@ -1021,7 +1021,7 @@ function escapeHtml(s) {
 async function handleApi(request, env) {
   const url = new URL(request.url);
   if (url.pathname === "/api/config") return json(publicConfig(env));
-  if (url.pathname === "/api/health") return json({ ok: true, version: "1.46.4" });
+  if (url.pathname === "/api/health") return json({ ok: true, version: env.APP_VERSION || "1.0.0" });
 
   if (url.pathname === "/api/tiktok/oauth/callback") return handleOAuthCallback(request, env);
 
