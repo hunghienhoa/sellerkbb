@@ -369,7 +369,7 @@ try {
 
   await page.click('#menuToggle');
   await page.waitForFunction(()=>document.querySelector('#sidebar')?.classList.contains('open'));
-  await page.$eval('#nav [data-section="reconcile"]',e=>e.click());
+  await page.click('#nav [data-section="reconcile"]');
   await page.waitForFunction(()=>!document.querySelector('#sidebar')?.classList.contains('open'));
   await page.click('#section-reconcile [data-range-mode="30d"]');
   const mobileReconcile='#section-reconcile .reconcile-session:first-of-type';
@@ -394,7 +394,7 @@ try {
 
   await page.click('#menuToggle');
   await page.waitForFunction(()=>document.querySelector('#sidebar')?.classList.contains('open'));
-  await page.$eval('#nav [data-section="live"]',e=>e.click());
+  await page.click('#nav [data-section="live"]');
   await page.waitForFunction(()=>!document.querySelector('#sidebar')?.classList.contains('open'));
   await sleep(320);
   await page.click('#section-live [data-range-mode="30d"]');
