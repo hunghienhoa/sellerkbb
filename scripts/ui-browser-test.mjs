@@ -557,6 +557,9 @@ try {
   await sleep(200);
   await page.click('#section-manual-kpi [data-range-mode="30d"]');
   const mobileManualCard='#section-manual-kpi [data-manual-session="'+manualSessionId+'"]';
+  assert(await page.$eval(mobileManualCard+' [data-manual-kpi-session-summary]',e=>getComputedStyle(e).display!=='none'&&e.textContent.includes('Sửa KPI')),"Mobile saved KPI session must start collapsed");
+  await page.click(mobileManualCard+' [data-manual-kpi-edit]');
+  assert(await page.$eval(mobileManualCard+' [data-manual-kpi-session-editor]',e=>!e.classList.contains('hidden')&&getComputedStyle(e).display!=='none'),"Mobile Sửa KPI must reopen the KPI editor");
   assert(await page.$eval(mobileManualCard+' [data-manual-entry-saved="1"] [data-manual-entry-details]',e=>e.classList.contains('hidden')),"Mobile saved KPI row must start collapsed");
   await page.click(mobileManualCard+' [data-manual-entry-saved="1"] [data-manual-detail-toggle]');
   assert(!(await page.$eval(mobileManualCard+' [data-manual-entry-saved="1"] [data-manual-entry-details]',e=>e.classList.contains('hidden'))),"Mobile Chi tiết must expand KPI row");
