@@ -3109,6 +3109,11 @@ tbody tr:hover td{background:#fffafb}
     const FIRESTORE_STRUCTURED_QUERY_HARD_LIMIT = 10000;
     const FIRESTORE_SESSION_QUERY_PAGE_SIZE = 5000;
     const FIRESTORE_TOTAL_SESSION_CAP = 12000;
+    const SELLERKBB_ALLOWED_LIVE_CHANNELS = new Set(['shopkhangbaby','mekhangsua']);
+
+    function isAllowedSellerKbbLiveChannel(session){
+      return SELLERKBB_ALLOWED_LIVE_CHANNELS.has(String(session?.channelUsername||'').trim().toLowerCase());
+    }
 
     function safeFirestoreQueryLimit(value){
       const requested=Math.max(1,Math.floor(Number(value)||1));
@@ -3583,8 +3588,11 @@ tbody tr:hover td{background:#fffafb}
         const cutoff=Timestamp.fromMillis(Date.now()-days*86400000);
         const maxDocs=Math.min(FIRESTORE_TOTAL_SESSION_CAP,Number(state.maintenance.settings.firestoreMaxSessions||FIRESTORE_TOTAL_SESSION_CAP));
         const liveDocs=await loadRecentLiveSessions(cutoff,maxDocs);
-        state.sessions=liveDocs.map(d=>({id:d.id,...d.data()})).map(x=>isManualKpi(x)?{...x,hostUid:'',hostName:'',operatorUid:'',operatorName:''}:x);
+        state.sessions=liveDocs.map(d=>({id:d.id,...d.data()}))
+          .filter(isAllowedSellerKbbLiveChannel)
+          .map(x=>isManualKpi(x)?{...x,hostUid:'',hostName:'',operatorUid:'',operatorName:''}:x);
         await mergeAutoSyncedSessions();
+        state.sessions=state.sessions.filter(isAllowedSellerKbbLiveChannel);
       }
       if(isAdmin()){
         const us=await getDocs(collection(state.db,'users'));
