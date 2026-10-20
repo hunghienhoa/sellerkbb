@@ -101,14 +101,13 @@ try {
   assert(await page.$('#nav [data-section="reconcile"]')!==null,"Đối soát đơn LIVE nav tab missing");
   await page.click('#nav [data-section="reconcile"]');
   await page.click('#section-reconcile [data-range-mode="30d"]');
-  const reconcileDebug=await page.$eval('#section-reconcile',e=>({text:e.textContent.trim().slice(0,500),html:e.innerHTML.slice(0,1000),active:e.classList.contains('active')}));
-  const reconcileCount=(await page.$('#section-reconcile [data-reconcile-session]')).length;
-  assert(reconcileCount>=1,"LIVE reconciliation session cards missing: "+JSON.stringify(reconcileDebug));
-  const reconcileCard='#section-reconcile [data-reconcile-session]:first-of-type';
+  const reconcileCount=(await page.$$('#section-reconcile .reconcile-session')).length;
+  assert(reconcileCount>=1,"LIVE reconciliation session cards missing");
+  const reconcileCard='#section-reconcile .reconcile-session:first-of-type';
   await page.click(reconcileCard+' [data-reconcile-load]');
   await page.waitForSelector(reconcileCard+' .reconcile-summary');
   assert(await page.$eval(reconcileCard,e=>e.textContent.includes('Tổng đơn trong khung LIVE')&&e.textContent.includes('Đang vận chuyển')&&e.textContent.includes('Đang hoàn/trả')),"LIVE reconciliation summary missing");
-  assert((await page.$(reconcileCard+' .reconcile-order')).length>=1,"LIVE reconciliation order rows missing");
+  assert((await page.$$(reconcileCard+' .reconcile-order')).length>=1,"LIVE reconciliation order rows missing");
   assert(await page.$eval(reconcileCard,e=>e.textContent.includes('Có tín hiệu LIVE')&&e.textContent.includes('Khớp theo thời gian')),"LIVE attribution confidence labels missing");
   assert(await page.$eval(reconcileCard,e=>e.textContent.includes('15 ngày')&&e.textContent.includes('6 ngày')),"Return-window explanation missing");
   await page.click('#nav [data-section="live"]');
