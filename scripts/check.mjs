@@ -225,6 +225,9 @@ assert(html.includes("manualKpiType:manualKpiType(x)"), "Preview Campaign/Mega t
 assert(html.includes("manualKpiType:manualType"), "Firestore Campaign/Mega type persistence missing");
 assert(html.includes("Hãy chọn loại phiên: Ngày Campaign hoặc Mega Live"), "Manual type required validation missing");
 assert(html.includes("manual-live-type-pill"), "Campaign/Mega saved badge missing");
+assert(html.includes(".manual-session .auto-person-wrap{display:none!important}"), "Manual KPI mode must hide automatic Host/Operator fields");
+assert(html.includes("data-auto-person-wrap"), "Automatic Host/Operator wrapper missing");
+assert(html.includes("mobile-auto-person-fields"), "Mobile automatic Host/Operator wrapper missing");
 assert(html.includes("manual_live_type"), "LIVE CSV Campaign/Mega type field missing");
 assert(readme.includes("Gắn thẻ loại phiên")&&readme.includes("Ngày Campaign")&&readme.includes("Mega Live"), "README Campaign/Mega classification guide missing");
 assert(html.includes("manualKpiEntries:entries"), "Firestore manual KPI persistence missing");
