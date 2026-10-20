@@ -10,6 +10,7 @@ const AUTO_SYNC_STATUS_KEY = "autosync:status";
 const GITHUB_REPO_CACHE_KEY = "maintenance:github_repo";
 const LIVE_RECONCILE_CACHE_PREFIX = "reconcile:live:";
 const LIVE_RECONCILE_CACHE_TTL_SECONDS = 600;
+const RECONCILIATION_PROTECTION_DAYS = 60;
 const DEFAULT_MAINTENANCE = {
   retentionDays: 180,
   autoCleanup: true,
@@ -21,7 +22,7 @@ const DEFAULT_MAINTENANCE = {
 
 function normalizeMaintenance(input = {}) {
   const n = { ...DEFAULT_MAINTENANCE, ...(input || {}) };
-  n.retentionDays = Math.min(180, Math.max(30, Number(n.retentionDays) || 180));
+  n.retentionDays = Math.min(180, Math.max(RECONCILIATION_PROTECTION_DAYS, Number(n.retentionDays) || 180));
   n.autoCleanup = n.autoCleanup !== false;
   n.emergencyPercent = Math.min(95, Math.max(70, Number(n.emergencyPercent) || 85));
   n.firestoreSoftLimitMb = Math.min(900, Math.max(100, Number(n.firestoreSoftLimitMb) || 600));
@@ -552,7 +553,10 @@ async function buildLiveReconciliation(env, accessToken, liveId) {
   const counts = {
     total: normalized.length,
     processing: 0,
-    shipping: 0,
+    awaitingPacking: 0,
+    awaitingCarrier: 0,
+    transporting: 0,
+    outForDelivery: 0,
     delivered: 0,
     completed: 0,
     cancelled: 0,
@@ -567,7 +571,10 @@ async function buildLiveReconciliation(env, accessToken, liveId) {
     provisionalNetAmount += order.netAmount;
     if (order.attribution === "live_signal") confirmedLiveSignalAmount += order.netAmount;
     if (order.status === "CANCELLED") counts.cancelled++;
-    else if (["IN_TRANSIT","AWAITING_COLLECTION","PARTIALLY_SHIPPING"].includes(order.status)) counts.shipping++;
+    else if (order.status === "AWAITING_SHIPMENT") counts.awaitingPacking++;
+    else if (order.status === "AWAITING_COLLECTION") counts.awaitingCarrier++;
+    else if (order.status === "PARTIALLY_SHIPPING") counts.transporting++;
+    else if (order.status === "IN_TRANSIT") counts.outForDelivery++;
     else if (order.status === "DELIVERED") counts.delivered++;
     else if (order.status === "COMPLETED") counts.completed++;
     else counts.processing++;
@@ -589,7 +596,8 @@ async function buildLiveReconciliation(env, accessToken, liveId) {
     policy: {
       generalReturnDays: 15,
       reducedCategoryDays: 6,
-      note: "Mốc hậu mãi tính từ khi đơn chuyển sang Delivered; một số danh mục tại Việt Nam chỉ có 6 ngày."
+      reconciliationProtectionDays: RECONCILIATION_PROTECTION_DAYS,
+      note: "Mốc hậu mãi tính từ khi đơn chuyển sang Delivered; SellerKBB bảo vệ dữ liệu phiên LIVE tối thiểu 60 ngày để tránh tự dọn khi đơn vẫn còn trong vòng đời giao hàng/hậu mãi."
     },
     scope: {
       orderWindow: "Đơn tạo trong đúng khoảng thời gian phiên LIVE",

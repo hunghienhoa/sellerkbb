@@ -4,7 +4,7 @@
 
 ### Báo cáo TikTok LIVE · KPI nhân sự · Tự đồng bộ 24/24
 
-**Phiên bản hiện tại: v1.33.0**
+**Phiên bản hiện tại: v1.34.0**
 
 [![GitHub Release](https://img.shields.io/github/v/release/hunghienhoa/sellerkbb?label=Release)](https://github.com/hunghienhoa/sellerkbb/releases)
 [![GitHub Actions](https://img.shields.io/github/actions/workflow/status/hunghienhoa/sellerkbb/deploy.yml?branch=main&label=Ki%E1%BB%83m%20tra%20%26%20Backup)](https://github.com/hunghienhoa/sellerkbb/actions)
@@ -17,19 +17,19 @@
 
 ---
 
-## 🆕 Cập nhật mới nhất — v1.33.0
+## 🆕 Cập nhật mới nhất — v1.34.0
 
-- Thêm tab **Đối soát đơn LIVE** theo từng phiên.
-- Mỗi phiên có thể tải danh sách đơn được tạo trong đúng khoảng thời gian LIVE và xem: **mã đơn, trạng thái giao hàng, trạng thái hậu mãi, giá trị đơn và giá trị sau hủy/hoàn đã biết**.
-- Tách rõ 2 mức liên kết đơn: **Có tín hiệu LIVE** và **Khớp theo thời gian**. SellerKBB không coi đơn chỉ trùng thời gian là bằng chứng tuyệt đối phát sinh từ LIVE.
-- Bổ sung đọc **TikTok Orders API** và **Return/Refund API** khi token hiện tại có đủ quyền.
-- Nếu TikTok chưa cấp quyền Return/Refund, giao diện vẫn hiển thị trạng thái đơn nhưng cảnh báo rõ rằng số sau hoàn chưa phải số chốt.
-- Làm rõ lại cơ chế cũ: trước v1.33.0, trường “GMV sau hoàn/hủy” thực tế chỉ là GMV mới nhất trả về từ LIVE Performance API sau mỗi lần đồng bộ. Theo định nghĩa TikTok, LIVE GMV là GMV gộp và có thể bao gồm đơn hủy/hoàn, nên không được coi là GMV ròng sau hậu mãi.
-- Đối soát hậu mãi căn cứ vào vòng đời đơn và mốc **Delivered**. Chính sách TikTok Shop Việt Nam hiện có cửa sổ trả/hoàn tới **15 ngày** với đa số ngành hàng; một số nhóm hàng chỉ **6 ngày**.
-- KPI hiện tại **chưa tự chuyển sang số đối soát cấp đơn** để tránh tính sai khi đơn chỉ được ghép theo thời gian hoặc token thiếu quyền hậu mãi.
-- Dữ liệu đối soát được cache ngắn hạn ở Cloudflare KV để tránh gọi TikTok API quá dày; nút **Làm mới** cho phép kiểm tra lại trạng thái hiện tại.
-- Giữ nguyên toàn bộ fix v1.32.0 chống iPhone/Safari tự zoom khi chạm ô nhập liệu.
-- README và GitHub Release được cập nhật cùng phiên bản.
+- Thiết kế lại hoàn toàn tab **Đối soát đơn LIVE** để dễ đọc trên cả PC và điện thoại.
+- Sửa lỗi CSS đối soát trước đây nằm trong `@media(hover:hover)`, khiến thiết bị cảm ứng/mobile có thể hiển thị chữ và số liệu dính vào nhau.
+- Mỗi phiên LIVE nay hiển thị gọn thành một card; bấm **Xem đơn** mới mở chi tiết.
+- Thêm bộ lọc trạng thái bằng thẻ: **Chờ đóng hàng / Chờ vận chuyển / Đang vận chuyển / Đang giao / Đã giao / Đang hoàn-trả / Đã hoàn tiền / Đã hủy / Hoàn tất / Đang xử lý**.
+- Mỗi đơn hiển thị dạng card riêng với mã đơn, giá trị đơn, trạng thái giao hàng, trạng thái hậu mãi, mức liên kết LIVE và số tiền sau hủy/hoàn đã biết.
+- Bản Preview có sẵn đủ các trạng thái trên để kiểm tra trực tiếp, không dùng ảnh minh họa.
+- Bổ sung **vùng bảo vệ đối soát tối thiểu 60 ngày**. Phiên LIVE trong 60 ngày gần nhất không bị tự dọn, kể cả khi Firestore chạm ngưỡng dọn khẩn cấp.
+- Thời gian lưu dữ liệu LIVE cho phép từ **60–180 ngày**; cấu hình cũ 30 ngày sẽ tự được nâng lên 60 ngày.
+- Cache đối soát ở Cloudflare KV vẫn chỉ là cache ngắn hạn và có thể hết hạn/xóa để tiết kiệm dung lượng; khi cần SellerKBB gọi lại TikTok, nên không làm mất dữ liệu nguồn.
+- Auto-sync rolling cache cũng tuân theo mốc giữ dữ liệu tối thiểu 60 ngày, bảo đảm backend còn thông tin phiên để đối soát.
+- README, kiểm thử desktop/mobile và GitHub Release được cập nhật cùng phiên bản.
 
 ---
 
@@ -66,7 +66,7 @@ Bạn không cần hiểu hết code. Chỉ cần nhớ 4 nơi chính:
 - **Ngày Campaign/Mega Live** có thể bật chế độ KPI thủ công; Host/Operator được để trống và phiên đó không cộng KPI tự động.
 - Bộ lọc: **Hôm nay / 7 ngày / 30 Ngày / Chọn ngày**.
 - Có trang Xuất file riêng.
-- Lưu dữ liệu tối đa **180 ngày (6 tháng)** theo cấu hình.
+- Lưu dữ liệu **60–180 ngày** theo cấu hình; 60 ngày gần nhất được bảo vệ để phục vụ đối soát đơn và hậu mãi.
 - Có trang **Lưu trữ & tự dọn** theo dõi GitHub / Firebase / Cloudflare.
 - Hỗ trợ PC và điện thoại.
 - Giao diện **hồng pastel nhẹ**, sidebar chia rõ **Báo cáo / Công cụ / Quản trị**; **KPI thủ công** nằm ở **Công cụ**, còn **Quản lý tài khoản** nằm trong **Quản trị** và là nơi duy nhất quản lý user.
@@ -131,10 +131,11 @@ Vào tab **Đối soát đơn LIVE**:
 1. Chọn khoảng thời gian cần kiểm tra.
 2. Chọn phiên LIVE và bấm **Xem đơn**.
 3. SellerKBB lấy các đơn được tạo trong đúng khung thời gian phiên đó.
-4. Mỗi đơn hiển thị trạng thái như **Đang vận chuyển / Đã giao / Hoàn tất / Đã hủy** và trạng thái hậu mãi như **Đang hoàn/trả / Đã hoàn tiền**.
+4. Mỗi đơn được gắn thẻ rõ: **Chờ đóng hàng / Chờ vận chuyển / Đang vận chuyển / Đang giao / Đã giao / Hoàn tất / Đã hủy**; nếu có hậu mãi sẽ ưu tiên thẻ **Đang hoàn/trả / Đã hoàn tiền**.
 5. Nếu đơn có tín hiệu liên kết LIVE từ dữ liệu đơn, hệ thống ghi **Có tín hiệu LIVE**.
 6. Nếu chỉ khớp theo giờ tạo đơn, hệ thống ghi **Khớp theo thời gian** để tránh hiểu nhầm là đã xác minh tuyệt đối.
-7. Số **Giá trị sau hủy/hoàn đã biết** chỉ phản ánh dữ liệu SellerKBB đọc được tại thời điểm đó; không tự dùng thay KPI nếu dữ liệu hậu mãi chưa đầy đủ.
+7. Dùng các thẻ trạng thái phía trên danh sách để lọc nhanh đơn cần kiểm tra.
+8. Số **Giá trị sau hủy/hoàn đã biết** chỉ phản ánh dữ liệu SellerKBB đọc được tại thời điểm đó; không tự dùng thay KPI nếu dữ liệu hậu mãi chưa đầy đủ.
 
 > **Vì sao chưa chốt ngay sau khi giao?** Người mua vẫn có thể mở yêu cầu trả/hoàn sau khi đơn ở trạng thái Delivered. Với chính sách TikTok Shop Việt Nam hiện hành, cửa sổ này có thể tới 15 ngày với đa số nhóm hàng và 6 ngày với một số nhóm hàng. Vì vậy muốn gọi là “GMV đã chốt” phải dựa trên trạng thái đơn + hậu mãi, không chỉ dựa vào ngày LIVE.
 
@@ -242,7 +243,9 @@ Trang Admin **Lưu trữ & tự dọn** hiển thị:
 - Mức áp lực dọn dữ liệu.
 - Số key KV và lần kiểm tra gần nhất.
 
-Giới hạn giữ dữ liệu báo cáo tối đa **180 ngày**.
+Giới hạn giữ dữ liệu báo cáo tối đa **180 ngày** và tối thiểu **60 ngày**.
+
+> **Bảo vệ đối soát:** SellerKBB không tự xóa phiên LIVE trong 60 ngày gần nhất, kể cả khi Firestore chạm ngưỡng dọn khẩn cấp. Mốc 60 ngày là vùng đệm vận hành để không làm mất phiên trước khi vòng đời giao hàng + hậu mãi kết thúc. Cache kết quả đối soát 10 phút trong Cloudflare KV có thể hết hạn vì có thể tải lại từ TikTok.
 
 > SellerKBB không tự xóa SRC GitHub, tài khoản người dùng hoặc TikTok token được bảo vệ.
 
