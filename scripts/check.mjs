@@ -45,8 +45,8 @@ assert(html.includes('id="dashboardViewMore"'), "Dashboard View More button miss
 const timeRangeStart = html.indexOf("function fmtLiveTimeRange(s)");
 const timeRangeEnd = html.indexOf("function isManualKpi", timeRangeStart);
 const timeRangeBlock = html.slice(timeRangeStart, timeRangeEnd);
-assert(!timeRangeBlock.includes(" lúc "), "LIVE time range must not contain the word lúc");
-assert(timeRangeBlock.includes("${startDate}  ${startTime}-${endTime}"), "LIVE time range must use two spaces between date and time");
+assert(timeRangeBlock.includes(" Vào lúc "), "LIVE time range must include 'Vào lúc'");
+assert(timeRangeBlock.includes("${startDate} Vào lúc ${startTime}-${endTime}"), "LIVE same-day time range format is incorrect");
 assert(html.includes("function liveEndTime(s)"), "LIVE end-time helper missing");
 assert(html.includes("Thời gian phiên LIVE"), "Desktop LIVE time header missing");
 assert(html.includes("fmtLiveTimeRange(s)"), "Compact LIVE time range formatter missing");

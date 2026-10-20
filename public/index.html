@@ -1909,7 +1909,7 @@ tbody tr:hover td{background:#fffafb}
       </div>
     </aside>
     <main class="main">
-      <header class="topbar"><div class="topbar-title-wrap"><button id="menuToggle" class="menu-toggle" type="button" aria-label="Mở menu" aria-expanded="false">☰</button><div><h1 id="pageTitle" class="page-title">Tổng quan</h1><div id="pageSub" class="tiny"></div></div></div><div class="row"><span id="syncBadge" class="pill">v1.22.0</span></div></header>
+      <header class="topbar"><div class="topbar-title-wrap"><button id="menuToggle" class="menu-toggle" type="button" aria-label="Mở menu" aria-expanded="false">☰</button><div><h1 id="pageTitle" class="page-title">Tổng quan</h1><div id="pageSub" class="tiny"></div></div></div><div class="row"><span id="syncBadge" class="pill">v1.23.0</span></div></header>
       <div class="content">
         <section id="section-dashboard" class="section active"></section>
         <section id="section-live" class="section"></section>
@@ -2244,7 +2244,7 @@ tbody tr:hover td{background:#fffafb}
 
     function previewTs(iso){ return {toDate:()=>new Date(iso)}; }
     function enterPreview(){
-      state.config={version:'1.22.0-preview',tiktokConfigured:true};
+      state.config={version:'1.23.0-preview',tiktokConfigured:true};
       state.user={uid:'preview-admin',email:'admin@sellerkbb.demo',displayName:'Quản trị viên Demo',photoURL:avatarFallbackData('Quản trị viên Demo')};
       state.profile={role:'admin',status:'approved',displayName:'Quản trị viên Demo',photoURL:state.user.photoURL,permissions:['live.read','kpi.read']};
       state.maintenance={settings:{retentionDays:180,autoCleanup:true,emergencyPercent:85,firestoreSoftLimitMb:600,firestoreMaxSessions:12000,kvSoftKeyLimit:5000},github:{usedBytes:124000,limitBytes:10000000000,available:true},cloudflare:{keyCount:5,lastRun:{ranAt:new Date().toISOString(),deleted:0},usedBytes:428000,storageLimitBytes:1000000000,storageComplete:true},firebase:{freePlanMode:true,ttlEnabled:false,ttlRecommended:false,storageLimitBytes:1073741824}};
@@ -2637,12 +2637,12 @@ tbody tr:hover td{background:#fffafb}
       const p=n=>String(n).padStart(2,'0');
       const startDate=`${p(start.getDate())}/${p(start.getMonth()+1)}/${start.getFullYear()}`;
       const startTime=`${p(start.getHours())}:${p(start.getMinutes())}`;
-      if(!(end instanceof Date)||Number.isNaN(end.getTime()))return `${startDate}  ${startTime}`;
+      if(!(end instanceof Date)||Number.isNaN(end.getTime()))return `${startDate} Vào lúc ${startTime}`;
       const endTime=`${p(end.getHours())}:${p(end.getMinutes())}`;
       const sameDay=start.getFullYear()===end.getFullYear()&&start.getMonth()===end.getMonth()&&start.getDate()===end.getDate();
-      if(sameDay)return `${startDate}  ${startTime}-${endTime}`;
+      if(sameDay)return `${startDate} Vào lúc ${startTime}-${endTime}`;
       const endDate=`${p(end.getDate())}/${p(end.getMonth()+1)}/${end.getFullYear()}`;
-      return `${startDate}  ${startTime}-${endDate} ${endTime}`;
+      return `${startDate} Vào lúc ${startTime}-${endDate} ${endTime}`;
     }
     function isManualKpi(s){ return s?.kpiMode==='manual'; }
 
