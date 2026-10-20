@@ -36,6 +36,12 @@ jobs:
           else
             echo "configured=false" >> "$GITHUB_OUTPUT"
           fi
+      - name: Warn when Cloudflare deploy is not configured
+        if: steps.cloudflare.outputs.configured != 'true'
+        run: |
+          echo "::warning::Cloudflare deploy đang bị bỏ qua vì thiếu CLOUDFLARE_API_TOKEN/CLOUDFLARE_ACCOUNT_ID trong GitHub Actions Secrets."
+          echo "### ⚠️ Cloudflare deploy skipped" >> "$GITHUB_STEP_SUMMARY"
+          echo "Thiếu CLOUDFLARE_API_TOKEN hoặc CLOUDFLARE_ACCOUNT_ID." >> "$GITHUB_STEP_SUMMARY"
       - name: Deploy Cloudflare Worker
         if: steps.cloudflare.outputs.configured == 'true'
         uses: cloudflare/wrangler-action@v4
@@ -64,6 +70,12 @@ jobs:
           else
             echo "configured=false" >> "$GITHUB_OUTPUT"
           fi
+      - name: Warn when Firebase deploy is not configured
+        if: steps.firebase.outputs.configured != 'true'
+        run: |
+          echo "::warning::Firestore deploy đang bị bỏ qua vì thiếu FIREBASE_SERVICE_ACCOUNT/FIREBASE_PROJECT_ID trong GitHub Actions Secrets."
+          echo "### ⚠️ Firestore deploy skipped" >> "$GITHUB_STEP_SUMMARY"
+          echo "Thiếu FIREBASE_SERVICE_ACCOUNT hoặc FIREBASE_PROJECT_ID." >> "$GITHUB_STEP_SUMMARY"
       - name: Authenticate Google Cloud
         if: steps.firebase.outputs.configured == 'true'
         uses: google-github-actions/auth@v3
