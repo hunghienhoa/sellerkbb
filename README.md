@@ -4,7 +4,7 @@
 
 ### Báo cáo TikTok LIVE · KPI nhân sự · Tự đồng bộ 24/24
 
-**Phiên bản hiện tại: v1.37.0**
+**Phiên bản hiện tại: v1.38.0**
 
 [![GitHub Release](https://img.shields.io/github/v/release/hunghienhoa/sellerkbb?label=Release)](https://github.com/hunghienhoa/sellerkbb/releases)
 [![GitHub Actions](https://img.shields.io/github/actions/workflow/status/hunghienhoa/sellerkbb/deploy.yml?branch=main&label=Ki%E1%BB%83m%20tra%20%26%20Backup)](https://github.com/hunghienhoa/sellerkbb/actions)
@@ -17,23 +17,17 @@
 
 ---
 
-## 🆕 Cập nhật mới nhất — v1.37.0
+## 🆕 Cập nhật mới nhất — v1.38.0
 
-- Chuẩn hóa tên GMV để tránh hiểu nhầm:
-  - **GMV đã ghi nhận** = số TikTok cập nhật mới nhất của đúng phiên LIVE; nếu TikTok xác nhận thêm đơn sau khi LIVE kết thúc thì SellerKBB tiếp tục cập nhật số này.
-  - **GMV chờ đối soát** = số tạm tính sau hủy/hoàn đã biết của **các đơn có tín hiệu LIVE chắc chắn**.
-  - **GMV sau khi hoàn hủy** = số cuối cùng đã chốt; đây là GMV dùng để chốt KPI.
-- Bổ sung **GMV sau khi hoàn hủy** trực tiếp vào bảng/card Phiên LIVE trên PC và mobile.
-- Đơn chỉ **Khớp theo thời gian** vẫn hiển thị trong đối soát để Admin kiểm tra nhưng **không được cộng vào KPI tự động**, kể cả KPI tạm tính.
-- Popup Đối soát hiển thị riêng **GMV đã ghi nhận / GMV chờ đối soát / GMV sau khi hoàn hủy** và số đơn khớp thời gian bị loại khỏi KPI.
-- KPI tự động chỉ áp dụng cho phiên **không tích Tính KPI thủ công**.
-- KPI thủ công có kiểm soát cân bằng GMV:
-  - Tổng GMV Host bằng GMV sau khi hoàn hủy → báo xanh, đủ điều kiện.
-  - Tổng GMV Host nhỏ hơn → báo vàng số còn chưa phân bổ nhưng vẫn cho lưu.
-  - Tổng GMV Host lớn hơn → báo đỏ số vượt và **chặn lưu**.
-  - Phiên chưa có GMV sau khi hoàn hủy → cho **Lưu nháp**, chưa cộng vào KPI đã chốt.
-- KPI thủ công đã lưu nháp sẽ tự được kiểm tra lại khi phiên có số chốt; nếu hợp lệ thì được tính, nếu vượt thì yêu cầu Admin sửa.
-- README bổ sung phần giải thích 3 loại GMV, ví dụ tính chi tiết, quy tắc KPI tự động/thủ công và lịch sử các phiên bản gần đây.
+- Khi tích **Ngày Campaign/Mega Live · tính KPI thủ công**, SellerKBB bắt buộc chọn thêm loại phiên:
+  - **Ngày Campaign**
+  - **Mega Live**
+- Loại phiên được lưu cùng chính phiên LIVE và giữ nguyên sau khi reload.
+- Sau khi lưu, giao diện Phiên LIVE và tab **KPI thủ công** hiển thị thẻ rõ **Ngày Campaign** hoặc **Mega Live** thay vì gộp chung.
+- Nếu đã tích KPI thủ công nhưng chưa chọn loại phiên, hệ thống **không cho lưu** và yêu cầu chọn loại.
+- Khi bỏ tích KPI thủ công, thẻ phân loại Campaign/Mega cũng được xóa khỏi phiên.
+- CSV Phiên LIVE bổ sung cột `manual_live_type` để phân biệt Campaign và Mega Live khi xuất dữ liệu.
+- Các phiên KPI thủ công cũ chưa từng có trường phân loại vẫn được giữ nguyên dữ liệu và hiển thị **KPI thủ công · chưa phân loại** cho tới khi Admin cập nhật.
 - README, kiểm thử PC/mobile và GitHub Release được cập nhật cùng phiên bản.
 
 ---
@@ -68,7 +62,7 @@ Bạn không cần hiểu hết code. Chỉ cần nhớ 4 nơi chính:
   - Host Livestream: **0,3% GMV dùng KPI**.
   - Livestream operator: **0,1% GMV dùng KPI**.
 - **Từ v1.37.0:** giao diện dùng 3 tên rõ ràng: **GMV đã ghi nhận / GMV chờ đối soát / GMV sau khi hoàn hủy**. KPI tự động chỉ dùng đơn có tín hiệu LIVE chắc chắn; đơn chỉ khớp thời gian không được tính KPI.
-- **Ngày Campaign/Mega Live** có thể bật chế độ KPI thủ công; Host/Operator được để trống và phiên đó không cộng KPI tự động.
+- **Ngày Campaign/Mega Live** có thể bật chế độ KPI thủ công; sau khi tích phải chọn rõ **Ngày Campaign** hoặc **Mega Live**. Host/Operator được để trống và phiên đó không cộng KPI tự động.
 - Bộ lọc: **Hôm nay / 7 ngày / 30 Ngày / Chọn ngày**.
 - Có trang Xuất file riêng.
 - Lưu dữ liệu **60–180 ngày** theo cấu hình; 60 ngày gần nhất được bảo vệ để phục vụ đối soát đơn và hậu mãi.
@@ -108,13 +102,15 @@ Phiên LIVE tự đồng bộ mới luôn để Host/Operator **trống** để 
 Nếu một phiên kéo dài nhiều giờ và nhiều người thay ca:
 
 1. Tích **Ngày Campaign/Mega Live · tính KPI thủ công**.
-2. SellerKBB tự xóa lựa chọn Host/Operator tự động của phiên đó.
-3. Bấm **Lưu**.
-4. Phiên vẫn xuất hiện trong doanh thu/báo cáo nhưng **không cộng KPI tự động**.
-5. Phiên được đưa vào tab **KPI thủ công** trong nhóm **Công cụ**.
-6. Admin thêm những Host/Operator thực sự cần tính và nhập **GMV sau hoàn/hủy của từng Host**.
-7. KPI Host tự tính = GMV Host × **0,3%**; KPI Vận hành đi cùng Host = GMV Host × **0,1%**.
-8. SellerKBB không tự chia GMV tổng phiên cho các Host.
+2. SellerKBB hiện thêm ô **Gắn thẻ loại phiên**.
+3. Chọn **Ngày Campaign** hoặc **Mega Live**. Đây là lựa chọn bắt buộc trước khi lưu.
+4. SellerKBB tự xóa lựa chọn Host/Operator tự động của phiên đó.
+5. Bấm **Lưu**. Sau khi lưu, thẻ loại phiên sẽ hiển thị ngay trên phiên LIVE và trong tab KPI thủ công.
+6. Phiên vẫn xuất hiện trong doanh thu/báo cáo nhưng **không cộng KPI tự động**.
+7. Phiên được đưa vào tab **KPI thủ công** trong nhóm **Công cụ**.
+8. Admin thêm những Host/Operator thực sự cần tính và nhập **GMV sau hoàn/hủy của từng Host**.
+9. KPI Host tự tính = GMV Host × **0,3%**; KPI Vận hành đi cùng Host = GMV Host × **0,1%**.
+10. SellerKBB không tự chia GMV tổng phiên cho các Host.
 
 #### Kiểm soát GMV thủ công
 
@@ -220,6 +216,7 @@ README giữ lại phần này để nhân sự có thể biết **vì sao giao 
 
 | Phiên bản | Thay đổi chính |
 |---|---|
+| **v1.38.0** | KPI thủ công bắt buộc gắn thẻ **Ngày Campaign** hoặc **Mega Live**; lưu cùng phiên, hiển thị lại sau reload và xuất CSV. |
 | **v1.37.0** | Chuẩn hóa 3 loại GMV; loại đơn chỉ khớp thời gian khỏi KPI; thêm kiểm soát thiếu/vượt cho KPI thủ công và chế độ Lưu nháp. |
 | **v1.36.1** | KPI tự động chuyển sang GMV đối soát; thêm lớp an toàn không chốt khi liên kết LIVE chưa chắc chắn. |
 | **v1.36.0** | Tách KPI Đã chốt / Tạm tính / Chờ đối soát / Dự kiến; cron tự cập nhật KPI đối soát. |
