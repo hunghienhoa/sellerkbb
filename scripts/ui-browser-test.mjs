@@ -160,7 +160,7 @@ try {
   assert(await page.$('[data-kpi-table="pending"]')!==null&&await page.$('[data-kpi-table="final"]')!==null,"KPI page must split pending and finalized data into two tables");
   assert(await page.$eval('[data-kpi-table="pending"]',e=>e.textContent.includes('KPI chưa chốt')&&e.textContent.includes('GMV chờ đối soát')&&e.textContent.includes('KPI tạm tính')),"Pending KPI table labels missing");
   assert(await page.$eval('[data-kpi-table="final"]',e=>e.textContent.includes('KPI đã chốt')&&e.textContent.includes('GMV tự động đã chốt')&&e.textContent.includes('GMV thủ công')&&e.textContent.includes('Tổng KPI đã chốt')),"Final KPI table labels missing");
-  const autoKpiRows=await page.$eval('[data-kpi-table="final"] tbody tr',rows=>rows.map(row=>{
+  const autoKpiRows=await page.$$eval('[data-kpi-table="final"] tbody tr',rows=>rows.map(row=>{
     const cells=[...row.querySelectorAll('td')].map(x=>x.textContent.trim());
     return {name:cells[0]||'',finalKpi:Number((cells[6]||'').replace(/[^0-9]/g,'')||0)};
   }));
