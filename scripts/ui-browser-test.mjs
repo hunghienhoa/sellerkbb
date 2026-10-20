@@ -533,7 +533,7 @@ try {
   await page.waitForFunction(()=>!document.querySelector('#sidebar')?.classList.contains('open'));
   await sleep(200);
 
-  const mobileCard='#section-live .mobile-live-card:nth-child(2)';
+  const mobileCard='#section-live .mobile-live-card:not(.manual-session):first-of-type';
   assert(await page.$eval(mobileCard+' .mobile-live-time',e=>/^\d{2}\/\d{2}\/\d{4} Vào lúc \d{2}:\d{2}-/.test(e.textContent.trim())),"Mobile compact LIVE time range not rendered");
   const mobileId=await page.$eval(mobileCard+' [data-save-session]',e=>e.dataset.saveSession);
   await page.select(mobileCard+' select[data-person="host"]','staff-dung');
