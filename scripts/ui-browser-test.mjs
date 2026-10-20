@@ -287,10 +287,10 @@ try {
     if(!value)return {label,lines:0,whiteSpace:'',text:''};
     const range=document.createRange();
     range.selectNodeContents(value);
-    return {label,text:value.textContent.trim(),lines:range.getClientRects().length,whiteSpace:getComputedStyle(value).whiteSpace};
+    return {label,text:value.textContent.trim(),lines:range.getClientRects().length,whiteSpace:getComputedStyle(value).whiteSpace,fits:value.scrollWidth<=value.clientWidth+1};
   }));
   assert(mobileMetrics.length===4,"Mobile Dashboard metric cards missing");
-  assert(mobileMetrics.every(x=>x.lines===1&&x.whiteSpace==='nowrap'),"Mobile Dashboard metric values must stay on one line");
+  assert(mobileMetrics.every(x=>x.lines===1&&x.whiteSpace==='nowrap'&&x.fits),"Mobile Dashboard metric values must stay on one line without clipping");
   const mobileGmv=mobileMetrics.find(x=>x.label==='GMV cuối kỳ');
   assert(mobileGmv&&mobileGmv.text.endsWith('đ')&&mobileGmv.lines===1,"Mobile GMV cuối kỳ must display the full amount and đ on one line");
   await page.click('#menuToggle');
