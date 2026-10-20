@@ -559,7 +559,8 @@ try {
   await page.waitForFunction(()=>!document.querySelector('#sidebar')?.classList.contains('open'));
   await sleep(200);
 
-  const mobileId=await page.$eval('#section-live .mobile-live-card',cards=>{
+  const mobileId=await page.evaluate(()=>{
+    const cards=[...document.querySelectorAll('#section-live .mobile-live-card')];
     const automatic=cards.filter(e=>!e.classList.contains('manual-session'));
     const card=automatic.find(e=>!e.querySelector('[data-assignment-editor]')?.classList.contains('hidden'))||automatic[0];
     return card?.querySelector('[data-save-session]')?.dataset.saveSession||'';
