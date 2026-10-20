@@ -4317,10 +4317,10 @@ tbody tr:hover td{background:#fffafb}
           <div class="kpi-rate-guide-icon">${icon('shield',16)}</div>
           <div class="kpi-rate-guide-copy">
             <b>Cách tính KPI mới</b>
-            <span><strong>KPI tự động không dùng GMV LIVE TikTok gộp.</strong> SellerKBB lấy GMV đối soát cấp đơn sau hủy/hoàn đã biết. Host Livestream = <strong>0,3%</strong>; Nhân viên vận hành Livestream = <strong>0,1%</strong>. Phiên còn đơn chưa kết thúc là <strong>KPI tạm tính</strong>; khi toàn bộ đơn đã hoàn tất/hủy và không còn hậu mãi đang xử lý thì chuyển thành <strong>KPI đã chốt</strong>.</span>
+            <span><strong>KPI tự động chỉ dùng đơn có tín hiệu LIVE.</strong> GMV chờ đối soát là số tạm tính; GMV sau khi hoàn hủy là số đã chốt. Host Livestream = <strong>0,3%</strong>; Nhân viên vận hành Livestream = <strong>0,1%</strong>. Đơn chỉ khớp theo thời gian không được cộng vào KPI.</span>
           </div>
         </div>
-        <div class="notice ok"><b>KPI thủ công được coi là đã chốt</b> vì bạn tự nhập GMV sau hoàn/hủy cho từng Host. Các phiên tự động thiếu dữ liệu Orders/Return & Refund sẽ nằm ở “Chờ đối soát” và <b>không lấy GMV gộp để tính thay</b>.</div>
+        <div class="notice ok"><b>KPI thủ công chỉ được coi là đã chốt khi đã kiểm tra được GMV sau khi hoàn hủy.</b> Nếu chưa có số chốt thì lưu nháp; nếu tổng GMV Host vượt số chốt thì không được cộng KPI. Phiên tự động thiếu dữ liệu đối soát cũng không lấy GMV đã ghi nhận để tính thay.</div>
         <div class="kpi-pair"><div class="pair-card"><b>Host Livestream</b><span class="tiny">${esc(staffForRole('host').map(x=>x.displayName).join(' · ')||'Chưa có nhân sự')}</span></div><div class="pair-card"><b>Nhân viên vận hành Livestream</b><span class="tiny">${esc(staffForRole('operator').map(x=>x.displayName).join(' · ')||'Chưa có nhân sự')}</span></div></div>
         <div class="metrics-grid metrics-4">
           ${metricCard('check','KPI đã chốt',fmtMoney(totalFinalKpi,currency),finalSessions+' phiên tự động đã chốt · gồm KPI thủ công')}
