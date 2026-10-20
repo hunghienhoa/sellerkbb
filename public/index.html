@@ -4519,14 +4519,11 @@ tbody tr:hover td{background:#fffafb}
           if(remove){
             const row=remove.closest('[data-manual-entry]');
             const rows=card.querySelectorAll('[data-manual-entry]');
-            if(rows.length===1){
-              row.querySelector('[data-manual-host-person]').value='';
-              row.querySelector('[data-manual-operator-person]').value='';
-              setManualMoneyInput(row.querySelector('[data-manual-host-gmv]'),0);
-              setManualMoneyInput(row.querySelector('[data-manual-host-kpi]'),0);
-              setManualMoneyInput(row.querySelector('[data-manual-operator-kpi]'),0);
-            }else row.remove();
             const session=state.sessions.find(s=>s.id===sessionId);
+            if(rows.length===1){
+              row.outerHTML=manualKpiPairRow(session,{host:null,operator:null},0,true);
+              bindManualKpiPair(card.querySelector('[data-manual-entry]'));
+            }else row.remove();
             updateManualKpiBalance(card,session);
           }
         });
