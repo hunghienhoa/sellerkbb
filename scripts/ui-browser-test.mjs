@@ -212,6 +212,7 @@ try {
   assert((await page.$$('#section-manual-kpi [data-manual-session]')).length>=1,"Manual KPI session section missing");
   assert(await page.$('#section-kpi [data-manual-session]')===null,"Manual KPI editor must not remain inside KPI nhân sự");
   const manualCard='#section-manual-kpi [data-manual-session]:first-of-type';
+  const manualSessionId=await page.$eval(manualCard,e=>e.dataset.manualSession);
   assert(await page.$eval(manualCard,e=>e.textContent.includes('Mega Live')),"Manual KPI card must show saved Mega Live classification");
   assert(await page.$eval(manualCard,e=>e.classList.contains('reconciled')&&e.textContent.includes('✓ Đã đối soát')),"Finalized manual KPI session must use green reconciled styling/badge");
   assert(await page.$eval(manualCard,e=>e.textContent.includes('không tự chia GMV tổng')),"Manual KPI no-equal-split notice missing");
@@ -279,7 +280,7 @@ try {
   await page.waitForSelector("#app:not(.hidden)",{timeout:30000});
   await page.click('[data-section="manual-kpi"]');
   await page.click('#section-manual-kpi [data-range-mode="30d"]');
-  const savedManualCard='#section-manual-kpi [data-manual-session]:first-of-type';
+  const savedManualCard='#section-manual-kpi [data-manual-session="'+manualSessionId+'"]';
   assert((await page.$(savedManualCard+' [data-manual-entry-saved="1"]')).length>=1,"Saved manual KPI people must render as compact rows after save");
   assert(await page.$eval(savedManualCard+' [data-manual-entry-saved="1"] [data-manual-entry-details]',e=>e.classList.contains('hidden')),"Saved manual KPI details must start collapsed after reload");
   assert(await page.$eval(savedManualCard+' [data-manual-entry-saved="1"] .manual-kpi-entry-summary',e=>e.textContent.includes('Host:')&&e.textContent.includes('Vận hành:')&&e.textContent.includes('Chi tiết')),"Collapsed manual KPI summary must show Host Operator and Chi tiết");
@@ -516,7 +517,7 @@ try {
   await page.waitForFunction(()=>!document.querySelector('#sidebar')?.classList.contains('open'));
   await sleep(200);
   await page.click('#section-manual-kpi [data-range-mode="30d"]');
-  const mobileManualCard='#section-manual-kpi [data-manual-session]:first-of-type';
+  const mobileManualCard='#section-manual-kpi [data-manual-session="'+manualSessionId+'"]';
   assert(await page.$eval(mobileManualCard+' [data-manual-entry-saved="1"] [data-manual-entry-details]',e=>e.classList.contains('hidden')),"Mobile saved KPI row must start collapsed");
   await page.click(mobileManualCard+' [data-manual-entry-saved="1"] [data-manual-detail-toggle]');
   assert(!(await page.$eval(mobileManualCard+' [data-manual-entry-saved="1"] [data-manual-entry-details]',e=>e.classList.contains('hidden'))),"Mobile Chi tiết must expand KPI row");
