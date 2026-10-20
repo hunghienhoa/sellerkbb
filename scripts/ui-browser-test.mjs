@@ -301,7 +301,7 @@ try {
   await page.setViewport({width:390,height:844,deviceScaleFactor:1});
   await page.reload({waitUntil:"domcontentloaded"});
   await page.waitForSelector("#app:not(.hidden)",{timeout:30000});
-  const mobileFormFonts=await page.$eval('input,select,textarea',els=>els.map(e=>({
+  const mobileFormFonts=await page.evaluate(()=>[...document.querySelectorAll('input,select,textarea')].map(e=>({
     tag:e.tagName,
     type:e.getAttribute('type')||'',
     id:e.id||'',
