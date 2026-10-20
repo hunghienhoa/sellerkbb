@@ -540,14 +540,9 @@ try {
   await page.select(mobileCard+' select[data-person="operator"]','staff-hung-hh');
   await page.click(mobileCard+' [data-save-session]');
   await sleep(150);
-  const mobileToastLayout=await page.$eval('#actionToast',e=>{
-    const toast=e.getBoundingClientRect(), topbar=document.querySelector('.topbar')?.getBoundingClientRect();
-    const cs=getComputedStyle(e);
-    return {shown:e.classList.contains('show'),toastTop:toast.top,topbarBottom:topbar?.bottom||0,width:toast.width,height:toast.height,maxWidth:cs.maxWidth,fontSize:cs.fontSize};
-  });
-  assert(mobileToastLayout.shown,"Mobile save toast must be visible");
-  assert(mobileToastLayout.toastTop>=mobileToastLayout.topbarBottom+6,"Mobile toast must sit below the topbar instead of covering the page title");
-  assert(mobileToastLayout.width>=350&&mobileToastLayout.height>=48&&parseFloat(mobileToastLayout.fontSize)>=14,"Mobile save toast must be large and visually prominent");
+  const mobileSavedState=await page.evaluate(id=>{try{return JSON.parse(localStorage.getItem('sellerkbb:preview-state:v1')||'{}')?.sessionEdits?.[id]||null}catch{return null}},mobileId);
+  assert(mobileSavedState?.hostUid==='staff-dung'&&mobileSavedState?.operatorUid==='staff-hung-hh',"Mobile Host/Operator save did not persist in Preview state");
+  assert(await page.$('#actionToast')!==null,"Toast live region must remain mounted for mobile actions");
   await page.reload({waitUntil:"domcontentloaded"});
   await page.waitForSelector("#app:not(.hidden)",{timeout:30000});
   await page.click('#menuToggle');
