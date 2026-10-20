@@ -533,9 +533,13 @@ try {
   await page.waitForFunction(()=>!document.querySelector('#sidebar')?.classList.contains('open'));
   await sleep(200);
 
-  const mobileCard='#section-live .mobile-live-card:not(.manual-session):first-of-type';
+  const mobileId=await page.$eval('#section-live .mobile-live-card',cards=>{
+    const card=cards.find(e=>!e.classList.contains('manual-session'));
+    return card?.querySelector('[data-save-session]')?.dataset.saveSession||'';
+  });
+  assert(mobileId,"No automatic mobile LIVE card available for assignment test");
+  const mobileCard='#section-live .mobile-live-card:has([data-save-session="'+mobileId+'"])';
   assert(await page.$eval(mobileCard+' .mobile-live-time',e=>/^\d{2}\/\d{2}\/\d{4} Vào lúc \d{2}:\d{2}-/.test(e.textContent.trim())),"Mobile compact LIVE time range not rendered");
-  const mobileId=await page.$eval(mobileCard+' [data-save-session]',e=>e.dataset.saveSession);
   await page.select(mobileCard+' select[data-person="host"]','staff-dung');
   await page.select(mobileCard+' select[data-person="operator"]','staff-hung-hh');
   await page.click(mobileCard+' [data-save-session]');
