@@ -254,7 +254,7 @@ try {
   assert(await page.$('[data-approved-user="tam"]')===null,"Confirmed delete did not remove user");
   await page.click('[data-section="live"]');
   await page.click('#section-live [data-range-mode="30d"]');
-  assert(await page.$eval('#section-live',e=>[...e.querySelectorAll('select[data-person="host"] option')].some(x=>x.textContent.trim()==='Tâm'),"Deleting login account Tâm must not remove staff Tâm from Host dropdown");
+  assert(await page.$eval('#section-live',e=>[...e.querySelectorAll('select[data-person="host"] option')].some(x=>x.textContent.trim()==='Tâm')),"Deleting login account Tâm must not remove staff Tâm from Host dropdown");
   await page.click('#nav [data-section="users"]');
 
   await page.select('[data-role="pending-01"]','operator');
