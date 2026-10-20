@@ -2,6 +2,11 @@
 
 These rules are mandatory for every SellerKBB feature/fix release.
 
+## Default execution behavior
+- When the user asks to sửa, fix, bổ sung, thay đổi, cập nhật, or chỉnh giao diện/nghiệp vụ, implement it immediately without asking for confirmation again unless a real ambiguity blocks safe implementation.
+- After every completed change, automatically run checks, update README/release notes when applicable, deploy the new version to production and /preview, verify the live APP_VERSION, and report the result.
+- Do not stop at source code or a GitHub commit when the request changes the website; the task is only complete after the updated web version is live and verified.
+
 1. Bump VERSION, package.json, wrangler.toml and the UI version together.
 2. Update README in all three places: "Cập nhật mới nhất", current usage instructions, and version history.
 3. Run static checks and Chromium smoke tests for desktop + mobile.
