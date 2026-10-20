@@ -352,7 +352,7 @@ async function getAuthorizedShops(env, accessToken) {
   return result.payload?.data?.shops || [];
 }
 
-function normalizeLiveSession(s, shop) {
+function normalizeLiveSession(s, shop, requestedAccountType = "") {
   const start = Number(s.start_time || 0);
   const end = Number(s.end_time || 0);
   const sales = s.sales_performance || {};
@@ -362,7 +362,7 @@ function normalizeLiveSession(s, shop) {
     title: s.title || "Phiên LIVE",
     channelUsername: s.username || "",
     channelId: String(s.creator_id || s.account_id || s.user_id || ""),
-    accountType: s.account_type || "",
+    accountType: s.account_type || requestedAccountType || "",
     shopCipher: shop?.cipher || "",
     shopId: String(shop?.id || ""),
     shopName: shop?.name || "",
@@ -508,7 +508,7 @@ async function searchReturnsForOrders(env, accessToken, shopCipher, orderIds) {
     const query = { shop_cipher: shopCipher, page_size: 100 };
     if (pageToken) query.page_token = pageToken;
     const result = await tiktokCall(env, accessToken, "/return_refund/202309/returns/search", query, "POST", {
-      order_ids: ids.join(",")
+      order_ids: ids
     });
     if (result.payload?.code !== 0) {
       return { available: false, error: result.payload?.message || "Return & Refund API unavailable", records: [] };
@@ -821,35 +821,42 @@ async function refreshKpiReconciliations(env, accessToken, sessions, reason = "h
   return { checked: candidates.length, refreshed, finalized, blocked, errors: errors.slice(0, 5) };
 }
 
+const SELLERKBB_LIVE_ACCOUNT_TYPES = ["OFFICIAL_ACCOUNTS", "MARKETING_ACCOUNTS"];
+
 async function syncLivePerformance(env, accessToken, startDate, endDate) {
   const shops = await getAuthorizedShops(env, accessToken);
-  const all = [];
+  const byLiveId = new Map();
   for (const shop of shops) {
-    let pageToken = "";
-    do {
-      const query = {
-        start_date_ge: startDate,
-        end_date_lt: endDate,
-        page_size: 100,
-        sort_field: "gmv",
-        sort_order: "DESC",
-        currency: "LOCAL",
-        account_type: "ALL",
-        shop_cipher: shop.cipher
-      };
-      if (pageToken) query.page_token = pageToken;
-      const result = await tiktokCall(env, accessToken, "/analytics/202509/shop_lives/performance", query);
-      if (result.payload?.code === 105002) {
-        const refreshed = await refreshTikTokToken(env, await getTikTokToken(env));
-        return syncLivePerformance(env, refreshed.access_token, startDate, endDate);
-      }
-      if (result.payload?.code !== 0) throw new Error(result.payload?.message || "Không lấy được dữ liệu LIVE");
-      const data = result.payload?.data || {};
-      for (const session of data.live_stream_sessions || []) all.push(normalizeLiveSession(session, shop));
-      pageToken = data.next_page_token || data.page_token || "";
-    } while (pageToken);
+    for (const accountType of SELLERKBB_LIVE_ACCOUNT_TYPES) {
+      let pageToken = "";
+      do {
+        const query = {
+          start_date_ge: startDate,
+          end_date_lt: endDate,
+          page_size: 100,
+          sort_field: "gmv",
+          sort_order: "DESC",
+          currency: "LOCAL",
+          account_type: accountType,
+          shop_cipher: shop.cipher
+        };
+        if (pageToken) query.page_token = pageToken;
+        const result = await tiktokCall(env, accessToken, "/analytics/202509/shop_lives/performance", query);
+        if (result.payload?.code === 105002) {
+          const refreshed = await refreshTikTokToken(env, await getTikTokToken(env));
+          return syncLivePerformance(env, refreshed.access_token, startDate, endDate);
+        }
+        if (result.payload?.code !== 0) throw new Error(result.payload?.message || "Không lấy được dữ liệu LIVE");
+        const data = result.payload?.data || {};
+        for (const session of data.live_stream_sessions || []) {
+          const normalized = normalizeLiveSession(session, shop, accountType);
+          if (normalized.liveId) byLiveId.set(String(normalized.liveId), normalized);
+        }
+        pageToken = data.next_page_token || data.page_token || "";
+      } while (pageToken);
+    }
   }
-  return { shops, sessions: all };
+  return { shops, accountTypes: [...SELLERKBB_LIVE_ACCOUNT_TYPES], sessions: [...byLiveId.values()] };
 }
 
 
@@ -903,9 +910,17 @@ async function runAutoSync(env, lookbackDays = 2, reason = "hourly") {
     const cutoffSeconds = Math.floor((Date.now() - retentionMs) / 1000);
     const existing = await getAutoSyncData(env);
     const byId = new Map();
+    const syncWindowStartSeconds = Math.floor(Date.parse(startDate + "T00:00:00+07:00") / 1000);
+    const syncWindowEndSeconds = Math.floor(Date.parse(endDate + "T00:00:00+07:00") / 1000);
+    const freshIds = new Set((data.sessions || []).map(item => String(item?.liveId || "")).filter(Boolean));
 
     for (const item of existing) {
-      if (Number(item?.startTimeSeconds || 0) >= cutoffSeconds && item?.liveId) byId.set(String(item.liveId), item);
+      const id = String(item?.liveId || "");
+      const started = Number(item?.startTimeSeconds || 0);
+      if (!id || started < cutoffSeconds) continue;
+      const insideRefreshedWindow = started >= syncWindowStartSeconds && started < syncWindowEndSeconds;
+      if (insideRefreshedWindow && !freshIds.has(id)) continue;
+      byId.set(id, item);
     }
     for (const item of data.sessions || []) {
       if (!item?.liveId) continue;
@@ -938,6 +953,7 @@ async function runAutoSync(env, lookbackDays = 2, reason = "hourly") {
       windowEndExclusive: endDate,
       fetched: Number(data.sessions?.length || 0),
       cached: merged.length,
+      liveAccountTypes: data.accountTypes || [...SELLERKBB_LIVE_ACCOUNT_TYPES],
       tokenRefreshed: Boolean(tokenResult.refreshed),
       reconciliation
     };
