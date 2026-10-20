@@ -301,6 +301,15 @@ try {
   await page.setViewport({width:390,height:844,deviceScaleFactor:1});
   await page.reload({waitUntil:"domcontentloaded"});
   await page.waitForSelector("#app:not(.hidden)",{timeout:30000});
+  const mobileFormFonts=await page.$eval('input,select,textarea',els=>els.map(e=>({
+    tag:e.tagName,
+    type:e.getAttribute('type')||'',
+    id:e.id||'',
+    cls:e.className||'',
+    fontSize:parseFloat(getComputedStyle(e).fontSize)||0
+  })));
+  assert(mobileFormFonts.length>0,"Mobile form controls missing from regression scan");
+  assert(mobileFormFonts.every(x=>x.fontSize>=16),"Every mobile input/select/textarea must stay at >=16px to prevent iOS Safari focus zoom: "+JSON.stringify(mobileFormFonts.filter(x=>x.fontSize<16)));
   await page.click('#section-dashboard [data-range-mode="30d"]');
   const mobileMetrics=await page.$eval('#section-dashboard',root=>[...root.querySelectorAll('.metric-card')].map(card=>{
     const label=card.querySelector('.metric-copy>span')?.textContent.trim()||'';
@@ -346,6 +355,7 @@ try {
   await sleep(200);
   await page.click('#section-manual-kpi [data-range-mode="30d"]');
   const mobileManualCard='#section-manual-kpi [data-manual-session]:first-of-type';
+  assert(await page.$eval(mobileManualCard+' [data-manual-host-gmv]',e=>parseFloat(getComputedStyle(e).fontSize)>=16),"Mobile Host GMV input must be >=16px to prevent focus zoom");
   const focusBefore=await page.evaluate(()=>document.activeElement?.tagName||'');
   await page.$eval(mobileManualCard+' [data-manual-host-kpi]',e=>e.dispatchEvent(new PointerEvent('pointerdown',{bubbles:true})));
   await page.$eval(mobileManualCard+' [data-manual-operator-kpi]',e=>e.dispatchEvent(new PointerEvent('pointerdown',{bubbles:true})));
