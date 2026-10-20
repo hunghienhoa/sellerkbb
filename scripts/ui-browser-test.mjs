@@ -140,6 +140,7 @@ try {
   await sleep(80);
   const visibleReturnCards=await page.$$eval('#reconcileModalBody .reconcile-order-card',els=>els.filter(e=>!e.hidden).map(e=>e.dataset.orderState));
   assert(visibleReturnCards.length===1&&visibleReturnCards[0]==='returning',"Reconciliation status filtering failed");
+  await page.waitForFunction(()=>!document.querySelector('#reconcileModalRefresh')?.disabled);
   assert(await page.$eval('#reconcileModalRefresh',e=>e.querySelector('.ui-icon')!==null&&e.textContent.includes('Làm mới')),"Reconciliation refresh button must use the standard refresh SVG icon");
   await page.click('#reconcileModalRefresh');
   await page.waitForFunction(()=>document.querySelector('#reconcileModalRefresh')?.disabled===true);
