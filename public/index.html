@@ -3662,7 +3662,7 @@ tbody tr:hover td{background:#fffafb}
         pending:usable&&status!=='final'?Math.max(0,Number(summary.gmvAmount||0)):null,
         final:usable&&status==='final'?Math.max(0,Number(summary.gmvAmount||0)):null,
         status,
-        excludedTimeWindow:Math.max(0,Number(summary?.timeWindowNetAmount||0)),
+        excludedTimeWindow:Math.max(0,Number(summary?.excludedTimeWindowAmount||0)),
         liveSignalOrders:Number(summary?.liveSignalOrders||0),
         timeWindowOrders:Number(summary?.timeWindowOrders||0)
       };
@@ -3707,45 +3707,60 @@ tbody tr:hover td{background:#fffafb}
       const orderWindow=Number(result?.totals?.orderWindowAmount||0);
       const confirmedLiveSignalAmount=Number(result?.totals?.confirmedLiveSignalAmount||0);
       const aftersalesAvailable=result?.scope?.aftersalesAvailable!==false;
+      const aftersalesError=String(result?.scope?.aftersalesError||'');
       const overlapAmbiguous=result?.scope?.overlapAmbiguous===true;
       const overlapCount=Number(result?.scope?.overlapCount||0);
+
       const liveSignalRows=orders.filter(order=>order?.attribution==='live_signal');
-      const timeWindowRows=orders.filter(order=>order?.attribution!=='live_signal');
+      const provisionalTimeRows=orders.filter(order=>order?.attribution==='time_window_single_live');
+      const excludedTimeRows=orders.filter(order=>order?.attribution==='time_window');
+      const kpiRows=[...liveSignalRows,...provisionalTimeRows];
       const liveSignalOrders=liveSignalRows.length;
-      const timeWindowOrders=timeWindowRows.length;
-      const timeWindowNetAmount=timeWindowRows.reduce((sum,order)=>sum+Number(order?.netAmount||0),0);
-      const usable=!overlapAmbiguous&&aftersalesAvailable&&(liveSignalOrders>0||analytics===0);
-      const allFinal=usable&&liveSignalRows.every(order=>order?.status==='CANCELLED'||order?.status==='COMPLETED');
+      const provisionalTimeWindowOrders=provisionalTimeRows.length;
+      const timeWindowOrders=provisionalTimeRows.length+excludedTimeRows.length;
+      const provisionalTimeWindowAmount=provisionalTimeRows.reduce((sum,order)=>sum+Number(order?.netAmount||0),0);
+      const excludedTimeWindowAmount=excludedTimeRows.reduce((sum,order)=>sum+Number(order?.netAmount||0),0);
+      const timeWindowNetAmount=provisionalTimeWindowAmount+excludedTimeWindowAmount;
+      const kpiGmvAmount=kpiRows.reduce((sum,order)=>sum+Number(order?.netAmount||0),0);
+
+      const usable=!overlapAmbiguous&&aftersalesAvailable&&(kpiRows.length>0||analytics===0);
+      const allFinal=usable&&kpiRows.every(order=>order?.finalized===true||order?.status==='CANCELLED'||order?.status==='COMPLETED');
       const status=overlapAmbiguous?'blocked':!aftersalesAvailable?'blocked':!usable?'waiting':allFinal?'final':'provisional';
       const reason=overlapAmbiguous
-        ?'Phát hiện '+overlapCount+' phiên LIVE cùng shop bị chồng thời gian. SellerKBB khóa KPI tự động để tránh gán nhầm đơn giữa các phiên.'
+        ?'Có '+overlapCount+' phiên LIVE nội bộ chồng thời gian. SellerKBB khóa KPI tự động để tránh gán nhầm đơn giữa các phiên.'
         :!aftersalesAvailable
-          ?'Thiếu quyền hoặc dữ liệu Return/Refund; chưa dùng số này để tính KPI.'
+          ?'TikTok Return/Refund chưa đọc được'+(aftersalesError?': '+aftersalesError:'.')+' SellerKBB chưa dùng số này để tính KPI.'
           :!usable
-            ?'Chưa có đơn đủ tín hiệu LIVE để tính KPI; đơn chỉ khớp theo thời gian không được cộng.'
+            ?'Chưa tìm thấy đơn trong khung thời gian phiên LIVE để tính KPI.'
             :allFinal
-              ?'Toàn bộ đơn có tín hiệu LIVE dùng cho KPI đã kết thúc hậu mãi.'
-              :'GMV chờ đối soát chỉ gồm đơn có tín hiệu LIVE và sẽ tự cập nhật khi trạng thái đơn thay đổi.';
+              ?(provisionalTimeWindowOrders>0?'Đã chốt theo quy tắc một kênh nội bộ LIVE trong khung giờ; toàn bộ đơn dùng cho KPI đã kết thúc hậu mãi.':'Toàn bộ đơn có tín hiệu LIVE dùng cho KPI đã kết thúc hậu mãi.')
+              :provisionalTimeWindowOrders>0
+                ?'Chỉ có một kênh nội bộ LIVE trong khung giờ, nên '+provisionalTimeWindowOrders+' đơn khớp thời gian được tính KPI tạm tính. GMV sẽ tự giảm khi đơn hủy/hoàn.'
+                :'GMV chờ đối soát gồm các đơn có tín hiệu LIVE và sẽ tự cập nhật khi trạng thái đơn thay đổi.';
       return {
         status,
         usableForKpi:usable,
-        gmvAmount:usable?confirmedLiveSignalAmount:0,
+        gmvAmount:usable?kpiGmvAmount:0,
         analyticsGmvAmount:analytics,
         orderWindowAmount:orderWindow,
         confirmedLiveSignalAmount,
+        provisionalTimeWindowAmount,
+        excludedTimeWindowAmount,
         timeWindowNetAmount,
         orderCount:orders.length,
-        kpiOrderCount:liveSignalOrders,
-        pendingOrderCount:liveSignalRows.filter(order=>order?.status!=='CANCELLED'&&order?.status!=='COMPLETED').length,
+        kpiOrderCount:kpiRows.length,
+        pendingOrderCount:kpiRows.filter(order=>order?.finalized!==true&&order?.status!=='CANCELLED'&&order?.status!=='COMPLETED').length,
         cancelledCount:Number(result?.counts?.cancelled||0),
         returningCount:Number(result?.counts?.returning||0),
         refundedCount:Number(result?.counts?.refunded||0),
         aftersalesAvailable,
+        aftersalesError,
         overlapAmbiguous,
         overlapCount,
         liveSignalOrders,
+        provisionalTimeWindowOrders,
         timeWindowOrders,
-        attribution:liveSignalOrders>0?(timeWindowOrders>0?'mixed':'live_signal'):'time_window',
+        attribution:provisionalTimeWindowOrders>0?(liveSignalOrders>0?'mixed_single_live':'time_window_single_live'):(liveSignalOrders>0?'live_signal':'time_window'),
         generatedAt:new Date().toISOString(),
         finalizedAt:allFinal?new Date().toISOString():'',
         reason
@@ -3789,7 +3804,16 @@ tbody tr:hover td{background:#fffafb}
       };
       return {key,...map[key]};
     }
-    function reconcileAttributionLabel(order){ return order?.attribution==='live_signal'?'Có tín hiệu LIVE':'Khớp theo thời gian'; }
+    function reconcileAttributionLabel(order){
+      if(order?.attribution==='live_signal')return 'Có tín hiệu LIVE';
+      if(order?.attribution==='time_window_single_live')return 'Khớp giờ · 1 kênh nội bộ LIVE';
+      return 'Khớp theo thời gian';
+    }
+    function reconcileAttributionKpiSuffix(order){
+      if(order?.attribution==='live_signal')return ' · tính KPI';
+      if(order?.attribution==='time_window_single_live')return ' · KPI tạm tính';
+      return ' · không tính KPI';
+    }
     function reconcileSessionCard(session){
       const isOpen=state.reconcileModalSessionId===session.id;
       const reconciled=sessionGmvFigures(session).final!==null;
@@ -3836,11 +3860,11 @@ tbody tr:hover td{background:#fffafb}
         </div>
         <div class="reconcile-badges">
           <span class="order-status ${meta.tone}">${esc(meta.label)}</span>
-          <span class="order-status attribution">${esc(reconcileAttributionLabel(order))}${order?.attribution==='live_signal'?' · tính KPI':' · không tính KPI'}</span>
+          <span class="order-status attribution">${esc(reconcileAttributionLabel(order))}${esc(reconcileAttributionKpiSuffix(order))}</span>
         </div>
         <div class="reconcile-order-bottom">
           <div><span>Sau hủy/hoàn đã biết</span><b>${fmtMoney(order.netAmount,order.currency||session.currency)}</b></div>
-          <div><span>Hậu mãi</span><b>${after==='returning'?'Đang xử lý hoàn/trả':after==='refunded'?'Đã hoàn tiền':after==='closed'?'Đã đóng':'Không có'}</b></div>
+          <div><span>Hậu mãi</span><b>${order?.aftersalesAvailable===false?'Chưa kiểm tra được':after==='returning'?'Đang xử lý hoàn/trả':after==='refunded'?'Đã hoàn tiền':after==='closed'?'Đã đóng':'Không có'}</b></div>
         </div>
       </article>`;
     }
@@ -3905,7 +3929,7 @@ tbody tr:hover td{background:#fffafb}
           <div class="reconcile-overview-card"><span>GMV chờ đối soát</span><b>${result?.kpiSummary?.usableForKpi&&result?.kpiSummary?.status!=='final'?fmtMoney(result.kpiSummary.gmvAmount,session.currency):result?.kpiSummary?.status==='final'?'Đã chốt':'Chờ dữ liệu'}</b></div>
           <div class="reconcile-overview-card primary"><span>GMV sau khi hoàn hủy</span><b>${result?.kpiSummary?.status==='final'?fmtMoney(result.kpiSummary.gmvAmount,session.currency):'Chưa chốt'}</b></div>
         </div>
-        <div class="notice ${result?.kpiSummary?.status==='final'?'ok':result?.kpiSummary?.usableForKpi?'warn':'bad'} kpi-summary-note"><strong>KPI tự động: ${esc(kpiStatusLabel(result?.kpiSummary?.status||'waiting',result?.kpiSummary||null))}.</strong> ${esc(result?.kpiSummary?.reason||'')} ${Number(result?.kpiSummary?.timeWindowOrders||0)>0?'Có '+new Intl.NumberFormat('vi-VN').format(Number(result.kpiSummary.timeWindowOrders||0))+' đơn chỉ khớp theo thời gian ('+fmtMoney(Number(result.kpiSummary.timeWindowNetAmount||0),session.currency)+') và không được cộng vào KPI.':''}</div>
+        <div class="notice ${result?.kpiSummary?.status==='final'?'ok':result?.kpiSummary?.usableForKpi?'warn':'bad'} kpi-summary-note"><strong>KPI tự động: ${esc(kpiStatusLabel(result?.kpiSummary?.status||'waiting',result?.kpiSummary||null))}.</strong> ${esc(result?.kpiSummary?.reason||'')} ${Number(result?.kpiSummary?.provisionalTimeWindowOrders||0)>0&&!result?.kpiSummary?.overlapAmbiguous?'Có '+new Intl.NumberFormat('vi-VN').format(Number(result.kpiSummary.provisionalTimeWindowOrders||0))+' đơn khớp thời gian đang được tính KPI tạm tính ('+fmtMoney(Number(result.kpiSummary.provisionalTimeWindowAmount||0),session.currency)+').':Number(result?.kpiSummary?.excludedTimeWindowAmount||0)>0?'Có '+new Intl.NumberFormat('vi-VN').format(Number(result.kpiSummary.timeWindowOrders||0))+' đơn khớp thời gian chưa được cộng KPI vì phiên LIVE chồng giờ.':''}</div>
         <div class="reconcile-filter-wrap">
           <div class="reconcile-filter-label">Lọc nhanh theo trạng thái đơn</div>
           <div class="reconcile-filterbar">${filters.map((x,i)=>`<button type="button" class="reconcile-filter-chip ${i===0?'active':''}" data-reconcile-filter="${x.key}"><span>${esc(x.label)}</span><b>${x.count}</b></button>`).join('')}</div>
@@ -3915,9 +3939,9 @@ tbody tr:hover td{background:#fffafb}
         <details class="reconcile-policy">
           <summary>Giải thích đối soát & dữ liệu hậu mãi</summary>
           <div class="reconcile-policy-body">
-            <span>${aftersalesAvailable?'Đã đọc được dữ liệu Return/Refund của TikTok.':'Token hiện tại chưa đọc đủ Return/Refund; trạng thái hậu mãi có thể chưa đầy đủ.'}</span>
+            <span>${aftersalesAvailable?'Đã đọc được dữ liệu Return/Refund của TikTok.':'Chưa đọc được Return/Refund'+(result?.scope?.aftersalesError?' · '+esc(result.scope.aftersalesError):'')+'.'}</span>
             <span>Cửa sổ trả/hoàn có thể kéo dài tới 15 ngày sau Delivered; một số danh mục là 6 ngày.</span>
-            <span>Đơn “Khớp theo thời gian” chưa được coi là bằng chứng tuyệt đối phát sinh từ LIVE và chưa dùng để tự chốt KPI.</span>
+            <span>Khi chỉ có một trong hai kênh nội bộ đang LIVE, đơn khớp thời gian được tính KPI tạm tính; nếu hai kênh LIVE chồng giờ thì phần không xác định được sẽ bị khóa để tránh gán nhầm.</span>
           </div>
         </details>`;
       root.querySelectorAll('[data-reconcile-filter]').forEach(btn=>btn.onclick=()=>applyReconcileFilter(root,btn.dataset.reconcileFilter));
@@ -3979,7 +4003,7 @@ tbody tr:hover td{background:#fffafb}
           amount,
           netAmount:sample.status==='CANCELLED'?0:(refunded?Math.round(amount*.62):amount),
           currency:session.currency||'VND',
-          attribution:i<5?'live_signal':'time_window',
+          attribution:i<5?'live_signal':'time_window_single_live',
           finalized:sample.status==='CANCELLED'||sample.status==='COMPLETED',
           aftersales:sample.after?[{status:sample.after,refundTotal:refunded?Math.round(amount*.38):0}]:[]
         };
