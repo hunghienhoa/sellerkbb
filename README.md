@@ -4,7 +4,7 @@
 
 ### Báo cáo TikTok LIVE · KPI nhân sự · Tự đồng bộ 24/24
 
-**Phiên bản hiện tại: v1.45.1**
+**Phiên bản hiện tại: v1.45.2**
 
 [![GitHub Release](https://img.shields.io/github/v/release/hunghienhoa/sellerkbb?label=Release)](https://github.com/hunghienhoa/sellerkbb/releases)
 [![GitHub Actions](https://img.shields.io/github/actions/workflow/status/hunghienhoa/sellerkbb/deploy.yml?branch=main&label=Ki%E1%BB%83m%20tra%20%26%20Backup)](https://github.com/hunghienhoa/sellerkbb/actions)
@@ -17,12 +17,12 @@
 
 ---
 
-## 🆕 Cập nhật mới nhất — v1.45.1
+## 🆕 Cập nhật mới nhất — v1.45.2
 
-- Sửa bố cục trạng thái **Loại phiên đã lưu** của Ngày Campaign/Mega Live trên điện thoại.
-- Tên loại phiên nằm gọn bên trái, nút **Sửa** giữ kích thước nhỏ bên phải; không còn bị kéo full chiều ngang hoặc ép chữ xuống nhiều dòng.
-- Bổ sung kiểm thử mobile để chặn lỗi tràn khung/lệch nút khi các style nút chung thay đổi ở những bản sau.
-- Giữ nguyên toàn bộ logic v1.45.0: lưu xong tự thu gọn và bấm **Sửa** để mở lại lựa chọn.
+- Nút **Làm mới** trong popup **Đối soát đơn LIVE** dùng cùng icon đồng bộ với phần trạng thái TikTok.
+- Khi bấm **Làm mới**, icon xoay liên tục giống icon “Dữ liệu TikTok được đồng bộ lúc…” và nút chuyển sang trạng thái **Đang tải…**.
+- Trong lúc tải, nút được khóa tạm thời để tránh bấm lặp; hoàn tất sẽ tự trở về **Làm mới**.
+- Bổ sung trạng thái `aria-busy` và kiểm thử browser để đảm bảo animation quay/khôi phục đúng trên PC và mobile.
 
 ---
 
@@ -234,6 +234,7 @@ README giữ lại phần này để nhân sự có thể biết **vì sao giao 
 
 | Phiên bản | Thay đổi chính |
 |---|---|
+| **v1.45.2** | Nút **Làm mới** trong popup Đối soát đơn LIVE dùng icon đồng bộ và xoay khi đang tải, có trạng thái Đang tải/aria-busy và tự dừng khi hoàn tất. |
 | **v1.45.1** | Fix bố cục Campaign/Mega đã lưu trên mobile: tên loại phiên và nút **Sửa** cân đối, không tràn/không kéo nút full width. |
 | **v1.45.0** | Thu gọn loại Campaign/Mega sau khi lưu và thu gọn toàn bộ khối KPI thủ công sau khi lưu; thêm nút **Sửa** / **Sửa KPI** để mở lại khi cần chỉnh. |
 | **v1.44.0** | Mobile Phiên LIVE tự thu gọn Host/Vận hành sau khi lưu đủ, hiển thị tên đã gán và nút **Sửa** để mở lại bộ chọn khi cần đổi người. |

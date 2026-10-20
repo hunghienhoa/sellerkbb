@@ -140,8 +140,25 @@ try {
   await sleep(80);
   const visibleReturnCards=await page.$$eval('#reconcileModalBody .reconcile-order-card',els=>els.filter(e=>!e.hidden).map(e=>e.dataset.orderState));
   assert(visibleReturnCards.length===1&&visibleReturnCards[0]==='returning',"Reconciliation status filtering failed");
+  assert(await page.$eval('#reconcileModalRefresh',e=>e.querySelector('.ui-icon')!==null&&e.textContent.includes('Làm mới')),"Reconciliation refresh button must use the standard refresh SVG icon");
   await page.click('#reconcileModalRefresh');
+  await page.waitForFunction(()=>document.querySelector('#reconcileModalRefresh')?.disabled===true);
+  const reconcileRefreshBusy=await page.$eval('#reconcileModalRefresh',e=>{
+    const icon=e.querySelector('.ui-icon');
+    const cs=icon?getComputedStyle(icon):null;
+    return {
+      spinning:e.classList.contains('is-refreshing'),
+      busy:e.getAttribute('aria-busy'),
+      text:e.textContent.trim(),
+      animationName:cs?.animationName||'',
+      animationDuration:cs?.animationDuration||''
+    };
+  });
+  assert(reconcileRefreshBusy.spinning&&reconcileRefreshBusy.busy==='true',"Reconciliation refresh must expose a busy spinning state");
+  assert(reconcileRefreshBusy.text.includes('Đang tải'),"Reconciliation refresh must show loading text while spinning");
+  assert(reconcileRefreshBusy.animationName==='sync-spin'&&reconcileRefreshBusy.animationDuration==='0.75s',"Reconciliation refresh icon must spin like the dashboard sync icon");
   await page.waitForFunction(()=>!document.querySelector('#reconcileModalRefresh')?.disabled);
+  assert(await page.$eval('#reconcileModalRefresh',e=>!e.classList.contains('is-refreshing')&&!e.hasAttribute('aria-busy')&&e.textContent.includes('Làm mới')),"Reconciliation refresh must restore its idle state");
   assert(await page.$('#reconcileModalBody .reconcile-overview')!==null,"Reconciliation refresh must keep popup content");
   await page.click('#reconcileModalClose');
   await page.waitForFunction(()=>document.querySelector('#reconcileModalBackdrop')?.classList.contains('hidden'));
