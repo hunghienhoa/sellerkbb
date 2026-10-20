@@ -240,7 +240,25 @@ button{-webkit-tap-highlight-color:transparent}
   background:rgba(255,251,253,.88);
   backdrop-filter:blur(16px);
 }
-.topbar-title-wrap{display:flex;align-items:center;gap:12px;min-width:0}
+.topbar-title-wrap{display:flex;align-items:center;gap:12px;min-width:0;flex:1}
+.topbar-title-wrap>div{min-width:0}
+.topbar-right{display:flex;align-items:center;justify-content:flex-end;gap:12px;flex:0 0 auto;min-width:0}
+.topbar-account{
+  display:flex;
+  align-items:center;
+  gap:9px;
+  min-width:0;
+  max-width:280px;
+  padding:5px 0 5px 12px;
+  border-left:1px solid var(--line);
+  cursor:default;
+  user-select:none;
+  -webkit-user-select:none;
+}
+.topbar-account-avatar{width:36px;height:36px;flex:0 0 36px;border:1px solid #efd5e0;box-shadow:0 2px 8px rgba(151,88,117,.08)}
+.topbar-account-copy{display:grid;gap:2px;min-width:0}
+.topbar-account-copy #userName{color:#563c49;font-size:12.5px;font-weight:850;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.topbar-account-copy #userRole{color:#9a7185;font-size:10.5px;font-weight:650;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .page-title{
   margin:0;
   color:#513544;
@@ -629,21 +647,25 @@ tbody tr:hover td{background:#fffafd}
 @media(max-width:1050px) and (min-width:701px){
   #app{grid-template-columns:86px minmax(0,1fr)}
   .sidebar{padding:16px 10px}
-  .side-brand .brand span,.nav button span:not(.nav-icon),.side-bottom .usertext{display:none}
+  .side-brand .brand span,.nav button span:not(.nav-icon){display:none}
   .nav button{justify-content:center;padding:11px 7px}
   .nav-icon{font-size:18px}
-  .side-bottom{left:10px;right:10px}
-  .userbox{justify-content:center}
   .stats{grid-template-columns:repeat(2,minmax(0,1fr))}
 }
 
 @media(max-width:700px){
   body{font-size:14px;background:linear-gradient(180deg,#fff4f9 0,#fffafd 38%,#fff8fb 100%)}
   #app{display:block}
-  .topbar{min-height:62px;padding:8px 11px}
-  .topbar-title-wrap{gap:9px}
-  .page-title{font-size:clamp(19px,5.2vw,22px)}
+  .topbar{min-height:62px;padding:8px 11px;gap:8px}
+  .topbar-title-wrap{gap:9px;min-width:0}
+  .topbar-title-wrap>div{min-width:0}
+  .page-title{font-size:clamp(19px,5.2vw,22px);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .topbar .pill{display:none}
+  .topbar-right{gap:7px;flex:0 0 auto}
+  .topbar-account{max-width:150px;padding:3px 0 3px 8px;gap:7px;border-left:1px solid var(--line)}
+  .topbar-account-avatar{width:34px;height:34px;flex-basis:34px}
+  .topbar-account-copy #userName{max-width:95px;font-size:11.5px}
+  .topbar-account-copy #userRole{display:none}
   .topbar .btn{min-height:34px;padding:6px 9px;font-size:10.5px}
   .content{padding:12px 10px 28px}
   .section.active{gap:12px}
@@ -749,13 +771,12 @@ tbody tr:hover td{background:#fffafd}
   }
   .nav button span:not(.nav-icon){display:inline!important}
   .nav-icon{width:24px!important;font-size:17px!important}
-  .side-bottom{display:block!important;position:static!important;margin-top:24px}
-  .side-bottom .usertext{display:block!important}
-  .userbox{justify-content:flex-start!important}
   body.menu-open{overflow:hidden}
 }
 
 @media(max-width:420px){
+  .topbar-account{padding-left:7px}
+  .topbar-account-copy{display:none}
   .stats{grid-template-columns:repeat(2,minmax(0,1fr))}
   .mobile-grid{grid-template-columns:1fr 1fr}
   .range-tabs{grid-template-columns:repeat(2,1fr)}
@@ -1966,17 +1987,18 @@ tbody tr:hover td{background:#fffafb}
     <aside class="sidebar" id="sidebar">
       <div class="side-brand"><div class="brand brand-lockup"><span class="brand-seller">Seller</span><b>KBB</b><span class="brand-live">LIVE</span></div></div>
       <nav class="nav" id="nav"></nav>
-      <div class="side-bottom">
-        <button id="userMenuBtn" class="userbox account-trigger row" type="button" aria-expanded="false" aria-controls="accountPopover">
-          <img id="userAvatar" class="avatar" alt="Ảnh đại diện Google">
-          <div class="usertext"><div id="userName"></div><div id="userRole" class="tiny"></div></div>
-          <span class="account-chevron" aria-hidden="true">⌃</span>
-        </button>
-        <div id="accountPopover" class="account-popover hidden" role="dialog" aria-label="Thông tin tài khoản"></div>
-      </div>
     </aside>
     <main class="main">
-      <header class="topbar"><div class="topbar-title-wrap"><button id="menuToggle" class="menu-toggle" type="button" aria-label="Mở menu" aria-expanded="false">☰</button><div><h1 id="pageTitle" class="page-title">Tổng quan</h1><div id="pageSub" class="tiny"></div></div></div><div class="row"><span id="syncBadge" class="pill">v1.27.0</span></div></header>
+      <header class="topbar">
+        <div class="topbar-title-wrap"><button id="menuToggle" class="menu-toggle" type="button" aria-label="Mở menu" aria-expanded="false">☰</button><div><h1 id="pageTitle" class="page-title">Tổng quan</h1><div id="pageSub" class="tiny"></div></div></div>
+        <div class="topbar-right">
+          <span id="syncBadge" class="pill">v1.28.0</span>
+          <div id="topbarAccount" class="topbar-account" aria-label="Tài khoản đang đăng nhập">
+            <img id="userAvatar" class="avatar topbar-account-avatar" alt="Ảnh đại diện Google">
+            <div class="topbar-account-copy"><div id="userName"></div><div id="userRole" class="tiny"></div></div>
+          </div>
+        </div>
+      </header>
       <div class="content">
         <section id="section-dashboard" class="section active"></section>
         <section id="section-live" class="section"></section>
@@ -2311,7 +2333,7 @@ tbody tr:hover td{background:#fffafb}
 
     function previewTs(iso){ return {toDate:()=>new Date(iso)}; }
     function enterPreview(){
-      state.config={version:'1.27.0-preview',tiktokConfigured:true};
+      state.config={version:'1.28.0-preview',tiktokConfigured:true};
       state.user={uid:'preview-admin',email:'admin@sellerkbb.demo',displayName:'Quản trị viên Demo',photoURL:avatarFallbackData('Quản trị viên Demo')};
       state.profile={role:'admin',status:'approved',displayName:'Quản trị viên Demo',photoURL:state.user.photoURL,permissions:['live.read','kpi.read']};
       state.maintenance={settings:{retentionDays:180,autoCleanup:true,emergencyPercent:85,firestoreSoftLimitMb:600,firestoreMaxSessions:12000,kvSoftKeyLimit:5000},github:{usedBytes:124000,limitBytes:10000000000,available:true},cloudflare:{keyCount:5,lastRun:{ranAt:new Date().toISOString(),deleted:0},usedBytes:428000,storageLimitBytes:1000000000,storageComplete:true},firebase:{freePlanMode:true,ttlEnabled:false,ttlRecommended:false,storageLimitBytes:1073741824}};
@@ -2565,18 +2587,16 @@ tbody tr:hover td{background:#fffafb}
     function bindShell(){
       bindInteractionEffects();
       $('#menuToggle').onclick=()=>setMobileMenu(!$('#sidebar').classList.contains('open'));
-      $('#mobileMenuOverlay').onclick=()=>{ setAccountMenu(false); setMobileMenu(false); };
-      if(document.documentElement.dataset.accountMenuBound!=='1'){
-        document.documentElement.dataset.accountMenuBound='1';
-        document.addEventListener('keydown',e=>{ if(e.key==='Escape'){ setAccountMenu(false); setMobileMenu(false); } });
-        document.addEventListener('click',e=>{ if(!e.target.closest('.side-bottom'))setAccountMenu(false); });
+      $('#mobileMenuOverlay').onclick=()=>setMobileMenu(false);
+      if(document.documentElement.dataset.shellEscapeBound!=='1'){
+        document.documentElement.dataset.shellEscapeBound='1';
+        document.addEventListener('keydown',e=>{ if(e.key==='Escape')setMobileMenu(false); });
       }
       const currentRecord={displayName:state.profile.displayName||state.user.displayName||state.user.email||'',email:state.user.email||'',photoURL:state.user.photoURL||state.profile.photoURL||''};
       $('#userAvatar').src=avatarSrc(currentRecord);
       $('#userName').textContent=currentRecord.displayName;
       $('#userRole').textContent=roleLabel(state.profile.role);
-      renderAccountPopover();
-      $('#userMenuBtn').onclick=e=>{ e.stopPropagation(); setAccountMenu($('#accountPopover').classList.contains('hidden')); };
+      $('#topbarAccount').setAttribute('aria-label',`Tài khoản đang đăng nhập: ${currentRecord.displayName}, ${roleLabel(state.profile.role)}`);
       $('#syncBadge').textContent=`v${state.config.version||'1.0.0'}`;
     }
 
@@ -2694,7 +2714,7 @@ tbody tr:hover td{background:#fffafb}
       $('#nav').querySelectorAll('button').forEach(b=>b.onclick=()=>switchSection(b.dataset.section));
     }
 
-    function switchSection(id){ state.section=id; setAccountMenu(false); setMobileMenu(false); document.querySelectorAll('.section').forEach(s=>s.classList.remove('active')); $(`#section-${id}`).classList.add('active'); renderNav(); const meta={dashboard:['Tổng quan','Báo cáo LIVE & KPI'],live:['Phiên LIVE','Gắn Host/Operator cho từng phiên'],kpi:['KPI nhân sự','Tổng hợp KPI tự động + KPI thủ công đã lưu'], 'manual-kpi':['KPI thủ công','Nhập KPI theo từng người cho các phiên tính thủ công'],users:['Quản lý tài khoản','Duyệt, chỉnh quyền hoặc xóa user'],staff:['Quản lý nhân sự','Danh sách Host/Vận hành dùng chung cho toàn hệ thống'],export:['Xuất file','Xuất báo cáo theo khoảng thời gian đã chọn'],tiktok:['TikTok / API','Tự động đồng bộ LIVE và gia hạn token 24/24'],storage:['Lưu trữ & tự dọn','Giữ dữ liệu tối đa 6 tháng và bảo vệ dung lượng']}[id]; $('#pageTitle').textContent=meta[0]; $('#pageSub').textContent=meta[1]; }
+    function switchSection(id){ state.section=id; setMobileMenu(false); document.querySelectorAll('.section').forEach(s=>s.classList.remove('active')); $(`#section-${id}`).classList.add('active'); renderNav(); const meta={dashboard:['Tổng quan','Báo cáo LIVE & KPI'],live:['Phiên LIVE','Gắn Host/Operator cho từng phiên'],kpi:['KPI nhân sự','Tổng hợp KPI tự động + KPI thủ công đã lưu'], 'manual-kpi':['KPI thủ công','Nhập KPI theo từng người cho các phiên tính thủ công'],users:['Quản lý tài khoản','Duyệt, chỉnh quyền hoặc xóa user'],staff:['Quản lý nhân sự','Danh sách Host/Vận hành dùng chung cho toàn hệ thống'],export:['Xuất file','Xuất báo cáo theo khoảng thời gian đã chọn'],tiktok:['TikTok / API','Tự động đồng bộ LIVE và gia hạn token 24/24'],storage:['Lưu trữ & tự dọn','Giữ dữ liệu tối đa 6 tháng và bảo vệ dung lượng']}[id]; $('#pageTitle').textContent=meta[0]; $('#pageSub').textContent=meta[1]; }
 
     function finalGmv(s){ return Number(s.finalGmvAmount ?? s.currentGmvAmount ?? s.recordedGmvAmount ?? 0); }
     function liveEndTime(s){
