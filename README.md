@@ -4,7 +4,7 @@
 
 ### Báo cáo TikTok LIVE · KPI nhân sự · Tự đồng bộ 24/24
 
-**Phiên bản hiện tại: v1.25.0**
+**Phiên bản hiện tại: v1.26.0**
 
 [![GitHub Release](https://img.shields.io/github/v/release/hunghienhoa/sellerkbb?label=Release)](https://github.com/hunghienhoa/sellerkbb/releases)
 [![GitHub Actions](https://img.shields.io/github/actions/workflow/status/hunghienhoa/sellerkbb/deploy.yml?branch=main&label=Ki%E1%BB%83m%20tra%20%26%20Backup)](https://github.com/hunghienhoa/sellerkbb/actions)
@@ -17,13 +17,14 @@
 
 ---
 
-## 🆕 Cập nhật mới nhất — v1.25.0
+## 🆕 Cập nhật mới nhất — v1.26.0
 
-- Hai giá trị **KPI của Host Livestream (0,3%)** và **KPI của Nhân viên vận hành Livestream (0,1%)** không còn là ô input/readonly.
-- Chuyển thành **khối hiển thị tĩnh hoàn toàn**: không focus, không mở bàn phím, không xuất hiện con trỏ nhập và không thể chỉnh sửa.
-- Khắc phục hiện tượng iPhone/Safari tự **zoom màn hình khi chạm** vào hai giá trị KPI tự tính.
-- Hai khối vẫn tự cập nhật ngay theo GMV Host: Host = **0,3%**, Vận hành = **0,1%**.
-- Giao diện giữ nguyên phong cách ô KPI màu hồng để người dùng vẫn nhận biết đây là giá trị tự động.
+- Thiết kế lại toàn bộ **toast/thông báo nổi** để đồng bộ với giao diện **hồng pastel**.
+- Bỏ nền xanh mint cũ; thay bằng nền **trắng-hồng chuyển nhẹ**, viền rose, chữ nâu hồng và chấm nhấn hồng.
+- Toast có bo góc lớn hơn, bóng mờ cùng tông hồng và một đường nhấn rose ở mép trái để trông nhẹ nhàng nhưng vẫn dễ nhận biết.
+- Trên mobile, toast được đặt **bên dưới thanh tiêu đề**, tránh che tên trang và nút thao tác như giao diện cũ.
+- Tăng chiều rộng hợp lý trên điện thoại để các thông báo như **“Đã lưu nhân sự cho phiên LIVE”** không bị bó hẹp.
+- Bổ sung `role="status"` + `aria-live="polite"` cho khả năng truy cập tốt hơn.
 - Bản **preview/demo** và website được đồng bộ cùng source sau khi test đạt.
 - README và GitHub Release tiếp tục được cập nhật cùng phiên bản.
 
