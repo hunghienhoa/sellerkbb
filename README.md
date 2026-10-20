@@ -4,7 +4,7 @@
 
 ### Báo cáo TikTok LIVE · KPI nhân sự · Tự đồng bộ 24/24
 
-**Phiên bản hiện tại: v1.46.4**
+**Phiên bản hiện tại: v1.46.5**
 
 [![GitHub Release](https://img.shields.io/github/v/release/hunghienhoa/sellerkbb?label=Release)](https://github.com/hunghienhoa/sellerkbb/releases)
 [![GitHub Actions](https://img.shields.io/github/actions/workflow/status/hunghienhoa/sellerkbb/deploy.yml?branch=main&label=Ki%E1%BB%83m%20tra%20%26%20Backup)](https://github.com/hunghienhoa/sellerkbb/actions)
@@ -17,15 +17,15 @@
 
 ---
 
-## 🆕 Cập nhật mới nhất — v1.46.4
+## 🆕 Cập nhật mới nhất — v1.46.5
 
-- Sửa lỗi TikTok Return/Refund: `page_size` giảm từ 100 xuống 50 đúng giới hạn API; `order_ids` tiếp tục gửi dạng danh sách.
-- SellerKBB chỉ đồng bộ/hiển thị LIVE của đúng hai kênh nội bộ: `shopkhangbaby` và `mekhangsua`; các phiên affiliate khác không tham gia đối soát/KPI.
-- Nếu trong thời điểm tạo đơn chỉ có **một** trong hai kênh nội bộ đang LIVE, đơn không có `auto_combine_order_id` được tính vào **KPI tạm tính theo thời gian**.
-- Nếu hai kênh nội bộ LIVE chồng giờ, các đơn không xác định được phiên sẽ bị khóa khỏi KPI để tránh gán nhầm.
-- GMV KPI tạm tính tự giảm khi đơn hủy/hoàn; chỉ chuyển sang **GMV sau khi hoàn hủy / Đã chốt** khi các đơn dùng cho KPI đã kết thúc và không còn hậu mãi đang xử lý.
-- Giao diện hậu mãi phân biệt rõ **Không có** với **Chưa kiểm tra được** khi TikTok Return/Refund lỗi.
-- Không ép GMV đơn phải bằng GMV Analytics của TikTok; Analytics vẫn là số TikTok ghi nhận, còn KPI dùng dữ liệu đơn sau hủy/hoàn theo quy tắc đối soát trên.
+- Fix triệt để tình huống hai kênh nội bộ `shopkhangbaby` và `mekhangsua` LIVE chồng giờ: không còn khóa toàn bộ KPI chỉ vì phát hiện chồng thời gian.
+- Khi hai kênh chồng giờ, SellerKBB lấy **GMV TikTok Analytics riêng của từng phiên** làm nền và dùng các đơn trong đúng khung giờ chỉ để tính **tỷ lệ hủy/hoàn**. Cách này tránh cộng cùng một đơn trực tiếp vào hai phiên.
+- Công thức đối soát khi chồng LIVE: `GMV chờ đối soát = GMV Analytics của phiên × (GMV đơn sau hủy/hoàn ÷ GMV đơn trước hủy/hoàn)`.
+- Khi đơn còn đang giao/chờ xử lý, kết quả là **KPI tạm tính**; khi toàn bộ đơn trong khung giờ đã kết thúc và không còn hậu mãi xử lý thì phiên mới chuyển **Đã chốt**.
+- Trên popup đối soát, đơn ở phiên chồng giờ hiển thị rõ **Khớp giờ · đối soát chồng LIVE · dùng tính tỷ lệ hủy/hoàn** thay vì báo “không tính KPI”.
+- Giữ nguyên cơ chế 1 kênh nội bộ LIVE: đơn khớp thời gian vẫn được tính KPI tạm tính trực tiếp theo đơn sau hủy/hoàn.
+- Return/Refund tiếp tục dùng `page_size=50`, `order_ids` dạng danh sách; chỉ đồng bộ đúng hai kênh nội bộ.
 
 
 ---
@@ -81,7 +81,7 @@ Vào website SellerKBB. Mặc định hệ thống luôn chọn **Hôm nay**.
 SellerKBB chỉ dùng `shopkhangbaby` và `mekhangsua`.
 
 - Chỉ một kênh đang LIVE trong thời điểm đơn phát sinh → đơn khớp thời gian được cộng vào **GMV/KPI tạm tính**.
-- Hai kênh LIVE chồng giờ → đơn không có tín hiệu LIVE riêng bị khóa để tránh gán nhầm.
+- Hai kênh LIVE chồng giờ → không gán cùng một đơn trực tiếp cho cả hai phiên. SellerKBB dùng GMV Analytics riêng từng phiên và áp dụng tỷ lệ hủy/hoàn của đơn trong khung giờ.
 - Đơn hủy có GMV KPI = 0; đơn hoàn tiền được trừ theo dữ liệu Return/Refund.
 - Khi đơn còn chờ đóng/giao/hậu mãi → chỉ là **tạm tính**.
 - Khi toàn bộ đơn dùng KPI đã kết thúc và không còn hậu mãi đang xử lý → phiên chuyển **Đã chốt**.
