@@ -4,7 +4,7 @@
 
 ### Báo cáo TikTok LIVE · KPI nhân sự · Tự đồng bộ 24/24
 
-**Phiên bản hiện tại: v1.36.0**
+**Phiên bản hiện tại: v1.36.1**
 
 [![GitHub Release](https://img.shields.io/github/v/release/hunghienhoa/sellerkbb?label=Release)](https://github.com/hunghienhoa/sellerkbb/releases)
 [![GitHub Actions](https://img.shields.io/github/actions/workflow/status/hunghienhoa/sellerkbb/deploy.yml?branch=main&label=Ki%E1%BB%83m%20tra%20%26%20Backup)](https://github.com/hunghienhoa/sellerkbb/actions)
@@ -17,9 +17,10 @@
 
 ---
 
-## 🆕 Cập nhật mới nhất — v1.36.0
+## 🆕 Cập nhật mới nhất — v1.36.1
 
 - Sửa triệt để cơ chế **KPI tự động**: không còn lấy **GMV LIVE TikTok gộp** để tính KPI.
+- Bổ sung lớp an toàn khi chốt KPI: phiên có đơn chỉ **Khớp theo thời gian** vẫn được hiển thị **KPI tạm tính**, nhưng **không tự chuyển thành KPI đã chốt** cho tới khi liên kết LIVE đủ chắc chắn.
 - KPI tự động nay dùng **GMV đối soát cấp đơn sau hủy/hoàn đã biết**.
 - Host Livestream = **0,3%** GMV đối soát; Nhân viên vận hành Livestream = **0,1%** GMV đối soát của cùng phiên.
 - Tách rõ 3 trạng thái:
@@ -125,7 +126,7 @@ Operator KPI   = GMV đối soát sau hủy/hoàn × 0,1%
 ```
 
 - **KPI tạm tính:** đã có dữ liệu Orders + Return/Refund nhưng còn đơn chưa kết thúc.
-- **KPI đã chốt:** toàn bộ đơn đã ở trạng thái kết thúc và không còn hậu mãi đang xử lý.
+- **KPI đã chốt:** toàn bộ đơn đã ở trạng thái kết thúc, không còn hậu mãi đang xử lý và liên kết LIVE đủ chắc chắn; đơn chỉ khớp thời gian không làm phiên tự chốt.
 - **Chờ đối soát:** SellerKBB chưa có đủ dữ liệu để tính; hệ thống không lấy GMV Analytics gộp để thay thế.
 - **KPI dự kiến = KPI đã chốt + KPI tạm tính.**
 - **KPI thủ công** được cộng vào phần đã chốt vì Admin nhập trực tiếp GMV sau hoàn/hủy của cá nhân.
