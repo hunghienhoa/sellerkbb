@@ -505,7 +505,7 @@ async function searchReturnsForOrders(env, accessToken, shopCipher, orderIds) {
   const records = [];
   let pageToken = "";
   do {
-    const query = { shop_cipher: shopCipher, page_size: 100 };
+    const query = { shop_cipher: shopCipher, page_size: 50 };
     if (pageToken) query.page_token = pageToken;
     const result = await tiktokCall(env, accessToken, "/return_refund/202309/returns/search", query, "POST", {
       order_ids: ids
@@ -521,7 +521,7 @@ async function searchReturnsForOrders(env, accessToken, shopCipher, orderIds) {
   return { available: true, error: "", records };
 }
 
-function normalizeReconcileOrder(order, aftersales, fallbackCurrency) {
+function normalizeReconcileOrder(order, aftersales, fallbackCurrency, allowTimeWindowKpi = false) {
   const amount = orderSubtotal(order);
   const status = String(order?.status || order?.order_status || "");
   const records = Array.isArray(aftersales?.records) ? aftersales.records : [];
@@ -544,7 +544,7 @@ function normalizeReconcileOrder(order, aftersales, fallbackCurrency) {
     netAmount,
     finalized,
     autoCombineOrderId,
-    attribution: autoCombineOrderId ? "live_signal" : "time_window",
+    attribution: autoCombineOrderId ? "live_signal" : (allowTimeWindowKpi ? "time_window_single_live" : "time_window"),
     aftersalesAvailable: aftersales?.available !== false,
     aftersalesError: aftersales?.error || "",
     aftersales: records.map(x => ({
@@ -583,6 +583,7 @@ async function buildLiveReconciliationForSession(env, accessToken, session, opti
 
   const aftersalesById = new Map();
   let aftersalesPermissionMissing = false;
+  let aftersalesError = "";
   const eligibleOrderIds = orders
     .filter(order => String(order?.status || order?.order_status || "") !== "CANCELLED")
     .map(order => String(order?.id || ""))
@@ -591,7 +592,10 @@ async function buildLiveReconciliationForSession(env, accessToken, session, opti
   for (let i = 0; i < eligibleOrderIds.length; i += 50) {
     const batchIds = eligibleOrderIds.slice(i, i + 50);
     const value = await searchReturnsForOrders(env, accessToken, session.shopCipher, batchIds);
-    if (!value.available) aftersalesPermissionMissing = true;
+    if (!value.available) {
+      aftersalesPermissionMissing = true;
+      if (!aftersalesError) aftersalesError = String(value.error || "Return & Refund API unavailable");
+    }
     const grouped = new Map(batchIds.map(id => [id, []]));
     for (const record of value.records || []) {
       const orderId = String(record?.order_id || record?.order?.id || "");
@@ -617,7 +621,7 @@ async function buildLiveReconciliationForSession(env, accessToken, session, opti
   }
 
   const normalized = orders
-    .map(order => normalizeReconcileOrder(order, aftersalesById.get(String(order?.id || "")), session.currency || "VND"))
+    .map(order => normalizeReconcileOrder(order, aftersalesById.get(String(order?.id || "")), session.currency || "VND", overlappingSessions.length === 0))
     .sort((a, b) => b.createTime - a.createTime);
 
   const counts = {
@@ -673,6 +677,7 @@ async function buildLiveReconciliationForSession(env, accessToken, session, opti
       orderWindow: "Đơn tạo trong đúng khoảng thời gian phiên LIVE",
       attribution: "auto_combine_order_id là tín hiệu LIVE; nếu không có, SellerKBB chỉ đánh dấu khớp theo thời gian.",
       aftersalesAvailable: !aftersalesPermissionMissing,
+      aftersalesError,
       overlapAmbiguous: overlappingSessions.length > 0,
       overlapCount: overlappingSessions.length,
       overlapLiveIds: overlappingSessions.slice(0, 20).map(x => String(x?.liveId || "")).filter(Boolean)
@@ -695,53 +700,78 @@ function summarizeLiveReconciliation(result) {
   const orderWindowAmount = moneyNumber(result?.totals?.orderWindowAmount);
   const confirmedLiveSignalAmount = moneyNumber(result?.totals?.confirmedLiveSignalAmount);
   const aftersalesAvailable = result?.scope?.aftersalesAvailable !== false;
+  const aftersalesError = String(result?.scope?.aftersalesError || "");
   const overlapAmbiguous = result?.scope?.overlapAmbiguous === true;
   const overlapCount = Number(result?.scope?.overlapCount || 0);
+
   const liveSignalOrderRows = orders.filter(order => order?.attribution === "live_signal");
-  const timeWindowOrderRows = orders.filter(order => order?.attribution !== "live_signal");
+  const provisionalTimeWindowRows = orders.filter(order => order?.attribution === "time_window_single_live");
+  const excludedTimeWindowRows = orders.filter(order => order?.attribution === "time_window");
+  const kpiOrderRows = [...liveSignalOrderRows, ...provisionalTimeWindowRows];
+
   const liveSignalOrders = liveSignalOrderRows.length;
-  const timeWindowOrders = timeWindowOrderRows.length;
-  const timeWindowNetAmount = timeWindowOrderRows.reduce((sum, order) => sum + moneyNumber(order?.netAmount), 0);
-  const hasConfirmedOrderData = liveSignalOrders > 0 || analyticsGmvAmount === 0;
-  const usableForKpi = !overlapAmbiguous && aftersalesAvailable && hasConfirmedOrderData;
-  const allFinal = usableForKpi && liveSignalOrderRows.every(order => order?.finalized === true);
+  const provisionalTimeWindowOrders = provisionalTimeWindowRows.length;
+  const timeWindowOrders = provisionalTimeWindowRows.length + excludedTimeWindowRows.length;
+  const timeWindowNetAmount = [...provisionalTimeWindowRows, ...excludedTimeWindowRows]
+    .reduce((sum, order) => sum + moneyNumber(order?.netAmount), 0);
+  const excludedTimeWindowAmount = excludedTimeWindowRows
+    .reduce((sum, order) => sum + moneyNumber(order?.netAmount), 0);
+  const provisionalTimeWindowAmount = provisionalTimeWindowRows
+    .reduce((sum, order) => sum + moneyNumber(order?.netAmount), 0);
+  const kpiGmvAmount = kpiOrderRows.reduce((sum, order) => sum + moneyNumber(order?.netAmount), 0);
+
+  const hasKpiOrderData = kpiOrderRows.length > 0 || analyticsGmvAmount === 0;
+  const usableForKpi = !overlapAmbiguous && aftersalesAvailable && hasKpiOrderData;
+  const allFinal = usableForKpi && kpiOrderRows.every(order => order?.finalized === true);
+
   let status = "provisional";
   let reason = "";
   if (overlapAmbiguous) {
     status = "blocked";
-    reason = "Phát hiện " + overlapCount + " phiên LIVE cùng shop bị chồng thời gian. auto_combine_order_id chỉ xác nhận đơn có tín hiệu LIVE nhưng không xác định duy nhất phiên nào, nên SellerKBB khóa KPI tự động để tránh tính nhầm.";
+    reason = "Có " + overlapCount + " phiên LIVE nội bộ chồng thời gian. Các đơn không có tín hiệu LIVE riêng không thể xác định thuộc phiên nào, nên SellerKBB khóa KPI tự động để tránh gán nhầm.";
   } else if (!aftersalesAvailable) {
     status = "blocked";
-    reason = "Thiếu quyền hoặc dữ liệu Return/Refund; chưa dùng số này để tính KPI."
-  } else if (!hasConfirmedOrderData) {
+    reason = "TikTok Return/Refund chưa đọc được" + (aftersalesError ? ": " + aftersalesError : ".") + " SellerKBB chưa dùng số này để tính KPI.";
+  } else if (!hasKpiOrderData) {
     status = "waiting";
-    reason = "Chưa có đơn đủ tín hiệu LIVE để tính KPI; các đơn chỉ khớp theo thời gian không được cộng vào KPI.";
+    reason = "Chưa tìm thấy đơn trong khung thời gian phiên LIVE để tính KPI.";
   } else if (allFinal) {
     status = "final";
-    reason = "Toàn bộ đơn có tín hiệu LIVE dùng cho KPI đã kết thúc và không còn hậu mãi đang xử lý.";
+    reason = provisionalTimeWindowOrders > 0
+      ? "Đã chốt theo quy tắc một kênh nội bộ LIVE trong khung giờ; toàn bộ đơn dùng cho KPI đã kết thúc và không còn hậu mãi đang xử lý."
+      : "Toàn bộ đơn có tín hiệu LIVE dùng cho KPI đã kết thúc và không còn hậu mãi đang xử lý.";
+  } else if (provisionalTimeWindowOrders > 0) {
+    reason = "Chỉ có một kênh nội bộ LIVE trong khung giờ, nên " + provisionalTimeWindowOrders + " đơn khớp thời gian được tính KPI tạm tính. GMV sẽ tự giảm khi đơn hủy/hoàn và chỉ chốt khi các đơn đủ điều kiện kết thúc.";
   } else {
-    reason = "GMV chờ đối soát chỉ gồm đơn có tín hiệu LIVE và sẽ tự cập nhật khi đơn giao, hủy hoặc hoàn tiền thay đổi.";
+    reason = "GMV chờ đối soát gồm các đơn có tín hiệu LIVE và sẽ tự cập nhật khi trạng thái giao, hủy hoặc hoàn tiền thay đổi.";
   }
+
   return {
     status,
     usableForKpi,
-    gmvAmount: usableForKpi ? confirmedLiveSignalAmount : 0,
+    gmvAmount: usableForKpi ? kpiGmvAmount : 0,
     analyticsGmvAmount,
     orderWindowAmount,
     confirmedLiveSignalAmount,
+    provisionalTimeWindowAmount,
+    excludedTimeWindowAmount,
     timeWindowNetAmount,
     orderCount: orders.length,
-    kpiOrderCount: liveSignalOrders,
-    pendingOrderCount: liveSignalOrderRows.filter(order => order?.finalized !== true).length,
+    kpiOrderCount: kpiOrderRows.length,
+    pendingOrderCount: kpiOrderRows.filter(order => order?.finalized !== true).length,
     cancelledCount: Number(result?.counts?.cancelled || 0),
     returningCount: Number(result?.counts?.returning || 0),
     refundedCount: Number(result?.counts?.refunded || 0),
     aftersalesAvailable,
+    aftersalesError,
     overlapAmbiguous,
     overlapCount,
     liveSignalOrders,
+    provisionalTimeWindowOrders,
     timeWindowOrders,
-    attribution: liveSignalOrders > 0 ? (timeWindowOrders > 0 ? "mixed" : "live_signal") : "time_window",
+    attribution: provisionalTimeWindowOrders > 0
+      ? (liveSignalOrders > 0 ? "mixed_single_live" : "time_window_single_live")
+      : (liveSignalOrders > 0 ? "live_signal" : "time_window"),
     generatedAt: result?.generatedAt || new Date().toISOString(),
     finalizedAt: allFinal ? (result?.generatedAt || new Date().toISOString()) : "",
     reason
