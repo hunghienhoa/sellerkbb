@@ -180,7 +180,7 @@ try {
     return {role:e.getAttribute('role'),live:e.getAttribute('aria-live'),radius:cs.borderRadius,border:cs.borderTopColor,color:cs.color,dotWidth:dot.width};
   });
   assert(desktopToastStyle.role==='status'&&desktopToastStyle.live==='polite',"Toast live-region semantics missing");
-  assert(desktopToastStyle.radius==='13px'&&desktopToastStyle.dotWidth==='10px',"Pastel toast visual treatment missing");
+  assert(desktopToastStyle.radius==='16px'&&desktopToastStyle.dotWidth==='12px',"Prominent pastel toast visual treatment missing");
 
   await page.click('[data-section="storage"]');
   assert((await page.$$('#section-storage .storage-quota-card')).length===3,"Storage page must show GitHub Firebase and Cloudflare cards");
@@ -345,10 +345,11 @@ try {
   const mobileToastLayout=await page.$eval('#actionToast',e=>{
     const toast=e.getBoundingClientRect(), topbar=document.querySelector('.topbar')?.getBoundingClientRect();
     const cs=getComputedStyle(e);
-    return {shown:e.classList.contains('show'),toastTop:toast.top,topbarBottom:topbar?.bottom||0,maxWidth:cs.maxWidth,fontSize:cs.fontSize};
+    return {shown:e.classList.contains('show'),toastTop:toast.top,topbarBottom:topbar?.bottom||0,width:toast.width,height:toast.height,maxWidth:cs.maxWidth,fontSize:cs.fontSize};
   });
   assert(mobileToastLayout.shown,"Mobile save toast must be visible");
   assert(mobileToastLayout.toastTop>=mobileToastLayout.topbarBottom+6,"Mobile toast must sit below the topbar instead of covering the page title");
+  assert(mobileToastLayout.width>=350&&mobileToastLayout.height>=48&&parseFloat(mobileToastLayout.fontSize)>=14,"Mobile save toast must be large and visually prominent");
   await page.reload({waitUntil:"domcontentloaded"});
   await page.waitForSelector("#app:not(.hidden)",{timeout:30000});
   await page.click('#menuToggle');

@@ -579,43 +579,44 @@ tbody tr:hover td{background:#fffafd}
 .action-toast{
   position:fixed;
   left:50%;
-  top:calc(env(safe-area-inset-top, 0px) + 18px);
+  top:calc(env(safe-area-inset-top, 0px) + 20px);
   bottom:auto;
   z-index:120;
   width:max-content;
-  min-width:min(280px,calc(100vw - 32px));
-  max-width:min(90vw,440px);
+  min-width:min(340px,calc(100vw - 32px));
+  max-width:min(92vw,560px);
   display:flex;
   align-items:center;
-  gap:10px;
-  padding:11px 15px 11px 12px;
-  border:1px solid #efcbdc;
-  border-radius:13px;
-  background:linear-gradient(135deg,rgba(255,253,254,.985),rgba(255,241,247,.985));
-  color:#6b4657;
+  gap:13px;
+  padding:15px 20px 15px 16px;
+  border:1px solid #edbfd4;
+  border-radius:16px;
+  background:linear-gradient(135deg,rgba(255,254,255,.99),rgba(255,237,246,.99));
+  color:#64404f;
   box-shadow:
-    inset 3px 0 0 #d77ca5,
-    0 14px 38px rgba(151,88,117,.15),
-    0 3px 10px rgba(126,72,97,.08);
-  backdrop-filter:blur(14px);
-  -webkit-backdrop-filter:blur(14px);
-  font-size:12.5px;
-  line-height:1.4;
-  font-weight:750;
+    inset 4px 0 0 #d56e9e,
+    0 18px 46px rgba(151,88,117,.20),
+    0 5px 14px rgba(126,72,97,.11);
+  backdrop-filter:blur(16px);
+  -webkit-backdrop-filter:blur(16px);
+  font-size:14.5px;
+  line-height:1.45;
+  font-weight:800;
+  letter-spacing:-.01em;
   text-align:left;
   opacity:0;
   pointer-events:none;
-  transform:translate(-50%,-9px) scale(.985);
-  transition:opacity .2s ease,transform .22s cubic-bezier(.22,.61,.36,1);
+  transform:translate(-50%,-10px) scale(.975);
+  transition:opacity .2s ease,transform .24s cubic-bezier(.22,.61,.36,1);
 }
 .action-toast::before{
   content:'';
-  width:10px;
-  height:10px;
-  flex:0 0 10px;
+  width:12px;
+  height:12px;
+  flex:0 0 12px;
   border-radius:50%;
-  background:#d77ca5;
-  box-shadow:0 0 0 6px rgba(215,124,165,.13);
+  background:#d56e9e;
+  box-shadow:0 0 0 7px rgba(213,110,158,.15);
 }
 .action-toast.show{opacity:1;transform:translate(-50%,0) scale(1)}
 
@@ -1324,12 +1325,15 @@ tbody tr:hover td{background:#fcfafb}
 .manual-session select[data-person]{border-color:#e6d9df;background:#f5f2f4;color:#9b9095;cursor:not-allowed}
 @media(max-width:700px){
   .action-toast{
-    top:calc(env(safe-area-inset-top, 0px) + 72px);
-    min-width:min(300px,calc(100vw - 28px));
-    max-width:calc(100vw - 28px);
-    padding:11px 14px 11px 12px;
-    border-radius:12px;
-    font-size:12px;
+    top:calc(env(safe-area-inset-top, 0px) + 74px);
+    width:calc(100vw - 24px);
+    min-width:0;
+    max-width:430px;
+    gap:12px;
+    padding:14px 17px 14px 15px;
+    border-radius:15px;
+    font-size:14px;
+    line-height:1.45;
   }
 }
 .sync-status{min-height:22px}
@@ -1972,7 +1976,7 @@ tbody tr:hover td{background:#fffafb}
       </div>
     </aside>
     <main class="main">
-      <header class="topbar"><div class="topbar-title-wrap"><button id="menuToggle" class="menu-toggle" type="button" aria-label="Mở menu" aria-expanded="false">☰</button><div><h1 id="pageTitle" class="page-title">Tổng quan</h1><div id="pageSub" class="tiny"></div></div></div><div class="row"><span id="syncBadge" class="pill">v1.26.0</span></div></header>
+      <header class="topbar"><div class="topbar-title-wrap"><button id="menuToggle" class="menu-toggle" type="button" aria-label="Mở menu" aria-expanded="false">☰</button><div><h1 id="pageTitle" class="page-title">Tổng quan</h1><div id="pageSub" class="tiny"></div></div></div><div class="row"><span id="syncBadge" class="pill">v1.27.0</span></div></header>
       <div class="content">
         <section id="section-dashboard" class="section active"></section>
         <section id="section-live" class="section"></section>
@@ -2307,7 +2311,7 @@ tbody tr:hover td{background:#fffafb}
 
     function previewTs(iso){ return {toDate:()=>new Date(iso)}; }
     function enterPreview(){
-      state.config={version:'1.26.0-preview',tiktokConfigured:true};
+      state.config={version:'1.27.0-preview',tiktokConfigured:true};
       state.user={uid:'preview-admin',email:'admin@sellerkbb.demo',displayName:'Quản trị viên Demo',photoURL:avatarFallbackData('Quản trị viên Demo')};
       state.profile={role:'admin',status:'approved',displayName:'Quản trị viên Demo',photoURL:state.user.photoURL,permissions:['live.read','kpi.read']};
       state.maintenance={settings:{retentionDays:180,autoCleanup:true,emergencyPercent:85,firestoreSoftLimitMb:600,firestoreMaxSessions:12000,kvSoftKeyLimit:5000},github:{usedBytes:124000,limitBytes:10000000000,available:true},cloudflare:{keyCount:5,lastRun:{ranAt:new Date().toISOString(),deleted:0},usedBytes:428000,storageLimitBytes:1000000000,storageComplete:true},firebase:{freePlanMode:true,ttlEnabled:false,ttlRecommended:false,storageLimitBytes:1073741824}};
@@ -2444,7 +2448,7 @@ tbody tr:hover td{background:#fffafb}
       el.classList.remove('show');
       requestAnimationFrame(()=>el.classList.add('show'));
       clearTimeout(showToast.timer);
-      showToast.timer=setTimeout(()=>el.classList.remove('show'),2200);
+      showToast.timer=setTimeout(()=>el.classList.remove('show'),3200);
     }
 
     function fmtSyncMoment(iso){
