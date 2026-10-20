@@ -1862,6 +1862,17 @@ tbody tr:hover td{background:#fcfafb}
 .kpi-rate-guide-copy b{color:#654653;font-size:12.5px;line-height:1.3}
 .kpi-rate-guide-copy span{font-size:11.5px;line-height:1.55}
 .kpi-rate-guide-copy strong{color:#a84f79;font-weight:850}
+.kpi-split-card{display:grid;gap:12px}
+.kpi-split-head{display:flex;align-items:flex-start;justify-content:space-between;gap:14px}
+.kpi-split-head h3{margin-bottom:3px}
+.kpi-split-head .sub{max-width:760px}
+.kpi-split-summary{display:flex;flex-wrap:wrap;gap:6px;justify-content:flex-end}
+.kpi-pending-table tbody tr{background:#fffdf8}
+.kpi-final-table tbody tr{background:#fbfffd}
+@media(max-width:700px){
+  .kpi-split-head{display:grid;gap:8px}
+  .kpi-split-summary{justify-content:flex-start}
+}
 .storage-stat{display:flex!important;align-items:flex-start;gap:11px}
 .storage-stat .metric-icon{width:36px;height:36px}
 
@@ -2508,7 +2519,7 @@ tbody tr:hover td{background:#fffafb}
       <header class="topbar">
         <div class="topbar-title-wrap"><button id="menuToggle" class="menu-toggle" type="button" aria-label="Mở menu" aria-expanded="false">☰</button><div><h1 id="pageTitle" class="page-title">Tổng quan</h1><div id="pageSub" class="tiny"></div></div></div>
         <div class="topbar-right">
-          <span id="syncBadge" class="pill">v1.38.0</span>
+          <span id="syncBadge" class="pill">v1.39.0</span>
           <div class="account-menu-wrap">
             <button id="topbarAccountBtn" class="topbar-account-btn" type="button" aria-expanded="false" aria-controls="accountPopover" aria-label="Mở thông tin tài khoản">
               <img id="userAvatar" class="avatar topbar-account-avatar" alt="Ảnh đại diện Google">
@@ -2871,7 +2882,7 @@ tbody tr:hover td{background:#fffafb}
 
     function previewTs(iso){ return {toDate:()=>new Date(iso)}; }
     function enterPreview(){
-      state.config={version:'1.38.0-preview',tiktokConfigured:true};
+      state.config={version:'1.39.0-preview',tiktokConfigured:true};
       state.user={uid:'preview-admin',email:'admin@sellerkbb.demo',displayName:'Quản trị viên Demo',photoURL:avatarFallbackData('Quản trị viên Demo')};
       state.profile={role:'admin',status:'approved',displayName:'Quản trị viên Demo',photoURL:state.user.photoURL,permissions:['live.read','kpi.read']};
       state.maintenance={settings:{retentionDays:180,autoCleanup:true,emergencyPercent:85,firestoreSoftLimitMb:600,firestoreMaxSessions:12000,kvSoftKeyLimit:5000},github:{usedBytes:124000,limitBytes:10000000000,available:true},cloudflare:{keyCount:5,lastRun:{ranAt:new Date().toISOString(),deleted:0},usedBytes:428000,storageLimitBytes:1000000000,storageComplete:true},firebase:{freePlanMode:true,ttlEnabled:false,ttlRecommended:false,storageLimitBytes:1073741824}};
@@ -4345,6 +4356,13 @@ tbody tr:hover td{background:#fffafb}
       const provisionalSessions=autoSessions.filter(s=>{const b=automaticKpiBasis(s);return b.usable&&b.status!=='final';}).length;
       const finalSessions=autoSessions.filter(s=>{const b=automaticKpiBasis(s);return b.usable&&b.status==='final';}).length;
 
+      const pendingRows=rows
+        .filter(r=>r.provisionalKpi>0||r.waitingSessions>0)
+        .sort((a,b)=>(b.provisionalKpi-a.provisionalKpi)||(b.waitingSessions-a.waitingSessions));
+      const finalRows=rows
+        .filter(r=>r.finalKpi>0||r.finalAutoGmv>0||r.manualGmv>0)
+        .sort((a,b)=>b.finalKpi-a.finalKpi);
+
       $('#section-kpi').innerHTML=`
         ${timeFilterHtml('kpi')}
         <div class="kpi-rate-guide">
@@ -4360,13 +4378,27 @@ tbody tr:hover td{background:#fffafb}
           ${metricCard('check','KPI đã chốt',fmtMoney(totalFinalKpi,currency),finalSessions+' phiên tự động đã chốt · gồm KPI thủ công')}
           ${metricCard('clock','KPI tạm tính',fmtMoney(totalProvisionalKpi,currency),provisionalSessions+' phiên còn theo dõi')}
           ${metricCard('money','KPI dự kiến',fmtMoney(totalProjectedKpi,currency),'Đã chốt + tạm tính')}
-          ${metricCard('history','Chờ đối soát',waitingSessions+' phiên','Không dùng GMV gộp để tính KPI')}
+          ${metricCard('history','Chờ đối soát',waitingSessions+' phiên','Chưa đủ dữ liệu để tính')}
         </div>
-        <div class="card">
-          <div class="row space"><div><h3>KPI nhân sự</h3><div class="sub">KPI đã chốt là số có thể dùng để thanh toán; KPI tạm tính vẫn có thể giảm/tăng khi TikTok cập nhật hủy, hoàn hoặc trạng thái đơn.</div></div><div class="row"><span class="pill ok">Chốt ${fmtMoney(totalFinalKpi,currency)}</span><span class="pill warn">Dự kiến ${fmtMoney(totalProjectedKpi,currency)}</span></div></div>
-          ${rows.length?`<div class="table-wrap"><table style="min-width:1120px"><thead><tr><th>Nhân sự</th><th>Vai trò</th><th>GMV đã chốt</th><th>GMV tạm tính</th><th>GMV thủ công</th><th>KPI đã chốt</th><th>KPI tạm tính</th><th>KPI dự kiến</th><th>Chờ đối soát</th></tr></thead><tbody>${rows.map(r=>`<tr><td>${userIdentityHtml(staffDisplayRecord(r.uid,r.name),false)}</td><td><span class="tag ${r.roles[0]||''}">${esc(kpiRoleSummary(r))}</span></td><td class="money">${fmtMoney(r.finalAutoGmv,r.currency)}</td><td class="money">${fmtMoney(r.provisionalAutoGmv,r.currency)}</td><td class="money manual-kpi-value">${fmtMoney(r.manualGmv,r.currency)}</td><td class="money"><b>${fmtMoney(r.finalKpi,r.currency)}</b></td><td class="money">${fmtMoney(r.provisionalKpi,r.currency)}</td><td class="money"><b>${fmtMoney(r.kpi,r.currency)}</b></td><td>${r.waitingSessions?'<span class="pill warn">'+r.waitingSessions+' phiên</span>':'<span class="pill ok">0</span>'}</td></tr>`).join('')}</tbody></table></div>`:'<div class="empty">Chưa có KPI trong khoảng thời gian này.</div>'}
-          ${totalManualKpi?'<div class="tiny" style="margin-top:10px">KPI thủ công đã lưu và được tính vào KPI đã chốt: <b>'+fmtMoney(totalManualKpi,currency)+'</b>.</div>':''}
-        </div>`;
+
+        <div class="card kpi-split-card" data-kpi-table="pending">
+          <div class="kpi-split-head">
+            <div><h3>KPI chưa chốt</h3><div class="sub">Chỉ hiển thị phần còn thay đổi: GMV chờ đối soát, KPI tạm tính và số phiên chưa đủ dữ liệu. Không dùng bảng này để thanh toán KPI cuối cùng.</div></div>
+            <div class="kpi-split-summary"><span class="pill warn">Tạm tính ${fmtMoney(totalProvisionalKpi,currency)}</span><span class="pill warn">${waitingSessions} phiên chờ đối soát</span></div>
+          </div>
+          ${pendingRows.length?`<div class="table-wrap kpi-pending-table"><table style="min-width:760px"><thead><tr><th>Nhân sự</th><th>Vai trò</th><th>GMV chờ đối soát</th><th>KPI tạm tính</th><th>Chờ đối soát</th></tr></thead><tbody>${pendingRows.map(r=>`<tr><td>${userIdentityHtml(staffDisplayRecord(r.uid,r.name),false)}</td><td><span class="tag ${r.roles[0]||''}">${esc(kpiRoleSummary(r))}</span></td><td class="money">${fmtMoney(r.provisionalAutoGmv,r.currency)}</td><td class="money"><b>${fmtMoney(r.provisionalKpi,r.currency)}</b></td><td>${r.waitingSessions?'<span class="pill warn">'+r.waitingSessions+' phiên</span>':'<span class="pill ok">0</span>'}</td></tr>`).join('')}</tbody></table></div>`:'<div class="empty">Không có KPI chưa chốt trong khoảng thời gian này.</div>'}
+        </div>
+
+        <div class="card kpi-split-card" data-kpi-table="final">
+          <div class="kpi-split-head">
+            <div><h3>KPI đã chốt</h3><div class="sub">Chỉ hiển thị phần đã đủ điều kiện dùng để thanh toán: KPI tự động đã chốt và KPI thủ công hợp lệ.</div></div>
+            <div class="kpi-split-summary"><span class="pill ok">Đã chốt ${fmtMoney(totalFinalKpi,currency)}</span></div>
+          </div>
+          ${finalRows.length?`<div class="table-wrap kpi-final-table"><table style="min-width:980px"><thead><tr><th>Nhân sự</th><th>Vai trò</th><th>GMV tự động đã chốt</th><th>GMV thủ công</th><th>KPI tự động đã chốt</th><th>KPI thủ công</th><th>Tổng KPI đã chốt</th></tr></thead><tbody>${finalRows.map(r=>`<tr><td>${userIdentityHtml(staffDisplayRecord(r.uid,r.name),false)}</td><td><span class="tag ${r.roles[0]||''}">${esc(kpiRoleSummary(r))}</span></td><td class="money">${fmtMoney(r.finalAutoGmv,r.currency)}</td><td class="money manual-kpi-value">${fmtMoney(r.manualGmv,r.currency)}</td><td class="money">${fmtMoney(r.finalAutoKpi,r.currency)}</td><td class="money manual-kpi-value">${fmtMoney(r.manualKpi,r.currency)}</td><td class="money"><b>${fmtMoney(r.finalKpi,r.currency)}</b></td></tr>`).join('')}</tbody></table></div>`:'<div class="empty">Chưa có KPI đã chốt trong khoảng thời gian này.</div>'}
+          ${totalManualKpi?'<div class="tiny" style="margin-top:2px">Trong tổng KPI đã chốt có KPI thủ công hợp lệ: <b>'+fmtMoney(totalManualKpi,currency)+'</b>.</div>':''}
+        </div>
+
+        <div class="data-note">${icon('history',16)}<span>Cùng một nhân sự có thể xuất hiện ở cả hai bảng nếu họ có phiên đã chốt và đồng thời còn phiên khác đang đối soát.</span></div>`;
       bindTimeFilter('kpi');
     }
 

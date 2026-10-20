@@ -157,9 +157,12 @@ try {
   await page.click('#section-kpi [data-range-mode="30d"]');
   assert(await page.$eval('#section-kpi .kpi-rate-guide',e=>e.textContent.includes('KPI tự động chỉ dùng đơn có tín hiệu LIVE')&&e.textContent.includes('Đơn chỉ khớp theo thời gian không được cộng vào KPI')),"KPI guide must use confirmed LIVE orders only");
   assert(await page.$eval('#section-kpi',e=>e.textContent.includes('KPI đã chốt')&&e.textContent.includes('KPI tạm tính')&&e.textContent.includes('KPI dự kiến')&&e.textContent.includes('Chờ đối soát')),"KPI final/provisional/waiting summary labels missing");
-  const autoKpiRows=await page.$$eval('#section-kpi tbody tr',rows=>rows.map(row=>{
+  assert(await page.$('[data-kpi-table="pending"]')!==null&&await page.$('[data-kpi-table="final"]')!==null,"KPI page must split pending and finalized data into two tables");
+  assert(await page.$eval('[data-kpi-table="pending"]',e=>e.textContent.includes('KPI chưa chốt')&&e.textContent.includes('GMV chờ đối soát')&&e.textContent.includes('KPI tạm tính')),"Pending KPI table labels missing");
+  assert(await page.$eval('[data-kpi-table="final"]',e=>e.textContent.includes('KPI đã chốt')&&e.textContent.includes('GMV tự động đã chốt')&&e.textContent.includes('GMV thủ công')&&e.textContent.includes('Tổng KPI đã chốt')),"Final KPI table labels missing");
+  const autoKpiRows=await page.$eval('[data-kpi-table="final"] tbody tr',rows=>rows.map(row=>{
     const cells=[...row.querySelectorAll('td')].map(x=>x.textContent.trim());
-    return {name:cells[0]||'',finalKpi:Number((cells[5]||'').replace(/[^0-9]/g,'')||0)};
+    return {name:cells[0]||'',finalKpi:Number((cells[6]||'').replace(/[^0-9]/g,'')||0)};
   }));
   const hostAuto=autoKpiRows.find(x=>x.name.includes('Thảo My'));
   const operatorAuto=autoKpiRows.find(x=>x.name.includes('Hùng Bắc Giang'));
@@ -247,6 +250,7 @@ try {
   assert(await page.$eval('#section-kpi',e=>e.textContent.includes('3.702')),"Host 0.3% KPI was not added to KPI nhân sự");
   assert(await page.$eval('#section-kpi',e=>e.textContent.includes('1.234')),"Operator 0.1% KPI was not added to KPI nhân sự");
   assert(await page.$eval('#section-kpi',e=>e.textContent.includes('1.234.000')),"Manual Host GMV was not added to KPI nhân sự");
+  assert(await page.$eval('[data-kpi-table="final"]',e=>e.textContent.includes('1.234.000')),"Manual Host GMV must appear in finalized KPI table");
   assert(await page.$eval('#section-kpi',e=>e.textContent.includes('KPI thủ công chỉ được coi là đã chốt khi đã kiểm tra được GMV sau khi hoàn hủy')),"Manual KPI finalization rule missing");
   assert(await page.$('#section-kpi [data-manual-save]')===null,"KPI nhân sự must not contain manual KPI save controls");
 
