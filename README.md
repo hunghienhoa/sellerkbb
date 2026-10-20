@@ -4,7 +4,7 @@
 
 ### Báo cáo TikTok LIVE · KPI nhân sự · Tự đồng bộ 24/24
 
-**Phiên bản hiện tại: v1.38.0**
+**Phiên bản hiện tại: v1.39.0**
 
 [![GitHub Release](https://img.shields.io/github/v/release/hunghienhoa/sellerkbb?label=Release)](https://github.com/hunghienhoa/sellerkbb/releases)
 [![GitHub Actions](https://img.shields.io/github/actions/workflow/status/hunghienhoa/sellerkbb/deploy.yml?branch=main&label=Ki%E1%BB%83m%20tra%20%26%20Backup)](https://github.com/hunghienhoa/sellerkbb/actions)
@@ -17,17 +17,15 @@
 
 ---
 
-## 🆕 Cập nhật mới nhất — v1.38.0
+## 🆕 Cập nhật mới nhất — v1.39.0
 
-- Khi tích **Ngày Campaign/Mega Live · tính KPI thủ công**, SellerKBB bắt buộc chọn thêm loại phiên:
-  - **Ngày Campaign**
-  - **Mega Live**
-- Loại phiên được lưu cùng chính phiên LIVE và giữ nguyên sau khi reload.
-- Sau khi lưu, giao diện Phiên LIVE và tab **KPI thủ công** hiển thị thẻ rõ **Ngày Campaign** hoặc **Mega Live** thay vì gộp chung.
-- Nếu đã tích KPI thủ công nhưng chưa chọn loại phiên, hệ thống **không cho lưu** và yêu cầu chọn loại.
-- Khi bỏ tích KPI thủ công, thẻ phân loại Campaign/Mega cũng được xóa khỏi phiên.
-- CSV Phiên LIVE bổ sung cột `manual_live_type` để phân biệt Campaign và Mega Live khi xuất dữ liệu.
-- Các phiên KPI thủ công cũ chưa từng có trường phân loại vẫn được giữ nguyên dữ liệu và hiển thị **KPI thủ công · chưa phân loại** cho tới khi Admin cập nhật.
+- Trang **KPI nhân sự** được tách thành **2 bảng riêng** để dễ đọc:
+  - **KPI chưa chốt**: chỉ hiển thị GMV chờ đối soát, KPI tạm tính và số phiên còn chờ dữ liệu.
+  - **KPI đã chốt**: chỉ hiển thị phần đủ điều kiện thanh toán gồm KPI tự động đã chốt và KPI thủ công hợp lệ.
+- Một nhân sự có thể xuất hiện ở cả hai bảng nếu họ có phiên đã chốt và đồng thời có phiên khác còn đang đối soát.
+- Bảng **KPI chưa chốt** không dùng để thanh toán KPI cuối cùng.
+- Bảng **KPI đã chốt** tách riêng GMV/KPI tự động và GMV/KPI thủ công, đồng thời có cột **Tổng KPI đã chốt**.
+- Các thẻ tổng hợp phía trên vẫn giữ **KPI đã chốt / KPI tạm tính / KPI dự kiến / Chờ đối soát** để nhìn nhanh toàn kỳ.
 - README, kiểm thử PC/mobile và GitHub Release được cập nhật cùng phiên bản.
 
 ---
@@ -167,6 +165,12 @@ Operator KPI   = GMV đối soát có tín hiệu LIVE × 0,1%
 - **Chờ đối soát:** chưa đủ dữ liệu Orders/Return & Refund hoặc chưa có đơn đủ tín hiệu LIVE; hệ thống không dùng GMV đã ghi nhận để tính thay.
 - **KPI dự kiến = KPI đã chốt + KPI tạm tính.**
 
+#### Cách đọc 2 bảng KPI nhân sự
+
+- **KPI chưa chốt:** dùng để theo dõi số còn biến động. Bảng này chỉ có **GMV chờ đối soát / KPI tạm tính / số phiên chờ đối soát**.
+- **KPI đã chốt:** dùng để thanh toán. Bảng này tách **GMV tự động đã chốt / GMV thủ công / KPI tự động đã chốt / KPI thủ công / Tổng KPI đã chốt**.
+- Nếu cùng một người vừa có phiên đã chốt vừa có phiên chưa chốt thì người đó sẽ xuất hiện ở **cả hai bảng**.
+
 #### KPI thủ công
 
 - Phiên đã tích **Tính KPI thủ công** không chạy KPI tự động.
@@ -216,6 +220,7 @@ README giữ lại phần này để nhân sự có thể biết **vì sao giao 
 
 | Phiên bản | Thay đổi chính |
 |---|---|
+| **v1.39.0** | Tách KPI nhân sự thành **KPI chưa chốt** và **KPI đã chốt** để không trộn số tạm tính với số dùng thanh toán. |
 | **v1.38.0** | KPI thủ công bắt buộc gắn thẻ **Ngày Campaign** hoặc **Mega Live**; lưu cùng phiên, hiển thị lại sau reload và xuất CSV. |
 | **v1.37.0** | Chuẩn hóa 3 loại GMV; loại đơn chỉ khớp thời gian khỏi KPI; thêm kiểm soát thiếu/vượt cho KPI thủ công và chế độ Lưu nháp. |
 | **v1.36.1** | KPI tự động chuyển sang GMV đối soát; thêm lớp an toàn không chốt khi liên kết LIVE chưa chắc chắn. |
