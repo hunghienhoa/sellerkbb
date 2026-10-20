@@ -81,10 +81,13 @@ assert(html.includes('id="accountLogoutBtn"'), "Account popover logout missing")
 assert(!html.includes('id="logoutBtn"'), "Legacy topbar logout button should be removed");
 assert(readme.includes("Hồ sơ Google & đăng xuất"), "README Google profile/logout guide missing");
 assert(html.includes("v1.16 pink pastel theme + grouped navigation"), "Pink pastel theme override missing");
-assert(html.includes("background:linear-gradient(135deg,rgba(255,253,254,.985),rgba(255,241,247,.985))"), "Pastel pink toast background missing");
-assert(html.includes("border:1px solid #efcbdc")&&html.includes("inset 3px 0 0 #d77ca5"), "Pastel pink toast border/accent missing");
-assert(html.includes(".action-toast::before")&&html.includes("box-shadow:0 0 0 6px rgba(215,124,165,.13)"), "Toast rose indicator missing");
-assert(html.includes("top:calc(env(safe-area-inset-top, 0px) + 72px)"), "Mobile toast must sit below the sticky topbar");
+assert(html.includes("background:linear-gradient(135deg,rgba(255,254,255,.99),rgba(255,237,246,.99))"), "Prominent pastel pink toast background missing");
+assert(html.includes("border:1px solid #edbfd4")&&html.includes("inset 4px 0 0 #d56e9e"), "Prominent toast border/accent missing");
+assert(html.includes(".action-toast::before")&&html.includes("box-shadow:0 0 0 7px rgba(213,110,158,.15)"), "Large rose toast indicator missing");
+assert(html.includes("font-size:14.5px")&&html.includes("min-width:min(340px,calc(100vw - 32px))"), "Prominent desktop toast sizing missing");
+assert(html.includes("width:calc(100vw - 24px)")&&html.includes("font-size:14px"), "Prominent mobile toast sizing missing");
+assert(html.includes("top:calc(env(safe-area-inset-top, 0px) + 74px)"), "Mobile toast must sit below the sticky topbar");
+assert(html.includes("setTimeout(()=>el.classList.remove('show'),3200)"), "Toast display duration must be 3.2 seconds");
 assert(html.includes("el.setAttribute('role','status')")&&html.includes("el.setAttribute('aria-live','polite')"), "Toast accessibility semantics missing");
 assert(html.includes("white-space:nowrap;")&&html.includes("font-variant-numeric:tabular-nums"), "Mobile metric one-line numeric styling missing");
 assert(html.includes("font-size:clamp(12.5px,3.6vw,16px)"), "Mobile metric responsive font sizing missing");

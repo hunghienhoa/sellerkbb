@@ -4,7 +4,7 @@
 
 ### Báo cáo TikTok LIVE · KPI nhân sự · Tự đồng bộ 24/24
 
-**Phiên bản hiện tại: v1.26.0**
+**Phiên bản hiện tại: v1.27.0**
 
 [![GitHub Release](https://img.shields.io/github/v/release/hunghienhoa/sellerkbb?label=Release)](https://github.com/hunghienhoa/sellerkbb/releases)
 [![GitHub Actions](https://img.shields.io/github/actions/workflow/status/hunghienhoa/sellerkbb/deploy.yml?branch=main&label=Ki%E1%BB%83m%20tra%20%26%20Backup)](https://github.com/hunghienhoa/sellerkbb/actions)
@@ -17,14 +17,13 @@
 
 ---
 
-## 🆕 Cập nhật mới nhất — v1.26.0
+## 🆕 Cập nhật mới nhất — v1.27.0
 
-- Thiết kế lại toàn bộ **toast/thông báo nổi** để đồng bộ với giao diện **hồng pastel**.
-- Bỏ nền xanh mint cũ; thay bằng nền **trắng-hồng chuyển nhẹ**, viền rose, chữ nâu hồng và chấm nhấn hồng.
-- Toast có bo góc lớn hơn, bóng mờ cùng tông hồng và một đường nhấn rose ở mép trái để trông nhẹ nhàng nhưng vẫn dễ nhận biết.
-- Trên mobile, toast được đặt **bên dưới thanh tiêu đề**, tránh che tên trang và nút thao tác như giao diện cũ.
-- Tăng chiều rộng hợp lý trên điện thoại để các thông báo như **“Đã lưu nhân sự cho phiên LIVE”** không bị bó hẹp.
-- Bổ sung `role="status"` + `aria-live="polite"` cho khả năng truy cập tốt hơn.
+- Tăng kích thước **toast/thông báo lưu** để người dùng nhìn thấy rõ ngay sau thao tác.
+- Toast mới rộng hơn, padding lớn hơn, chữ tăng lên **14–14,5px**, đậm hơn và chấm nhấn rose lớn hơn.
+- Tăng độ nổi bằng viền hồng đậm nhẹ, đường nhấn rose bên trái và bóng đổ rõ hơn nhưng vẫn giữ phong cách **hồng pastel**.
+- Trên mobile, toast gần như chiếm toàn bộ chiều ngang an toàn của màn hình nhưng vẫn nằm dưới topbar, không che tiêu đề.
+- Thời gian hiển thị tăng từ **2,2 giây lên 3,2 giây** để người dùng có đủ thời gian đọc thông báo lưu.
 - Bản **preview/demo** và website được đồng bộ cùng source sau khi test đạt.
 - README và GitHub Release tiếp tục được cập nhật cùng phiên bản.
 
