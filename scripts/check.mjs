@@ -86,8 +86,8 @@ assert(worker.includes("async function refreshKpiReconciliations"), "Scheduled K
 assert(worker.includes('status === "COMPLETED" && active.length === 0'), "Completed-order finalization rule missing");
 assert(worker.includes("const finalized = cancelled ||"), "Cancelled orders must finalize reconciliation");
 assert(worker.includes('time_window_single_live'), "Single-LIVE time-window provisional attribution missing");
-assert(worker.includes("const kpiOrderRows = [...liveSignalOrderRows, ...provisionalTimeWindowRows]"), "KPI reconciliation must include provisional single-LIVE time-window orders");
-assert(worker.includes("gmvAmount: usableForKpi ? kpiGmvAmount : 0"), "Automatic KPI GMV must use reconciled KPI rows");
+assert(worker.includes("const singleLiveKpiRows = [...liveSignalOrderRows, ...provisionalTimeWindowRows]"), "KPI reconciliation must include provisional single-LIVE time-window orders");
+assert(worker.includes("gmvAmount: usableForKpi ? gmvAmount : 0"), "Automatic KPI GMV must use reconciled KPI result");
 assert(worker.includes("provisionalTimeWindowAmount")&&worker.includes("excludedTimeWindowAmount"), "Time-window provisional/excluded totals missing");
 assert(worker.includes("Chỉ có một kênh nội bộ LIVE trong khung giờ"), "Backend must explain single-LIVE provisional KPI rule");
 assert(worker.includes("overlapProrated")&&worker.includes("overlapAdjustmentRatio")&&worker.includes("overlapAdjustedGmvAmount"), "Overlapping internal LIVE must use analytics GMV with aftersales ratio instead of blocking");
