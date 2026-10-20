@@ -175,7 +175,7 @@ assert(html.includes("cur.waitingSessions++"), "KPI waiting-session tracking mis
 assert(html.includes("cur.finalAutoGmv+=basis.gmv"), "Final reconciled GMV aggregation missing");
 assert(html.includes("cur.provisionalAutoGmv+=basis.gmv"), "Provisional reconciled GMV aggregation missing");
 assert(html.includes("KPI đã chốt")&&html.includes("KPI tạm tính")&&html.includes("KPI dự kiến")&&html.includes("Chờ đối soát"), "KPI final/provisional/waiting labels missing");
-assert(html.includes("KPI tự động không dùng GMV LIVE TikTok gộp"), "KPI guide must state gross GMV is not used");
+assert(html.includes("KPI tự động chỉ dùng đơn có tín hiệu LIVE"), "KPI guide must state only confirmed LIVE orders are used");
 assert(!html.includes("KPI tự động đang tạm dùng GMV LIVE gộp"), "Legacy gross-GMV KPI warning must be removed");
 assert(html.includes("gmv_reconciled_for_kpi")&&html.includes("kpi_status"), "LIVE CSV reconciled KPI fields missing");
 assert(html.includes("gmv_auto_final")&&html.includes("gmv_auto_provisional"), "KPI CSV final/provisional fields missing");
