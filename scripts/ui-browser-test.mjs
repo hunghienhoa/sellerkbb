@@ -84,6 +84,14 @@ try {
   assert(dashboardFinalGmv.text.includes('GMV sau khi hoàn hủy')&&dashboardFinalGmv.text.includes('Đã chốt'),"Dashboard finalized GMV copy missing");
   assert(dashboardFinalGmv.amount.endsWith('đ'),"Dashboard finalized GMV must display currency");
   assert(dashboardFinalGmv.width<=dashboardFinalGmv.parentWidth+1,"Dashboard finalized GMV card must not overflow layout");
+  assert(await page.$('#section-dashboard .live-row-reconciled')!==null,"Desktop Dashboard must mark at least one finalized LIVE row");
+  const desktopFinalizedStyle=await page.$eval('#section-dashboard .live-row-reconciled',e=>{
+    const td=e.querySelector('td');
+    const badge=e.querySelector('.live-reconciled-badge');
+    return {text:e.textContent,cellBg:getComputedStyle(td).backgroundColor,badgeColor:getComputedStyle(badge).color,badgeBg:getComputedStyle(badge).backgroundColor};
+  });
+  assert(desktopFinalizedStyle.text.includes('✓ Đã đối soát'),"Desktop finalized LIVE row must show green reconciliation check");
+  assert(desktopFinalizedStyle.badgeColor!=='rgb(149, 76, 112)',"Desktop finalized LIVE badge must not use the pink status color");
   assert(await page.$('#dashboardViewMore')!==null,"Monthly Dashboard View More button missing");
   await page.click('#dashboardViewMore');
   assert(await page.$eval('#section-live',e=>e.classList.contains('active')),"View More did not switch to LIVE section");
@@ -437,6 +445,24 @@ try {
   });
   assert(mobileFinalGmv.text.includes('GMV sau khi hoàn hủy')&&mobileFinalGmv.value.endsWith('đ'),"Mobile finalized GMV summary missing");
   assert(mobileFinalGmv.width<=mobileFinalGmv.vw-16&&mobileFinalGmv.scrollWidth<=mobileFinalGmv.width+1,"Mobile finalized GMV summary must fit viewport without horizontal overflow");
+  assert(await page.$('#section-dashboard .mobile-live-card.reconciled')!==null,"Mobile Dashboard must mark finalized LIVE cards");
+  const mobileFinalizedStyle=await page.$eval('#section-dashboard .mobile-live-card.reconciled',e=>{
+    const field=e.querySelector('.mobile-field');
+    const badge=e.querySelector('.live-reconciled-badge');
+    const pill=e.querySelector('.kpi-status-final');
+    return {
+      text:e.textContent,
+      cardBg:getComputedStyle(e).backgroundColor,
+      border:getComputedStyle(e).borderTopColor,
+      fieldBg:getComputedStyle(field).backgroundColor,
+      badgeColor:getComputedStyle(badge).color,
+      badgeBg:getComputedStyle(badge).backgroundColor,
+      pillText:pill?.textContent.trim()||''
+    };
+  });
+  assert(mobileFinalizedStyle.text.includes('✓ Đã đối soát'),"Mobile finalized LIVE card must show reconciliation check");
+  assert(mobileFinalizedStyle.pillText.startsWith('✓ Đã chốt'),"Mobile finalized KPI pill must include green check");
+  assert(mobileFinalizedStyle.cardBg!=='rgba(0, 0, 0, 0)'&&mobileFinalizedStyle.fieldBg!=='rgb(250, 247, 249)',"Mobile finalized LIVE card must use finalized green styling instead of the default pink surface");
   await page.click('#menuToggle');
   await page.waitForFunction(()=>document.querySelector('#sidebar')?.classList.contains('open'));
   await sleep(300);
