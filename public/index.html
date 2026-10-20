@@ -2823,7 +2823,7 @@ tbody tr:hover td{background:#fffafb}
       <header class="topbar">
         <div class="topbar-title-wrap"><button id="menuToggle" class="menu-toggle" type="button" aria-label="Mở menu" aria-expanded="false">☰</button><div><h1 id="pageTitle" class="page-title">Tổng quan</h1><div id="pageSub" class="tiny"></div></div></div>
         <div class="topbar-right">
-          <span id="syncBadge" class="pill">v1.46.1</span>
+          <span id="syncBadge" class="pill">v1.46.2</span>
           <div class="account-menu-wrap">
             <button id="topbarAccountBtn" class="topbar-account-btn" type="button" aria-expanded="false" aria-controls="accountPopover" aria-label="Mở thông tin tài khoản">
               <img id="userAvatar" class="avatar topbar-account-avatar" alt="Ảnh đại diện Google">
@@ -3106,7 +3106,15 @@ tbody tr:hover td{background:#fffafb}
 
     const LIVE_PAGE_SIZE = 20;
     const RECONCILIATION_PROTECTION_DAYS = 60;
-    const state = { config:null, auth:null, db:null, user:null, profile:null, sessions:[], users:[], staff:[], section:'dashboard', livePage:1, rangeMode:'today', customStart:'', customEnd:'', customPickerScope:null, maintenance:{settings:{retentionDays:180,autoCleanup:true,emergencyPercent:85,firestoreSoftLimitMb:600,firestoreMaxSessions:12000,kvSoftKeyLimit:5000},github:{usedBytes:0,limitBytes:10000000000,available:false},cloudflare:{keyCount:0,lastRun:null,usedBytes:0,storageLimitBytes:1000000000,storageComplete:true},firebase:{freePlanMode:true,ttlEnabled:false,ttlRecommended:false,storageLimitBytes:1073741824}}, autoSyncStatus:null, autoSyncRefreshing:false, autoSyncWatcher:null, autoSyncVisibilityBound:false, reconcileModalSessionId:'' };
+    const FIRESTORE_STRUCTURED_QUERY_HARD_LIMIT = 10000;
+    const FIRESTORE_SESSION_QUERY_PAGE_SIZE = 5000;
+    const FIRESTORE_TOTAL_SESSION_CAP = 12000;
+
+    function safeFirestoreQueryLimit(value){
+      const requested=Math.max(1,Math.floor(Number(value)||1));
+      return Math.min(FIRESTORE_STRUCTURED_QUERY_HARD_LIMIT,requested);
+    }
+    const state = { config:null, auth:null, db:null, user:null, profile:null, sessions:[], users:[], staff:[], section:'dashboard', livePage:1, rangeMode:'today', customStart:'', customEnd:'', customPickerScope:null, maintenance:{settings:{retentionDays:180,autoCleanup:true,emergencyPercent:85,firestoreSoftLimitMb:600,firestoreMaxSessions:FIRESTORE_TOTAL_SESSION_CAP,kvSoftKeyLimit:5000},github:{usedBytes:0,limitBytes:10000000000,available:false},cloudflare:{keyCount:0,lastRun:null,usedBytes:0,storageLimitBytes:1000000000,storageComplete:true},firebase:{freePlanMode:true,ttlEnabled:false,ttlRecommended:false,storageLimitBytes:1073741824}}, autoSyncStatus:null, autoSyncRefreshing:false, autoSyncWatcher:null, autoSyncVisibilityBound:false, reconcileModalSessionId:'' };
 
     const DEFAULT_STAFF_MEMBERS=[
       {id:'staff-thao-my',displayName:'Thảo My',role:'host'},
@@ -3187,10 +3195,10 @@ tbody tr:hover td{background:#fffafb}
 
     function previewTs(iso){ return {toDate:()=>new Date(iso)}; }
     function enterPreview(){
-      state.config={version:'1.46.1-preview',tiktokConfigured:true};
+      state.config={version:'1.46.2-preview',tiktokConfigured:true};
       state.user={uid:'preview-admin',email:'admin@sellerkbb.demo',displayName:'Quản trị viên Demo',photoURL:avatarFallbackData('Quản trị viên Demo')};
       state.profile={role:'admin',status:'approved',displayName:'Quản trị viên Demo',photoURL:state.user.photoURL,permissions:['live.read','kpi.read']};
-      state.maintenance={settings:{retentionDays:180,autoCleanup:true,emergencyPercent:85,firestoreSoftLimitMb:600,firestoreMaxSessions:12000,kvSoftKeyLimit:5000},github:{usedBytes:124000,limitBytes:10000000000,available:true},cloudflare:{keyCount:5,lastRun:{ranAt:new Date().toISOString(),deleted:0},usedBytes:428000,storageLimitBytes:1000000000,storageComplete:true},firebase:{freePlanMode:true,ttlEnabled:false,ttlRecommended:false,storageLimitBytes:1073741824}};
+      state.maintenance={settings:{retentionDays:180,autoCleanup:true,emergencyPercent:85,firestoreSoftLimitMb:600,firestoreMaxSessions:FIRESTORE_TOTAL_SESSION_CAP,kvSoftKeyLimit:5000},github:{usedBytes:124000,limitBytes:10000000000,available:true},cloudflare:{keyCount:5,lastRun:{ranAt:new Date().toISOString(),deleted:0},usedBytes:428000,storageLimitBytes:1000000000,storageComplete:true},firebase:{freePlanMode:true,ttlEnabled:false,ttlRecommended:false,storageLimitBytes:1073741824}};
       state.autoSyncStatus={ok:true,reason:'preview',finishedAt:new Date().toISOString(),cached:34};
       state.users=[
         {id:'thao-my',displayName:'Thảo My',email:'thaomy@sellerkbb.demo',role:'host',status:'approved',permissions:['live.read','kpi.read']},
@@ -3540,8 +3548,11 @@ tbody tr:hover td{background:#fffafb}
     }
 
     async function loadRecentLiveSessions(cutoff,maxDocs){
-      const target=Math.max(1,Math.min(12000,Number(maxDocs||12000)));
-      const pageSize=5000;
+      const target=Math.max(1,Math.min(FIRESTORE_TOTAL_SESSION_CAP,Number(maxDocs||FIRESTORE_TOTAL_SESSION_CAP)));
+      const pageSize=safeFirestoreQueryLimit(FIRESTORE_SESSION_QUERY_PAGE_SIZE);
+      if(pageSize>FIRESTORE_STRUCTURED_QUERY_HARD_LIMIT){
+        throw new Error('Firestore page size vượt giới hạn nền tảng');
+      }
       const docs=[];
       let cursor=null;
       while(docs.length<target){
@@ -3570,7 +3581,7 @@ tbody tr:hover td{background:#fffafb}
         if(!PREVIEW){ const syncStatus=await fetchAutoSyncStatus(); if(syncStatus)state.autoSyncStatus=syncStatus; }
         const days=Math.min(180,Number(state.maintenance.settings.retentionDays||180));
         const cutoff=Timestamp.fromMillis(Date.now()-days*86400000);
-        const maxDocs=Math.min(12000,Number(state.maintenance.settings.firestoreMaxSessions||12000));
+        const maxDocs=Math.min(FIRESTORE_TOTAL_SESSION_CAP,Number(state.maintenance.settings.firestoreMaxSessions||FIRESTORE_TOTAL_SESSION_CAP));
         const liveDocs=await loadRecentLiveSessions(cutoff,maxDocs);
         state.sessions=liveDocs.map(d=>({id:d.id,...d.data()})).map(x=>isManualKpi(x)?{...x,hostUid:'',hostName:'',operatorUid:'',operatorName:''}:x);
         await mergeAutoSyncedSessions();

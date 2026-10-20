@@ -4,7 +4,7 @@
 
 ### Báo cáo TikTok LIVE · KPI nhân sự · Tự đồng bộ 24/24
 
-**Phiên bản hiện tại: v1.46.1**
+**Phiên bản hiện tại: v1.46.2**
 
 [![GitHub Release](https://img.shields.io/github/v/release/hunghienhoa/sellerkbb?label=Release)](https://github.com/hunghienhoa/sellerkbb/releases)
 [![GitHub Actions](https://img.shields.io/github/actions/workflow/status/hunghienhoa/sellerkbb/deploy.yml?branch=main&label=Ki%E1%BB%83m%20tra%20%26%20Backup)](https://github.com/hunghienhoa/sellerkbb/actions)
@@ -17,13 +17,14 @@
 
 ---
 
-## 🆕 Cập nhật mới nhất — v1.46.1
+## 🆕 Cập nhật mới nhất — v1.46.2
 
-- Sửa lỗi production khi Firebase báo `Limit value in the structured query is over the maximum value of 10000`.
-- Nguyên nhân: SellerKBB cho phép giữ tối đa 12.000 phiên nhưng trước đây gửi một truy vấn Firestore với `limit(12000)`; Firestore chỉ chấp nhận tối đa 10.000 cho một structured query.
-- SellerKBB giờ đọc dữ liệu LIVE theo nhiều trang **5.000 phiên/lần** bằng cursor `startAfter`, nên vẫn hỗ trợ mức lưu 12.000 phiên mà không vượt giới hạn Firestore.
-- Thêm lớp bắt lỗi lúc khởi động: nếu Firebase/Firestore gặp lỗi khác, web sẽ hiện lỗi và nút **Thử tải lại** thay vì để màn hình trắng.
-- Không thay đổi dữ liệu Firebase đã tạo, tài khoản Admin, KPI hay dữ liệu TikTok.
+- Fix triệt để lỗi Firestore giới hạn 10.000: tách rõ **giới hạn mỗi truy vấn** và **giới hạn tổng số phiên SellerKBB giữ trong bộ nhớ**.
+- Thêm hằng số bảo vệ: mỗi truy vấn Firestore tối đa 10.000, SellerKBB chủ động dùng **5.000 bản ghi/trang**, còn tổng dữ liệu vẫn có thể tải tới **12.000 phiên** bằng nhiều trang.
+- Mọi truy vấn danh sách LIVE giờ bắt buộc đi qua hàm giới hạn an toàn; không còn nguy cơ vô tình lấy `firestoreMaxSessions=12000` rồi truyền thẳng vào `limit()`.
+- Thêm regression test tự quét source: nếu sau này có ai thêm `limit(<số>)` lớn hơn 10.000 hoặc quay lại `limit(maxDocs)`, build sẽ **FAIL trước khi deploy**.
+- Giữ lớp xử lý lỗi startup: nếu Firebase gặp lỗi khác, web hiển thị lỗi và nút **Thử tải lại** thay vì màn hình trắng.
+- Không thay đổi dữ liệu Firebase/TikTok/KPI hiện có.
 
 
 ---
@@ -236,6 +237,7 @@ README giữ lại phần này để nhân sự có thể biết **vì sao giao 
 
 | Phiên bản | Thay đổi chính |
 |---|---|
+| **v1.46.2** | Fix triệt để Firestore 10.000: tách query limit/total cap, dùng pagination 5.000/trang và regression test chặn tái phát. |
 | **v1.46.1** | Sửa màn hình trắng khi bật Firebase thật: phân trang Firestore dưới giới hạn 10.000/truy vấn và thêm xử lý lỗi startup. |
 | **v1.46.0** | Hardening trước khi chạy thật: quét đủ đơn không cắt 1.000, khóa KPI khi LIVE cùng shop chồng giờ, Order Details cho cron, Đồng bộ ngay, readiness checklist, backup JSON và `keep_vars` an toàn khi deploy. |
 | **v1.45.2** | Nút **Làm mới** trong popup Đối soát đơn LIVE dùng icon đồng bộ và xoay khi đang tải, có trạng thái Đang tải/aria-busy và tự dừng khi hoàn tất. |

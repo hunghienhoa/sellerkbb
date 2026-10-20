@@ -346,7 +346,12 @@ assert(workflow.includes("Warn when Cloudflare deploy is not configured")&&workf
 assert(readme.includes("Bảng hướng dẫn cài đặt để đưa SellerKBB vào chạy thật"), "README production setup checklist missing");
 assert(readme.includes("Đồng bộ ngay 30 ngày")&&readme.includes("Tải backup JSON"), "README pre-production operation guide missing");
 assert(html.includes("startAfter")&&html.includes("loadRecentLiveSessions"), "Firestore pagination loader missing");
-assert(html.includes("const pageSize=5000"), "Firestore page size must stay below the 10000 structured-query limit");
-assert(!html.includes("limit(maxDocs)"), "Firestore must not send a limit above the platform maximum");
+assert(html.includes("FIRESTORE_STRUCTURED_QUERY_HARD_LIMIT = 10000"), "Firestore hard query limit constant missing");
+assert(html.includes("FIRESTORE_SESSION_QUERY_PAGE_SIZE = 5000"), "Firestore safe page size constant missing");
+assert(html.includes("safeFirestoreQueryLimit"), "Firestore query-limit guard missing");
+const numericFirestoreLimits=[...html.matchAll(/limit\((\d+)\)/g)].map(m=>Number(m[1]));
+assert(numericFirestoreLimits.every(n=>n<=10000), "A Firestore numeric limit exceeds the platform maximum of 10000");
+assert(!html.includes("limit(maxDocs)"), "Firestore must not send a total session cap directly as one query limit");
+assert(!html.includes("Math.min(12000,Number(state.maintenance.settings.firestoreMaxSessions"), "Firestore total-session cap must use the centralized safe constant");
 assert(html.includes("auth startup")&&html.includes("retryBoot"), "Startup error boundary missing");
 console.log("Project structure, syntax, persistence, calendar, storage/backup, Google profiles, pink pastel UI, overlap-safe reconciliation, full pagination, readiness, descriptive Releases, README, and auto-sync checks OK");
