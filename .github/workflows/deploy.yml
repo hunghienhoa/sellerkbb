@@ -154,17 +154,37 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           VERSION: ${{ steps.version.outputs.version }}
           TAG: ${{ steps.version.outputs.tag }}
+        shell: bash
         run: |
           set -euo pipefail
-          if gh release view "$TAG" >/dev/null 2>&1; then
-            echo "Release $TAG already exists; refreshing it to the newest completed commit."
-            gh release delete "$TAG" --cleanup-tag -y
+          ASSET="sellerkbb-v${VERSION}-src.zip"
+
+          # Tìm cả Release đã publish lẫn draft còn sót từ lần upload bị gián đoạn.
+          RELEASE_ID="$(gh api --paginate "repos/$GITHUB_REPOSITORY/releases?per_page=100" \
+            --jq '.[] | select(.tag_name == "'"$TAG"'") | .id' | head -n 1 || true)"
+
+          if [ -n "$RELEASE_ID" ]; then
+            echo "Release/draft $TAG already exists (id=$RELEASE_ID); refreshing idempotently."
+
+            # Cập nhật đúng commit + notes và publish draft nếu có.
+            gh api -X PATCH "repos/$GITHUB_REPOSITORY/releases/$RELEASE_ID" \
+              -f tag_name="$TAG" \
+              -f target_commitish="$GITHUB_SHA" \
+              -f name="SellerKBB $TAG" \
+              -f body="$(cat release-notes.md)" \
+              -F draft=false \
+              -F prerelease=false \
+              -f make_latest=true >/dev/null
+
+            # --clobber bảo đảm retry không lỗi vì asset cùng tên đã tồn tại.
+            gh release upload "$TAG" "$ASSET" --clobber
+          else
+            gh release create "$TAG" "$ASSET" \
+              --target "$GITHUB_SHA" \
+              --title "SellerKBB $TAG" \
+              --notes-file release-notes.md \
+              --latest
           fi
-          gh release create "$TAG" "sellerkbb-v${VERSION}-src.zip" \
-            --target "$GITHUB_SHA" \
-            --title "SellerKBB $TAG" \
-            --notes-file release-notes.md \
-            --latest
 
       - name: Backfill legacy Release descriptions
         env:
