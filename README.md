@@ -4,7 +4,7 @@
 
 ### Báo cáo TikTok LIVE · KPI nhân sự · Tự đồng bộ 24/24
 
-**Phiên bản hiện tại: v1.27.0**
+**Phiên bản hiện tại: v1.28.0**
 
 [![GitHub Release](https://img.shields.io/github/v/release/hunghienhoa/sellerkbb?label=Release)](https://github.com/hunghienhoa/sellerkbb/releases)
 [![GitHub Actions](https://img.shields.io/github/actions/workflow/status/hunghienhoa/sellerkbb/deploy.yml?branch=main&label=Ki%E1%BB%83m%20tra%20%26%20Backup)](https://github.com/hunghienhoa/sellerkbb/actions)
@@ -17,13 +17,13 @@
 
 ---
 
-## 🆕 Cập nhật mới nhất — v1.27.0
+## 🆕 Cập nhật mới nhất — v1.28.0
 
-- Tăng kích thước **toast/thông báo lưu** để người dùng nhìn thấy rõ ngay sau thao tác.
-- Toast mới rộng hơn, padding lớn hơn, chữ tăng lên **14–14,5px**, đậm hơn và chấm nhấn rose lớn hơn.
-- Tăng độ nổi bằng viền hồng đậm nhẹ, đường nhấn rose bên trái và bóng đổ rõ hơn nhưng vẫn giữ phong cách **hồng pastel**.
-- Trên mobile, toast gần như chiếm toàn bộ chiều ngang an toàn của màn hình nhưng vẫn nằm dưới topbar, không che tiêu đề.
-- Thời gian hiển thị tăng từ **2,2 giây lên 3,2 giây** để người dùng có đủ thời gian đọc thông báo lưu.
+- Chuyển **khối tài khoản đang đăng nhập** ra khỏi cuối sidebar và đặt ở **mép phải top bar màn hình chính**, cùng hàng với tiêu đề trang.
+- Khối top bar chỉ hiển thị **avatar + tên + vai trò**; **không có mũi tên**, **không có biểu tượng cài đặt** và **không có menu xổ xuống**.
+- Desktop/tablet hiển thị avatar + tên + vai trò. Mobile thu gọn tên/vai trò theo chiều rộng; màn hình hẹp hiển thị avatar ở góc phải để không chèn tiêu đề.
+- Sidebar giờ chỉ dành cho điều hướng, không còn khối user ở phía dưới.
+- TAB **Quản lý tài khoản** trong nhóm **Quản trị** vẫn giữ nguyên chức năng quản lý user/phân quyền.
 - Bản **preview/demo** và website được đồng bộ cùng source sau khi test đạt.
 - README và GitHub Release tiếp tục được cập nhật cùng phiên bản.
 
@@ -119,13 +119,13 @@ Operator KPI   = GMV cuối kỳ × 0,1%
 
 Vào tab **Xuất file**. File xuất dùng đúng khoảng thời gian đang chọn. SellerKBB không đưa Session ID TikTok ra CSV.
 
-### 7. Hồ sơ Google & đăng xuất
+### 7. Hồ sơ Google trên top bar
 
 - SellerKBB dùng **ảnh đại diện Google/Gmail** của tài khoản đã đăng nhập.
-- Ảnh được lưu cùng hồ sơ người dùng trong Firestore để Admin nhận diện tài khoản ở trang **Tài khoản**.
-- Bấm khối **ảnh + tên + vai trò** ở cuối sidebar để mở thông tin tài khoản.
-- Bảng hồ sơ hiển thị: tên, Gmail, vai trò, trạng thái duyệt và quyền truy cập.
-- Nút **Đăng xuất** nằm trong bảng hồ sơ này.
+- Ảnh được lưu cùng hồ sơ người dùng trong Firestore để Admin nhận diện tài khoản ở trang **Quản lý tài khoản**.
+- Hồ sơ hiện tại được hiển thị **tĩnh ở mép phải top bar** bằng avatar + tên + vai trò.
+- Khối hồ sơ top bar **không có mũi tên, không có cài đặt và không mở menu xổ xuống**.
+- Trên màn hình điện thoại hẹp, khối này tự thu gọn còn avatar để giữ đủ không gian cho tiêu đề trang.
 - Nếu Google không có ảnh hoặc ảnh không tải được, SellerKBB dùng avatar chữ cái dự phòng.
 
 ---
