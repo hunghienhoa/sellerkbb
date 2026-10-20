@@ -2408,6 +2408,36 @@ tbody tr:hover td{background:#fffafb}
   touch-action:manipulation;
 }
 .manual-kpi-value{color:#7654a6!important;font-weight:750}
+.manual-kpi-balance{
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:7px;
+  margin:10px 0;
+}
+.manual-kpi-balance-item{
+  padding:9px 10px;
+  border:1px solid var(--line);
+  border-radius:8px;
+  background:var(--surface-soft);
+}
+.manual-kpi-balance-item span{display:block;color:var(--muted);font-size:9.5px;margin-bottom:3px}
+.manual-kpi-balance-item b{display:block;color:#5f4050;font-size:12px;line-height:1.35}
+.manual-kpi-validation{
+  margin:8px 0 10px;
+  padding:9px 10px;
+  border:1px solid var(--line);
+  border-radius:8px;
+  font-size:10.5px;
+  line-height:1.45;
+}
+.manual-kpi-validation.ok{background:var(--ok-soft);border-color:#bee1ce;color:#347257}
+.manual-kpi-validation.warn{background:#fff8e6;border-color:#eedb9e;color:#745b16}
+.manual-kpi-validation.bad{background:#fff0f3;border-color:#efc7d0;color:#99485e}
+.manual-kpi-validation.draft{background:#f7f1fb;border-color:#dfd0ee;color:#6f50a1}
+.manual-kpi-entry.input-error{border-color:#e49ab0;background:#fff8fa}
+@media(max-width:700px){
+  .manual-kpi-balance{grid-template-columns:1fr}
+}
 @media(max-width:1050px){
   .metrics-grid.metrics-4{grid-template-columns:repeat(2,minmax(0,1fr))}
 }
@@ -3800,6 +3830,73 @@ tbody tr:hover td{background:#fffafb}
         .filter(entry=>entry.uid||entry.name);
     }
 
+    function manualKpiHostTotal(entries){
+      return (entries||[]).filter(entry=>entry?.role==='host').reduce((sum,entry)=>sum+Math.max(0,Number(entry?.gmv||0)),0);
+    }
+
+    function manualKpiBalance(session,hostTotal){
+      const figures=sessionGmvFigures(session);
+      const finalAvailable=figures.final!==null;
+      const limit=finalAvailable?Math.max(0,Number(figures.final||0)):0;
+      const total=Math.max(0,Number(hostTotal||0));
+      if(!finalAvailable){
+        return {status:total>0?'draft':'waiting',finalAvailable:false,limit:0,total,remaining:0,excess:0,countable:false};
+      }
+      if(total>limit){
+        return {status:'excess',finalAvailable:true,limit,total,remaining:0,excess:total-limit,countable:false};
+      }
+      if(total===0){
+        return {status:'empty',finalAvailable:true,limit,total,remaining:limit,excess:0,countable:false};
+      }
+      if(total===limit){
+        return {status:'matched',finalAvailable:true,limit,total,remaining:0,excess:0,countable:true};
+      }
+      return {status:'under',finalAvailable:true,limit,total,remaining:limit-total,excess:0,countable:true};
+    }
+
+    function manualKpiValidation(session,entries=normalizedManualKpiEntries(session)){
+      return manualKpiBalance(session,manualKpiHostTotal(entries));
+    }
+
+    function manualKpiBalanceHtml(session,hostTotal){
+      const v=manualKpiBalance(session,hostTotal);
+      const currency=session.currency||'VND';
+      let tone='warn', message='';
+      if(v.status==='matched'){
+        tone='ok'; message='GMV thủ công khớp hoàn toàn với GMV sau khi hoàn hủy. Dữ liệu đủ điều kiện cộng vào KPI đã chốt.';
+      }else if(v.status==='under'){
+        tone='warn'; message='Còn '+fmtMoney(v.remaining,currency)+' GMV chưa phân bổ. Vẫn có thể lưu và chỉ tính KPI trên phần GMV đã nhập.';
+      }else if(v.status==='excess'){
+        tone='bad'; message='GMV các Host đang vượt GMV sau khi hoàn hủy '+fmtMoney(v.excess,currency)+'. Hệ thống chặn lưu cho tới khi sửa lại.';
+      }else if(v.status==='draft'){
+        tone='draft'; message='Phiên chưa có GMV sau khi hoàn hủy đã chốt. Dữ liệu được lưu nháp và chưa cộng vào KPI đã chốt.';
+      }else if(v.status==='waiting'){
+        tone='draft'; message='Chưa có GMV sau khi hoàn hủy đã chốt. Khi nhập KPI thủ công, hệ thống sẽ lưu ở trạng thái nháp.';
+      }else{
+        tone='warn'; message='Chưa phân bổ GMV cho Host.';
+      }
+      const lastLabel=v.status==='excess'?'Vượt GMV':v.finalAvailable?'Còn chưa phân bổ':'Trạng thái';
+      const lastValue=v.status==='excess'?fmtMoney(v.excess,currency):v.finalAvailable?fmtMoney(v.remaining,currency):'Chờ đối soát';
+      return `<div class="manual-kpi-balance">
+        <div class="manual-kpi-balance-item"><span>GMV sau khi hoàn hủy</span><b>${v.finalAvailable?fmtMoney(v.limit,currency):'Chưa chốt'}</b></div>
+        <div class="manual-kpi-balance-item"><span>GMV Host đã phân bổ</span><b>${fmtMoney(v.total,currency)}</b></div>
+        <div class="manual-kpi-balance-item"><span>${lastLabel}</span><b>${lastValue}</b></div>
+      </div><div class="manual-kpi-validation ${tone}" data-manual-validation-status="${v.status}">${message}</div>`;
+    }
+
+    function manualDraftHostTotal(card){
+      return [...card.querySelectorAll('[data-manual-host-gmv]')].reduce((sum,input)=>sum+manualMoneyNumber(input.value),0);
+    }
+
+    function updateManualKpiBalance(card,session){
+      const target=card?.querySelector('[data-manual-balance]');
+      if(!target)return;
+      const total=manualDraftHostTotal(card);
+      target.innerHTML=manualKpiBalanceHtml(session,total);
+      const balance=manualKpiBalance(session,total);
+      card.querySelectorAll('[data-manual-entry]').forEach(row=>row.classList.toggle('input-error',balance.status==='excess'));
+    }
+
     function buildKpiRows(){
       const map=new Map();
       const ensure=(uid,name,currency)=>{
@@ -3854,12 +3951,16 @@ tbody tr:hover td{background:#fffafb}
 
       for(const session of sessionsForRange()){
         if(isManualKpi(session)){
-          for(const entry of normalizedManualKpiEntries(session)){
-            const cur=ensure(entry.uid,entry.name,entry.currency||session.currency);
-            if(!cur)continue;
-            cur.roles.add(entry.role);
-            cur.manualGmv+=entry.gmv;
-            cur.manualKpi+=entry.kpi;
+          const manualEntries=normalizedManualKpiEntries(session);
+          const validation=manualKpiValidation(session,manualEntries);
+          if(validation.countable){
+            for(const entry of manualEntries){
+              const cur=ensure(entry.uid,entry.name,entry.currency||session.currency);
+              if(!cur)continue;
+              cur.roles.add(entry.role);
+              cur.manualGmv+=entry.gmv;
+              cur.manualKpi+=entry.kpi;
+            }
           }
           continue;
         }
