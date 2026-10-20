@@ -2469,7 +2469,7 @@ tbody tr:hover td{background:#fffafb}
       <header class="topbar">
         <div class="topbar-title-wrap"><button id="menuToggle" class="menu-toggle" type="button" aria-label="Mở menu" aria-expanded="false">☰</button><div><h1 id="pageTitle" class="page-title">Tổng quan</h1><div id="pageSub" class="tiny"></div></div></div>
         <div class="topbar-right">
-          <span id="syncBadge" class="pill">v1.36.0</span>
+          <span id="syncBadge" class="pill">v1.36.1</span>
           <div class="account-menu-wrap">
             <button id="topbarAccountBtn" class="topbar-account-btn" type="button" aria-expanded="false" aria-controls="accountPopover" aria-label="Mở thông tin tài khoản">
               <img id="userAvatar" class="avatar topbar-account-avatar" alt="Ảnh đại diện Google">
@@ -2832,7 +2832,7 @@ tbody tr:hover td{background:#fffafb}
 
     function previewTs(iso){ return {toDate:()=>new Date(iso)}; }
     function enterPreview(){
-      state.config={version:'1.36.0-preview',tiktokConfigured:true};
+      state.config={version:'1.36.1-preview',tiktokConfigured:true};
       state.user={uid:'preview-admin',email:'admin@sellerkbb.demo',displayName:'Quản trị viên Demo',photoURL:avatarFallbackData('Quản trị viên Demo')};
       state.profile={role:'admin',status:'approved',displayName:'Quản trị viên Demo',photoURL:state.user.photoURL,permissions:['live.read','kpi.read']};
       state.maintenance={settings:{retentionDays:180,autoCleanup:true,emergencyPercent:85,firestoreSoftLimitMb:600,firestoreMaxSessions:12000,kvSoftKeyLimit:5000},github:{usedBytes:124000,limitBytes:10000000000,available:true},cloudflare:{keyCount:5,lastRun:{ranAt:new Date().toISOString(),deleted:0},usedBytes:428000,storageLimitBytes:1000000000,storageComplete:true},firebase:{freePlanMode:true,ttlEnabled:false,ttlRecommended:false,storageLimitBytes:1073741824}};
@@ -2870,7 +2870,7 @@ tbody tr:hover td{background:#fffafb}
         }
         const gmv=Math.round(gross*(.72+(index%4)*.055));
         const status=index%3===0?'final':'provisional';
-        session.reconciliation={status,usableForKpi:true,gmvAmount:gmv,analyticsGmvAmount:gross,orderWindowAmount:Math.round(gross*.94),orderCount:9+(index%5),pendingOrderCount:status==='final'?0:3+(index%4),cancelledCount:index%3,returningCount:status==='final'?0:1,refundedCount:index%2,aftersalesAvailable:true,liveSignalOrders:5,timeWindowOrders:4,attribution:'mixed',generatedAt:new Date().toISOString(),finalizedAt:status==='final'?new Date().toISOString():'',reason:status==='final'?'Đã chốt đối soát.':'KPI đang tạm tính và sẽ tự thay đổi khi đơn cập nhật.'};
+        session.reconciliation={status,usableForKpi:true,gmvAmount:gmv,analyticsGmvAmount:gross,orderWindowAmount:Math.round(gross*.94),orderCount:9+(index%5),pendingOrderCount:status==='final'?0:3+(index%4),cancelledCount:index%3,returningCount:status==='final'?0:1,refundedCount:index%2,aftersalesAvailable:true,liveSignalOrders:status==='final'?(9+(index%5)):5,timeWindowOrders:status==='final'?0:4,attribution:status==='final'?'live_signal':'mixed',generatedAt:new Date().toISOString(),finalizedAt:status==='final'?new Date().toISOString():'',reason:status==='final'?'Đã chốt đối soát và liên kết LIVE.':'KPI đang tạm tính và sẽ tự thay đổi khi đơn cập nhật.'};
       });
       restorePreviewState();
       showApp(); bindShell(); renderAll(); startAutoSyncWatcher();
@@ -3275,9 +3275,22 @@ tbody tr:hover td{background:#fffafb}
       const net=Number(result?.totals?.provisionalNetAmount||0);
       const aftersalesAvailable=result?.scope?.aftersalesAvailable!==false;
       const usable=aftersalesAvailable&&(orders.length>0||analytics===0)&&(orderWindow>0||analytics===0);
-      const allFinal=usable&&orders.every(order=>order?.status==='CANCELLED'||order?.status==='COMPLETED');
+      const liveSignalOrders=orders.filter(order=>order?.attribution==='live_signal').length;
+      const timeWindowOrders=Math.max(0,orders.length-liveSignalOrders);
+      const attributionConfirmed=orders.length===0||timeWindowOrders===0;
+      const allFinal=usable&&attributionConfirmed&&orders.every(order=>order?.status==='CANCELLED'||order?.status==='COMPLETED');
+      const status=!aftersalesAvailable?'blocked':!usable?'waiting':allFinal?'final':'provisional';
+      const reason=!aftersalesAvailable
+        ?'Thiếu quyền hoặc dữ liệu Return/Refund; chưa dùng số này để tính KPI.'
+        :!usable
+          ?'Chưa lấy đủ dữ liệu đơn để tính KPI.'
+          :!attributionConfirmed
+            ?'KPI đang tạm tính vì còn đơn chỉ khớp theo thời gian; chưa tự chốt cho tới khi liên kết LIVE đủ chắc chắn.'
+            :allFinal
+              ?'Tất cả đơn đã có tín hiệu LIVE và đã kết thúc hậu mãi.'
+              :'KPI đang tạm tính và sẽ tự thay đổi khi đơn cập nhật.';
       return {
-        status:!aftersalesAvailable?'blocked':!usable?'waiting':allFinal?'final':'provisional',
+        status,
         usableForKpi:usable,
         gmvAmount:usable?net:0,
         analyticsGmvAmount:analytics,
@@ -3288,9 +3301,12 @@ tbody tr:hover td{background:#fffafb}
         returningCount:Number(result?.counts?.returning||0),
         refundedCount:Number(result?.counts?.refunded||0),
         aftersalesAvailable,
+        liveSignalOrders,
+        timeWindowOrders,
+        attribution:timeWindowOrders===0&&liveSignalOrders>0?'live_signal':liveSignalOrders>0?'mixed':'time_window',
         generatedAt:new Date().toISOString(),
         finalizedAt:allFinal?new Date().toISOString():'',
-        reason:!aftersalesAvailable?'Thiếu quyền hoặc dữ liệu Return/Refund; chưa dùng số này để tính KPI.':allFinal?'Đã chốt đối soát.':'KPI đang tạm tính và sẽ tự thay đổi khi đơn cập nhật.'
+        reason
       };
     }
 
