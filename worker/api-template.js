@@ -8,6 +8,8 @@ const MAINTENANCE_LAST_RUN_KEY = "maintenance:last_run";
 const AUTO_SYNC_DATA_KEY = "autosync:rolling";
 const AUTO_SYNC_STATUS_KEY = "autosync:status";
 const GITHUB_REPO_CACHE_KEY = "maintenance:github_repo";
+const LIVE_RECONCILE_CACHE_PREFIX = "reconcile:live:";
+const LIVE_RECONCILE_CACHE_TTL_SECONDS = 600;
 const DEFAULT_MAINTENANCE = {
   retentionDays: 180,
   autoCleanup: true,
@@ -52,7 +54,7 @@ function isProtectedKvKey(name) {
 }
 
 function isExpendableKvKey(name) {
-  return name.startsWith("oauth_state:") || name.startsWith("cache:") || name.startsWith("maintenance_log:") || name === MAINTENANCE_LAST_RUN_KEY;
+  return name.startsWith("oauth_state:") || name.startsWith("cache:") || name.startsWith("maintenance_log:") || name.startsWith(LIVE_RECONCILE_CACHE_PREFIX) || name === MAINTENANCE_LAST_RUN_KEY;
 }
 
 async function measureKvStorage(env, keys = []) {
@@ -366,6 +368,244 @@ function normalizeLiveSession(s, shop) {
   };
 }
 
+function moneyNumber(value) {
+  const n = Number(String(value ?? "0").replace(/[^0-9.-]/g, ""));
+  return Number.isFinite(n) ? n : 0;
+}
+
+function orderSubtotal(order) {
+  const payment = order?.payment || {};
+  const candidates = [
+    payment.sub_total,
+    payment.subtotal,
+    payment.original_total_product_price,
+    payment.total_product_price,
+    payment.total_amount,
+    payment.payment
+  ];
+  for (const value of candidates) {
+    const n = moneyNumber(value);
+    if (n > 0) return n;
+  }
+  return 0;
+}
+
+function orderCurrency(order, fallback = "VND") {
+  return String(order?.payment?.currency || order?.currency || fallback || "VND");
+}
+
+function orderDeliveredTime(order) {
+  const candidates = [
+    order?.delivery_time,
+    order?.delivered_time,
+    order?.package_delivery_time,
+    ...(Array.isArray(order?.packages) ? order.packages.flatMap(p => [p?.delivery_time, p?.delivered_time]) : [])
+  ];
+  for (const value of candidates) {
+    const n = Number(value || 0);
+    if (n > 1000000000) return n;
+  }
+  return 0;
+}
+
+function aftersaleRefundTotal(record) {
+  const top = moneyNumber(record?.refund_amount?.refund_total);
+  if (top > 0) return top;
+  return (Array.isArray(record?.return_line_items) ? record.return_line_items : [])
+    .reduce((sum, item) => sum + moneyNumber(item?.refund_amount?.refund_total), 0);
+}
+
+function aftersaleState(record) {
+  const status = String(record?.return_status || "");
+  if (!status) return "none";
+  if (["RETURN_OR_REFUND_REQUEST_PENDING","AWAITING_BUYER_SHIP","BUYER_SHIPPED_ITEM","REPLACEMENT_REQUEST_PENDING"].includes(status)) return "active";
+  if (["RETURN_OR_REFUND_REQUEST_SUCCESS","RETURN_OR_REFUND_REQUEST_COMPLETE","REPLACEMENT_REQUEST_REFUND_SUCCESS","REPLACEMENT_REQUEST_COMPLETE"].includes(status)) return "refunded";
+  if (["REFUND_OR_RETURN_REQUEST_REJECT","REJECT_RECEIVE_PACKAGE","RETURN_OR_REFUND_REQUEST_CANCEL","REPLACEMENT_REQUEST_REJECT","REPLACEMENT_REQUEST_CANCEL"].includes(status)) return "closed";
+  return "other";
+}
+
+async function searchOrdersForLiveWindow(env, accessToken, session) {
+  const start = Number(session?.startTimeSeconds || 0);
+  const end = Number(session?.endTimeSeconds || 0) || (start + Math.max(1, Number(session?.durationSeconds || 0)));
+  if (!start || end <= start) throw new Error("Phiên LIVE chưa có đủ thời gian bắt đầu/kết thúc để đối soát.");
+  if (!session?.shopCipher) throw new Error("Phiên LIVE chưa có shop_cipher để đối soát đơn.");
+
+  const found = [];
+  let pageToken = "";
+  do {
+    const query = { shop_cipher: session.shopCipher, page_size: 100 };
+    if (pageToken) query.page_token = pageToken;
+    const result = await tiktokCall(env, accessToken, "/order/202309/orders/search", query, "POST", {
+      create_time_ge: start,
+      create_time_lt: end + 1
+    });
+    if (result.payload?.code !== 0) {
+      const detail = result.payload?.message || "Không lấy được danh sách đơn";
+      throw new Error(`TikTok Orders API: ${detail}. Hãy kiểm tra quyền seller.order.info.`);
+    }
+    const data = result.payload?.data || {};
+    found.push(...(Array.isArray(data.orders) ? data.orders : []));
+    pageToken = data.next_page_token || "";
+  } while (pageToken && found.length < 1000);
+  return found.slice(0, 1000);
+}
+
+async function hydrateOrderDetails(env, accessToken, shopCipher, orders) {
+  const byId = new Map((orders || []).filter(o => o?.id).map(o => [String(o.id), o]));
+  const ids = [...byId.keys()];
+  for (let i = 0; i < ids.length; i += 50) {
+    const batch = ids.slice(i, i + 50);
+    const result = await tiktokCall(env, accessToken, "/order/202309/orders", {
+      shop_cipher: shopCipher,
+      ids: batch.join(",")
+    });
+    if (result.payload?.code !== 0) continue;
+    const detailed = result.payload?.data?.orders || result.payload?.data?.order_list || [];
+    for (const order of detailed) {
+      if (order?.id) byId.set(String(order.id), { ...(byId.get(String(order.id)) || {}), ...order });
+    }
+  }
+  return [...byId.values()];
+}
+
+async function searchReturnsForOrder(env, accessToken, shopCipher, orderId) {
+  const result = await tiktokCall(env, accessToken, "/return_refund/202309/returns/search", {
+    shop_cipher: shopCipher,
+    page_size: 100
+  }, "POST", { order_ids: String(orderId) });
+  if (result.payload?.code !== 0) {
+    return { available: false, error: result.payload?.message || "Return & Refund API unavailable", records: [] };
+  }
+  return {
+    available: true,
+    error: "",
+    records: Array.isArray(result.payload?.data?.return_orders) ? result.payload.data.return_orders : []
+  };
+}
+
+function normalizeReconcileOrder(order, aftersales, fallbackCurrency) {
+  const amount = orderSubtotal(order);
+  const status = String(order?.status || order?.order_status || "");
+  const records = Array.isArray(aftersales?.records) ? aftersales.records : [];
+  const active = records.filter(x => aftersaleState(x) === "active");
+  const refunded = records.filter(x => aftersaleState(x) === "refunded");
+  const refundAmount = refunded.reduce((sum, x) => sum + aftersaleRefundTotal(x), 0);
+  const cancelled = status === "CANCELLED";
+  const netAmount = cancelled ? 0 : Math.max(0, amount - refundAmount);
+  const autoCombineOrderId = String(order?.auto_combine_order_id || "");
+  const finalized = status === "COMPLETED" && active.length === 0;
+  const deliveredAt = orderDeliveredTime(order);
+  return {
+    id: String(order?.id || ""),
+    createTime: Number(order?.create_time || 0),
+    updateTime: Number(order?.update_time || 0),
+    deliveredAt,
+    status,
+    amount,
+    currency: orderCurrency(order, fallbackCurrency),
+    netAmount,
+    finalized,
+    autoCombineOrderId,
+    attribution: autoCombineOrderId ? "live_signal" : "time_window",
+    aftersalesAvailable: aftersales?.available !== false,
+    aftersalesError: aftersales?.error || "",
+    aftersales: records.map(x => ({
+      id: String(x?.return_id || x?.id || ""),
+      type: String(x?.return_type || ""),
+      status: String(x?.return_status || ""),
+      refundTotal: aftersaleRefundTotal(x),
+      updateTime: Number(x?.update_time || 0)
+    }))
+  };
+}
+
+async function buildLiveReconciliation(env, accessToken, liveId) {
+  const sessions = await getAutoSyncData(env);
+  const session = sessions.find(x => String(x?.liveId || "") === String(liveId || ""));
+  if (!session) throw new Error("Không tìm thấy phiên LIVE trong dữ liệu TikTok đang lưu.");
+  const orders = await hydrateOrderDetails(
+    env,
+    accessToken,
+    session.shopCipher,
+    await searchOrdersForLiveWindow(env, accessToken, session)
+  );
+
+  const aftersalesById = new Map();
+  let aftersalesPermissionMissing = false;
+  for (let i = 0; i < orders.length; i += 6) {
+    const batch = orders.slice(i, i + 6);
+    const results = await Promise.all(batch.map(async order => {
+      if (String(order?.status || order?.order_status || "") === "CANCELLED") {
+        return [String(order?.id || ""), { available: true, error: "", records: [] }];
+      }
+      const value = await searchReturnsForOrder(env, accessToken, session.shopCipher, order?.id);
+      if (!value.available) aftersalesPermissionMissing = true;
+      return [String(order?.id || ""), value];
+    }));
+    for (const [id, value] of results) aftersalesById.set(id, value);
+  }
+
+  const normalized = orders
+    .map(order => normalizeReconcileOrder(order, aftersalesById.get(String(order?.id || "")), session.currency || "VND"))
+    .sort((a, b) => b.createTime - a.createTime);
+
+  const counts = {
+    total: normalized.length,
+    processing: 0,
+    shipping: 0,
+    delivered: 0,
+    completed: 0,
+    cancelled: 0,
+    returning: 0,
+    refunded: 0
+  };
+  let orderWindowAmount = 0;
+  let provisionalNetAmount = 0;
+  let confirmedLiveSignalAmount = 0;
+  for (const order of normalized) {
+    orderWindowAmount += order.amount;
+    provisionalNetAmount += order.netAmount;
+    if (order.attribution === "live_signal") confirmedLiveSignalAmount += order.netAmount;
+    if (order.status === "CANCELLED") counts.cancelled++;
+    else if (["IN_TRANSIT","AWAITING_COLLECTION","PARTIALLY_SHIPPING"].includes(order.status)) counts.shipping++;
+    else if (order.status === "DELIVERED") counts.delivered++;
+    else if (order.status === "COMPLETED") counts.completed++;
+    else counts.processing++;
+    if (order.aftersales.some(x => aftersaleState(x) === "active")) counts.returning++;
+    if (order.aftersales.some(x => aftersaleState(x) === "refunded")) counts.refunded++;
+  }
+
+  return {
+    ok: true,
+    generatedAt: new Date().toISOString(),
+    live: {
+      liveId: String(session.liveId || ""),
+      title: session.title || "Phiên LIVE",
+      startTimeSeconds: Number(session.startTimeSeconds || 0),
+      endTimeSeconds: Number(session.endTimeSeconds || 0),
+      analyticsGmvAmount: moneyNumber(session.gmvAmount),
+      currency: session.currency || "VND"
+    },
+    policy: {
+      generalReturnDays: 15,
+      reducedCategoryDays: 6,
+      note: "Mốc hậu mãi tính từ khi đơn chuyển sang Delivered; một số danh mục tại Việt Nam chỉ có 6 ngày."
+    },
+    scope: {
+      orderWindow: "Đơn tạo trong đúng khoảng thời gian phiên LIVE",
+      attribution: "auto_combine_order_id là tín hiệu LIVE; nếu không có, SellerKBB chỉ đánh dấu khớp theo thời gian.",
+      aftersalesAvailable: !aftersalesPermissionMissing
+    },
+    counts,
+    totals: {
+      orderWindowAmount,
+      provisionalNetAmount,
+      confirmedLiveSignalAmount
+    },
+    orders: normalized
+  };
+}
+
 async function syncLivePerformance(env, accessToken, startDate, endDate) {
   const shops = await getAuthorizedShops(env, accessToken);
   const all = [];
@@ -612,6 +852,29 @@ async function handleApi(request, env) {
   if (url.pathname === "/api/tiktok/autosync/sessions" && request.method === "GET") {
     await requireReportAccess(request, env);
     return json({ ok: true, sessions: await getAutoSyncData(env) });
+  }
+
+  if (url.pathname === "/api/tiktok/reconcile/live" && request.method === "GET") {
+    await requireReportAccess(request, env);
+    const liveId = url.searchParams.get("live_id") || "";
+    if (!liveId) return json({ error: "missing_live_id", message: "Thiếu live_id để đối soát." }, 400);
+    const cacheKey = LIVE_RECONCILE_CACHE_PREFIX + liveId;
+    const force = url.searchParams.get("refresh") === "1";
+    if (!force && env.TIKTOK_KV) {
+      const cachedRaw = await env.TIKTOK_KV.get(cacheKey);
+      if (cachedRaw) {
+        try { return json({ ...JSON.parse(cachedRaw), cached: true }); } catch {}
+      }
+    }
+    const token = await getTikTokToken(env);
+    if (!token?.access_token) return json({ error: "tiktok_not_connected", message: "TikTok chưa được kết nối." }, 503);
+    try {
+      const result = await buildLiveReconciliation(env, token.access_token, liveId);
+      if (env.TIKTOK_KV) await env.TIKTOK_KV.put(cacheKey, JSON.stringify(result), { expirationTtl: LIVE_RECONCILE_CACHE_TTL_SECONDS });
+      return json({ ...result, cached: false });
+    } catch (e) {
+      return json({ error: "reconcile_failed", message: String(e?.message || e) }, 502);
+    }
   }
 
   return json({ error: "not_found" }, 404);

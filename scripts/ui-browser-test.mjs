@@ -98,6 +98,20 @@ try {
   assert(await page.$('#section-live [data-date-calendar="live"]')===null,"Desktop calendar did not collapse after reopening and applying");
   await page.click('#section-live [data-range-mode="30d"]');
 
+  assert(await page.$('#nav [data-section="reconcile"]')!==null,"Đối soát đơn LIVE nav tab missing");
+  await page.click('#nav [data-section="reconcile"]');
+  await page.click('#section-reconcile [data-range-mode="30d"]');
+  assert((await page.$('#section-reconcile [data-reconcile-session]')).length>=1,"LIVE reconciliation session cards missing");
+  const reconcileCard='#section-reconcile [data-reconcile-session]:first-of-type';
+  await page.click(reconcileCard+' [data-reconcile-load]');
+  await page.waitForSelector(reconcileCard+' .reconcile-summary');
+  assert(await page.$eval(reconcileCard,e=>e.textContent.includes('Tổng đơn trong khung LIVE')&&e.textContent.includes('Đang vận chuyển')&&e.textContent.includes('Đang hoàn/trả')),"LIVE reconciliation summary missing");
+  assert((await page.$(reconcileCard+' .reconcile-order')).length>=1,"LIVE reconciliation order rows missing");
+  assert(await page.$eval(reconcileCard,e=>e.textContent.includes('Có tín hiệu LIVE')&&e.textContent.includes('Khớp theo thời gian')),"LIVE attribution confidence labels missing");
+  assert(await page.$eval(reconcileCard,e=>e.textContent.includes('15 ngày')&&e.textContent.includes('6 ngày')),"Return-window explanation missing");
+  await page.click('#nav [data-section="live"]');
+  await page.click('#section-live [data-range-mode="30d"]');
+
   const desktopRow='#section-live .desktop-live-table tbody tr:nth-child(1)';
   const desktopId=await page.$eval(desktopRow+' [data-save-session]',e=>e.dataset.saveSession);
   await page.select(desktopRow+' select[data-person="host"]','staff-thao-my');
@@ -329,6 +343,7 @@ try {
   const mobileNavGroups=await page.$$eval('#nav .nav-group-title',els=>els.map(e=>e.textContent.trim()));
   assert(mobileNavGroups.join('|')==='Báo cáo|Công cụ|Quản trị',"Mobile sidebar groups are missing");
   assert(await page.$('#nav [data-section="manual-kpi"]')!==null,"Mobile KPI thủ công tab missing");
+  assert(await page.$('#nav [data-section="reconcile"]')!==null,"Mobile Đối soát đơn LIVE tab missing");
   assert(await page.$('#nav .nav-group:nth-child(3) [data-section="users"]')!==null,"Mobile Quản lý tài khoản must stay inside Quản trị");
   assert(await page.$('#nav .nav-group:nth-child(3) [data-section="staff"]')!==null,"Mobile Quản lý nhân sự must stay inside Quản trị");
   assert(await page.$('#usersDockBtn')===null,"Mobile duplicate Users dock must be removed");
