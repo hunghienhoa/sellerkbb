@@ -172,6 +172,7 @@ try {
   await page.click('#section-live [data-range-mode="30d"]');
 
   await page.click(desktopSavedRow+' [data-manual-kpi]');
+  assert(await page.$eval(desktopSavedRow+' [data-auto-person-wrap]',e=>getComputedStyle(e).display==='none'),"Desktop Host/Operator fields must hide in manual KPI mode");
   assert(await page.$eval(desktopSavedRow+' select[data-person="host"]',e=>e.value)==='',"Campaign/Mega did not clear desktop Host");
   assert(await page.$eval(desktopSavedRow+' select[data-person="operator"]',e=>e.value)==='',"Campaign/Mega did not clear desktop Operator");
   assert(await page.$eval(desktopSavedRow+' select[data-person="host"]',e=>e.disabled),"Campaign/Mega did not disable desktop Host");
@@ -191,6 +192,7 @@ try {
   const desktopManualRow='#section-live .desktop-live-table tbody tr:has([data-save-session="'+desktopId+'"])';
   assert(await page.$eval(desktopManualRow+' [data-manual-kpi]',e=>e.checked),"Campaign/Mega flag did not persist");
   assert(await page.$eval(desktopManualRow+' [data-manual-type]',e=>e.value)==='mega',"Mega Live classification did not persist");
+  assert(await page.$eval(desktopManualRow+' [data-auto-person-wrap]',e=>getComputedStyle(e).display==='none'),"Persisted manual desktop row must keep Host/Operator hidden");
   assert(await page.$eval(desktopManualRow,e=>e.textContent.includes('Mega Live · tính thủ công')),"Saved Mega Live badge missing on LIVE row");
   assert(await page.$eval(desktopManualRow+' select[data-person="host"]',e=>e.value)==='',"Campaign/Mega Host was restored unexpectedly");
 
@@ -524,6 +526,7 @@ try {
   assert(await page.$eval(mobileSavedCard+' select[data-person="operator"]',e=>e.value)==='staff-hung-hh',"Mobile Operator save read the wrong hidden desktop selector");
 
   await page.click(mobileSavedCard+' [data-manual-kpi]');
+  assert(await page.$eval(mobileSavedCard+' [data-auto-person-wrap]',e=>getComputedStyle(e).display==='none'),"Mobile Host/Operator block must hide in manual KPI mode");
   assert(await page.$eval(mobileSavedCard+' select[data-person="host"]',e=>e.value)==='',"Mobile Campaign/Mega did not clear Host");
   assert(await page.$eval(mobileSavedCard+' select[data-person="operator"]',e=>e.value)==='',"Mobile Campaign/Mega did not clear Operator");
   assert(!(await page.$eval(mobileSavedCard+' [data-manual-type-wrap]',e=>e.classList.contains('hidden'))),"Mobile Campaign/Mega type selector must appear");
