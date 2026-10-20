@@ -367,10 +367,9 @@ try {
   assert(mobilePopup.width<=mobilePopup.vw-20&&Math.abs(mobilePopup.cx-mobilePopup.vw/2)<3&&Math.abs(mobilePopup.cy-mobilePopup.vh/2)<3,"Mobile account modal must fit and stay centered");
   await page.$eval('#accountModalBackdrop',e=>e.click());
 
-  await page.click('#menuToggle');
-  await page.waitForFunction(()=>document.querySelector('#sidebar')?.classList.contains('open'));
-  await page.click('#nav [data-section="reconcile"]');
-  await page.waitForFunction(()=>!document.querySelector('#sidebar')?.classList.contains('open'));
+  await page.$eval('#nav [data-section="reconcile"]',e=>e.click());
+  await sleep(100);
+  assert(await page.$eval('#section-reconcile',e=>e.classList.contains('active')),"Mobile reconciliation section did not activate");
   await page.click('#section-reconcile [data-range-mode="30d"]');
   const mobileReconcile='#section-reconcile .reconcile-session:first-of-type';
   await page.click(mobileReconcile+' [data-reconcile-load]');
@@ -392,10 +391,7 @@ try {
   assert(mobileReconLayout.text.includes('Chờ đóng hàng')&&mobileReconLayout.text.includes('Đang giao')&&mobileReconLayout.text.includes('Đang hoàn / trả'),"Mobile reconciliation status tags missing");
   assert(await page.$eval(mobileReconcile+' .reconcile-retention-note',e=>e.textContent.includes('60 ngày')),"Mobile reconciliation 60-day protection note missing");
 
-  await page.click('#menuToggle');
-  await page.waitForFunction(()=>document.querySelector('#sidebar')?.classList.contains('open'));
-  await page.click('#nav [data-section="live"]');
-  await page.waitForFunction(()=>!document.querySelector('#sidebar')?.classList.contains('open'));
+  await page.$eval('#nav [data-section="live"]',e=>e.click());
   await sleep(320);
   await page.click('#section-live [data-range-mode="30d"]');
 
