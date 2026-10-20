@@ -1608,49 +1608,7 @@ tbody tr:hover td{background:#fcfafb}
 }
 
 
-/* v1.11 Google account identity */
-.account-trigger{
-  width:100%;
-  min-width:0;
-  display:grid;
-  grid-template-columns:36px minmax(0,1fr) 18px;
-  align-items:center;
-  gap:10px;
-  color:var(--text);
-  text-align:left;
-  font:inherit;
-  cursor:pointer;
-  -webkit-tap-highlight-color:transparent;
-}
-.account-trigger:hover{background:#fbf7f9}
-.account-trigger.open{background:#f9eef3;border-top-color:#e4cbd7}
-.account-trigger .usertext{min-width:0}
-.account-trigger .usertext>div:first-child{font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.account-chevron{color:#9a7c8b;font-size:15px;transition:transform .18s ease}
-.account-trigger.open .account-chevron{transform:rotate(180deg)}
-.account-popover{
-  position:absolute;
-  left:0;
-  right:0;
-  bottom:calc(100% + 9px);
-  z-index:55;
-  padding:13px;
-  border:1px solid var(--line);
-  border-radius:12px;
-  background:#fff;
-  box-shadow:0 16px 40px rgba(70,44,57,.14);
-}
-.account-popover-head{display:grid;grid-template-columns:48px minmax(0,1fr);align-items:center;gap:10px;padding-bottom:11px;border-bottom:1px solid var(--line)}
-.account-popover-head>div{min-width:0;display:grid;gap:2px}
-.account-popover-head b{color:#46333d;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.account-popover-head span{color:var(--muted);font-size:10.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.account-popover-avatar{width:48px;height:48px;border-radius:50%;object-fit:cover;background:var(--accent-soft)}
-.account-detail-list{display:grid;padding:6px 0 9px}
-.account-detail-list>div{display:grid;grid-template-columns:78px minmax(0,1fr);gap:8px;padding:6px 0}
-.account-detail-list span{color:var(--muted);font-size:9.5px;font-weight:650}
-.account-detail-list b{color:#53404a;font-size:10.5px;line-height:1.4;font-weight:750;text-align:right;overflow-wrap:anywhere}
-.account-status{color:var(--ok)!important}
-.account-logout{width:100%;justify-content:center}
+/* Google/user identity */
 .user-identity{display:flex;align-items:center;gap:9px;min-width:0}
 .user-list-avatar{width:38px;height:38px;flex:0 0 auto;border-radius:50%;object-fit:cover;background:var(--accent-soft);border:1px solid #efdbe5}
 .user-identity-copy{display:grid;gap:2px;min-width:0}
@@ -2555,35 +2513,6 @@ tbody tr:hover td{background:#fffafb}
       document.addEventListener('pointerup',clear);
       document.addEventListener('pointercancel',clear);
     }
-    function setAccountMenu(open){
-      const btn=$('#userMenuBtn'), pop=$('#accountPopover');
-      if(!btn||!pop)return;
-      pop.classList.toggle('hidden',!open);
-      btn.classList.toggle('open',open);
-      btn.setAttribute('aria-expanded',String(open));
-    }
-
-    function renderAccountPopover(){
-      const user=state.user||{}, profile=state.profile||{};
-      const displayName=profile.displayName||user.displayName||user.email||'Tài khoản';
-      const email=user.email||profile.email||'';
-      const photoRecord={displayName,email,photoURL:user.photoURL||profile.photoURL||''};
-      $('#accountPopover').innerHTML=`
-        <div class="account-popover-head">
-          ${avatarHtml(photoRecord,'account-popover-avatar')}
-          <div><b>${esc(displayName)}</b><span>${esc(email)}</span></div>
-        </div>
-        <div class="account-detail-list">
-          <div><span>Đăng nhập</span><b>Google / Gmail</b></div>
-          <div><span>Vai trò</span><b>${esc(roleLabel(profile.role))}</b></div>
-          <div><span>Trạng thái</span><b class="account-status">${esc(accountStatusLabel(profile.status))}</b></div>
-          <div><span>Quyền truy cập</span><b>${esc(permissionSummary(profile))}</b></div>
-        </div>
-        <button id="accountLogoutBtn" class="btn danger account-logout" type="button">${icon('logout',16)} ${PREVIEW?'Thoát Preview':'Đăng xuất'}</button>`;
-      const logout=$('#accountLogoutBtn');
-      if(logout)logout.onclick=()=>{ if(PREVIEW) location.href='/'; else signOut(state.auth); };
-    }
-
     function bindShell(){
       bindInteractionEffects();
       $('#menuToggle').onclick=()=>setMobileMenu(!$('#sidebar').classList.contains('open'));
