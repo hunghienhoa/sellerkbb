@@ -1494,6 +1494,39 @@ body{
   overflow-wrap:anywhere;
 }
 .metric-copy>small{color:var(--muted);font-size:10.5px}
+.dashboard-final-gmv{
+  display:grid;
+  grid-template-columns:auto minmax(0,1fr) auto;
+  align-items:center;
+  gap:12px;
+  padding:14px 16px;
+  border:1px solid #dcece5;
+  border-radius:10px;
+  background:linear-gradient(145deg,#fbfffd 0,#f3faf7 100%);
+}
+.dashboard-final-gmv-icon{
+  width:40px;height:40px;
+  display:grid;place-items:center;
+  border-radius:9px;
+  background:#e7f5ef;
+  color:#3f846d;
+}
+.dashboard-final-gmv-copy{display:grid;gap:3px;min-width:0}
+.dashboard-final-gmv-copy>span{color:#61756c;font-size:11px;font-weight:750}
+.dashboard-final-gmv-copy>strong{
+  color:#365f50;
+  font-size:clamp(19px,.6vw + 15px,24px);
+  line-height:1.2;
+  font-weight:850;
+  letter-spacing:-.025em;
+}
+.dashboard-final-gmv-copy>small{color:#71847c;font-size:10.5px;line-height:1.4}
+@media(max-width:700px){
+  .dashboard-final-gmv{grid-template-columns:34px minmax(0,1fr);padding:11px 10px;gap:8px}
+  .dashboard-final-gmv-icon{width:34px;height:34px}
+  .dashboard-final-gmv-copy>strong{font-size:clamp(15px,4.2vw,18px);white-space:nowrap}
+  .dashboard-final-gmv>.pill{grid-column:1/-1;justify-self:start;margin-left:42px}
+}
 
 .time-filter{
   padding:0 0 14px;
@@ -3714,6 +3747,8 @@ tbody tr:hover td{background:#fffafb}
       const ss=sessionsForRange();
       const visibleSessions=dashboardSessionsForRange();
       const gmv=ss.reduce((a,s)=>a+finalGmv(s),0), items=ss.reduce((a,s)=>a+Number(s.currentItemsSold??s.recordedItemsSold??0),0), totalSec=ss.reduce((a,s)=>a+Number(s.durationSeconds||0),0), currency=ss.find(s=>s.currency)?.currency||'VND';
+      const finalizedSessions=ss.filter(s=>sessionGmvFigures(s).final!==null);
+      const finalizedGmv=finalizedSessions.reduce((sum,s)=>sum+Number(sessionGmvFigures(s).final||0),0);
       const monthly=state.rangeMode==='30d';
       const listTitle=state.rangeMode==='today'?'Phiên LIVE hôm nay':state.rangeMode==='7d'?'Phiên LIVE trong 7 ngày gần nhất':monthly?'Phiên LIVE 7 ngày gần nhất':'Phiên LIVE trong khoảng thời gian';
       const moreAction=monthly?`<button id="dashboardViewMore" class="btn dashboard-more">${icon('live',15)} Xem thêm</button>`:'';
@@ -3722,6 +3757,15 @@ tbody tr:hover td{background:#fffafb}
         ${timeFilterHtml('dashboard')}
         <div class="data-note sync-status ${state.autoSyncRefreshing?'is-refreshing':''}">${icon('sync',16)}<span>Dữ liệu Tiktok được đồng bộ lúc: <b>${fmtSyncMoment(state.autoSyncStatus?.finishedAt)}</b></span></div>
         <div class="metrics-grid">${metricCard('live','Phiên LIVE',ss.length)}${metricCard('money','GMV đã ghi nhận',fmtMoney(gmv,currency),'TikTok cập nhật theo đúng dữ liệu phiên')}${metricCard('box','Sản phẩm bán',new Intl.NumberFormat('vi-VN').format(items))}${metricCard('clock','Tổng thời lượng',fmtDuration(totalSec))}</div>
+        <div class="dashboard-final-gmv" data-dashboard-final-gmv>
+          <div class="dashboard-final-gmv-icon">${icon('check',20)}</div>
+          <div class="dashboard-final-gmv-copy">
+            <span>GMV sau khi hoàn hủy</span>
+            <strong>${fmtMoney(finalizedGmv,currency)}</strong>
+            <small>Chỉ cộng số cuối cùng của các phiên đã chốt/đã đối soát · ${finalizedSessions.length}/${ss.length} phiên trong khoảng đang chọn.</small>
+          </div>
+          <span class="pill ok">Đã chốt ${finalizedSessions.length} phiên</span>
+        </div>
         ${monthlyHint}
         <div class="card dashboard-live-card"><div class="row space dashboard-live-head"><div><h3>${listTitle}</h3>${monthly?`<div class="tiny">Đang hiển thị ${visibleSessions.length} phiên thuộc 7 ngày gần nhất trên tổng ${ss.length} phiên của 30 ngày.</div>`:''}</div><div class="row"><span class="pill ok">KPI tự động dùng GMV đối soát đơn</span>${moreAction}</div></div>${renderLiveTable(visibleSessions,false)}</div>`;
       bindTimeFilter('dashboard');
