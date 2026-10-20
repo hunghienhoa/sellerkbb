@@ -24,7 +24,7 @@
 - Tách rõ 2 mức liên kết đơn: **Có tín hiệu LIVE** và **Khớp theo thời gian**. SellerKBB không coi đơn chỉ trùng thời gian là bằng chứng tuyệt đối phát sinh từ LIVE.
 - Bổ sung đọc **TikTok Orders API** và **Return/Refund API** khi token hiện tại có đủ quyền.
 - Nếu TikTok chưa cấp quyền Return/Refund, giao diện vẫn hiển thị trạng thái đơn nhưng cảnh báo rõ rằng số sau hoàn chưa phải số chốt.
-- Làm rõ lại cơ chế cũ: trước v1.33.0, trường “GMV sau hoàn/hủy” thực tế chỉ là GMV mới nhất trả về từ LIVE Performance API sau mỗi lần đồng bộ, chưa phải đối soát cấp đơn.
+- Làm rõ lại cơ chế cũ: trước v1.33.0, trường “GMV sau hoàn/hủy” thực tế chỉ là GMV mới nhất trả về từ LIVE Performance API sau mỗi lần đồng bộ. Theo định nghĩa TikTok, LIVE GMV là GMV gộp và có thể bao gồm đơn hủy/hoàn, nên không được coi là GMV ròng sau hậu mãi.
 - Đối soát hậu mãi căn cứ vào vòng đời đơn và mốc **Delivered**. Chính sách TikTok Shop Việt Nam hiện có cửa sổ trả/hoàn tới **15 ngày** với đa số ngành hàng; một số nhóm hàng chỉ **6 ngày**.
 - KPI hiện tại **chưa tự chuyển sang số đối soát cấp đơn** để tránh tính sai khi đơn chỉ được ghép theo thời gian hoặc token thiếu quyền hậu mãi.
 - Dữ liệu đối soát được cache ngắn hạn ở Cloudflare KV để tránh gọi TikTok API quá dày; nút **Làm mới** cho phép kiểm tra lại trạng thái hiện tại.
@@ -60,8 +60,9 @@ Bạn không cần hiểu hết code. Chỉ cần nhớ 4 nơi chính:
 - LIVE Analytics được quét lại hằng ngày; riêng từ v1.33.0 có thêm tab đối soát cấp đơn để xem vận chuyển/hủy/hoàn rõ ràng hơn.
 - Phiên LIVE mới **không tự chọn Host/Operator**; Admin chọn thủ công.
 - KPI mặc định:
-  - Host Livestream: **0,3% GMV cuối kỳ**.
-  - Livestream operator: **0,1% GMV cuối kỳ**.
+  - Host Livestream: **0,3% GMV dùng KPI**.
+  - Livestream operator: **0,1% GMV dùng KPI**.
+- **Lưu ý từ v1.33.0:** LIVE Analytics GMV của TikTok là GMV gộp và có thể bao gồm đơn hủy/hoàn. Vì vậy KPI tự động hiện được đánh dấu **tạm tính** cho tới khi dữ liệu đối soát cấp đơn đủ chắc chắn.
 - **Ngày Campaign/Mega Live** có thể bật chế độ KPI thủ công; Host/Operator được để trống và phiên đó không cộng KPI tự động.
 - Bộ lọc: **Hôm nay / 7 ngày / 30 Ngày / Chọn ngày**.
 - Có trang Xuất file riêng.
@@ -112,11 +113,11 @@ Nếu một phiên kéo dài nhiều giờ và nhiều người thay ca:
 
 ### 5. Xem KPI
 
-Trang **KPI nhân sự** lấy GMV cuối kỳ của các phiên hợp lệ để tính:
+Trang **KPI nhân sự** hiện lấy GMV LIVE Analytics của các phiên hợp lệ để tính **KPI tạm tính**. Không nên coi đây là KPI đã chốt sau hoàn/hủy cho tới khi phiên được đối soát cấp đơn:
 
 ```text
-Host KPI       = GMV cuối kỳ × 0,3%
-Operator KPI   = GMV cuối kỳ × 0,1%
+Host KPI tạm tính       = GMV LIVE Analytics × 0,3%
+Operator KPI tạm tính   = GMV LIVE Analytics × 0,1%
 ```
 
 ### 6. Xuất file
