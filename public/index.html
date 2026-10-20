@@ -4142,18 +4142,21 @@ tbody tr:hover td{background:#fffafb}
       const saved=normalizedManualKpiEntries(session);
       const pairs=manualKpiPairs(session);
       const rows=pairs.length?pairs:[{host:null,operator:null}];
-      const totalManual=saved.reduce((sum,e)=>sum+Math.round(Number(e.gmv||0)*(e.role==='operator'?.001:.003)),0);
+      const validation=manualKpiValidation(session,saved);
+      const totalManual=validation.countable?saved.reduce((sum,e)=>sum+Math.round(Number(e.gmv||0)*(e.role==='operator'?.001:.003)),0):0;
       const peopleCount=saved.filter(e=>e.uid||e.name).length;
-      const status=peopleCount?'Đã nhập '+peopleCount+' người':'Chưa nhập';
+      const status=validation.status==='draft'?'Đã lưu nháp':validation.status==='excess'?'Cần sửa · vượt GMV':peopleCount?'Đã nhập '+peopleCount+' người':'Chưa nhập';
+      const statusClass=validation.status==='excess'?'bad':validation.status==='draft'?'warn':validation.countable?'ok':'warn';
       return `<div class="manual-kpi-session" data-manual-session="${session.id}">
         <div class="manual-kpi-session-head">
           <div>
-            <div class="row manual-kpi-title-row"><b>${esc(session.title||'Phiên LIVE')}</b><span class="pill warn">${status}</span></div>
-            <div class="tiny">@${esc(session.channelUsername||'—')} · ${fmtLiveTimeRange(session)} · GMV phiên: ${fmtMoney(finalGmv(session),session.currency)}</div>
+            <div class="row manual-kpi-title-row"><b>${esc(session.title||'Phiên LIVE')}</b><span class="pill ${statusClass}">${status}</span></div>
+            <div class="tiny">@${esc(session.channelUsername||'—')} · ${fmtLiveTimeRange(session)} · GMV đã ghi nhận: ${fmtMoney(sessionGmvFigures(session).recorded,session.currency)}</div>
           </div>
-          <div class="manual-kpi-total"><span>KPI thủ công đã nhập</span><b>${fmtMoney(totalManual,session.currency)}</b></div>
+          <div class="manual-kpi-total"><span>KPI thủ công được tính</span><b>${fmtMoney(totalManual,session.currency)}</b></div>
         </div>
-        <div class="manual-kpi-rule">${icon('shield',15)} <span>Chọn Host Livestream và Nhân viên vận hành Livestream riêng. Nhập GMV sau hoàn/hủy của Host; KPI Host tự tính = 0,3% GMV và KPI Vận hành tự tính = 0,1% GMV Host. Không bắt buộc đủ số người tham gia và SellerKBB không tự chia GMV tổng phiên.</span></div>
+        <div class="manual-kpi-rule">${icon('shield',15)} <span>Chỉ nhập GMV sau hoàn/hủy của từng Host. Tổng GMV Host không được vượt <b>GMV sau khi hoàn hủy</b> đã chốt của phiên. Nếu phiên chưa chốt, dữ liệu được lưu nháp và chưa cộng vào KPI nhân sự.</span></div>
+        <div data-manual-balance>${manualKpiBalanceHtml(session,manualKpiHostTotal(saved))}</div>
         <div class="manual-kpi-entries">${rows.map((pair,index)=>manualKpiPairRow(session,pair,index,editable)).join('')}</div>
         ${editable?`<div class="manual-kpi-actions"><button class="btn" type="button" data-manual-add>${icon('users',15)} Thêm người</button><button class="btn primary" type="button" data-manual-save>${icon('check',15)} Lưu KPI thủ công</button></div>`:''}
       </div>`;
@@ -4191,10 +4194,21 @@ tbody tr:hover td{background:#fffafb}
       if(!session||!card)return;
       let entries;
       try{entries=collectManualKpiEntries(card,session)}catch(error){showToast(error.message||'Dữ liệu KPI thủ công chưa hợp lệ');return;}
+      const validation=manualKpiValidation(session,entries);
+      if(validation.status==='excess'){
+        updateManualKpiBalance(card,session);
+        showToast('Không thể lưu: GMV các Host vượt GMV sau khi hoàn hủy '+fmtMoney(validation.excess,session.currency));
+        return;
+      }
       session.manualKpiEntries=entries;
+      const message=validation.status==='draft'||validation.status==='waiting'
+        ?'Đã lưu nháp KPI thủ công · chưa cộng vào KPI đã chốt'
+        :validation.status==='under'
+          ?'Đã lưu KPI thủ công · còn '+fmtMoney(validation.remaining,session.currency)+' GMV chưa phân bổ'
+          :'Đã lưu KPI thủ công · GMV đã khớp với số sau hoàn hủy';
       if(PREVIEW){
         persistPreviewState();
-        showToast('Đã lưu KPI thủ công và cộng vào KPI nhân sự');
+        showToast(message);
         renderManualKpi();
         renderKpi();
         return;
@@ -4204,7 +4218,7 @@ tbody tr:hover td{background:#fffafb}
         manualKpiUpdatedAt:serverTimestamp(),
         updatedAt:serverTimestamp()
       },{merge:true});
-      showToast('Đã lưu KPI thủ công và cộng vào KPI nhân sự');
+      showToast(message);
       await loadData();
       renderAll();
     }
@@ -4221,6 +4235,7 @@ tbody tr:hover td{background:#fffafb}
           const session=state.sessions.find(s=>s.id===sessionId);
           list.insertAdjacentHTML('beforeend',manualKpiPairRow(session,{host:null,operator:null},index,true));
           bindManualKpiPair(list.lastElementChild);
+          updateManualKpiBalance(card,session);
         });
 
         card.addEventListener('click',event=>{
@@ -4235,8 +4250,19 @@ tbody tr:hover td{background:#fffafb}
               setManualMoneyInput(row.querySelector('[data-manual-host-kpi]'),0);
               setManualMoneyInput(row.querySelector('[data-manual-operator-kpi]'),0);
             }else row.remove();
+            const session=state.sessions.find(s=>s.id===sessionId);
+            updateManualKpiBalance(card,session);
           }
         });
+        card.addEventListener('input',()=>{
+          const session=state.sessions.find(s=>s.id===sessionId);
+          updateManualKpiBalance(card,session);
+        });
+        card.addEventListener('change',()=>{
+          const session=state.sessions.find(s=>s.id===sessionId);
+          updateManualKpiBalance(card,session);
+        });
+        updateManualKpiBalance(card,state.sessions.find(s=>s.id===sessionId));
 
         card.querySelector('[data-manual-save]')?.addEventListener('click',event=>saveManualKpiSession(sessionId,event.currentTarget));
       });
@@ -4245,20 +4271,21 @@ tbody tr:hover td{background:#fffafb}
     function renderManualKpi(){
       if(!isAdmin()){ $('#section-manual-kpi').innerHTML=''; return; }
       const manualSessions=sessionsForRange().filter(isManualKpi);
-      const entries=manualSessions.flatMap(normalizedManualKpiEntries);
-      const currency=manualSessions[0]?.currency||entries[0]?.currency||'VND';
-      const totalManualKpi=entries.reduce((sum,e)=>sum+Number(e.kpi||0),0);
-      const totalManualGmv=entries.reduce((sum,e)=>sum+Number(e.gmv||0),0);
-      const completed=manualSessions.filter(s=>normalizedManualKpiEntries(s).length).length;
+      const validations=manualSessions.map(session=>({session,entries:normalizedManualKpiEntries(session),validation:manualKpiValidation(session)}));
+      const countable=validations.filter(x=>x.validation.countable);
+      const drafts=validations.filter(x=>x.entries.length&&!x.validation.countable);
+      const currency=manualSessions[0]?.currency||'VND';
+      const totalManualKpi=countable.reduce((sum,x)=>sum+x.entries.reduce((s,e)=>s+Number(e.kpi||0),0),0);
+      const totalManualGmv=countable.reduce((sum,x)=>sum+manualKpiHostTotal(x.entries),0);
       $('#section-manual-kpi').innerHTML=`
         ${timeFilterHtml('manual-kpi')}
         <div class="metrics-grid metrics-4">
           ${metricCard('settings','Phiên KPI thủ công',manualSessions.length)}
-          ${metricCard('check','Đã nhập',completed+' / '+manualSessions.length)}
-          ${metricCard('money','GMV cá nhân đã nhập',fmtMoney(totalManualGmv,currency))}
-          ${metricCard('kpi','KPI thủ công đã nhập',fmtMoney(totalManualKpi,currency))}
+          ${metricCard('check','Đã đủ điều kiện',countable.length+' / '+manualSessions.length)}
+          ${metricCard('history','Nháp / cần sửa',drafts.length)}
+          ${metricCard('kpi','KPI thủ công đã chốt',fmtMoney(totalManualKpi,currency),fmtMoney(totalManualGmv,currency)+' GMV Host')}
         </div>
-        <div class="data-note">${icon('shield',16)}<span>Mỗi khung gồm Host Livestream + Nhân viên vận hành Livestream. Tiền tự định dạng VND; KPI Host tự tính 0,3% và KPI Vận hành tự tính 0,1% từ GMV Host.</span></div>
+        <div class="data-note">${icon('shield',16)}<span>KPI thủ công chỉ được cộng vào KPI nhân sự khi phiên đã có <b>GMV sau khi hoàn hủy</b> và tổng GMV các Host không vượt số đó. Thiếu GMV thì cảnh báo vàng nhưng vẫn lưu; vượt GMV thì chặn lưu; chưa có số chốt thì lưu nháp.</span></div>
         <div class="card manual-kpi-section">
           <div class="row space manual-kpi-section-head"><div><h3 class="heading-with-icon">${icon('settings',18)} Phiên cần tính KPI thủ công</h3><div class="sub">Phiên nào đã tích “Tính KPI thủ công” ở tab Phiên LIVE sẽ tự xuất hiện tại đây.</div></div><span class="pill">${manualSessions.length} phiên</span></div>
           ${manualSessions.length?`<div class="manual-kpi-session-list">${manualSessions.map(s=>manualKpiSessionCard(s,true)).join('')}</div>`:'<div class="empty">Không có phiên KPI thủ công trong khoảng thời gian này.</div>'}
