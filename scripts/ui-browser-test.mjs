@@ -173,7 +173,7 @@ try {
   assert(await page.$eval(desktopSavedRow+' select[data-person="operator"]',e=>e.value)==='',"Campaign/Mega did not clear desktop Operator");
   assert(await page.$eval(desktopSavedRow+' select[data-person="host"]',e=>e.disabled),"Campaign/Mega did not disable desktop Host");
   assert(!(await page.$eval(desktopSavedRow+' [data-manual-type-wrap]',e=>e.classList.contains('hidden'))),"Campaign/Mega type selector must appear after enabling manual KPI");
-  const manualTypeOptions=await page.$eval(desktopSavedRow+' [data-manual-type] option',els=>els.map(e=>e.textContent.trim()));
+  const manualTypeOptions=await page.$eval(desktopSavedRow+' [data-manual-type]',e=>[...e.options].map(o=>o.textContent.trim()));
   assert(manualTypeOptions.includes('Ngày Campaign')&&manualTypeOptions.includes('Mega Live'),"Campaign/Mega type options missing");
   await page.click(desktopSavedRow+' [data-save-session]');
   await sleep(80);
