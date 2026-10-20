@@ -68,6 +68,18 @@ try {
   await page.click('#accountModalClose');
   assert(await page.$eval('#accountModalBackdrop',e=>e.classList.contains('hidden')),"Account modal did not close");
 
+  await page.click('#nav [data-section="tiktok"]');
+  await page.waitForSelector('#section-tiktok [data-readiness-grid]');
+  assert((await page.$$eval('#section-tiktok [data-readiness-grid] [data-readiness-item]',els=>els.length))>=5,"Go-live readiness checklist must show Firebase, TikTok, token, scopes and sync");
+  assert(await page.$('#previewSyncNow')!==null,"Preview Sync-now button missing");
+  await page.click('#previewSyncNow');
+  await sleep(750);
+  assert(await page.$eval('#actionToast',e=>e.textContent.includes('đồng bộ 30 ngày thành công')),"Preview Sync-now flow missing success toast");
+  await page.click('#nav [data-section="storage"]');
+  assert(await page.$('#downloadBusinessBackup')!==null,"Business backup JSON button missing");
+  assert(await page.$('[data-business-backup-card]')!==null,"Business backup card missing");
+  await page.click('#nav [data-section="dashboard"]');
+
   assert(await page.$eval('#section-dashboard [data-range-mode="today"]',e=>e.classList.contains('active')),"Dashboard must default to Today");
   await page.click('#section-dashboard [data-range-mode="7d"]');
   assert(await page.$eval('#section-dashboard [data-range-mode="7d"]',e=>e.classList.contains('active')),"7-day filter did not activate");
