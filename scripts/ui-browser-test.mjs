@@ -114,6 +114,7 @@ try {
   assert(await page.$eval('#reconcileModalBody',e=>e.textContent.includes('Đang hoàn / trả')&&e.textContent.includes('Đã hoàn tiền')&&e.textContent.includes('Đã hủy')&&e.textContent.includes('Hoàn tất')),"Aftersale/final-state chips missing");
   assert(await page.$eval('#reconcileModalBody',e=>e.textContent.includes('Có tín hiệu LIVE')&&e.textContent.includes('Khớp theo thời gian')),"LIVE attribution confidence labels missing");
   assert(await page.$eval('#reconcileModalBody',e=>e.textContent.includes('Bảo vệ đối soát 60 ngày')&&e.textContent.includes('15 ngày')&&e.textContent.includes('6 ngày')),"Reconciliation retention/return-window explanation missing");
+  assert(await page.$eval('#reconcileModalBody',e=>e.textContent.includes('GMV dùng tính KPI')&&e.textContent.includes('KPI tự động:')),"Reconciliation popup KPI basis/status missing");
   const returnFilter=[...await page.$$('#reconcileModalBody [data-reconcile-filter]')];
   assert(returnFilter.length>=8,"Reconciliation filter chips missing");
   await page.$$eval('#reconcileModalBody [data-reconcile-filter]',els=>els.find(e=>e.textContent.includes('Đang hoàn'))?.click());
@@ -143,6 +144,28 @@ try {
   const desktopSavedRow='#section-live .desktop-live-table tbody tr:has([data-save-session="'+desktopId+'"])';
   assert(await page.$eval(desktopSavedRow+' select[data-person="host"]',e=>e.value)==='staff-thao-my',"Desktop Host did not persist after reload");
   assert(await page.$eval(desktopSavedRow+' select[data-person="operator"]',e=>e.value)==='staff-hung-bg',"Desktop Operator did not persist after reload");
+  const autoKpiBasis=await page.$eval(desktopSavedRow,e=>{
+    const status=e.querySelector('.kpi-state-line')?.textContent.trim()||'';
+    const gmv=Number((status.split('·')[1]||'').replace(/[^0-9]/g,'')||0);
+    const grossCells=[...e.querySelectorAll('td.money')].map(x=>Number(x.textContent.replace(/[^0-9]/g,'')||0));
+    return {status,gmv,gross:grossCells[grossCells.length-1]||0};
+  });
+  assert(autoKpiBasis.status.includes('Đã chốt')&&autoKpiBasis.gmv>0,"Preview auto session must expose a finalized reconciled KPI basis");
+  assert(autoKpiBasis.gmv!==autoKpiBasis.gross,"Automatic KPI basis must differ from gross LIVE GMV in Preview");
+  await page.click('#nav [data-section="kpi"]');
+  await page.click('#section-kpi [data-range-mode="30d"]');
+  assert(await page.$eval('#section-kpi .kpi-rate-guide',e=>e.textContent.includes('KPI tự động không dùng GMV LIVE TikTok gộp')),"KPI guide must reject gross LIVE GMV");
+  assert(await page.$eval('#section-kpi',e=>e.textContent.includes('KPI đã chốt')&&e.textContent.includes('KPI tạm tính')&&e.textContent.includes('KPI dự kiến')&&e.textContent.includes('Chờ đối soát')),"KPI final/provisional/waiting summary labels missing");
+  const autoKpiRows=await page.$eval('#section-kpi tbody tr',rows=>rows.map(row=>{
+    const cells=[...row.querySelectorAll('td')].map(x=>x.textContent.trim());
+    return {name:cells[0]||'',finalKpi:Number((cells[5]||'').replace(/[^0-9]/g,'')||0)};
+  }));
+  const hostAuto=autoKpiRows.find(x=>x.name.includes('Thảo My'));
+  const operatorAuto=autoKpiRows.find(x=>x.name.includes('Hùng Bắc Giang'));
+  assert(hostAuto?.finalKpi===Math.round(autoKpiBasis.gmv*.003),"Host automatic KPI must use reconciled GMV at 0.3%");
+  assert(operatorAuto?.finalKpi===Math.round(autoKpiBasis.gmv*.001),"Operator automatic KPI must use reconciled GMV at 0.1%");
+  await page.click('#nav [data-section="live"]');
+  await page.click('#section-live [data-range-mode="30d"]');
 
   await page.click(desktopSavedRow+' [data-manual-kpi]');
   assert(await page.$eval(desktopSavedRow+' select[data-person="host"]',e=>e.value)==='',"Campaign/Mega did not clear desktop Host");
@@ -204,6 +227,7 @@ try {
   assert(await page.$eval('#section-kpi',e=>e.textContent.includes('3.702')),"Host 0.3% KPI was not added to KPI nhân sự");
   assert(await page.$eval('#section-kpi',e=>e.textContent.includes('1.234')),"Operator 0.1% KPI was not added to KPI nhân sự");
   assert(await page.$eval('#section-kpi',e=>e.textContent.includes('1.234.000')),"Manual Host GMV was not added to KPI nhân sự");
+  assert(await page.$eval('#section-kpi',e=>e.textContent.includes('KPI thủ công được coi là đã chốt')),"Manual KPI must be described as finalized");
   assert(await page.$('#section-kpi [data-manual-save]')===null,"KPI nhân sự must not contain manual KPI save controls");
 
   await page.reload({waitUntil:"domcontentloaded"});

@@ -11,6 +11,10 @@ const GITHUB_REPO_CACHE_KEY = "maintenance:github_repo";
 const LIVE_RECONCILE_CACHE_PREFIX = "reconcile:live:";
 const LIVE_RECONCILE_CACHE_TTL_SECONDS = 600;
 const RECONCILIATION_PROTECTION_DAYS = 60;
+const KPI_RECONCILE_HOURLY_MAX_SESSIONS = 2;
+const KPI_RECONCILE_DAILY_MAX_SESSIONS = 6;
+const KPI_RECONCILE_HOURLY_LOOKBACK_SECONDS = 3 * 86400;
+const KPI_RECONCILE_DAILY_LOOKBACK_SECONDS = RECONCILIATION_PROTECTION_DAYS * 86400;
 const DEFAULT_MAINTENANCE = {
   retentionDays: 180,
   autoCleanup: true,
@@ -469,19 +473,26 @@ async function hydrateOrderDetails(env, accessToken, shopCipher, orders) {
   return [...byId.values()];
 }
 
-async function searchReturnsForOrder(env, accessToken, shopCipher, orderId) {
-  const result = await tiktokCall(env, accessToken, "/return_refund/202309/returns/search", {
-    shop_cipher: shopCipher,
-    page_size: 100
-  }, "POST", { order_ids: String(orderId) });
-  if (result.payload?.code !== 0) {
-    return { available: false, error: result.payload?.message || "Return & Refund API unavailable", records: [] };
-  }
-  return {
-    available: true,
-    error: "",
-    records: Array.isArray(result.payload?.data?.return_orders) ? result.payload.data.return_orders : []
-  };
+async function searchReturnsForOrders(env, accessToken, shopCipher, orderIds) {
+  const ids = [...new Set((orderIds || []).map(x => String(x || "")).filter(Boolean))];
+  if (!ids.length) return { available: true, error: "", records: [] };
+  const records = [];
+  let pageToken = "";
+  do {
+    const query = { shop_cipher: shopCipher, page_size: 100 };
+    if (pageToken) query.page_token = pageToken;
+    const result = await tiktokCall(env, accessToken, "/return_refund/202309/returns/search", query, "POST", {
+      order_ids: ids.join(",")
+    });
+    if (result.payload?.code !== 0) {
+      return { available: false, error: result.payload?.message || "Return & Refund API unavailable", records: [] };
+    }
+    const data = result.payload?.data || {};
+    const pageRecords = data.return_orders || data.returns || [];
+    if (Array.isArray(pageRecords)) records.push(...pageRecords);
+    pageToken = data.next_page_token || "";
+  } while (pageToken && records.length < 5000);
+  return { available: true, error: "", records };
 }
 
 function normalizeReconcileOrder(order, aftersales, fallbackCurrency) {
@@ -494,7 +505,7 @@ function normalizeReconcileOrder(order, aftersales, fallbackCurrency) {
   const cancelled = status === "CANCELLED";
   const netAmount = cancelled ? 0 : Math.max(0, amount - refundAmount);
   const autoCombineOrderId = String(order?.auto_combine_order_id || "");
-  const finalized = status === "COMPLETED" && active.length === 0;
+  const finalized = cancelled || (status === "COMPLETED" && active.length === 0);
   const deliveredAt = orderDeliveredTime(order);
   return {
     id: String(order?.id || ""),
@@ -520,30 +531,47 @@ function normalizeReconcileOrder(order, aftersales, fallbackCurrency) {
   };
 }
 
-async function buildLiveReconciliation(env, accessToken, liveId) {
-  const sessions = await getAutoSyncData(env);
-  const session = sessions.find(x => String(x?.liveId || "") === String(liveId || ""));
+async function buildLiveReconciliationForSession(env, accessToken, session, options = {}) {
   if (!session) throw new Error("Không tìm thấy phiên LIVE trong dữ liệu TikTok đang lưu.");
-  const orders = await hydrateOrderDetails(
-    env,
-    accessToken,
-    session.shopCipher,
-    await searchOrdersForLiveWindow(env, accessToken, session)
-  );
+  const hydrateDetails = options.hydrateDetails !== false;
+  const listedOrders = await searchOrdersForLiveWindow(env, accessToken, session);
+  const orders = hydrateDetails
+    ? await hydrateOrderDetails(env, accessToken, session.shopCipher, listedOrders)
+    : listedOrders;
 
   const aftersalesById = new Map();
   let aftersalesPermissionMissing = false;
-  for (let i = 0; i < orders.length; i += 6) {
-    const batch = orders.slice(i, i + 6);
-    const results = await Promise.all(batch.map(async order => {
-      if (String(order?.status || order?.order_status || "") === "CANCELLED") {
-        return [String(order?.id || ""), { available: true, error: "", records: [] }];
-      }
-      const value = await searchReturnsForOrder(env, accessToken, session.shopCipher, order?.id);
-      if (!value.available) aftersalesPermissionMissing = true;
-      return [String(order?.id || ""), value];
-    }));
-    for (const [id, value] of results) aftersalesById.set(id, value);
+  const eligibleOrderIds = orders
+    .filter(order => String(order?.status || order?.order_status || "") !== "CANCELLED")
+    .map(order => String(order?.id || ""))
+    .filter(Boolean);
+
+  for (let i = 0; i < eligibleOrderIds.length; i += 50) {
+    const batchIds = eligibleOrderIds.slice(i, i + 50);
+    const value = await searchReturnsForOrders(env, accessToken, session.shopCipher, batchIds);
+    if (!value.available) aftersalesPermissionMissing = true;
+    const grouped = new Map(batchIds.map(id => [id, []]));
+    for (const record of value.records || []) {
+      const orderId = String(record?.order_id || record?.order?.id || "");
+      if (orderId && grouped.has(orderId)) grouped.get(orderId).push(record);
+    }
+    for (const id of batchIds) {
+      aftersalesById.set(id, {
+        available: value.available,
+        error: value.error || "",
+        records: grouped.get(id) || []
+      });
+    }
+  }
+
+  for (const order of orders) {
+    const id = String(order?.id || "");
+    if (!id) continue;
+    if (String(order?.status || order?.order_status || "") === "CANCELLED") {
+      aftersalesById.set(id, { available: true, error: "", records: [] });
+    } else if (!aftersalesById.has(id)) {
+      aftersalesById.set(id, { available: !aftersalesPermissionMissing, error: "", records: [] });
+    }
   }
 
   const normalized = orders
@@ -582,7 +610,7 @@ async function buildLiveReconciliation(env, accessToken, liveId) {
     if (order.aftersales.some(x => aftersaleState(x) === "refunded")) counts.refunded++;
   }
 
-  return {
+  const result = {
     ok: true,
     generatedAt: new Date().toISOString(),
     live: {
@@ -612,6 +640,129 @@ async function buildLiveReconciliation(env, accessToken, liveId) {
     },
     orders: normalized
   };
+  result.kpiSummary = summarizeLiveReconciliation(result);
+  return result;
+}
+
+function summarizeLiveReconciliation(result) {
+  const orders = Array.isArray(result?.orders) ? result.orders : [];
+  const analyticsGmvAmount = moneyNumber(result?.live?.analyticsGmvAmount);
+  const orderWindowAmount = moneyNumber(result?.totals?.orderWindowAmount);
+  const netAmount = moneyNumber(result?.totals?.provisionalNetAmount);
+  const aftersalesAvailable = result?.scope?.aftersalesAvailable !== false;
+  const hasOrderData = orders.length > 0 || analyticsGmvAmount === 0;
+  const amountDataAvailable = orderWindowAmount > 0 || analyticsGmvAmount === 0;
+  const usableForKpi = aftersalesAvailable && hasOrderData && amountDataAvailable;
+  const allFinal = usableForKpi && orders.every(order => order?.finalized === true);
+  const liveSignalOrders = orders.filter(order => order?.attribution === "live_signal").length;
+  const timeWindowOrders = Math.max(0, orders.length - liveSignalOrders);
+  let status = "provisional";
+  let reason = "";
+  if (!aftersalesAvailable) {
+    status = "blocked";
+    reason = "Thiếu quyền hoặc dữ liệu Return/Refund; chưa dùng số này để tính KPI.";
+  } else if (!hasOrderData || !amountDataAvailable) {
+    status = "waiting";
+    reason = "Chưa lấy đủ dữ liệu đơn để tính KPI.";
+  } else if (allFinal) {
+    status = "final";
+    reason = "Tất cả đơn trong đối soát đã ở trạng thái kết thúc và không còn hậu mãi đang xử lý.";
+  } else {
+    reason = "KPI đang tạm tính và sẽ tự thay đổi khi đơn giao, hủy hoặc hoàn tiền cập nhật.";
+  }
+  return {
+    status,
+    usableForKpi,
+    gmvAmount: usableForKpi ? netAmount : 0,
+    analyticsGmvAmount,
+    orderWindowAmount,
+    confirmedLiveSignalAmount: moneyNumber(result?.totals?.confirmedLiveSignalAmount),
+    orderCount: orders.length,
+    pendingOrderCount: orders.filter(order => order?.finalized !== true).length,
+    cancelledCount: Number(result?.counts?.cancelled || 0),
+    returningCount: Number(result?.counts?.returning || 0),
+    refundedCount: Number(result?.counts?.refunded || 0),
+    aftersalesAvailable,
+    liveSignalOrders,
+    timeWindowOrders,
+    attribution: timeWindowOrders === 0 && liveSignalOrders > 0 ? "live_signal" : (liveSignalOrders > 0 ? "mixed" : "time_window"),
+    generatedAt: result?.generatedAt || new Date().toISOString(),
+    finalizedAt: allFinal ? (result?.generatedAt || new Date().toISOString()) : "",
+    reason
+  };
+}
+
+async function buildLiveReconciliation(env, accessToken, liveId, options = {}) {
+  const sessions = await getAutoSyncData(env);
+  const session = sessions.find(x => String(x?.liveId || "") === String(liveId || ""));
+  if (!session) throw new Error("Không tìm thấy phiên LIVE trong dữ liệu TikTok đang lưu.");
+  return buildLiveReconciliationForSession(env, accessToken, session, options);
+}
+
+async function persistReconciliationSummary(env, liveId, summary) {
+  if (!env.TIKTOK_KV || !liveId || !summary) return false;
+  const sessions = await getAutoSyncData(env);
+  const target = sessions.find(x => String(x?.liveId || "") === String(liveId));
+  if (!target) return false;
+  target.reconciliation = summary;
+  await env.TIKTOK_KV.put(AUTO_SYNC_DATA_KEY, JSON.stringify(sessions));
+  return true;
+}
+
+function reconciliationGeneratedMs(summary) {
+  const ms = Date.parse(String(summary?.generatedAt || ""));
+  return Number.isFinite(ms) ? ms : 0;
+}
+
+async function refreshKpiReconciliations(env, accessToken, sessions, reason = "hourly") {
+  const nowSeconds = Math.floor(Date.now() / 1000);
+  const daily = reason === "daily_reconcile";
+  const lookback = daily ? KPI_RECONCILE_DAILY_LOOKBACK_SECONDS : KPI_RECONCILE_HOURLY_LOOKBACK_SECONDS;
+  const maxSessions = daily ? KPI_RECONCILE_DAILY_MAX_SESSIONS : KPI_RECONCILE_HOURLY_MAX_SESSIONS;
+  const minRefreshMs = daily ? 18 * 3600000 : 45 * 60000;
+
+  const candidates = (sessions || [])
+    .filter(session => {
+      const end = Number(session?.endTimeSeconds || 0);
+      if (!session?.liveId || !session?.shopCipher || !end || end > nowSeconds) return false;
+      if (nowSeconds - end > lookback) return false;
+      if (session?.reconciliation?.status === "final") return false;
+      const last = reconciliationGeneratedMs(session?.reconciliation);
+      return !last || Date.now() - last >= minRefreshMs;
+    })
+    .sort((a, b) => {
+      const aMissing = a?.reconciliation ? 1 : 0;
+      const bMissing = b?.reconciliation ? 1 : 0;
+      if (aMissing !== bMissing) return aMissing - bMissing;
+      return reconciliationGeneratedMs(a?.reconciliation) - reconciliationGeneratedMs(b?.reconciliation);
+    })
+    .slice(0, maxSessions);
+
+  let refreshed = 0;
+  let finalized = 0;
+  let blocked = 0;
+  const errors = [];
+  for (const session of candidates) {
+    try {
+      const result = await buildLiveReconciliationForSession(env, accessToken, session, { hydrateDetails: false });
+      session.reconciliation = result.kpiSummary;
+      refreshed++;
+      if (result.kpiSummary?.status === "final") finalized++;
+      if (result.kpiSummary?.status === "blocked") blocked++;
+    } catch (error) {
+      session.reconciliation = {
+        status: "blocked",
+        usableForKpi: false,
+        gmvAmount: 0,
+        analyticsGmvAmount: moneyNumber(session?.gmvAmount),
+        generatedAt: new Date().toISOString(),
+        reason: String(error?.message || error)
+      };
+      blocked++;
+      errors.push({ liveId: String(session?.liveId || ""), message: String(error?.message || error) });
+    }
+  }
+  return { checked: candidates.length, refreshed, finalized, blocked, errors: errors.slice(0, 5) };
 }
 
 async function syncLivePerformance(env, accessToken, startDate, endDate) {
@@ -701,7 +852,14 @@ async function runAutoSync(env, lookbackDays = 2, reason = "hourly") {
       if (Number(item?.startTimeSeconds || 0) >= cutoffSeconds && item?.liveId) byId.set(String(item.liveId), item);
     }
     for (const item of data.sessions || []) {
-      if (item?.liveId) byId.set(String(item.liveId), item);
+      if (!item?.liveId) continue;
+      const id = String(item.liveId);
+      const previous = byId.get(id) || {};
+      byId.set(id, {
+        ...previous,
+        ...item,
+        reconciliation: previous?.reconciliation || item?.reconciliation || null
+      });
     }
 
     const merged = [...byId.values()]
@@ -709,6 +867,7 @@ async function runAutoSync(env, lookbackDays = 2, reason = "hourly") {
       .sort((a, b) => Number(b.startTimeSeconds || 0) - Number(a.startTimeSeconds || 0))
       .slice(0, Math.min(12000, Number(settings.firestoreMaxSessions || 12000)));
 
+    const reconciliation = await refreshKpiReconciliations(env, token.access_token, merged, reason);
     const nextRaw = JSON.stringify(merged);
     const oldRaw = JSON.stringify(existing);
     if (nextRaw !== oldRaw) await env.TIKTOK_KV.put(AUTO_SYNC_DATA_KEY, nextRaw);
@@ -722,7 +881,8 @@ async function runAutoSync(env, lookbackDays = 2, reason = "hourly") {
       windowEndExclusive: endDate,
       fetched: Number(data.sessions?.length || 0),
       cached: merged.length,
-      tokenRefreshed: Boolean(tokenResult.refreshed)
+      tokenRefreshed: Boolean(tokenResult.refreshed),
+      reconciliation
     };
     await writeAutoSyncStatus(env, status);
     return status;
@@ -871,14 +1031,22 @@ async function handleApi(request, env) {
     if (!force && env.TIKTOK_KV) {
       const cachedRaw = await env.TIKTOK_KV.get(cacheKey);
       if (cachedRaw) {
-        try { return json({ ...JSON.parse(cachedRaw), cached: true }); } catch {}
+        try {
+          const cachedResult = JSON.parse(cachedRaw);
+          cachedResult.kpiSummary = cachedResult.kpiSummary || summarizeLiveReconciliation(cachedResult);
+          await persistReconciliationSummary(env, liveId, cachedResult.kpiSummary);
+          return json({ ...cachedResult, cached: true });
+        } catch {}
       }
     }
     const token = await getTikTokToken(env);
     if (!token?.access_token) return json({ error: "tiktok_not_connected", message: "TikTok chưa được kết nối." }, 503);
     try {
-      const result = await buildLiveReconciliation(env, token.access_token, liveId);
-      if (env.TIKTOK_KV) await env.TIKTOK_KV.put(cacheKey, JSON.stringify(result), { expirationTtl: LIVE_RECONCILE_CACHE_TTL_SECONDS });
+      const result = await buildLiveReconciliation(env, token.access_token, liveId, { hydrateDetails: true });
+      if (env.TIKTOK_KV) {
+        await env.TIKTOK_KV.put(cacheKey, JSON.stringify(result), { expirationTtl: LIVE_RECONCILE_CACHE_TTL_SECONDS });
+        await persistReconciliationSummary(env, liveId, result.kpiSummary);
+      }
       return json({ ...result, cached: false });
     } catch (e) {
       return json({ error: "reconcile_failed", message: String(e?.message || e) }, 502);

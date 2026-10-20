@@ -4,7 +4,7 @@
 
 ### Báo cáo TikTok LIVE · KPI nhân sự · Tự đồng bộ 24/24
 
-**Phiên bản hiện tại: v1.35.0**
+**Phiên bản hiện tại: v1.36.0**
 
 [![GitHub Release](https://img.shields.io/github/v/release/hunghienhoa/sellerkbb?label=Release)](https://github.com/hunghienhoa/sellerkbb/releases)
 [![GitHub Actions](https://img.shields.io/github/actions/workflow/status/hunghienhoa/sellerkbb/deploy.yml?branch=main&label=Ki%E1%BB%83m%20tra%20%26%20Backup)](https://github.com/hunghienhoa/sellerkbb/actions)
@@ -17,17 +17,23 @@
 
 ---
 
-## 🆕 Cập nhật mới nhất — v1.35.0
+## 🆕 Cập nhật mới nhất — v1.36.0
 
-- Đổi luồng **Xem đơn** của tab **Đối soát đơn LIVE** sang **popup riêng** theo Option A.
-- Khi bấm **Xem đơn**, nút này của đúng phiên đang mở sẽ tự **ẩn đi** để tránh bấm lặp.
-- Trên điện thoại, popup chiếm **toàn bộ màn hình**; trên PC dùng modal lớn ở giữa màn hình.
-- Khi popup mở, SellerKBB **khóa cuộn nền** và chỉ cho cuộn bên trong danh sách đơn, tránh vuốt quá tay sang phiên LIVE khác.
-- Nút **Làm mới** được chuyển vào header của popup; card phiên bên ngoài chỉ còn hành động **Xem đơn**.
-- Popup có nút **Đóng (×)**, hỗ trợ phím **Esc** trên máy tính và tự trả focus về nút Xem đơn sau khi đóng.
-- Các bộ lọc trạng thái và card đơn của v1.34.0 được giữ nguyên bên trong popup.
-- Bộ kiểm thử desktop/mobile được bổ sung để kiểm tra popup, khóa scroll nền, full-screen mobile, ẩn/hiện lại nút Xem đơn và lọc trạng thái.
-- README và GitHub Release được cập nhật cùng phiên bản.
+- Sửa triệt để cơ chế **KPI tự động**: không còn lấy **GMV LIVE TikTok gộp** để tính KPI.
+- KPI tự động nay dùng **GMV đối soát cấp đơn sau hủy/hoàn đã biết**.
+- Host Livestream = **0,3%** GMV đối soát; Nhân viên vận hành Livestream = **0,1%** GMV đối soát của cùng phiên.
+- Tách rõ 3 trạng thái:
+  - **KPI tạm tính**: đối soát đã có nhưng vẫn còn đơn/hậu mãi chưa kết thúc.
+  - **KPI đã chốt**: toàn bộ đơn đối soát đã ở trạng thái kết thúc và không còn hậu mãi đang xử lý.
+  - **Chờ đối soát**: thiếu Orders/Return & Refund hoặc chưa lấy đủ dữ liệu; SellerKBB **không lấy GMV gộp để tính thay**.
+- KPI thủ công được coi là phần **đã chốt** vì Admin tự nhập GMV sau hoàn/hủy của từng Host.
+- Trang KPI nhân sự hiển thị riêng **KPI đã chốt / KPI tạm tính / KPI dự kiến / phiên chờ đối soát**.
+- CSV KPI xuất riêng các cột GMV/KPI đã chốt, tạm tính, thủ công và số phiên chờ đối soát.
+- CSV phiên LIVE đổi tên cột GMV gộp rõ ràng và bổ sung **GMV đối soát dùng KPI + trạng thái KPI**.
+- Backend tự đối soát KPI khi cron chạy: ưu tiên phiên gần đây mỗi giờ và tiếp tục rà phiên chưa chốt trong vòng bảo vệ 60 ngày ở lượt hằng ngày.
+- Tối ưu Return/Refund API bằng cách tra nhiều order ID theo batch thay vì gọi từng đơn, giảm số request và giúp đối soát tự động ổn định hơn.
+- Khi bấm **Xem đơn / Làm mới**, kết quả đối soát cũng cập nhật ngay GMV dùng KPI của phiên.
+- README, kiểm thử và GitHub Release được cập nhật cùng phiên bản.
 
 ---
 
@@ -60,7 +66,7 @@ Bạn không cần hiểu hết code. Chỉ cần nhớ 4 nơi chính:
 - KPI mặc định:
   - Host Livestream: **0,3% GMV dùng KPI**.
   - Livestream operator: **0,1% GMV dùng KPI**.
-- **Lưu ý từ v1.33.0:** LIVE Analytics GMV của TikTok là GMV gộp và có thể bao gồm đơn hủy/hoàn. Vì vậy KPI tự động hiện được đánh dấu **tạm tính** cho tới khi dữ liệu đối soát cấp đơn đủ chắc chắn.
+- **Từ v1.36.0:** LIVE Analytics GMV của TikTok chỉ còn là số tham khảo. KPI tự động lấy **GMV đối soát cấp đơn**; không fallback sang GMV gộp nếu đối soát chưa đủ dữ liệu.
 - **Ngày Campaign/Mega Live** có thể bật chế độ KPI thủ công; Host/Operator được để trống và phiên đó không cộng KPI tự động.
 - Bộ lọc: **Hôm nay / 7 ngày / 30 Ngày / Chọn ngày**.
 - Có trang Xuất file riêng.
@@ -111,12 +117,18 @@ Nếu một phiên kéo dài nhiều giờ và nhiều người thay ca:
 
 ### 5. Xem KPI
 
-Trang **KPI nhân sự** hiện lấy GMV LIVE Analytics của các phiên hợp lệ để tính **KPI tạm tính**. Không nên coi đây là KPI đã chốt sau hoàn/hủy cho tới khi phiên được đối soát cấp đơn:
+Trang **KPI nhân sự** từ v1.36.0 dùng GMV đối soát cấp đơn:
 
 ```text
-Host KPI tạm tính       = GMV LIVE Analytics × 0,3%
-Operator KPI tạm tính   = GMV LIVE Analytics × 0,1%
+Host KPI       = GMV đối soát sau hủy/hoàn × 0,3%
+Operator KPI   = GMV đối soát sau hủy/hoàn × 0,1%
 ```
+
+- **KPI tạm tính:** đã có dữ liệu Orders + Return/Refund nhưng còn đơn chưa kết thúc.
+- **KPI đã chốt:** toàn bộ đơn đã ở trạng thái kết thúc và không còn hậu mãi đang xử lý.
+- **Chờ đối soát:** SellerKBB chưa có đủ dữ liệu để tính; hệ thống không lấy GMV Analytics gộp để thay thế.
+- **KPI dự kiến = KPI đã chốt + KPI tạm tính.**
+- **KPI thủ công** được cộng vào phần đã chốt vì Admin nhập trực tiếp GMV sau hoàn/hủy của cá nhân.
 
 ### 6. Xuất file
 
@@ -136,7 +148,8 @@ Vào tab **Đối soát đơn LIVE**:
 8. Nếu chỉ khớp theo giờ tạo đơn, hệ thống ghi **Khớp theo thời gian** để tránh hiểu nhầm là đã xác minh tuyệt đối.
 9. Dùng các thẻ trạng thái phía trên danh sách để lọc nhanh đơn cần kiểm tra.
 10. Đóng popup bằng nút **×**; khi đóng, nút **Xem đơn** của phiên đó hiện lại.
-11. Số **Giá trị sau hủy/hoàn đã biết** chỉ phản ánh dữ liệu SellerKBB đọc được tại thời điểm đó; không tự dùng thay KPI nếu dữ liệu hậu mãi chưa đầy đủ.
+11. Số **GMV dùng tính KPI** trong popup chính là GMV đối soát cấp đơn. Nếu còn đơn/hậu mãi chưa kết thúc thì KPI ở trạng thái **Tạm tính**; khi đủ điều kiện sẽ tự chuyển **Đã chốt**.
+12. Nếu thiếu quyền/dữ liệu Return & Refund, phiên chuyển sang **Chờ đối soát** và không cộng GMV gộp vào KPI.
 
 > **Vì sao chưa chốt ngay sau khi giao?** Người mua vẫn có thể mở yêu cầu trả/hoàn sau khi đơn ở trạng thái Delivered. Với chính sách TikTok Shop Việt Nam hiện hành, cửa sổ này có thể tới 15 ngày với đa số nhóm hàng và 6 ngày với một số nhóm hàng. Vì vậy muốn gọi là “GMV đã chốt” phải dựa trên trạng thái đơn + hậu mãi, không chỉ dựa vào ngày LIVE.
 
@@ -224,8 +237,8 @@ Hiểu đơn giản:
 Cloudflare Cron hiện dùng:
 
 ```text
-0 * * * *    → mỗi giờ: kiểm tra token + đồng bộ LIVE gần đây
-15 3 * * *   → mỗi ngày: đối soát 30 ngày + dọn KV
+0 * * * *    → mỗi giờ: kiểm tra token + đồng bộ LIVE gần đây + cập nhật KPI đối soát các phiên mới
+15 3 * * *   → mỗi ngày: quét LIVE 30 ngày + tiếp tục đối soát các phiên chưa chốt trong vùng bảo vệ 60 ngày + dọn KV
 ```
 
 Access Token có thể hết hạn nhanh. Backend dùng **Refresh Token** để xin Access Token mới trước khi hết hạn. Nếu TikTok thu hồi quyền hoặc Refresh Token hết hiệu lực thì mới phải cấp quyền lại.
