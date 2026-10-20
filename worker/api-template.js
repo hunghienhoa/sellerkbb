@@ -707,49 +707,69 @@ function summarizeLiveReconciliation(result) {
   const liveSignalOrderRows = orders.filter(order => order?.attribution === "live_signal");
   const provisionalTimeWindowRows = orders.filter(order => order?.attribution === "time_window_single_live");
   const excludedTimeWindowRows = orders.filter(order => order?.attribution === "time_window");
-  const kpiOrderRows = [...liveSignalOrderRows, ...provisionalTimeWindowRows];
+  const singleLiveKpiRows = [...liveSignalOrderRows, ...provisionalTimeWindowRows];
 
   const liveSignalOrders = liveSignalOrderRows.length;
   const provisionalTimeWindowOrders = provisionalTimeWindowRows.length;
   const timeWindowOrders = provisionalTimeWindowRows.length + excludedTimeWindowRows.length;
-  const timeWindowNetAmount = [...provisionalTimeWindowRows, ...excludedTimeWindowRows]
-    .reduce((sum, order) => sum + moneyNumber(order?.netAmount), 0);
-  const excludedTimeWindowAmount = excludedTimeWindowRows
-    .reduce((sum, order) => sum + moneyNumber(order?.netAmount), 0);
-  const provisionalTimeWindowAmount = provisionalTimeWindowRows
-    .reduce((sum, order) => sum + moneyNumber(order?.netAmount), 0);
-  const kpiGmvAmount = kpiOrderRows.reduce((sum, order) => sum + moneyNumber(order?.netAmount), 0);
+  const provisionalTimeWindowAmount = provisionalTimeWindowRows.reduce((sum, order) => sum + moneyNumber(order?.netAmount), 0);
+  const excludedTimeWindowAmount = excludedTimeWindowRows.reduce((sum, order) => sum + moneyNumber(order?.netAmount), 0);
+  const timeWindowNetAmount = provisionalTimeWindowAmount + excludedTimeWindowAmount;
+  const singleLiveKpiGmvAmount = singleLiveKpiRows.reduce((sum, order) => sum + moneyNumber(order?.netAmount), 0);
 
-  const hasKpiOrderData = kpiOrderRows.length > 0 || analyticsGmvAmount === 0;
-  const usableForKpi = !overlapAmbiguous && aftersalesAvailable && hasKpiOrderData;
-  const allFinal = usableForKpi && kpiOrderRows.every(order => order?.finalized === true);
+  const overlapOrderGross = orders.reduce((sum, order) => sum + moneyNumber(order?.amount), 0);
+  const overlapOrderNet = orders.reduce((sum, order) => sum + moneyNumber(order?.netAmount), 0);
+  const overlapAdjustmentRatio = overlapOrderGross > 0
+    ? Math.max(0, Math.min(1, overlapOrderNet / overlapOrderGross))
+    : 1;
+  const overlapAdjustedGmvAmount = Math.round(analyticsGmvAmount * overlapAdjustmentRatio);
+  const overlapProrated = overlapAmbiguous && analyticsGmvAmount > 0;
+
+  const hasSingleLiveData = singleLiveKpiRows.length > 0 || analyticsGmvAmount === 0;
+  const hasOverlapData = overlapProrated && orders.length > 0;
+  const usableForKpi = aftersalesAvailable && (overlapAmbiguous ? hasOverlapData : hasSingleLiveData);
+  const finalRows = overlapAmbiguous ? orders : singleLiveKpiRows;
+  const allFinal = usableForKpi && finalRows.every(order => order?.finalized === true);
 
   let status = "provisional";
   let reason = "";
-  if (overlapAmbiguous) {
-    status = "blocked";
-    reason = "Có " + overlapCount + " phiên LIVE nội bộ chồng thời gian. Các đơn không có tín hiệu LIVE riêng không thể xác định thuộc phiên nào, nên SellerKBB khóa KPI tự động để tránh gán nhầm.";
-  } else if (!aftersalesAvailable) {
+  let gmvAmount = 0;
+
+  if (!aftersalesAvailable) {
     status = "blocked";
     reason = "TikTok Return/Refund chưa đọc được" + (aftersalesError ? ": " + aftersalesError : ".") + " SellerKBB chưa dùng số này để tính KPI.";
-  } else if (!hasKpiOrderData) {
+  } else if (overlapAmbiguous) {
+    if (!hasOverlapData) {
+      status = "waiting";
+      reason = "Hai kênh nội bộ có LIVE chồng giờ nhưng chưa có đủ đơn trong khung thời gian để tính tỷ lệ hủy/hoàn.";
+    } else {
+      gmvAmount = overlapAdjustedGmvAmount;
+      status = allFinal ? "final" : "provisional";
+      reason = allFinal
+        ? "LIVE nội bộ chồng giờ đã được xử lý: SellerKBB dùng GMV TikTok Analytics riêng của phiên và áp dụng tỷ lệ hủy/hoàn từ các đơn trong đúng khung giờ. Toàn bộ đơn đối soát đã kết thúc nên số này đã chốt."
+        : "LIVE nội bộ chồng giờ đã được xử lý: SellerKBB dùng GMV TikTok Analytics riêng của phiên và áp dụng tỷ lệ hủy/hoàn từ các đơn trong đúng khung giờ. Không gán cùng một đơn trực tiếp cho hai phiên; số này sẽ tự cập nhật khi đơn hủy/hoàn thay đổi.";
+    }
+  } else if (!hasSingleLiveData) {
     status = "waiting";
     reason = "Chưa tìm thấy đơn trong khung thời gian phiên LIVE để tính KPI.";
-  } else if (allFinal) {
-    status = "final";
-    reason = provisionalTimeWindowOrders > 0
-      ? "Đã chốt theo quy tắc một kênh nội bộ LIVE trong khung giờ; toàn bộ đơn dùng cho KPI đã kết thúc và không còn hậu mãi đang xử lý."
-      : "Toàn bộ đơn có tín hiệu LIVE dùng cho KPI đã kết thúc và không còn hậu mãi đang xử lý.";
-  } else if (provisionalTimeWindowOrders > 0) {
-    reason = "Chỉ có một kênh nội bộ LIVE trong khung giờ, nên " + provisionalTimeWindowOrders + " đơn khớp thời gian được tính KPI tạm tính. GMV sẽ tự giảm khi đơn hủy/hoàn và chỉ chốt khi các đơn đủ điều kiện kết thúc.";
   } else {
-    reason = "GMV chờ đối soát gồm các đơn có tín hiệu LIVE và sẽ tự cập nhật khi trạng thái giao, hủy hoặc hoàn tiền thay đổi.";
+    gmvAmount = singleLiveKpiGmvAmount;
+    if (allFinal) {
+      status = "final";
+      reason = provisionalTimeWindowOrders > 0
+        ? "Đã chốt theo quy tắc một kênh nội bộ LIVE trong khung giờ; toàn bộ đơn dùng cho KPI đã kết thúc và không còn hậu mãi đang xử lý."
+        : "Toàn bộ đơn có tín hiệu LIVE dùng cho KPI đã kết thúc và không còn hậu mãi đang xử lý.";
+    } else if (provisionalTimeWindowOrders > 0) {
+      reason = "Chỉ có một kênh nội bộ LIVE trong khung giờ, nên " + provisionalTimeWindowOrders + " đơn khớp thời gian được tính KPI tạm tính. GMV sẽ tự giảm khi đơn hủy/hoàn và chỉ chốt khi các đơn đủ điều kiện kết thúc.";
+    } else {
+      reason = "GMV chờ đối soát gồm các đơn có tín hiệu LIVE và sẽ tự cập nhật khi trạng thái giao, hủy hoặc hoàn tiền thay đổi.";
+    }
   }
 
   return {
     status,
     usableForKpi,
-    gmvAmount: usableForKpi ? kpiGmvAmount : 0,
+    gmvAmount: usableForKpi ? gmvAmount : 0,
     analyticsGmvAmount,
     orderWindowAmount,
     confirmedLiveSignalAmount,
@@ -757,8 +777,8 @@ function summarizeLiveReconciliation(result) {
     excludedTimeWindowAmount,
     timeWindowNetAmount,
     orderCount: orders.length,
-    kpiOrderCount: kpiOrderRows.length,
-    pendingOrderCount: kpiOrderRows.filter(order => order?.finalized !== true).length,
+    kpiOrderCount: overlapAmbiguous ? orders.length : singleLiveKpiRows.length,
+    pendingOrderCount: finalRows.filter(order => order?.finalized !== true).length,
     cancelledCount: Number(result?.counts?.cancelled || 0),
     returningCount: Number(result?.counts?.returning || 0),
     refundedCount: Number(result?.counts?.refunded || 0),
@@ -766,12 +786,19 @@ function summarizeLiveReconciliation(result) {
     aftersalesError,
     overlapAmbiguous,
     overlapCount,
+    overlapProrated,
+    overlapOrderGross,
+    overlapOrderNet,
+    overlapAdjustmentRatio,
+    overlapAdjustedGmvAmount,
     liveSignalOrders,
     provisionalTimeWindowOrders,
     timeWindowOrders,
-    attribution: provisionalTimeWindowOrders > 0
-      ? (liveSignalOrders > 0 ? "mixed_single_live" : "time_window_single_live")
-      : (liveSignalOrders > 0 ? "live_signal" : "time_window"),
+    attribution: overlapProrated
+      ? "overlap_prorated"
+      : (provisionalTimeWindowOrders > 0
+          ? (liveSignalOrders > 0 ? "mixed_single_live" : "time_window_single_live")
+          : (liveSignalOrders > 0 ? "live_signal" : "time_window")),
     generatedAt: result?.generatedAt || new Date().toISOString(),
     finalizedAt: allFinal ? (result?.generatedAt || new Date().toISOString()) : "",
     reason
