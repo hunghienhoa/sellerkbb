@@ -71,6 +71,18 @@ assert(html.includes("60 ngày · tối thiểu để đối soát"), "60-day mi
 assert(html.includes("Chờ đóng hàng")&&html.includes("Chờ vận chuyển")&&html.includes("Đang vận chuyển")&&html.includes("Đang giao"), "Expanded reconciliation shipping status labels missing");
 assert(html.includes("Đang hoàn / trả")&&html.includes("Đã hoàn tiền")&&html.includes("Đã hủy")&&html.includes("Hoàn tất"), "Expanded reconciliation aftersale/final status labels missing");
 assert(html.includes("reconcile-filter-chip")&&html.includes("reconcile-order-card"), "Redesigned reconciliation filters/cards missing");
+assert(html.includes('id="reconcileModalBackdrop"'), "Reconciliation modal backdrop missing");
+assert(html.includes('id="reconcileModalBody"'), "Reconciliation modal body missing");
+assert(html.includes("function openReconciliationModal"), "Reconciliation modal open handler missing");
+assert(html.includes("function closeReconciliationModal"), "Reconciliation modal close handler missing");
+assert(html.includes("body.reconcile-modal-open{overflow:hidden!important;touch-action:none}"), "Background scroll lock for reconciliation modal missing");
+assert(html.includes("height:100dvh")&&html.includes(".reconcile-modal-backdrop{")&&html.includes("place-items:stretch"), "Mobile full-screen reconciliation modal styling missing");
+assert(html.includes('data-reconcile-open="'), "Reconciliation card open action missing");
+assert(!html.includes('data-reconcile-load="'), "Legacy inline reconciliation load action must be removed");
+assert(!html.includes('data-reconcile-result="'), "Legacy inline reconciliation result container must be removed");
+assert(html.includes("state.reconcileModalSessionId===session.id"), "Open reconciliation card must hide its Xem đơn button");
+assert(html.includes("if(state.reconcileModalSessionId&&id!==state.section)closeReconciliationModal()"), "Section navigation must close reconciliation modal safely without interrupting same-section refreshes");
+assert(read("README.md").includes("popup riêng")&&read("README.md").includes("khóa cuộn nền"), "README popup behavior missing");
 const hoverMediaStart=html.indexOf("@media(hover:hover){");
 const globalReconCss=html.indexOf(".reconcile-list{display:grid;gap:12px}");
 const firstHoverClose=html.indexOf("\n}",hoverMediaStart);

@@ -4,7 +4,7 @@
 
 ### Báo cáo TikTok LIVE · KPI nhân sự · Tự đồng bộ 24/24
 
-**Phiên bản hiện tại: v1.34.0**
+**Phiên bản hiện tại: v1.35.0**
 
 [![GitHub Release](https://img.shields.io/github/v/release/hunghienhoa/sellerkbb?label=Release)](https://github.com/hunghienhoa/sellerkbb/releases)
 [![GitHub Actions](https://img.shields.io/github/actions/workflow/status/hunghienhoa/sellerkbb/deploy.yml?branch=main&label=Ki%E1%BB%83m%20tra%20%26%20Backup)](https://github.com/hunghienhoa/sellerkbb/actions)
@@ -17,19 +17,17 @@
 
 ---
 
-## 🆕 Cập nhật mới nhất — v1.34.0
+## 🆕 Cập nhật mới nhất — v1.35.0
 
-- Thiết kế lại hoàn toàn tab **Đối soát đơn LIVE** để dễ đọc trên cả PC và điện thoại.
-- Sửa lỗi CSS đối soát trước đây nằm trong `@media(hover:hover)`, khiến thiết bị cảm ứng/mobile có thể hiển thị chữ và số liệu dính vào nhau.
-- Mỗi phiên LIVE nay hiển thị gọn thành một card; bấm **Xem đơn** mới mở chi tiết.
-- Thêm bộ lọc trạng thái bằng thẻ: **Chờ đóng hàng / Chờ vận chuyển / Đang vận chuyển / Đang giao / Đã giao / Đang hoàn-trả / Đã hoàn tiền / Đã hủy / Hoàn tất / Đang xử lý**.
-- Mỗi đơn hiển thị dạng card riêng với mã đơn, giá trị đơn, trạng thái giao hàng, trạng thái hậu mãi, mức liên kết LIVE và số tiền sau hủy/hoàn đã biết.
-- Bản Preview có sẵn đủ các trạng thái trên để kiểm tra trực tiếp, không dùng ảnh minh họa.
-- Bổ sung **vùng bảo vệ đối soát tối thiểu 60 ngày**. Phiên LIVE trong 60 ngày gần nhất không bị tự dọn, kể cả khi Firestore chạm ngưỡng dọn khẩn cấp.
-- Thời gian lưu dữ liệu LIVE cho phép từ **60–180 ngày**; cấu hình cũ 30 ngày sẽ tự được nâng lên 60 ngày.
-- Cache đối soát ở Cloudflare KV vẫn chỉ là cache ngắn hạn và có thể hết hạn/xóa để tiết kiệm dung lượng; khi cần SellerKBB gọi lại TikTok, nên không làm mất dữ liệu nguồn.
-- Auto-sync rolling cache cũng tuân theo mốc giữ dữ liệu tối thiểu 60 ngày, bảo đảm backend còn thông tin phiên để đối soát.
-- README, kiểm thử desktop/mobile và GitHub Release được cập nhật cùng phiên bản.
+- Đổi luồng **Xem đơn** của tab **Đối soát đơn LIVE** sang **popup riêng** theo Option A.
+- Khi bấm **Xem đơn**, nút này của đúng phiên đang mở sẽ tự **ẩn đi** để tránh bấm lặp.
+- Trên điện thoại, popup chiếm **toàn bộ màn hình**; trên PC dùng modal lớn ở giữa màn hình.
+- Khi popup mở, SellerKBB **khóa cuộn nền** và chỉ cho cuộn bên trong danh sách đơn, tránh vuốt quá tay sang phiên LIVE khác.
+- Nút **Làm mới** được chuyển vào header của popup; card phiên bên ngoài chỉ còn hành động **Xem đơn**.
+- Popup có nút **Đóng (×)**, hỗ trợ phím **Esc** trên máy tính và tự trả focus về nút Xem đơn sau khi đóng.
+- Các bộ lọc trạng thái và card đơn của v1.34.0 được giữ nguyên bên trong popup.
+- Bộ kiểm thử desktop/mobile được bổ sung để kiểm tra popup, khóa scroll nền, full-screen mobile, ẩn/hiện lại nút Xem đơn và lọc trạng thái.
+- README và GitHub Release được cập nhật cùng phiên bản.
 
 ---
 
@@ -130,12 +128,15 @@ Vào tab **Đối soát đơn LIVE**:
 
 1. Chọn khoảng thời gian cần kiểm tra.
 2. Chọn phiên LIVE và bấm **Xem đơn**.
-3. SellerKBB lấy các đơn được tạo trong đúng khung thời gian phiên đó.
-4. Mỗi đơn được gắn thẻ rõ: **Chờ đóng hàng / Chờ vận chuyển / Đang vận chuyển / Đang giao / Đã giao / Hoàn tất / Đã hủy**; nếu có hậu mãi sẽ ưu tiên thẻ **Đang hoàn/trả / Đã hoàn tiền**.
-5. Nếu đơn có tín hiệu liên kết LIVE từ dữ liệu đơn, hệ thống ghi **Có tín hiệu LIVE**.
-6. Nếu chỉ khớp theo giờ tạo đơn, hệ thống ghi **Khớp theo thời gian** để tránh hiểu nhầm là đã xác minh tuyệt đối.
-7. Dùng các thẻ trạng thái phía trên danh sách để lọc nhanh đơn cần kiểm tra.
-8. Số **Giá trị sau hủy/hoàn đã biết** chỉ phản ánh dữ liệu SellerKBB đọc được tại thời điểm đó; không tự dùng thay KPI nếu dữ liệu hậu mãi chưa đầy đủ.
+3. SellerKBB mở một **popup riêng**; trên mobile popup chiếm toàn màn hình và khóa cuộn trang phía sau.
+4. Nút **Xem đơn** của phiên đang mở sẽ tạm ẩn; dùng **Làm mới** trong popup nếu muốn lấy trạng thái mới nhất.
+5. SellerKBB lấy các đơn được tạo trong đúng khung thời gian phiên đó.
+6. Mỗi đơn được gắn thẻ rõ: **Chờ đóng hàng / Chờ vận chuyển / Đang vận chuyển / Đang giao / Đã giao / Hoàn tất / Đã hủy**; nếu có hậu mãi sẽ ưu tiên thẻ **Đang hoàn/trả / Đã hoàn tiền**.
+7. Nếu đơn có tín hiệu liên kết LIVE từ dữ liệu đơn, hệ thống ghi **Có tín hiệu LIVE**.
+8. Nếu chỉ khớp theo giờ tạo đơn, hệ thống ghi **Khớp theo thời gian** để tránh hiểu nhầm là đã xác minh tuyệt đối.
+9. Dùng các thẻ trạng thái phía trên danh sách để lọc nhanh đơn cần kiểm tra.
+10. Đóng popup bằng nút **×**; khi đóng, nút **Xem đơn** của phiên đó hiện lại.
+11. Số **Giá trị sau hủy/hoàn đã biết** chỉ phản ánh dữ liệu SellerKBB đọc được tại thời điểm đó; không tự dùng thay KPI nếu dữ liệu hậu mãi chưa đầy đủ.
 
 > **Vì sao chưa chốt ngay sau khi giao?** Người mua vẫn có thể mở yêu cầu trả/hoàn sau khi đơn ở trạng thái Delivered. Với chính sách TikTok Shop Việt Nam hiện hành, cửa sổ này có thể tới 15 ngày với đa số nhóm hàng và 6 ngày với một số nhóm hàng. Vì vậy muốn gọi là “GMV đã chốt” phải dựa trên trạng thái đơn + hậu mãi, không chỉ dựa vào ngày LIVE.
 

@@ -104,19 +104,29 @@ try {
   const reconcileCount=(await page.$$('#section-reconcile .reconcile-session')).length;
   assert(reconcileCount>=1,"LIVE reconciliation session cards missing");
   const reconcileCard='#section-reconcile .reconcile-session:first-of-type';
-  await page.click(reconcileCard+' [data-reconcile-load]');
-  await page.waitForSelector(reconcileCard+' .reconcile-overview');
-  assert((await page.$$(reconcileCard+' .reconcile-order-card')).length>=8,"LIVE reconciliation order cards missing");
-  assert(await page.$eval(reconcileCard,e=>e.textContent.includes('Chờ đóng hàng')&&e.textContent.includes('Chờ vận chuyển')&&e.textContent.includes('Đang vận chuyển')&&e.textContent.includes('Đang giao')),"Shipping-state chips missing");
-  assert(await page.$eval(reconcileCard,e=>e.textContent.includes('Đang hoàn / trả')&&e.textContent.includes('Đã hoàn tiền')&&e.textContent.includes('Đã hủy')&&e.textContent.includes('Hoàn tất')),"Aftersale/final-state chips missing");
-  assert(await page.$eval(reconcileCard,e=>e.textContent.includes('Có tín hiệu LIVE')&&e.textContent.includes('Khớp theo thời gian')),"LIVE attribution confidence labels missing");
-  assert(await page.$eval(reconcileCard,e=>e.textContent.includes('Bảo vệ đối soát 60 ngày')&&e.textContent.includes('15 ngày')&&e.textContent.includes('6 ngày')),"Reconciliation retention/return-window explanation missing");
-  const returnFilter=[...await page.$$(reconcileCard+' [data-reconcile-filter]')];
+  const desktopOpenButton=reconcileCard+' [data-reconcile-open]';
+  await page.click(desktopOpenButton);
+  await page.waitForSelector('#reconcileModalBackdrop:not(.hidden) #reconcileModalBody .reconcile-overview');
+  assert(await page.$eval(desktopOpenButton,e=>e.classList.contains('hidden')),"Xem đơn must hide while its popup is open");
+  assert(await page.$eval('body',e=>e.classList.contains('reconcile-modal-open')),"Reconciliation popup must lock background scroll");
+  assert((await page.$('#reconcileModalBody .reconcile-order-card')).length>=8,"LIVE reconciliation order cards missing in popup");
+  assert(await page.$eval('#reconcileModalBody',e=>e.textContent.includes('Chờ đóng hàng')&&e.textContent.includes('Chờ vận chuyển')&&e.textContent.includes('Đang vận chuyển')&&e.textContent.includes('Đang giao')),"Shipping-state chips missing");
+  assert(await page.$eval('#reconcileModalBody',e=>e.textContent.includes('Đang hoàn / trả')&&e.textContent.includes('Đã hoàn tiền')&&e.textContent.includes('Đã hủy')&&e.textContent.includes('Hoàn tất')),"Aftersale/final-state chips missing");
+  assert(await page.$eval('#reconcileModalBody',e=>e.textContent.includes('Có tín hiệu LIVE')&&e.textContent.includes('Khớp theo thời gian')),"LIVE attribution confidence labels missing");
+  assert(await page.$eval('#reconcileModalBody',e=>e.textContent.includes('Bảo vệ đối soát 60 ngày')&&e.textContent.includes('15 ngày')&&e.textContent.includes('6 ngày')),"Reconciliation retention/return-window explanation missing");
+  const returnFilter=[...await page.$('#reconcileModalBody [data-reconcile-filter]')];
   assert(returnFilter.length>=8,"Reconciliation filter chips missing");
-  await page.$$eval(reconcileCard+' [data-reconcile-filter]',els=>els.find(e=>e.textContent.includes('Đang hoàn'))?.click());
+  await page.$eval('#reconcileModalBody [data-reconcile-filter]',els=>els.find(e=>e.textContent.includes('Đang hoàn'))?.click());
   await sleep(80);
-  const visibleReturnCards=await page.$$eval(reconcileCard+' .reconcile-order-card',els=>els.filter(e=>!e.hidden).map(e=>e.dataset.orderState));
+  const visibleReturnCards=await page.$eval('#reconcileModalBody .reconcile-order-card',els=>els.filter(e=>!e.hidden).map(e=>e.dataset.orderState));
   assert(visibleReturnCards.length===1&&visibleReturnCards[0]==='returning',"Reconciliation status filtering failed");
+  await page.click('#reconcileModalRefresh');
+  await page.waitForFunction(()=>!document.querySelector('#reconcileModalRefresh')?.disabled);
+  assert(await page.$('#reconcileModalBody .reconcile-overview')!==null,"Reconciliation refresh must keep popup content");
+  await page.click('#reconcileModalClose');
+  await page.waitForFunction(()=>document.querySelector('#reconcileModalBackdrop')?.classList.contains('hidden'));
+  assert(!(await page.$eval('body',e=>e.classList.contains('reconcile-modal-open'))),"Closing reconciliation popup must unlock background scroll");
+  assert(!(await page.$eval(desktopOpenButton,e=>e.classList.contains('hidden'))),"Xem đơn must reappear after popup closes");
   await page.click('#nav [data-section="live"]');
   await page.click('#section-live [data-range-mode="30d"]');
 
@@ -372,24 +382,43 @@ try {
   assert(await page.$eval('#section-reconcile',e=>e.classList.contains('active')),"Mobile reconciliation section did not activate");
   await page.click('#section-reconcile [data-range-mode="30d"]');
   const mobileReconcile='#section-reconcile .reconcile-session:first-of-type';
-  await page.click(mobileReconcile+' [data-reconcile-load]');
-  await page.waitForSelector(mobileReconcile+' .reconcile-order-grid');
-  const mobileReconLayout=await page.$eval(mobileReconcile,e=>{
+  const mobileOpenButton=mobileReconcile+' [data-reconcile-open]';
+  const pageScrollBefore=await page.evaluate(()=>window.scrollY);
+  await page.click(mobileOpenButton);
+  await page.waitForSelector('#reconcileModalBackdrop:not(.hidden) #reconcileModalBody .reconcile-order-grid');
+  const mobileReconLayout=await page.$eval('#reconcileModal',e=>{
     const grid=e.querySelector('.reconcile-order-grid');
     const card=e.querySelector('.reconcile-order-card');
+    const body=e.querySelector('#reconcileModalBody');
+    const r=e.getBoundingClientRect();
     return {
       columns:getComputedStyle(grid).gridTemplateColumns,
       cardWidth:card?.getBoundingClientRect().width||0,
-      rootWidth:e.getBoundingClientRect().width,
+      rootWidth:r.width,
+      rootHeight:r.height,
+      vw:innerWidth,
+      vh:innerHeight,
       overflow:e.scrollWidth>e.clientWidth+2,
+      bodyOverflowY:getComputedStyle(body).overflowY,
+      bodyTouchAction:getComputedStyle(body).touchAction,
       text:e.textContent
     };
   });
-  assert(!mobileReconLayout.overflow,"Mobile reconciliation must not overflow horizontally");
+  assert(!mobileReconLayout.overflow,"Mobile reconciliation popup must not overflow horizontally");
   assert(!mobileReconLayout.columns.includes(' '),"Mobile reconciliation order grid must be one column");
-  assert(mobileReconLayout.cardWidth<=mobileReconLayout.rootWidth+1,"Mobile reconciliation card must fit session width");
+  assert(mobileReconLayout.cardWidth<=mobileReconLayout.rootWidth+1,"Mobile reconciliation card must fit popup width");
+  assert(Math.abs(mobileReconLayout.rootWidth-mobileReconLayout.vw)<2&&Math.abs(mobileReconLayout.rootHeight-mobileReconLayout.vh)<3,"Mobile reconciliation popup must fill the viewport");
+  assert(mobileReconLayout.bodyOverflowY==='auto'||mobileReconLayout.bodyOverflowY==='scroll',"Mobile popup content must scroll internally");
   assert(mobileReconLayout.text.includes('Chờ đóng hàng')&&mobileReconLayout.text.includes('Đang giao')&&mobileReconLayout.text.includes('Đang hoàn / trả'),"Mobile reconciliation status tags missing");
-  assert(await page.$eval(mobileReconcile+' .reconcile-retention-note',e=>e.textContent.includes('60 ngày')),"Mobile reconciliation 60-day protection note missing");
+  assert(await page.$eval('#reconcileModalBody .reconcile-retention-note',e=>e.textContent.includes('60 ngày')),"Mobile reconciliation 60-day protection note missing");
+  assert(await page.$eval('body',e=>getComputedStyle(e).overflow==='hidden'),"Mobile popup must lock page background scrolling");
+  assert(await page.$eval(mobileOpenButton,e=>e.classList.contains('hidden')),"Mobile Xem đơn button must hide while popup is open");
+  await page.evaluate(()=>{const body=document.querySelector('#reconcileModalBody');body.scrollTop=body.scrollHeight;});
+  await sleep(60);
+  assert(await page.evaluate(()=>window.scrollY)===pageScrollBefore,"Scrolling reconciliation popup must not move the page behind it");
+  await page.click('#reconcileModalClose');
+  await page.waitForFunction(()=>document.querySelector('#reconcileModalBackdrop')?.classList.contains('hidden'));
+  assert(!(await page.$eval(mobileOpenButton,e=>e.classList.contains('hidden'))),"Mobile Xem đơn button must return after popup closes");
 
   await page.$eval('#nav [data-section="live"]',e=>e.click());
   await sleep(320);
