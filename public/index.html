@@ -2823,7 +2823,7 @@ tbody tr:hover td{background:#fffafb}
       <header class="topbar">
         <div class="topbar-title-wrap"><button id="menuToggle" class="menu-toggle" type="button" aria-label="Mở menu" aria-expanded="false">☰</button><div><h1 id="pageTitle" class="page-title">Tổng quan</h1><div id="pageSub" class="tiny"></div></div></div>
         <div class="topbar-right">
-          <span id="syncBadge" class="pill">v1.45.2</span>
+          <span id="syncBadge" class="pill">v1.46.0</span>
           <div class="account-menu-wrap">
             <button id="topbarAccountBtn" class="topbar-account-btn" type="button" aria-expanded="false" aria-controls="accountPopover" aria-label="Mở thông tin tài khoản">
               <img id="userAvatar" class="avatar topbar-account-avatar" alt="Ảnh đại diện Google">
@@ -3187,7 +3187,7 @@ tbody tr:hover td{background:#fffafb}
 
     function previewTs(iso){ return {toDate:()=>new Date(iso)}; }
     function enterPreview(){
-      state.config={version:'1.45.2-preview',tiktokConfigured:true};
+      state.config={version:'1.46.0-preview',tiktokConfigured:true};
       state.user={uid:'preview-admin',email:'admin@sellerkbb.demo',displayName:'Quản trị viên Demo',photoURL:avatarFallbackData('Quản trị viên Demo')};
       state.profile={role:'admin',status:'approved',displayName:'Quản trị viên Demo',photoURL:state.user.photoURL,permissions:['live.read','kpi.read']};
       state.maintenance={settings:{retentionDays:180,autoCleanup:true,emergencyPercent:85,firestoreSoftLimitMb:600,firestoreMaxSessions:12000,kvSoftKeyLimit:5000},github:{usedBytes:124000,limitBytes:10000000000,available:true},cloudflare:{keyCount:5,lastRun:{ranAt:new Date().toISOString(),deleted:0},usedBytes:428000,storageLimitBytes:1000000000,storageComplete:true},firebase:{freePlanMode:true,ttlEnabled:false,ttlRecommended:false,storageLimitBytes:1073741824}};
@@ -3660,21 +3660,25 @@ tbody tr:hover td{background:#fffafb}
       const orderWindow=Number(result?.totals?.orderWindowAmount||0);
       const confirmedLiveSignalAmount=Number(result?.totals?.confirmedLiveSignalAmount||0);
       const aftersalesAvailable=result?.scope?.aftersalesAvailable!==false;
+      const overlapAmbiguous=result?.scope?.overlapAmbiguous===true;
+      const overlapCount=Number(result?.scope?.overlapCount||0);
       const liveSignalRows=orders.filter(order=>order?.attribution==='live_signal');
       const timeWindowRows=orders.filter(order=>order?.attribution!=='live_signal');
       const liveSignalOrders=liveSignalRows.length;
       const timeWindowOrders=timeWindowRows.length;
       const timeWindowNetAmount=timeWindowRows.reduce((sum,order)=>sum+Number(order?.netAmount||0),0);
-      const usable=aftersalesAvailable&&(liveSignalOrders>0||analytics===0);
+      const usable=!overlapAmbiguous&&aftersalesAvailable&&(liveSignalOrders>0||analytics===0);
       const allFinal=usable&&liveSignalRows.every(order=>order?.status==='CANCELLED'||order?.status==='COMPLETED');
-      const status=!aftersalesAvailable?'blocked':!usable?'waiting':allFinal?'final':'provisional';
-      const reason=!aftersalesAvailable
-        ?'Thiếu quyền hoặc dữ liệu Return/Refund; chưa dùng số này để tính KPI.'
-        :!usable
-          ?'Chưa có đơn đủ tín hiệu LIVE để tính KPI; đơn chỉ khớp theo thời gian không được cộng.'
-          :allFinal
-            ?'Toàn bộ đơn có tín hiệu LIVE dùng cho KPI đã kết thúc hậu mãi.'
-            :'GMV chờ đối soát chỉ gồm đơn có tín hiệu LIVE và sẽ tự cập nhật khi trạng thái đơn thay đổi.';
+      const status=overlapAmbiguous?'blocked':!aftersalesAvailable?'blocked':!usable?'waiting':allFinal?'final':'provisional';
+      const reason=overlapAmbiguous
+        ?'Phát hiện '+overlapCount+' phiên LIVE cùng shop bị chồng thời gian. SellerKBB khóa KPI tự động để tránh gán nhầm đơn giữa các phiên.'
+        :!aftersalesAvailable
+          ?'Thiếu quyền hoặc dữ liệu Return/Refund; chưa dùng số này để tính KPI.'
+          :!usable
+            ?'Chưa có đơn đủ tín hiệu LIVE để tính KPI; đơn chỉ khớp theo thời gian không được cộng.'
+            :allFinal
+              ?'Toàn bộ đơn có tín hiệu LIVE dùng cho KPI đã kết thúc hậu mãi.'
+              :'GMV chờ đối soát chỉ gồm đơn có tín hiệu LIVE và sẽ tự cập nhật khi trạng thái đơn thay đổi.';
       return {
         status,
         usableForKpi:usable,
@@ -3690,6 +3694,8 @@ tbody tr:hover td{background:#fffafb}
         returningCount:Number(result?.counts?.returning||0),
         refundedCount:Number(result?.counts?.refunded||0),
         aftersalesAvailable,
+        overlapAmbiguous,
+        overlapCount,
         liveSignalOrders,
         timeWindowOrders,
         attribution:liveSignalOrders>0?(timeWindowOrders>0?'mixed':'live_signal'):'time_window',
@@ -3934,7 +3940,7 @@ tbody tr:hover td{background:#fffafb}
       const counts={total:orders.length,awaitingPacking:1,awaitingCarrier:1,transporting:1,outForDelivery:2,delivered:2,completed:1,cancelled:1,returning:1,refunded:1};
       const result={
         live:{analyticsGmvAmount:finalGmv(session)},
-        scope:{aftersalesAvailable:true},
+        scope:{aftersalesAvailable:true,overlapAmbiguous:false,overlapCount:0},
         policy:{reconciliationProtectionDays:60},
         counts,
         totals:{
@@ -5138,6 +5144,48 @@ tbody tr:hover td{background:#fffafb}
       return ids.length;
     }
 
+    function businessBackupValue(value){
+      if(value===null||value===undefined)return value??null;
+      if(typeof value?.toDate==='function'){
+        const d=value.toDate();
+        return d instanceof Date&&!Number.isNaN(d.getTime())?d.toISOString():null;
+      }
+      if(value instanceof Date)return value.toISOString();
+      if(Array.isArray(value))return value.map(businessBackupValue);
+      if(typeof value==='object'){
+        const out={};
+        for(const [key,item] of Object.entries(value)){
+          if(typeof item==='function')continue;
+          out[key]=businessBackupValue(item);
+        }
+        return out;
+      }
+      return value;
+    }
+
+    function downloadBusinessBackup(){
+      if(!isAdmin()){showToast('Chỉ Admin mới được tải backup dữ liệu');return;}
+      const payload={
+        schema:'sellerkbb-business-backup-v1',
+        appVersion:state.config?.version||'1.46.0',
+        createdAt:new Date().toISOString(),
+        note:'Backup nghiệp vụ không chứa TikTok access/refresh token, App Secret, Firebase service account, Cloudflare API token hoặc cookie đăng nhập.',
+        liveSessions:businessBackupValue(state.sessions),
+        staffMembers:businessBackupValue(state.staff),
+        users:businessBackupValue(state.users.map(u=>({id:u.id,email:u.email||'',displayName:u.displayName||'',photoURL:u.photoURL||'',role:u.role||'',status:u.status||'',permissions:Array.isArray(u.permissions)?u.permissions:[]}))),
+        maintenanceSettings:businessBackupValue(state.maintenance.settings)
+      };
+      const blob=new Blob([JSON.stringify(payload,null,2)],{type:'application/json;charset=utf-8'});
+      const a=document.createElement('a');
+      const href=URL.createObjectURL(blob);
+      a.href=href;
+      a.download='sellerkbb-business-backup-'+localDateKey(new Date())+'.json';
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(()=>URL.revokeObjectURL(href),0);
+      showToast('Đã tạo backup dữ liệu nghiệp vụ · hãy lưu file ở nơi an toàn');
+    }
     function renderStorage(){
       if(!isAdmin()){ $('#section-storage').innerHTML=''; return; }
       const m=state.maintenance.settings, st=maintenanceStats();
@@ -5192,6 +5240,11 @@ tbody tr:hover td{background:#fffafb}
           <div class="row storage-actions"><button id="saveMaintenance" class="btn primary">${icon('check',15)} Lưu và áp dụng</button><button id="cleanupNow" class="btn">${icon('database',15)} Dọn dữ liệu ngay</button><button id="runKvCleanup" class="btn">${icon('shield',15)} Kiểm tra Cloudflare</button></div>
         </div>
 
+        <div class="card" data-business-backup-card>
+          <div class="row space"><div><h3 class="heading-with-icon">${icon('export',18)} Backup dữ liệu nghiệp vụ</h3><div class="sub">Tải một file JSON chứa phiên LIVE, gắn Host/Vận hành, KPI thủ công, danh sách nhân sự, tài khoản/phân quyền và cài đặt dọn dữ liệu. File không chứa TikTok token hoặc secret.</div></div><button id="downloadBusinessBackup" class="btn">${icon('export',15)} Tải backup JSON</button></div>
+          <div class="notice" style="margin-top:12px"><b>Khuyến nghị:</b> tải backup trước khi kết nối TikTok thật, trước thay đổi lớn và tối thiểu mỗi tuần khi hệ thống đã vận hành.</div>
+        </div>
+
         <div class="card free-plan-note">
           <h3 class="heading-with-icon">${icon('shield',18)} Chế độ Firebase Free</h3>
           <div class="notice ok"><b>Không dùng Firestore TTL trả phí.</b> SellerKBB chỉ đọc tối đa dữ liệu trong thời gian lưu và tự dọn tối đa 300 phiên quá hạn mỗi lượt; phiên trong 60 ngày gần nhất không nằm trong danh sách xóa.</div>
@@ -5211,6 +5264,7 @@ tbody tr:hover td{background:#fffafb}
       $('#saveMaintenance').onclick=saveMaintenanceSettings;
       $('#cleanupNow').onclick=async()=>{ const n=await cleanupFirestoreData(false); if(!PREVIEW&&n) await loadData(); showToast(n?`Đã xóa ${n} phiên cũ`:'Không có dữ liệu cần xóa'); renderAll(); };
       $('#runKvCleanup').onclick=async()=>{ if(PREVIEW){ showToast('Preview: Cloudflare KV đang trong vùng an toàn'); return; } const result=await api('/api/maintenance/run',{method:'POST'}); showToast(`Cloudflare: đã kiểm tra ${result.keyCount||0} khóa, xóa ${result.deleted||0}`); await loadData(); renderAll(); };
+      $('#downloadBusinessBackup').onclick=downloadBusinessBackup;
     }
 
     async function saveMaintenanceSettings(){
@@ -5237,6 +5291,11 @@ tbody tr:hover td{background:#fffafb}
       renderAll();
     }
 
+    function readinessItem(ok,label,detail,warn=false){
+      const tone=ok?'ok':warn?'warn':'bad';
+      const mark=ok?'✓':warn?'!':'×';
+      return `<div class="status-item" data-readiness-item="${esc(label)}"><span class="pill ${tone}">${mark}</span><div><span>${esc(label)}</span><b>${esc(detail)}</b></div></div>`;
+    }
     async function renderTikTok(){
       if(!isAdmin()){ $('#section-tiktok').innerHTML='';return; }
       if(PREVIEW){
@@ -5246,23 +5305,50 @@ tbody tr:hover td{background:#fffafb}
             <div class="api-hero-copy"><span class="eyebrow">TikTok Shop Seller API</span><h3>Kết nối liên tục 24/24</h3><p>Dữ liệu LIVE tự được đồng bộ mỗi giờ. Không cần chọn ngày và không cần bấm đồng bộ thủ công.</p></div>
             <span class="status-dot ok">Đang hoạt động</span>
           </div>
+          <div class="card" data-readiness-card>
+            <div class="row space"><div><h3 class="heading-with-icon">${icon('shield',18)} Kiểm tra sẵn sàng chạy thật</h3><div class="sub">Preview mô phỏng trạng thái đã cấu hình để bạn xem giao diện trước khi nhập Firebase/TikTok thật.</div></div><span class="pill ok">✓ Sẵn sàng mẫu</span></div>
+            <div class="status-grid" data-readiness-grid>
+              ${readinessItem(true,'Firebase','Đã cấu hình Web App + Google Auth')}
+              ${readinessItem(true,'TikTok App','Đủ App Key / Secret / Service ID / URL')}
+              ${readinessItem(true,'Seller Token','Có Access Token + Refresh Token')}
+              ${readinessItem(true,'Scopes','Analytics + Order + Return/Refund')}
+              ${readinessItem(true,'Đồng bộ','Cron + đồng bộ gần nhất hoạt động')}
+            </div>
+          </div>
           <div class="status-grid">
             <div class="status-item">${icon('refresh')}<div><span>Refresh Token</span><b>Tự gia hạn trước khi Access Token hết hạn</b></div></div>
             <div class="status-item">${icon('sync')}<div><span>Đồng bộ tự động</span><b>Mỗi 1 giờ · chạy 24/24</b></div></div>
             <div class="status-item">${icon('history')}<div><span>Đối soát số liệu</span><b>Mỗi ngày rà lại 30 ngày gần nhất</b></div></div>
           </div>
-          <div class="api-foot"><div><b>LIVE Performance API</b><span>/analytics/202509/shop_lives/performance</span></div><button class="btn" id="previewSync">${icon('check')} Kiểm tra kết nối</button></div>`;
+          <div class="api-foot"><div><b>LIVE Performance API</b><span>/analytics/202509/shop_lives/performance</span></div><div class="row"><button class="btn primary" id="previewSyncNow">${icon('sync')} Đồng bộ ngay</button><button class="btn" id="previewSync">${icon('check')} Kiểm tra kết nối</button></div></div>`;
         $('#previewSync').onclick=()=>showToast('Kết nối TikTok mẫu hoạt động bình thường');
+        $('#previewSyncNow').onclick=async()=>{
+          const button=$('#previewSyncNow');
+          button.disabled=true; button.setAttribute('aria-busy','true'); button.innerHTML=icon('refresh',14)+' Đang đồng bộ...';
+          state.autoSyncRefreshing=true; renderDashboard();
+          await new Promise(r=>setTimeout(r,650));
+          state.autoSyncStatus={ok:true,reason:'manual-preview',finishedAt:new Date().toISOString(),cached:state.sessions.length};
+          state.autoSyncRefreshing=false; button.disabled=false; button.removeAttribute('aria-busy'); button.innerHTML=icon('sync')+' Đồng bộ ngay';
+          showToast('Preview: đã mô phỏng đồng bộ 30 ngày thành công');
+        };
         return;
       }
 
-      let status={configured:state.config.tiktokConfigured,connected:false,autoRefresh:false,autoSyncEnabled:true,autoSync:null,grantedScopes:[]};
+      let status={configured:state.config.tiktokConfigured,connected:false,autoRefresh:false,autoSyncEnabled:true,autoSync:null,grantedScopes:[],readiness:null};
       try{status=await api('/api/tiktok/status')}catch(e){status.error=e.message}
       const accessExpiry=status.accessTokenExpiresAt?fmtDate({toDate:()=>new Date(status.accessTokenExpiresAt*1000)}):'Chưa có';
       const refreshExpiry=status.refreshTokenExpiresAt?fmtDate({toDate:()=>new Date(status.refreshTokenExpiresAt*1000)}):'Chưa có';
       const sync=status.autoSync||{};
       const lastSync=sync.finishedAt?fmtDate({toDate:()=>new Date(sync.finishedAt)}):'Chưa chạy';
       const syncState=status.connected?(sync.ok===false?'Có lỗi cần kiểm tra':'Đang hoạt động'):'Chưa kết nối';
+      const readiness=status.readiness||{};
+      const checks=readiness.checks||{};
+      const readinessReady=readiness.state==='ready';
+      const readinessWarn=readiness.state==='verify_scopes';
+      const readinessLabel=readinessReady?'✓ Sẵn sàng':readinessWarn?'! Kiểm tra scopes':'Chưa sẵn sàng';
+      const scopeDetail=readiness.scopesReported
+        ?((readiness.missingScopes||[]).length?'Thiếu: '+readiness.missingScopes.join(', '):'Đã xác nhận đủ scopes bắt buộc')
+        :'Token chưa trả danh sách scopes · kiểm tra lại trong Partner Center';
 
       $('#section-tiktok').innerHTML=`
         <div class="api-hero">
@@ -5271,6 +5357,16 @@ tbody tr:hover td{background:#fffafb}
           <span class="status-dot ${status.connected&&sync.ok!==false?'ok':'warn'}">${syncState}</span>
         </div>
         ${!status.configured?'<div class="notice">Chưa cấu hình đủ TikTok App Key / Secret / Service ID / Seller Authorization URL / KV binding.</div>':''}
+        <div class="card" data-readiness-card>
+          <div class="row space"><div><h3 class="heading-with-icon">${icon('shield',18)} Kiểm tra sẵn sàng chạy thật</h3><div class="sub">Chỉ bắt đầu dùng KPI tiền thật khi các mục chính đã đạt và scopes đã được kiểm tra.</div></div><span class="pill ${readinessReady?'ok':readinessWarn?'warn':'bad'}">${readinessLabel}</span></div>
+          <div class="status-grid" data-readiness-grid>
+            ${readinessItem(checks.firebaseConfig===true,'Firebase',checks.firebaseConfig?'Web Config đã đủ':'Chưa đủ Firebase Web Config')}
+            ${readinessItem(checks.tiktokConfig===true,'TikTok App',checks.tiktokConfig?'App/Secret/Service ID/KV đã đủ':'Thiếu cấu hình TikTok hoặc KV')}
+            ${readinessItem(checks.sellerToken===true&&checks.refreshToken===true,'Seller Token',checks.sellerToken&&checks.refreshToken?'Có Access Token + Refresh Token':'Chưa có đủ token')}
+            ${readinessItem(readiness.scopesReported&&!(readiness.missingScopes||[]).length,'Scopes',scopeDetail,!readiness.scopesReported)}
+            ${readinessItem(checks.autoSync===true,'Đồng bộ',checks.autoSync?'Lần đồng bộ gần nhất thành công':'Chưa có lần đồng bộ thành công')}
+          </div>
+        </div>
         <div class="status-grid">
           <div class="status-item">${icon('refresh')}<div><span>Refresh Token</span><b>${status.autoRefresh?'Tự gia hạn · Access Token hết hạn '+accessExpiry:'Chưa có refresh token'}</b><small>Refresh Token hết hạn: ${refreshExpiry}</small></div></div>
           <div class="status-item">${icon('sync')}<div><span>Đồng bộ tự động</span><b>Mỗi 1 giờ · chạy 24/24</b><small>Lần gần nhất: ${lastSync}</small></div></div>
@@ -5280,6 +5376,7 @@ tbody tr:hover td{background:#fffafb}
           <div><b>LIVE Performance API</b><span>/analytics/202509/shop_lives/performance</span></div>
           <div class="row">
             ${status.configured&&!status.connected?'<button id="connectTikTok" class="btn primary">'+icon('link')+' Kết nối TikTok Seller</button>':''}
+            ${status.connected?'<button id="syncTikTokNow" class="btn primary">'+icon('sync')+' Đồng bộ ngay 30 ngày</button>':''}
             ${status.connected?'<button id="checkTikTok" class="btn">'+icon('check')+' Kiểm tra trạng thái</button>':''}
           </div>
         </div>
@@ -5288,6 +5385,19 @@ tbody tr:hover td{background:#fffafb}
 
       if($('#connectTikTok')) $('#connectTikTok').onclick=async()=>{try{const result=await api('/api/tiktok/oauth/start',{method:'POST'});location.href=result.url}catch(e){showToast(e.message)}};
       if($('#checkTikTok')) $('#checkTikTok').onclick=()=>showToast(status.connected?'Kết nối đang hoạt động · đồng bộ 24/24 đã bật':'TikTok chưa kết nối');
+      if($('#syncTikTokNow')) $('#syncTikTokNow').onclick=async()=>{
+        const button=$('#syncTikTokNow');
+        const old=button.innerHTML;
+        button.disabled=true; button.setAttribute('aria-busy','true'); button.innerHTML=icon('refresh',14)+' Đang đồng bộ...';
+        try{
+          const result=await api('/api/tiktok/autosync/run',{method:'POST',body:JSON.stringify({days:30})});
+          state.autoSyncStatus=result;
+          await loadData();
+          showToast('Đã đồng bộ '+new Intl.NumberFormat('vi-VN').format(Number(result.cached||0))+' phiên LIVE');
+          renderAll();
+        }catch(e){showToast('Đồng bộ thất bại: '+e.message)}
+        finally{if(button?.isConnected){button.disabled=false;button.removeAttribute('aria-busy');button.innerHTML=old;}}
+      };
     }
 
     function renderAll(){ renderNav(); renderDashboard(); renderLive(); renderReconcile(); renderKpi(); renderManualKpi(); renderExport(); renderUsers(); renderStaff(); renderTikTok(); renderStorage(); switchSection(state.section); }
