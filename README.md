@@ -4,7 +4,7 @@
 
 ### Báo cáo TikTok LIVE · KPI nhân sự · Tự đồng bộ 24/24
 
-**Phiên bản hiện tại: v1.45.2**
+**Phiên bản hiện tại: v1.46.0**
 
 [![GitHub Release](https://img.shields.io/github/v/release/hunghienhoa/sellerkbb?label=Release)](https://github.com/hunghienhoa/sellerkbb/releases)
 [![GitHub Actions](https://img.shields.io/github/actions/workflow/status/hunghienhoa/sellerkbb/deploy.yml?branch=main&label=Ki%E1%BB%83m%20tra%20%26%20Backup)](https://github.com/hunghienhoa/sellerkbb/actions)
@@ -17,12 +17,16 @@
 
 ---
 
-## 🆕 Cập nhật mới nhất — v1.45.2
+## 🆕 Cập nhật mới nhất — v1.46.0
 
-- Nút **Làm mới** trong popup **Đối soát đơn LIVE** dùng cùng icon đồng bộ với phần trạng thái TikTok.
-- Khi bấm **Làm mới**, icon xoay liên tục giống icon “Dữ liệu TikTok được đồng bộ lúc…” và nút chuyển sang trạng thái **Đang tải…**.
-- Trong lúc tải, nút được khóa tạm thời để tránh bấm lặp; hoàn tất sẽ tự trở về **Làm mới**.
-- Bổ sung trạng thái `aria-busy` và kiểm thử browser để đảm bảo animation quay/khôi phục đúng trên PC và mobile.
+- Bỏ giới hạn cắt im lặng **1.000 đơn/phiên**: SellerKBB tiếp tục phân trang đầy đủ; nếu TikTok trả quá nhiều trang hoặc page token lặp, hệ thống **dừng an toàn và không chốt KPI thiếu dữ liệu**.
+- Thêm bảo vệ **LIVE chồng thời gian cùng shop**. Khi không thể xác định duy nhất đơn thuộc phiên nào, KPI tự động chuyển sang **blocked/chưa chốt** thay vì đoán.
+- Cron đối soát giờ dùng **Order Details** để lấy tín hiệu LIVE đầy đủ hơn trước khi tính KPI.
+- Thêm nút **Đồng bộ ngay 30 ngày** cho Admin và khung **Kiểm tra sẵn sàng chạy thật**: Firebase, TikTok App, token, scopes và lần đồng bộ gần nhất.
+- Thêm **Backup dữ liệu nghiệp vụ JSON** trong Lưu trữ; file không chứa TikTok token, App Secret, Firebase service account hay Cloudflare token.
+- Cloudflare Wrangler bật **`keep_vars = true`** để deploy source không vô tình xóa các biến Firebase/TikTok đã cấu hình trên Dashboard.
+- GitHub Actions hiển thị cảnh báo rõ khi Cloudflare/Firebase Secrets chưa được cấu hình; Release vẫn tự tạo và chỉ giữ **5 bản gần nhất**.
+- README bổ sung **bảng checklist + hướng dẫn cài đặt chạy thật từng bước, kèm đầy đủ câu lệnh** cho người không biết lập trình.
 
 ---
 
@@ -234,6 +238,7 @@ README giữ lại phần này để nhân sự có thể biết **vì sao giao 
 
 | Phiên bản | Thay đổi chính |
 |---|---|
+| **v1.46.0** | Hardening trước khi chạy thật: quét đủ đơn không cắt 1.000, khóa KPI khi LIVE cùng shop chồng giờ, Order Details cho cron, Đồng bộ ngay, readiness checklist, backup JSON và `keep_vars` an toàn khi deploy. |
 | **v1.45.2** | Nút **Làm mới** trong popup Đối soát đơn LIVE dùng icon đồng bộ và xoay khi đang tải, có trạng thái Đang tải/aria-busy và tự dừng khi hoàn tất. |
 | **v1.45.1** | Fix bố cục Campaign/Mega đã lưu trên mobile: tên loại phiên và nút **Sửa** cân đối, không tràn/không kéo nút full width. |
 | **v1.45.0** | Thu gọn loại Campaign/Mega sau khi lưu và thu gọn toàn bộ khối KPI thủ công sau khi lưu; thêm nút **Sửa** / **Sửa KPI** để mở lại khi cần chỉnh. |
@@ -460,6 +465,184 @@ Không commit `dist/` nếu workflow đang tự build.
 
 ---
 
+## ✅ Bảng hướng dẫn cài đặt để đưa SellerKBB vào chạy thật
+
+> Phần này viết cho người **không biết lập trình**. Làm từ trên xuống dưới. Nếu một bước chưa đạt, dừng ở bước đó và xử lý trước khi sang bước tiếp theo.
+
+| Bước | Việc cần làm | Nơi thao tác | Kết quả phải thấy |
+|---:|---|---|---|
+| 1 | Giữ Release hiện tại làm điểm quay lại | GitHub → Releases | Có `v1.46.0` và tối đa 5 Release |
+| 2 | Tạo Firebase Project + bật Google Login | Firebase Console | Authentication → Google = Enabled |
+| 3 | Tạo Firestore Database + Web App | Firebase Console | Có 6 giá trị `FIREBASE_*` |
+| 4 | Thêm domain SellerKBB vào Authorized domains | Firebase Authentication | `sellerkbb.doanhsokpis.workers.dev` nằm trong danh sách |
+| 5 | Deploy Firestore rules/indexes | Máy tính hoặc GitHub Actions | Rules/indexes deploy thành công |
+| 6 | Điền Firebase Web Config vào Worker | Cloudflare → Worker → Variables | Trang production hiện nút Đăng nhập Google |
+| 7 | Đăng nhập Gmail của chủ hệ thống đầu tiên | SellerKBB production | Tài khoản đầu tiên trở thành Admin |
+| 8 | Tạo/cấu hình TikTok Shop Partner App | TikTok Partner Center | Có App Key, App Secret, Service ID và Seller Auth URL |
+| 9 | Cấp đúng scopes TikTok | TikTok Partner Center | Analytics + Order + Return/Refund |
+| 10 | Điền TikTok config vào Cloudflare | Cloudflare Worker | Khung “TikTok App” chuyển đạt |
+| 11 | Kết nối Seller TikTok | SellerKBB → TikTok / API | Có Access Token + Refresh Token |
+| 12 | Bấm **Đồng bộ ngay 30 ngày** | SellerKBB → TikTok / API | Lần đồng bộ gần nhất thành công |
+| 13 | Đối chiếu 1–3 LIVE thật với Seller Center | SellerKBB + TikTok Seller Center | GMV/đơn/hủy/hoàn khớp logic |
+| 14 | Tải **Backup dữ liệu nghiệp vụ JSON** | SellerKBB → Lưu trữ | Có file `sellerkbb-business-backup-YYYY-MM-DD.json` |
+| 15 | Thêm GitHub Actions Secrets để auto deploy | GitHub Settings → Actions Secrets | Cloudflare/Firestore deploy không còn SKIPPED |
+| 16 | Chỉ sau đó mới dùng KPI để thanh toán | SellerKBB KPI nhân sự | KPI 0,3% / 0,1% khớp kiểm tra tay |
+
+### A. Chuẩn bị máy tính để tự kiểm tra source
+
+Cài **Git**, **Node.js 22** và **Google Chrome**. Mở PowerShell trên Windows rồi chạy:
+
+```powershell
+git clone https://github.com/hunghienhoa/sellerkbb.git
+cd sellerkbb
+node -v
+npm -v
+npm run check
+npm install --no-save puppeteer-core
+$env:CHROME_BIN="C:\Program Files\Google\Chrome\Application\chrome.exe"
+node scripts/ui-browser-test.mjs
+npm run build
+```
+
+Khi test đạt, dòng cuối phải có:
+
+```text
+Desktop + mobile browser smoke tests passed
+```
+
+### B. Các biến Firebase cần lấy
+
+Trong Firebase → Project settings → General → Web App, copy đủ:
+
+```text
+FIREBASE_API_KEY
+FIREBASE_AUTH_DOMAIN
+FIREBASE_PROJECT_ID
+FIREBASE_STORAGE_BUCKET
+FIREBASE_MESSAGING_SENDER_ID
+FIREBASE_APP_ID
+```
+
+Đây là Firebase Web Config, **không phải Firebase Service Account JSON**.
+
+### C. Deploy Firestore bằng máy tính
+
+```powershell
+npm install -g firebase-tools
+firebase login
+firebase use --add
+firebase deploy --only firestore:rules,firestore:indexes
+```
+
+Khi `firebase use --add`, chọn đúng Project ID vừa tạo.
+
+### D. Điền Firebase vào Cloudflare Worker
+
+Vào **Cloudflare Dashboard → Workers & Pages → sellerkbb → Settings → Variables and Secrets** rồi tạo 6 biến Firebase phía trên. SellerKBB v1.46.0 dùng `keep_vars = true`, vì vậy các biến đã nhập trên Dashboard được giữ lại khi deploy bằng Wrangler.
+
+Trong Firebase Authentication → Settings → Authorized domains, thêm:
+
+```text
+sellerkbb.doanhsokpis.workers.dev
+```
+
+### E. TikTok Shop Partner App cần gì?
+
+Chuẩn bị:
+
+```text
+TIKTOK_APP_KEY
+TIKTOK_APP_SECRET
+TIKTOK_SERVICE_ID
+TIKTOK_SELLER_AUTH_URL
+```
+
+Redirect URL:
+
+```text
+https://sellerkbb.doanhsokpis.workers.dev/api/tiktok/oauth/callback
+```
+
+Scopes SellerKBB kiểm tra:
+
+```text
+data.shop_analytics.public.read
+seller.order.info
+seller.return_refund.basic
+```
+
+Trong Cloudflare:
+
+- `TIKTOK_APP_KEY`, `TIKTOK_SERVICE_ID`, `TIKTOK_SELLER_AUTH_URL`: Variable.
+- `TIKTOK_APP_SECRET`: **Secret**.
+- `TIKTOK_KV`: KV binding tên đúng `TIKTOK_KV`.
+
+Nếu dùng dòng lệnh để nhập App Secret:
+
+```powershell
+npx wrangler secret put TIKTOK_APP_SECRET
+```
+
+Terminal sẽ hỏi giá trị secret sau khi chạy lệnh. Không viết App Secret trực tiếp vào command và không commit lên GitHub.
+
+### F. Kết nối TikTok và đồng bộ lần đầu
+
+1. Đăng nhập SellerKBB bằng Admin.
+2. Vào **TikTok / API**.
+3. Kiểm tra khung **Kiểm tra sẵn sàng chạy thật**.
+4. Bấm **Kết nối TikTok Seller** và hoàn tất cấp quyền.
+5. Quay lại SellerKBB.
+6. Bấm **Đồng bộ ngay 30 ngày**.
+7. Chờ thông báo đồng bộ thành công.
+8. Mở **Đối soát đơn LIVE** và kiểm tra 1–3 phiên thật trước khi dùng KPI.
+
+SellerKBB v1.46.0 không còn cắt im lặng ở 1.000 đơn. Nếu pagination bất thường hoặc vượt ngưỡng quét an toàn, hệ thống dừng và **không chốt KPI**. Nếu phát hiện nhiều LIVE cùng shop chồng thời gian, KPI tự động cũng bị khóa để tránh gán nhầm đơn.
+
+### G. Backup dữ liệu trước khi vận hành thật
+
+Vào **Lưu trữ → Backup dữ liệu nghiệp vụ → Tải backup JSON**. File gồm dữ liệu LIVE/KPI/nhân sự/tài khoản/cài đặt đang quản lý nhưng **không chứa token/secret**.
+
+Khuyến nghị tải một bản trước khi kết nối TikTok thật, trước thay đổi lớn, và tối thiểu mỗi tuần khi đã vận hành.
+
+### H. GitHub Actions Secrets để tự deploy
+
+Vào **GitHub → sellerkbb → Settings → Secrets and variables → Actions**.
+
+Cloudflare:
+
+```text
+CLOUDFLARE_API_TOKEN
+CLOUDFLARE_ACCOUNT_ID
+```
+
+Firebase:
+
+```text
+FIREBASE_SERVICE_ACCOUNT
+FIREBASE_PROJECT_ID
+```
+
+`FIREBASE_SERVICE_ACCOUNT` là toàn bộ JSON credential của service account và chỉ lưu trong GitHub Secret. Nếu các secret chưa có, workflow v1.46.0 sẽ ghi cảnh báo rõ **deploy skipped**.
+
+### I. Kiểm tra cuối trước khi tính KPI tiền thật
+
+| Hạng mục | Phải đạt |
+|---|---|
+| Google Login production | ✅ |
+| Tài khoản đầu tiên đúng Admin | ✅ |
+| Lưu Host/Vận hành rồi reload vẫn còn | ✅ |
+| TikTok App + KV đầy đủ | ✅ |
+| Access Token + Refresh Token | ✅ |
+| Đồng bộ 30 ngày thành công | ✅ |
+| Order API + Return/Refund hoạt động | ✅ |
+| 1–3 phiên LIVE khớp Seller Center | ✅ |
+| LIVE >1.000 đơn không bị cắt thiếu | ✅ |
+| LIVE chồng giờ bị khóa KPI tự động | ✅ |
+| Host 0,3% và Operator 0,1% khớp tính tay | ✅ |
+| Có backup JSON trước khi chạy thật | ✅ |
+| GitHub Releases chỉ còn 5 bản gần nhất | ✅ |
+
+---
 ## 🔥 Cấu hình Firebase lần đầu
 
 1. Tạo Firebase Project.
@@ -498,6 +681,7 @@ Worker cần:
 - Cron hourly + daily reconciliation.
 - Các Firebase vars.
 - TikTok vars/secrets.
+- `keep_vars = true` trong `wrangler.toml` để deploy code không xóa các biến đã nhập trực tiếp trên Cloudflare Dashboard.
 
 ### GitHub Actions Secrets cho Cloudflare
 
