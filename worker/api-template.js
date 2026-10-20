@@ -933,6 +933,7 @@ async function runAutoSync(env, lookbackDays = 2, reason = "hourly") {
       reason,
       startedAt,
       finishedAt: new Date().toISOString(),
+      error: null,
       windowStart: startDate,
       windowEndExclusive: endDate,
       fetched: Number(data.sessions?.length || 0),

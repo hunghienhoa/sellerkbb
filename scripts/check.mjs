@@ -354,4 +354,5 @@ assert(numericFirestoreLimits.every(n=>n<=10000), "A Firestore numeric limit exc
 assert(!html.includes("limit(maxDocs)"), "Firestore must not send a total session cap directly as one query limit");
 assert(!html.includes("Math.min(12000,Number(state.maintenance.settings.firestoreMaxSessions"), "Firestore total-session cap must use the centralized safe constant");
 assert(html.includes("auth startup")&&html.includes("retryBoot"), "Startup error boundary missing");
+assert(worker.includes("error: null")&&worker.includes("const status = {\n      ok: true"), "Successful TikTok auto-sync must clear stale error state");
 console.log("Project structure, syntax, persistence, calendar, storage/backup, Google profiles, pink pastel UI, overlap-safe reconciliation, full pagination, readiness, descriptive Releases, README, and auto-sync checks OK");

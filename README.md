@@ -4,7 +4,7 @@
 
 ### Báo cáo TikTok LIVE · KPI nhân sự · Tự đồng bộ 24/24
 
-**Phiên bản hiện tại: v1.46.2**
+**Phiên bản hiện tại: v1.46.3**
 
 [![GitHub Release](https://img.shields.io/github/v/release/hunghienhoa/sellerkbb?label=Release)](https://github.com/hunghienhoa/sellerkbb/releases)
 [![GitHub Actions](https://img.shields.io/github/actions/workflow/status/hunghienhoa/sellerkbb/deploy.yml?branch=main&label=Ki%E1%BB%83m%20tra%20%26%20Backup)](https://github.com/hunghienhoa/sellerkbb/actions)
@@ -17,14 +17,11 @@
 
 ---
 
-## 🆕 Cập nhật mới nhất — v1.46.2
+## 🆕 Cập nhật mới nhất — v1.46.3
 
-- Fix triệt để lỗi Firestore giới hạn 10.000: tách rõ **giới hạn mỗi truy vấn** và **giới hạn tổng số phiên SellerKBB giữ trong bộ nhớ**.
-- Thêm hằng số bảo vệ: mỗi truy vấn Firestore tối đa 10.000, SellerKBB chủ động dùng **5.000 bản ghi/trang**, còn tổng dữ liệu vẫn có thể tải tới **12.000 phiên** bằng nhiều trang.
-- Mọi truy vấn danh sách LIVE giờ bắt buộc đi qua hàm giới hạn an toàn; không còn nguy cơ vô tình lấy `firestoreMaxSessions=12000` rồi truyền thẳng vào `limit()`.
-- Thêm regression test tự quét source: nếu sau này có ai thêm `limit(<số>)` lớn hơn 10.000 hoặc quay lại `limit(maxDocs)`, build sẽ **FAIL trước khi deploy**.
-- Giữ lớp xử lý lỗi startup: nếu Firebase gặp lỗi khác, web hiển thị lỗi và nút **Thử tải lại** thay vì màn hình trắng.
-- Không thay đổi dữ liệu Firebase/TikTok/KPI hiện có.
+- Sửa trạng thái TikTok gây hiểu nhầm: sau khi đã kết nối Seller và đồng bộ thành công, lỗi cũ `tiktok_not_connected` giờ được xóa khỏi trạng thái đồng bộ.
+- Nút **Kết nối TikTok Seller** chỉ hiện khi chưa có Seller Token; khi đã kết nối, giao diện chuyển sang **Đồng bộ ngay 30 ngày** và **Kiểm tra trạng thái**.
+- Không thay đổi Seller Token/Refresh Token hiện có và không xóa dữ liệu LIVE đã đồng bộ.
 
 
 ---
@@ -237,6 +234,7 @@ README giữ lại phần này để nhân sự có thể biết **vì sao giao 
 
 | Phiên bản | Thay đổi chính |
 |---|---|
+| **v1.46.3** | Xóa lỗi TikTok cũ khỏi trạng thái sau khi đồng bộ thành công; tránh báo `tiktok_not_connected` dù Seller Token đã có. |
 | **v1.46.2** | Fix triệt để Firestore 10.000: tách query limit/total cap, dùng pagination 5.000/trang và regression test chặn tái phát. |
 | **v1.46.1** | Sửa màn hình trắng khi bật Firebase thật: phân trang Firestore dưới giới hạn 10.000/truy vấn và thêm xử lý lỗi startup. |
 | **v1.46.0** | Hardening trước khi chạy thật: quét đủ đơn không cắt 1.000, khóa KPI khi LIVE cùng shop chồng giờ, Order Details cho cron, Đồng bộ ngay, readiness checklist, backup JSON và `keep_vars` an toàn khi deploy. |
