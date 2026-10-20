@@ -201,12 +201,12 @@ assert(html.includes("<h3>KPI chưa chốt</h3>"), "Pending KPI table title miss
 assert(html.includes("<h3>KPI đã chốt</h3>"), "Final KPI table title missing");
 assert(html.includes("GMV chờ đối soát")&&html.includes("Tổng KPI đã chốt"), "Split KPI table columns missing");
 assert(html.includes("Cùng một nhân sự có thể xuất hiện ở cả hai bảng"), "Split KPI explanation missing");
-assert(html.includes("KPI tự động chỉ dùng đơn có tín hiệu LIVE"), "KPI guide must state only confirmed LIVE orders are used");
+assert(html.includes("KPI tự động dùng đối soát theo từng phiên")&&html.includes("tránh cộng trùng"), "KPI guide must explain overlap-safe reconciliation");
 assert(!html.includes("KPI tự động đang tạm dùng GMV LIVE gộp"), "Legacy gross-GMV KPI warning must be removed");
 assert(html.includes("gmv_recorded_latest")&&html.includes("gmv_pending_reconciliation")&&html.includes("gmv_after_cancel_refund_final")&&html.includes("gmv_time_window_excluded")&&html.includes("kpi_status"), "LIVE CSV three-stage GMV fields missing");
 assert(html.includes("gmv_auto_final")&&html.includes("gmv_auto_provisional"), "KPI CSV final/provisional fields missing");
 assert(readme.includes("**GMV đã ghi nhận**")&&readme.includes("**GMV chờ đối soát**")&&readme.includes("**GMV sau khi hoàn hủy**"), "README must document the three GMV stages");
-assert(readme.includes("không được cộng vào KPI tự động"), "README must document time-window order exclusion from KPI");
+assert(readme.includes("GMV Analytics riêng từng phiên")&&readme.includes("tỷ lệ hủy/hoàn"), "README must document overlap-safe KPI reconciliation");
 assert(readme.includes("Lịch sử thay đổi gần đây"), "README version history missing");
 assert(html.includes("Phiên KPI thủ công"), "Manual KPI section missing");
 assert(html.includes("GMV sau hoàn/hủy của Host Livestream"), "Host manual GMV field missing");
