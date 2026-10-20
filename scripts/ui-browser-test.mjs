@@ -74,6 +74,16 @@ try {
   await page.click('#section-dashboard [data-range-mode="30d"]');
   assert(await page.$eval('#section-dashboard [data-range-mode="30d"]',e=>e.classList.contains('active')),"30-day filter did not activate");
   assert(await page.$eval('#section-dashboard .dashboard-range-note',e=>e.textContent.includes('chỉ hiển thị 7 ngày gần nhất')),"Monthly Dashboard 7-day preview note missing");
+  assert(await page.$('[data-dashboard-final-gmv]')!==null,"Dashboard finalized GMV summary missing");
+  const dashboardFinalGmv=await page.$eval('[data-dashboard-final-gmv]',e=>({
+    text:e.textContent.trim(),
+    amount:e.querySelector('.dashboard-final-gmv-copy>strong')?.textContent.trim()||'',
+    width:e.getBoundingClientRect().width,
+    parentWidth:e.parentElement?.getBoundingClientRect().width||0
+  }));
+  assert(dashboardFinalGmv.text.includes('GMV sau khi hoàn hủy')&&dashboardFinalGmv.text.includes('Đã chốt'),"Dashboard finalized GMV copy missing");
+  assert(dashboardFinalGmv.amount.endsWith('đ'),"Dashboard finalized GMV must display currency");
+  assert(dashboardFinalGmv.width<=dashboardFinalGmv.parentWidth+1,"Dashboard finalized GMV card must not overflow layout");
   assert(await page.$('#dashboardViewMore')!==null,"Monthly Dashboard View More button missing");
   await page.click('#dashboardViewMore');
   assert(await page.$eval('#section-live',e=>e.classList.contains('active')),"View More did not switch to LIVE section");
@@ -405,6 +415,13 @@ try {
   assert(mobileMetrics.every(x=>x.lines===1&&x.whiteSpace==='nowrap'&&x.fits),"Mobile Dashboard metric values must stay on one line without clipping");
   const mobileGmv=mobileMetrics.find(x=>x.label==='GMV đã ghi nhận');
   assert(mobileGmv&&mobileGmv.text.endsWith('đ')&&mobileGmv.lines===1,"Mobile GMV đã ghi nhận must display the full amount and đ on one line");
+  const mobileFinalGmv=await page.$eval('[data-dashboard-final-gmv]',e=>{
+    const r=e.getBoundingClientRect();
+    const value=e.querySelector('.dashboard-final-gmv-copy>strong');
+    return {text:e.textContent.trim(),width:r.width,vw:innerWidth,value:value?.textContent.trim()||'',scrollWidth:e.scrollWidth};
+  });
+  assert(mobileFinalGmv.text.includes('GMV sau khi hoàn hủy')&&mobileFinalGmv.value.endsWith('đ'),"Mobile finalized GMV summary missing");
+  assert(mobileFinalGmv.width<=mobileFinalGmv.vw-16&&mobileFinalGmv.scrollWidth<=mobileFinalGmv.width+1,"Mobile finalized GMV summary must fit viewport without horizontal overflow");
   await page.click('#menuToggle');
   await page.waitForFunction(()=>document.querySelector('#sidebar')?.classList.contains('open'));
   await sleep(300);
