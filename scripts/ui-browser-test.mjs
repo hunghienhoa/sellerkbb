@@ -105,11 +105,18 @@ try {
   assert(reconcileCount>=1,"LIVE reconciliation session cards missing");
   const reconcileCard='#section-reconcile .reconcile-session:first-of-type';
   await page.click(reconcileCard+' [data-reconcile-load]');
-  await page.waitForSelector(reconcileCard+' .reconcile-summary');
-  assert(await page.$eval(reconcileCard,e=>e.textContent.includes('Tổng đơn trong khung LIVE')&&e.textContent.includes('Đang vận chuyển')&&e.textContent.includes('Đang hoàn/trả')),"LIVE reconciliation summary missing");
-  assert((await page.$$(reconcileCard+' .reconcile-order')).length>=1,"LIVE reconciliation order rows missing");
+  await page.waitForSelector(reconcileCard+' .reconcile-overview');
+  assert((await page.$(reconcileCard+' .reconcile-order-card')).length>=8,"LIVE reconciliation order cards missing");
+  assert(await page.$eval(reconcileCard,e=>e.textContent.includes('Chờ đóng hàng')&&e.textContent.includes('Chờ vận chuyển')&&e.textContent.includes('Đang vận chuyển')&&e.textContent.includes('Đang giao')),"Shipping-state chips missing");
+  assert(await page.$eval(reconcileCard,e=>e.textContent.includes('Đang hoàn / trả')&&e.textContent.includes('Đã hoàn tiền')&&e.textContent.includes('Đã hủy')&&e.textContent.includes('Hoàn tất')),"Aftersale/final-state chips missing");
   assert(await page.$eval(reconcileCard,e=>e.textContent.includes('Có tín hiệu LIVE')&&e.textContent.includes('Khớp theo thời gian')),"LIVE attribution confidence labels missing");
-  assert(await page.$eval(reconcileCard,e=>e.textContent.includes('15 ngày')&&e.textContent.includes('6 ngày')),"Return-window explanation missing");
+  assert(await page.$eval(reconcileCard,e=>e.textContent.includes('Bảo vệ đối soát 60 ngày')&&e.textContent.includes('15 ngày')&&e.textContent.includes('6 ngày')),"Reconciliation retention/return-window explanation missing");
+  const returnFilter=[...await page.$(reconcileCard+' [data-reconcile-filter]')];
+  assert(returnFilter.length>=8,"Reconciliation filter chips missing");
+  await page.$eval(reconcileCard+' [data-reconcile-filter]',els=>els.find(e=>e.textContent.includes('Đang hoàn'))?.click());
+  await sleep(80);
+  const visibleReturnCards=await page.$eval(reconcileCard+' .reconcile-order-card',els=>els.filter(e=>!e.hidden).map(e=>e.dataset.orderState));
+  assert(visibleReturnCards.length===1&&visibleReturnCards[0]==='returning',"Reconciliation status filtering failed");
   await page.click('#nav [data-section="live"]');
   await page.click('#section-live [data-range-mode="30d"]');
 
@@ -359,6 +366,34 @@ try {
   const mobilePopup=await page.$eval('#accountPopover',e=>{const r=e.getBoundingClientRect();return {cx:r.left+r.width/2,cy:r.top+r.height/2,width:r.width,vw:innerWidth,vh:innerHeight};});
   assert(mobilePopup.width<=mobilePopup.vw-20&&Math.abs(mobilePopup.cx-mobilePopup.vw/2)<3&&Math.abs(mobilePopup.cy-mobilePopup.vh/2)<3,"Mobile account modal must fit and stay centered");
   await page.$eval('#accountModalBackdrop',e=>e.click());
+
+  await page.click('#menuToggle');
+  await page.waitForFunction(()=>document.querySelector('#sidebar')?.classList.contains('open'));
+  await page.$eval('#nav [data-section="reconcile"]',e=>e.click());
+  await page.waitForFunction(()=>!document.querySelector('#sidebar')?.classList.contains('open'));
+  await page.click('#section-reconcile [data-range-mode="30d"]');
+  const mobileReconcile='#section-reconcile .reconcile-session:first-of-type';
+  await page.click(mobileReconcile+' [data-reconcile-load]');
+  await page.waitForSelector(mobileReconcile+' .reconcile-order-grid');
+  const mobileReconLayout=await page.$eval(mobileReconcile,e=>{
+    const grid=e.querySelector('.reconcile-order-grid');
+    const card=e.querySelector('.reconcile-order-card');
+    return {
+      columns:getComputedStyle(grid).gridTemplateColumns,
+      cardWidth:card?.getBoundingClientRect().width||0,
+      rootWidth:e.getBoundingClientRect().width,
+      overflow:e.scrollWidth>e.clientWidth+2,
+      text:e.textContent
+    };
+  });
+  assert(!mobileReconLayout.overflow,"Mobile reconciliation must not overflow horizontally");
+  assert(!mobileReconLayout.columns.includes(' '),"Mobile reconciliation order grid must be one column");
+  assert(mobileReconLayout.cardWidth<=mobileReconLayout.rootWidth+1,"Mobile reconciliation card must fit session width");
+  assert(mobileReconLayout.text.includes('Chờ đóng hàng')&&mobileReconLayout.text.includes('Đang giao')&&mobileReconLayout.text.includes('Đang hoàn / trả'),"Mobile reconciliation status tags missing");
+  assert(await page.$eval(mobileReconcile+' .reconcile-retention-note',e=>e.textContent.includes('60 ngày')),"Mobile reconciliation 60-day protection note missing");
+
+  await page.click('#menuToggle');
+  await page.waitForFunction(()=>document.querySelector('#sidebar')?.classList.contains('open'));
   await page.$eval('#nav [data-section="live"]',e=>e.click());
   await page.waitForFunction(()=>!document.querySelector('#sidebar')?.classList.contains('open'));
   await sleep(320);
