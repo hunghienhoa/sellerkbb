@@ -67,6 +67,8 @@ assert(worker.includes("function summarizeLiveReconciliation"), "Reconciliation 
 assert(worker.includes("async function refreshKpiReconciliations"), "Scheduled KPI reconciliation refresher missing");
 assert(worker.includes('status === "COMPLETED" && active.length === 0'), "Completed-order finalization rule missing");
 assert(worker.includes("const finalized = cancelled ||"), "Cancelled orders must finalize reconciliation");
+assert(worker.includes("const attributionConfirmed = orders.length === 0 || timeWindowOrders === 0;"), "KPI finalization must require confirmed LIVE attribution");
+assert(worker.includes("!attributionConfirmed"), "Ambiguous time-window orders must keep KPI provisional");
 assert(worker.includes("reconciliation: previous?.reconciliation"), "Auto-sync must preserve reconciliation summary");
 assert(worker.includes("await refreshKpiReconciliations(env, token.access_token, merged, reason)"), "Auto-sync must refresh reconciled KPI basis");
 assert(worker.includes("await persistReconciliationSummary(env, liveId, result.kpiSummary)"), "Manual reconciliation must persist KPI summary");
