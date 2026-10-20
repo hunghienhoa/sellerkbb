@@ -73,7 +73,8 @@ assert(readme.includes("Release KHÔNG backup những gì?"), "README data-backu
 assert(readme.includes("Cách quay lại bản cũ"), "README rollback guide missing");
 assert(html.includes('id="topbarAccountBtn" class="topbar-account-btn"'), "Avatar-only topbar account trigger missing");
 assert(html.includes('id="userAvatar" class="avatar topbar-account-avatar"'), "Topbar Google avatar missing");
-assert(html.includes('id="accountPopover" class="topbar-account-popover hidden"'), "Account info popup missing");
+assert(html.includes('id="accountModalBackdrop" class="account-modal-backdrop hidden"'), "Centered account modal backdrop missing");
+assert(html.includes('id="accountPopover" class="topbar-account-popover"'), "Account info modal missing");
 assert(html.includes('id="accountLogoutBtn"'), "Account popup logout button missing");
 assert(!html.includes('id="userName"')&&!html.includes('id="userRole"'), "Topbar must not render persistent account name/role");
 assert(!html.includes('<span class="account-chevron"'), "Account arrow must remain removed");
@@ -83,7 +84,8 @@ assert(html.includes("userIdentityHtml(u,true)"), "User-list avatar identity mis
 assert(html.includes("userIdentityHtml(staffDisplayRecord(r.uid,r.name),false)"), "KPI staff avatar identity missing");
 assert(readme.includes("Hồ sơ Google trên top bar"), "README topbar Google profile guide missing");
 assert(html.includes("v1.16 pink pastel theme + grouped navigation"), "Pink pastel theme override missing");
-assert(html.includes(".topbar-account-btn{")&&html.includes(".topbar-account-popover{"), "Avatar popup account styling missing");
+assert(html.includes(".topbar-account-btn{")&&html.includes(".account-modal-backdrop{")&&html.includes(".topbar-account-popover{"), "Centered avatar modal styling missing");
+assert(html.includes("place-items:center")&&html.includes("position:fixed")&&html.includes("inset:0"), "Account modal must be centered in a full-screen overlay");
 assert(html.includes("width:40px")&&html.includes("height:40px")&&html.includes("border-radius:50%"), "Avatar-only topbar trigger sizing missing");
 assert(!html.includes(".topbar-account-copy"), "Persistent topbar account copy styling must be removed");
 assert(!html.includes(".topbar-account{"), "Legacy divided topbar account block must be removed");

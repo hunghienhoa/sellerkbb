@@ -261,21 +261,49 @@ button{-webkit-tap-highlight-color:transparent}
 .topbar-account-btn:hover{border-color:#e5b8cc;background:#fff4f9}
 .topbar-account-btn:focus-visible{outline:3px solid rgba(215,124,165,.2);outline-offset:2px}
 .topbar-account-avatar{width:34px;height:34px;border-radius:50%;object-fit:cover}
-.topbar-account-popover{
-  position:absolute;
-  top:calc(100% + 10px);
-  right:0;
-  z-index:80;
-  width:min(320px,calc(100vw - 24px));
-  padding:14px;
-  border:1px solid #efd6e2;
-  border-radius:14px;
-  background:rgba(255,253,254,.99);
-  box-shadow:0 18px 44px rgba(126,72,97,.16);
-  backdrop-filter:blur(16px);
-  -webkit-backdrop-filter:blur(16px);
+.account-modal-backdrop{
+  position:fixed;
+  inset:0;
+  z-index:90;
+  display:grid;
+  place-items:center;
+  padding:20px;
+  background:rgba(78,49,63,.28);
+  backdrop-filter:blur(4px);
+  -webkit-backdrop-filter:blur(4px);
 }
-.topbar-account-popover.hidden{display:none}
+.account-modal-backdrop.hidden{display:none}
+.topbar-account-popover{
+  position:relative;
+  width:min(360px,100%);
+  padding:18px;
+  border:1px solid #efd0df;
+  border-radius:18px;
+  background:linear-gradient(145deg,#fffefd,#fff4f8);
+  box-shadow:0 24px 70px rgba(100,61,80,.22);
+  animation:account-modal-in .18s ease-out both;
+}
+@keyframes account-modal-in{
+  from{opacity:0;transform:translateY(8px) scale(.985)}
+  to{opacity:1;transform:translateY(0) scale(1)}
+}
+.account-modal-close{
+  position:absolute;
+  top:10px;
+  right:10px;
+  width:30px;
+  height:30px;
+  display:grid;
+  place-items:center;
+  border:0;
+  border-radius:50%;
+  background:#fff0f6;
+  color:#a65a7b;
+  font-size:18px;
+  font-weight:800;
+  cursor:pointer;
+}
+.account-modal-close:hover{background:#fde4ef}
 .topbar-account-popover-head{display:grid;grid-template-columns:46px minmax(0,1fr);gap:10px;align-items:center;padding-bottom:12px;border-bottom:1px solid var(--line)}
 .topbar-account-popover-avatar{width:46px;height:46px;border-radius:50%;object-fit:cover;border:1px solid #efd6e2;background:var(--accent-soft)}
 .topbar-account-popover-copy{display:grid;gap:3px;min-width:0}
@@ -691,7 +719,8 @@ tbody tr:hover td{background:#fffafd}
   .topbar-right{gap:7px;flex:0 0 auto}
   .topbar-account-btn{width:38px;height:38px;flex-basis:38px;padding:2px}
   .topbar-account-avatar{width:32px;height:32px}
-  .topbar-account-popover{top:calc(100% + 8px);right:0;width:min(310px,calc(100vw - 20px));padding:13px}
+  .account-modal-backdrop{padding:14px}
+  .topbar-account-popover{width:min(340px,100%);padding:17px;border-radius:16px}
   .topbar .btn{min-height:34px;padding:6px 9px;font-size:10.5px}
   .content{padding:12px 10px 28px}
   .section.active{gap:12px}
@@ -1969,15 +1998,17 @@ tbody tr:hover td{background:#fffafb}
       <header class="topbar">
         <div class="topbar-title-wrap"><button id="menuToggle" class="menu-toggle" type="button" aria-label="Mở menu" aria-expanded="false">☰</button><div><h1 id="pageTitle" class="page-title">Tổng quan</h1><div id="pageSub" class="tiny"></div></div></div>
         <div class="topbar-right">
-          <span id="syncBadge" class="pill">v1.29.0</span>
+          <span id="syncBadge" class="pill">v1.30.0</span>
           <div class="account-menu-wrap">
             <button id="topbarAccountBtn" class="topbar-account-btn" type="button" aria-expanded="false" aria-controls="accountPopover" aria-label="Mở thông tin tài khoản">
               <img id="userAvatar" class="avatar topbar-account-avatar" alt="Ảnh đại diện Google">
             </button>
-            <div id="accountPopover" class="topbar-account-popover hidden" role="dialog" aria-label="Thông tin tài khoản"></div>
           </div>
         </div>
       </header>
+      <div id="accountModalBackdrop" class="account-modal-backdrop hidden" aria-hidden="true">
+        <div id="accountPopover" class="topbar-account-popover" role="dialog" aria-modal="true" aria-label="Thông tin tài khoản"></div>
+      </div>
       <div class="content">
         <section id="section-dashboard" class="section active"></section>
         <section id="section-live" class="section"></section>
@@ -2312,7 +2343,7 @@ tbody tr:hover td{background:#fffafb}
 
     function previewTs(iso){ return {toDate:()=>new Date(iso)}; }
     function enterPreview(){
-      state.config={version:'1.29.0-preview',tiktokConfigured:true};
+      state.config={version:'1.30.0-preview',tiktokConfigured:true};
       state.user={uid:'preview-admin',email:'admin@sellerkbb.demo',displayName:'Quản trị viên Demo',photoURL:avatarFallbackData('Quản trị viên Demo')};
       state.profile={role:'admin',status:'approved',displayName:'Quản trị viên Demo',photoURL:state.user.photoURL,permissions:['live.read','kpi.read']};
       state.maintenance={settings:{retentionDays:180,autoCleanup:true,emergencyPercent:85,firestoreSoftLimitMb:600,firestoreMaxSessions:12000,kvSoftKeyLimit:5000},github:{usedBytes:124000,limitBytes:10000000000,available:true},cloudflare:{keyCount:5,lastRun:{ranAt:new Date().toISOString(),deleted:0},usedBytes:428000,storageLimitBytes:1000000000,storageComplete:true},firebase:{freePlanMode:true,ttlEnabled:false,ttlRecommended:false,storageLimitBytes:1073741824}};
@@ -2535,9 +2566,10 @@ tbody tr:hover td{background:#fffafb}
       document.addEventListener('pointercancel',clear);
     }
     function setAccountMenu(open){
-      const btn=$('#topbarAccountBtn'), pop=$('#accountPopover');
-      if(!btn||!pop)return;
-      pop.classList.toggle('hidden',!open);
+      const btn=$('#topbarAccountBtn'), backdrop=$('#accountModalBackdrop');
+      if(!btn||!backdrop)return;
+      backdrop.classList.toggle('hidden',!open);
+      backdrop.setAttribute('aria-hidden',String(!open));
       btn.setAttribute('aria-expanded',String(open));
     }
 
@@ -2555,7 +2587,10 @@ tbody tr:hover td{background:#fffafb}
           <div><span>Vai trò</span><b>${esc(roleLabel(profile.role))}</b></div>
           <div><span>Trạng thái</span><b>${esc(accountStatusLabel(profile.status))}</b></div>
         </div>
+        <button id="accountModalClose" class="account-modal-close" type="button" aria-label="Đóng">×</button>
         <button id="accountLogoutBtn" class="btn danger topbar-account-logout" type="button">${icon('logout',16)} ${PREVIEW?'Thoát Preview':'Đăng xuất'}</button>`;
+      const close=$('#accountModalClose');
+      if(close)close.onclick=()=>setAccountMenu(false);
       const logout=$('#accountLogoutBtn');
       if(logout)logout.onclick=()=>{ if(PREVIEW) location.href='/'; else signOut(state.auth); };
     }
@@ -2564,16 +2599,16 @@ tbody tr:hover td{background:#fffafb}
       bindInteractionEffects();
       $('#menuToggle').onclick=()=>setMobileMenu(!$('#sidebar').classList.contains('open'));
       $('#mobileMenuOverlay').onclick=()=>{ setAccountMenu(false); setMobileMenu(false); };
+      $('#accountModalBackdrop').onclick=e=>{ if(e.target===$('#accountModalBackdrop'))setAccountMenu(false); };
       if(document.documentElement.dataset.shellAccountBound!=='1'){
         document.documentElement.dataset.shellAccountBound='1';
         document.addEventListener('keydown',e=>{ if(e.key==='Escape'){ setAccountMenu(false); setMobileMenu(false); } });
-        document.addEventListener('click',e=>{ if(!e.target.closest('.account-menu-wrap'))setAccountMenu(false); });
       }
       const currentRecord={displayName:state.profile.displayName||state.user.displayName||state.user.email||'',email:state.user.email||'',photoURL:state.user.photoURL||state.profile.photoURL||''};
       $('#userAvatar').src=avatarSrc(currentRecord);
       $('#topbarAccountBtn').setAttribute('aria-label',`Mở thông tin tài khoản ${currentRecord.displayName}`);
       renderAccountPopover();
-      $('#topbarAccountBtn').onclick=e=>{ e.stopPropagation(); setAccountMenu($('#accountPopover').classList.contains('hidden')); };
+      $('#topbarAccountBtn').onclick=e=>{ e.stopPropagation(); setAccountMenu($('#accountModalBackdrop').classList.contains('hidden')); };
       $('#syncBadge').textContent=`v${state.config.version||'1.0.0'}`;
     }
 
