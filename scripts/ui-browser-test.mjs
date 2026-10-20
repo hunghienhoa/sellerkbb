@@ -156,7 +156,7 @@ try {
   await page.click('#section-kpi [data-range-mode="30d"]');
   assert(await page.$eval('#section-kpi .kpi-rate-guide',e=>e.textContent.includes('KPI tự động không dùng GMV LIVE TikTok gộp')),"KPI guide must reject gross LIVE GMV");
   assert(await page.$eval('#section-kpi',e=>e.textContent.includes('KPI đã chốt')&&e.textContent.includes('KPI tạm tính')&&e.textContent.includes('KPI dự kiến')&&e.textContent.includes('Chờ đối soát')),"KPI final/provisional/waiting summary labels missing");
-  const autoKpiRows=await page.$eval('#section-kpi tbody tr',rows=>rows.map(row=>{
+  const autoKpiRows=await page.$$eval('#section-kpi tbody tr',rows=>rows.map(row=>{
     const cells=[...row.querySelectorAll('td')].map(x=>x.textContent.trim());
     return {name:cells[0]||'',finalKpi:Number((cells[5]||'').replace(/[^0-9]/g,'')||0)};
   }));
