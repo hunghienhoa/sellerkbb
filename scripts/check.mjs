@@ -85,10 +85,11 @@ assert(worker.includes("function summarizeLiveReconciliation"), "Reconciliation 
 assert(worker.includes("async function refreshKpiReconciliations"), "Scheduled KPI reconciliation refresher missing");
 assert(worker.includes('status === "COMPLETED" && active.length === 0'), "Completed-order finalization rule missing");
 assert(worker.includes("const finalized = cancelled ||"), "Cancelled orders must finalize reconciliation");
-assert(worker.includes("const liveSignalOrderRows = orders.filter(order => order?.attribution === \"live_signal\")"), "KPI reconciliation must isolate confirmed LIVE orders");
-assert(worker.includes("gmvAmount: usableForKpi ? confirmedLiveSignalAmount : 0"), "Automatic KPI GMV must use confirmed LIVE signal amount only");
-assert(worker.includes("timeWindowNetAmount"), "Time-window-only GMV exclusion summary missing");
-assert(worker.includes("các đơn chỉ khớp theo thời gian không được cộng vào KPI"), "Backend must explain time-window orders are excluded from KPI");
+assert(worker.includes('time_window_single_live'), "Single-LIVE time-window provisional attribution missing");
+assert(worker.includes("const kpiOrderRows = [...liveSignalOrderRows, ...provisionalTimeWindowRows]"), "KPI reconciliation must include provisional single-LIVE time-window orders");
+assert(worker.includes("gmvAmount: usableForKpi ? kpiGmvAmount : 0"), "Automatic KPI GMV must use reconciled KPI rows");
+assert(worker.includes("provisionalTimeWindowAmount")&&worker.includes("excludedTimeWindowAmount"), "Time-window provisional/excluded totals missing");
+assert(worker.includes("Chỉ có một kênh nội bộ LIVE trong khung giờ"), "Backend must explain single-LIVE provisional KPI rule");
 assert(worker.includes("reconciliation: previous?.reconciliation"), "Auto-sync must preserve reconciliation summary");
 assert(worker.includes("await refreshKpiReconciliations(env, token.access_token, merged, reason)"), "Auto-sync must refresh reconciled KPI basis");
 assert(worker.includes("await persistReconciliationSummary(env, liveId, result.kpiSummary)"), "Manual reconciliation must persist KPI summary");
@@ -356,6 +357,9 @@ assert(!html.includes("Math.min(12000,Number(state.maintenance.settings.firestor
 assert(html.includes("auth startup")&&html.includes("retryBoot"), "Startup error boundary missing");
 assert(worker.includes("error: null")&&worker.includes("const status = {\n      ok: true"), "Successful TikTok auto-sync must clear stale error state");
 assert(worker.includes("order_ids: ids")&&!worker.includes('order_ids: ids.join(",")'), "Return/Refund order_ids must be sent as a JSON list");
+assert(worker.includes("const query = { shop_cipher: shopCipher, page_size: 50 };"), "Return/Refund page_size must stay within TikTok maximum 50");
+assert(html.includes("Chưa kiểm tra được"), "Order aftersales UI must distinguish API failure from no aftersales");
+assert(html.includes("KPI tạm tính"), "Single-LIVE provisional KPI badge missing");
 assert(worker.includes("SELLERKBB_ALLOWED_LIVE_CHANNELS"), "SellerKBB LIVE channel whitelist missing");
 assert(worker.includes("parsed.filter(isAllowedSellerKbbLiveChannel)"), "Cached LIVE data must be whitelist-filtered");
 assert(worker.includes("insideRefreshedWindow")&&worker.includes("freshIds.has(id)"), "Refreshed sync window must prune stale affiliate sessions");
