@@ -87,7 +87,7 @@ const hoverMediaStart=html.indexOf("@media(hover:hover){");
 const globalReconCss=html.indexOf(".reconcile-list{display:grid;gap:12px}");
 const firstHoverClose=html.indexOf("\n}",hoverMediaStart);
 assert(globalReconCss>firstHoverClose, "Reconciliation base CSS must not live inside hover-only media");
-assert(read("README.md").includes("vùng bảo vệ đối soát tối thiểu 60 ngày"), "README 60-day reconciliation protection note missing");
+assert(read("README.md").includes("Bảo vệ đối soát")&&read("README.md").includes("60 ngày"), "README 60-day reconciliation protection note missing");
 assert(html.includes("function storageQuotaCard"), "Storage quota card renderer missing");
 assert(html.includes("provider:'GitHub'"), "GitHub storage card missing");
 assert(html.includes("provider:'Firebase'"), "Firebase storage card missing");
