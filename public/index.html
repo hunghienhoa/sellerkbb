@@ -2469,7 +2469,7 @@ tbody tr:hover td{background:#fffafb}
       <header class="topbar">
         <div class="topbar-title-wrap"><button id="menuToggle" class="menu-toggle" type="button" aria-label="Mở menu" aria-expanded="false">☰</button><div><h1 id="pageTitle" class="page-title">Tổng quan</h1><div id="pageSub" class="tiny"></div></div></div>
         <div class="topbar-right">
-          <span id="syncBadge" class="pill">v1.35.0</span>
+          <span id="syncBadge" class="pill">v1.36.0</span>
           <div class="account-menu-wrap">
             <button id="topbarAccountBtn" class="topbar-account-btn" type="button" aria-expanded="false" aria-controls="accountPopover" aria-label="Mở thông tin tài khoản">
               <img id="userAvatar" class="avatar topbar-account-avatar" alt="Ảnh đại diện Google">
@@ -2832,7 +2832,7 @@ tbody tr:hover td{background:#fffafb}
 
     function previewTs(iso){ return {toDate:()=>new Date(iso)}; }
     function enterPreview(){
-      state.config={version:'1.35.0-preview',tiktokConfigured:true};
+      state.config={version:'1.36.0-preview',tiktokConfigured:true};
       state.user={uid:'preview-admin',email:'admin@sellerkbb.demo',displayName:'Quản trị viên Demo',photoURL:avatarFallbackData('Quản trị viên Demo')};
       state.profile={role:'admin',status:'approved',displayName:'Quản trị viên Demo',photoURL:state.user.photoURL,permissions:['live.read','kpi.read']};
       state.maintenance={settings:{retentionDays:180,autoCleanup:true,emergencyPercent:85,firestoreSoftLimitMb:600,firestoreMaxSessions:12000,kvSoftKeyLimit:5000},github:{usedBytes:124000,limitBytes:10000000000,available:true},cloudflare:{keyCount:5,lastRun:{ranAt:new Date().toISOString(),deleted:0},usedBytes:428000,storageLimitBytes:1000000000,storageComplete:true},firebase:{freePlanMode:true,ttlEnabled:false,ttlRecommended:false,storageLimitBytes:1073741824}};
@@ -3720,8 +3720,8 @@ tbody tr:hover td{background:#fffafb}
     }
 
     function exportCsv(rows){
-      const header=['title','channel_username','channel_id','start_time','duration_seconds','gmv_recorded','items_sold','gmv_final','currency','kpi_mode','host','operator'];
-      const lines=[header,...rows.map(s=>[s.title||'',s.channelUsername||'',s.channelId||'',s.startTime?.toDate?.().toISOString?.()||'',s.durationSeconds||0,s.recordedGmvAmount||0,s.currentItemsSold??s.recordedItemsSold??0,finalGmv(s),s.currency||'',isManualKpi(s)?'manual':'auto',isManualKpi(s)?'':(s.hostName||''),isManualKpi(s)?'':(s.operatorName||'')])];
+      const header=['title','channel_username','channel_id','start_time','duration_seconds','gmv_recorded','items_sold','gmv_live_gross','gmv_reconciled_for_kpi','kpi_status','currency','kpi_mode','host','operator'];
+      const lines=[header,...rows.map(s=>{const basis=automaticKpiBasis(s);return [s.title||'',s.channelUsername||'',s.channelId||'',s.startTime?.toDate?.().toISOString?.()||'',s.durationSeconds||0,s.recordedGmvAmount||0,s.currentItemsSold??s.recordedItemsSold??0,finalGmv(s),isManualKpi(s)?'':(basis.usable?basis.gmv:''),isManualKpi(s)?'manual':kpiStatusLabel(basis.status),s.currency||'',isManualKpi(s)?'manual':'auto',isManualKpi(s)?'':(s.hostName||''),isManualKpi(s)?'':(s.operatorName||'')]} )];
       const csv=lines.map(r=>r.map(v=>`"${String(v??'').replaceAll('"','""')}"`).join(',')).join('\n'); const blob=new Blob(['\ufeff'+csv],{type:'text/csv;charset=utf-8'}); const a=document.createElement('a');a.href=URL.createObjectURL(blob);const range=selectedRange();a.download=`tiktok-live-${range.startKey}_${range.endKey}.csv`;a.click();URL.revokeObjectURL(a.href);
     }
 
