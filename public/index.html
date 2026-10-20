@@ -993,6 +993,137 @@ tbody tr:hover td{background:#fffafd}
   .reconcile-order-bottom{grid-template-columns:1fr 1fr}
 }
 
+.reconcile-modal-backdrop{
+  position:fixed;
+  inset:0;
+  z-index:115;
+  display:grid;
+  place-items:center;
+  padding:24px;
+  background:rgba(61,42,52,.34);
+  backdrop-filter:blur(5px);
+  -webkit-backdrop-filter:blur(5px);
+}
+.reconcile-modal-backdrop.hidden{display:none!important}
+.reconcile-modal{
+  width:min(980px,calc(100vw - 48px));
+  max-height:min(90dvh,920px);
+  display:flex;
+  flex-direction:column;
+  overflow:hidden;
+  border:1px solid #ebcada;
+  border-radius:18px;
+  background:#fff;
+  box-shadow:0 30px 80px rgba(92,52,72,.24);
+}
+.reconcile-modal-header{
+  flex:0 0 auto;
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap:16px;
+  padding:16px 18px;
+  border-bottom:1px solid var(--line);
+  background:linear-gradient(180deg,#fffafb 0,#fff 100%);
+}
+.reconcile-modal-heading{min-width:0}
+.reconcile-modal-eyebrow{
+  color:#a95d80;
+  font-size:9.5px;
+  font-weight:850;
+  letter-spacing:.09em;
+  text-transform:uppercase;
+}
+.reconcile-modal-title{
+  margin-top:3px;
+  color:#4f3442;
+  font-size:18px;
+  font-weight:900;
+  line-height:1.3;
+}
+.reconcile-modal-meta{
+  display:flex;
+  flex-wrap:wrap;
+  gap:4px 12px;
+  margin-top:4px;
+  color:var(--muted);
+  font-size:11px;
+}
+.reconcile-modal-tools{
+  flex:0 0 auto;
+  display:flex;
+  align-items:center;
+  gap:7px;
+}
+.reconcile-modal-close{
+  width:38px;
+  height:38px;
+  display:grid;
+  place-items:center;
+  padding:0;
+  border:1px solid var(--line);
+  border-radius:50%;
+  background:#fff;
+  color:#765365;
+  font-size:23px;
+  line-height:1;
+  cursor:pointer;
+}
+.reconcile-modal-close:hover{background:#fff4f8;border-color:#e5bfd1}
+.reconcile-modal-body{
+  min-height:0;
+  overflow-y:auto;
+  overscroll-behavior:contain;
+  -webkit-overflow-scrolling:touch;
+  padding:14px 18px 20px;
+  background:#fff;
+}
+.reconcile-modal-body.has-data{padding-top:14px}
+body.reconcile-modal-open{overflow:hidden!important;touch-action:none}
+body.reconcile-modal-open .reconcile-modal,
+body.reconcile-modal-open .reconcile-modal-body{touch-action:pan-y}
+.reconcile-card-open-note{
+  display:inline-flex;
+  align-items:center;
+  gap:5px;
+  color:#9a617b;
+  font-size:10.5px;
+  font-weight:750;
+}
+@media(max-width:700px){
+  .reconcile-modal-backdrop{
+    place-items:stretch;
+    padding:0;
+    background:#fff;
+    backdrop-filter:none;
+    -webkit-backdrop-filter:none;
+  }
+  .reconcile-modal{
+    width:100%;
+    height:100dvh;
+    max-height:100dvh;
+    border:0;
+    border-radius:0;
+    box-shadow:none;
+  }
+  .reconcile-modal-header{
+    position:relative;
+    z-index:2;
+    padding:calc(12px + env(safe-area-inset-top)) 12px 10px;
+    gap:10px;
+    box-shadow:0 1px 8px rgba(114,67,89,.06);
+  }
+  .reconcile-modal-title{font-size:16px}
+  .reconcile-modal-meta{display:grid;gap:2px;font-size:10.5px}
+  .reconcile-modal-tools{gap:5px}
+  .reconcile-modal-tools .btn{min-height:36px;padding:6px 9px;font-size:11px}
+  .reconcile-modal-close{width:36px;height:36px;font-size:21px}
+  .reconcile-modal-body{
+    padding:11px 12px calc(18px + env(safe-area-inset-bottom));
+    overscroll-behavior-y:contain;
+  }
+}
+
 @media(max-width:1050px) and (min-width:701px){
   #app{grid-template-columns:86px minmax(0,1fr)}
   .sidebar{padding:16px 10px}
@@ -2330,7 +2461,7 @@ tbody tr:hover td{background:#fffafb}
       <header class="topbar">
         <div class="topbar-title-wrap"><button id="menuToggle" class="menu-toggle" type="button" aria-label="Mở menu" aria-expanded="false">☰</button><div><h1 id="pageTitle" class="page-title">Tổng quan</h1><div id="pageSub" class="tiny"></div></div></div>
         <div class="topbar-right">
-          <span id="syncBadge" class="pill">v1.34.0</span>
+          <span id="syncBadge" class="pill">v1.35.0</span>
           <div class="account-menu-wrap">
             <button id="topbarAccountBtn" class="topbar-account-btn" type="button" aria-expanded="false" aria-controls="accountPopover" aria-label="Mở thông tin tài khoản">
               <img id="userAvatar" class="avatar topbar-account-avatar" alt="Ảnh đại diện Google">
@@ -2354,6 +2485,22 @@ tbody tr:hover td{background:#fffafb}
   </div>
   <div id="accountModalBackdrop" class="account-modal-backdrop hidden" aria-hidden="true">
     <div id="accountPopover" class="topbar-account-popover" role="dialog" aria-modal="true" aria-label="Thông tin tài khoản"></div>
+  </div>
+  <div id="reconcileModalBackdrop" class="reconcile-modal-backdrop hidden" aria-hidden="true">
+    <section id="reconcileModal" class="reconcile-modal" role="dialog" aria-modal="true" aria-labelledby="reconcileModalTitle">
+      <header class="reconcile-modal-header">
+        <div class="reconcile-modal-heading">
+          <div class="reconcile-modal-eyebrow">Đối soát đơn LIVE</div>
+          <div id="reconcileModalTitle" class="reconcile-modal-title">Phiên LIVE</div>
+          <div id="reconcileModalMeta" class="reconcile-modal-meta"></div>
+        </div>
+        <div class="reconcile-modal-tools">
+          <button id="reconcileModalRefresh" class="btn primary" type="button" aria-label="Làm mới đối soát">${icon("refresh",14)} Làm mới</button>
+          <button id="reconcileModalClose" class="reconcile-modal-close" type="button" aria-label="Đóng đối soát">×</button>
+        </div>
+      </header>
+      <div id="reconcileModalBody" class="reconcile-modal-body"></div>
+    </section>
   </div>
 
   <script type="module">
@@ -2596,7 +2743,7 @@ tbody tr:hover td{background:#fffafb}
 
     const LIVE_PAGE_SIZE = 20;
     const RECONCILIATION_PROTECTION_DAYS = 60;
-    const state = { config:null, auth:null, db:null, user:null, profile:null, sessions:[], users:[], staff:[], section:'dashboard', livePage:1, rangeMode:'today', customStart:'', customEnd:'', customPickerScope:null, maintenance:{settings:{retentionDays:180,autoCleanup:true,emergencyPercent:85,firestoreSoftLimitMb:600,firestoreMaxSessions:12000,kvSoftKeyLimit:5000},github:{usedBytes:0,limitBytes:10000000000,available:false},cloudflare:{keyCount:0,lastRun:null,usedBytes:0,storageLimitBytes:1000000000,storageComplete:true},firebase:{freePlanMode:true,ttlEnabled:false,ttlRecommended:false,storageLimitBytes:1073741824}}, autoSyncStatus:null, autoSyncRefreshing:false, autoSyncWatcher:null, autoSyncVisibilityBound:false };
+    const state = { config:null, auth:null, db:null, user:null, profile:null, sessions:[], users:[], staff:[], section:'dashboard', livePage:1, rangeMode:'today', customStart:'', customEnd:'', customPickerScope:null, maintenance:{settings:{retentionDays:180,autoCleanup:true,emergencyPercent:85,firestoreSoftLimitMb:600,firestoreMaxSessions:12000,kvSoftKeyLimit:5000},github:{usedBytes:0,limitBytes:10000000000,available:false},cloudflare:{keyCount:0,lastRun:null,usedBytes:0,storageLimitBytes:1000000000,storageComplete:true},firebase:{freePlanMode:true,ttlEnabled:false,ttlRecommended:false,storageLimitBytes:1073741824}}, autoSyncStatus:null, autoSyncRefreshing:false, autoSyncWatcher:null, autoSyncVisibilityBound:false, reconcileModalSessionId:'' };
 
     const DEFAULT_STAFF_MEMBERS=[
       {id:'staff-thao-my',displayName:'Thảo My',role:'host'},
@@ -2677,7 +2824,7 @@ tbody tr:hover td{background:#fffafb}
 
     function previewTs(iso){ return {toDate:()=>new Date(iso)}; }
     function enterPreview(){
-      state.config={version:'1.34.0-preview',tiktokConfigured:true};
+      state.config={version:'1.35.0-preview',tiktokConfigured:true};
       state.user={uid:'preview-admin',email:'admin@sellerkbb.demo',displayName:'Quản trị viên Demo',photoURL:avatarFallbackData('Quản trị viên Demo')};
       state.profile={role:'admin',status:'approved',displayName:'Quản trị viên Demo',photoURL:state.user.photoURL,permissions:['live.read','kpi.read']};
       state.maintenance={settings:{retentionDays:180,autoCleanup:true,emergencyPercent:85,firestoreSoftLimitMb:600,firestoreMaxSessions:12000,kvSoftKeyLimit:5000},github:{usedBytes:124000,limitBytes:10000000000,available:true},cloudflare:{keyCount:5,lastRun:{ranAt:new Date().toISOString(),deleted:0},usedBytes:428000,storageLimitBytes:1000000000,storageComplete:true},firebase:{freePlanMode:true,ttlEnabled:false,ttlRecommended:false,storageLimitBytes:1073741824}};
@@ -2934,9 +3081,12 @@ tbody tr:hover td{background:#fffafb}
       $('#menuToggle').onclick=()=>setMobileMenu(!$('#sidebar').classList.contains('open'));
       $('#mobileMenuOverlay').onclick=()=>{ setAccountMenu(false); setMobileMenu(false); };
       $('#accountModalBackdrop').onclick=e=>{ if(e.target===$('#accountModalBackdrop'))setAccountMenu(false); };
+      $('#reconcileModalBackdrop').onclick=e=>{ if(e.target===$('#reconcileModalBackdrop'))closeReconciliationModal(); };
+      $('#reconcileModalClose').onclick=closeReconciliationModal;
+      $('#reconcileModalRefresh').onclick=()=>{ const session=activeReconcileSession(); if(session)loadReconciliation(session.id,true); };
       if(document.documentElement.dataset.shellAccountBound!=='1'){
         document.documentElement.dataset.shellAccountBound='1';
-        document.addEventListener('keydown',e=>{ if(e.key==='Escape'){ setAccountMenu(false); setMobileMenu(false); } });
+        document.addEventListener('keydown',e=>{ if(e.key==='Escape'){ if(state.reconcileModalSessionId)closeReconciliationModal(); else { setAccountMenu(false); setMobileMenu(false); } } });
       }
       const currentRecord={displayName:state.profile.displayName||state.user.displayName||state.user.email||'',email:state.user.email||'',photoURL:state.user.photoURL||state.profile.photoURL||''};
       $('#userAvatar').src=avatarSrc(currentRecord);
@@ -3061,7 +3211,7 @@ tbody tr:hover td{background:#fffafb}
       $('#nav').querySelectorAll('button').forEach(b=>b.onclick=()=>switchSection(b.dataset.section));
     }
 
-    function switchSection(id){ state.section=id; setAccountMenu(false); setMobileMenu(false); document.querySelectorAll('.section').forEach(s=>s.classList.remove('active')); $(`#section-${id}`).classList.add('active'); renderNav(); const meta={dashboard:['Tổng quan','Báo cáo LIVE & KPI'],live:['Phiên LIVE','Gắn Host/Operator cho từng phiên'],reconcile:['Đối soát đơn LIVE','Xem trạng thái đơn và hậu mãi theo từng phiên LIVE'],kpi:['KPI nhân sự','Tổng hợp KPI tự động + KPI thủ công đã lưu'], 'manual-kpi':['KPI thủ công','Nhập KPI theo từng người cho các phiên tính thủ công'],users:['Quản lý tài khoản','Duyệt, chỉnh quyền hoặc xóa user'],staff:['Quản lý nhân sự','Danh sách Host/Vận hành dùng chung cho toàn hệ thống'],export:['Xuất file','Xuất báo cáo theo khoảng thời gian đã chọn'],tiktok:['TikTok / API','Tự động đồng bộ LIVE và gia hạn token 24/24'],storage:['Lưu trữ & tự dọn','Giữ dữ liệu tối đa 6 tháng và bảo vệ dung lượng']}[id]; $('#pageTitle').textContent=meta[0]; $('#pageSub').textContent=meta[1]; }
+    function switchSection(id){ if(state.reconcileModalSessionId)closeReconciliationModal(); state.section=id; setAccountMenu(false); setMobileMenu(false); document.querySelectorAll('.section').forEach(s=>s.classList.remove('active')); $(`#section-${id}`).classList.add('active'); renderNav(); const meta={dashboard:['Tổng quan','Báo cáo LIVE & KPI'],live:['Phiên LIVE','Gắn Host/Operator cho từng phiên'],reconcile:['Đối soát đơn LIVE','Xem trạng thái đơn và hậu mãi theo từng phiên LIVE'],kpi:['KPI nhân sự','Tổng hợp KPI tự động + KPI thủ công đã lưu'], 'manual-kpi':['KPI thủ công','Nhập KPI theo từng người cho các phiên tính thủ công'],users:['Quản lý tài khoản','Duyệt, chỉnh quyền hoặc xóa user'],staff:['Quản lý nhân sự','Danh sách Host/Vận hành dùng chung cho toàn hệ thống'],export:['Xuất file','Xuất báo cáo theo khoảng thời gian đã chọn'],tiktok:['TikTok / API','Tự động đồng bộ LIVE và gia hạn token 24/24'],storage:['Lưu trữ & tự dọn','Giữ dữ liệu tối đa 6 tháng và bảo vệ dung lượng']}[id]; $('#pageTitle').textContent=meta[0]; $('#pageSub').textContent=meta[1]; }
 
     function finalGmv(s){ return Number(s.finalGmvAmount ?? s.currentGmvAmount ?? s.recordedGmvAmount ?? 0); }
 
@@ -3104,20 +3254,18 @@ tbody tr:hover td{background:#fffafb}
     }
     function reconcileAttributionLabel(order){ return order?.attribution==='live_signal'?'Có tín hiệu LIVE':'Khớp theo thời gian'; }
     function reconcileSessionCard(session){
+      const isOpen=state.reconcileModalSessionId===session.id;
       return `<article class="reconcile-session" data-reconcile-session="${session.id}">
         <div class="reconcile-session-head">
           <div class="reconcile-session-copy">
             <div class="reconcile-session-title">${esc(session.title||'Phiên LIVE')}</div>
             <div class="reconcile-session-meta"><span>@${esc(session.channelUsername||'—')}</span><span>${fmtLiveTimeRange(session)}</span></div>
             <div class="reconcile-session-gmv">${icon('money',13)} GMV LIVE gộp: ${fmtMoney(finalGmv(session),session.currency)}</div>
+            ${isOpen?'<div class="reconcile-card-open-note">Đang mở chi tiết đơn trong popup</div>':''}
           </div>
           <div class="reconcile-actions">
-            <button class="btn" type="button" data-reconcile-load="${session.id}">${icon('history',14)} Xem đơn</button>
-            <button class="btn primary hidden" type="button" data-reconcile-refresh="${session.id}" aria-label="Làm mới đối soát">${icon('refresh',14)} Làm mới</button>
+            <button class="btn ${isOpen?'hidden':''}" type="button" data-reconcile-open="${session.id}">${icon('history',14)} Xem đơn</button>
           </div>
-        </div>
-        <div class="reconcile-result" data-reconcile-result="${session.id}">
-          <div class="reconcile-no-data">Bấm <b>Xem đơn</b> để tải trạng thái vận chuyển và hậu mãi của phiên này.</div>
         </div>
       </article>`;
     }
@@ -3167,8 +3315,46 @@ tbody tr:hover td{background:#fffafb}
       root.querySelectorAll('[data-reconcile-filter]').forEach(btn=>btn.classList.toggle('active',btn.dataset.reconcileFilter===key));
       root.querySelector('.reconcile-empty-filter')?.classList.toggle('show',visible===0);
     }
+    let reconcileModalOpener=null;
+    function activeReconcileSession(){
+      return state.sessions.find(s=>s.id===state.reconcileModalSessionId)||null;
+    }
+    function setReconcileModalOpen(open){
+      const backdrop=$('#reconcileModalBackdrop');
+      if(!backdrop)return;
+      backdrop.classList.toggle('hidden',!open);
+      backdrop.setAttribute('aria-hidden',String(!open));
+      document.body.classList.toggle('reconcile-modal-open',open);
+    }
+    function closeReconciliationModal(){
+      const previousId=state.reconcileModalSessionId;
+      state.reconcileModalSessionId='';
+      setReconcileModalOpen(false);
+      const body=$('#reconcileModalBody');
+      if(body){body.classList.remove('has-data');body.innerHTML='';}
+      document.querySelectorAll('[data-reconcile-open]').forEach(btn=>{
+        if(btn.dataset.reconcileOpen===previousId)btn.classList.remove('hidden');
+      });
+      if(reconcileModalOpener?.isConnected)reconcileModalOpener.focus({preventScroll:true});
+      reconcileModalOpener=null;
+    }
+    function openReconciliationModal(sessionId,opener){
+      const session=state.sessions.find(s=>s.id===sessionId);
+      if(!session)return;
+      reconcileModalOpener=opener||document.querySelector('[data-reconcile-open="'+sessionId+'"]');
+      state.reconcileModalSessionId=sessionId;
+      document.querySelectorAll('[data-reconcile-open]').forEach(btn=>{
+        if(btn.dataset.reconcileOpen===sessionId)btn.classList.add('hidden');
+      });
+      $('#reconcileModalTitle').textContent=session.title||'Phiên LIVE';
+      $('#reconcileModalMeta').innerHTML=`<span>@${esc(session.channelUsername||'—')}</span><span>${esc(fmtLiveTimeRange(session))}</span><span>GMV LIVE gộp: <b>${fmtMoney(finalGmv(session),session.currency)}</b></span>`;
+      setReconcileModalOpen(true);
+      $('#reconcileModalClose')?.focus({preventScroll:true});
+      loadReconciliation(sessionId,false);
+    }
     function renderReconcileResult(session,result){
-      const root=document.querySelector('[data-reconcile-result="'+session.id+'"]'); if(!root)return;
+      if(state.reconcileModalSessionId!==session.id)return;
+      const root=$('#reconcileModalBody'); if(!root)return;
       const totals=result?.totals||{}, orders=Array.isArray(result?.orders)?result.orders:[], aftersalesAvailable=result?.scope?.aftersalesAvailable!==false;
       const filters=reconcileFilterDefinitions(orders);
       root.classList.add('has-data');
@@ -3196,16 +3382,22 @@ tbody tr:hover td{background:#fffafb}
       root.querySelectorAll('[data-reconcile-filter]').forEach(btn=>btn.onclick=()=>applyReconcileFilter(root,btn.dataset.reconcileFilter));
     }
     async function loadReconciliation(sessionId,force=false){
-      const session=state.sessions.find(s=>s.id===sessionId), root=document.querySelector('[data-reconcile-result="'+sessionId+'"]'); if(!session||!root)return;
+      const session=state.sessions.find(s=>s.id===sessionId), root=$('#reconcileModalBody');
+      if(!session||!root||state.reconcileModalSessionId!==sessionId)return;
       root.classList.remove('has-data');
       root.innerHTML='<div class="reconcile-loading">Đang tải trạng thái đơn từ TikTok…</div>';
+      const refresh=$('#reconcileModalRefresh');
+      if(refresh){refresh.disabled=true;refresh.innerHTML=icon('refresh',14)+' Đang tải…';}
       try{
         const result=PREVIEW?previewReconciliation(session):await api('/api/tiktok/reconcile/live?live_id='+encodeURIComponent(session.liveId||session.id)+(force?'&refresh=1':''));
-        renderReconcileResult(session,result);
-        document.querySelector('[data-reconcile-refresh="'+sessionId+'"]')?.classList.remove('hidden');
+        if(state.reconcileModalSessionId===sessionId)renderReconcileResult(session,result);
       }catch(error){
-        root.classList.add('has-data');
-        root.innerHTML='<div class="notice bad">Không đối soát được phiên này: '+esc(error.message||String(error))+'</div>';
+        if(state.reconcileModalSessionId===sessionId){
+          root.classList.add('has-data');
+          root.innerHTML='<div class="notice bad">Không đối soát được phiên này: '+esc(error.message||String(error))+'</div>';
+        }
+      }finally{
+        if(refresh){refresh.disabled=false;refresh.innerHTML=icon('refresh',14)+' Làm mới';}
       }
     }
     function previewReconciliation(session){
@@ -3250,10 +3442,9 @@ tbody tr:hover td{background:#fffafb}
     function renderReconcile(){
       if(!can('live.read')){ $('#section-reconcile').innerHTML='';return; }
       const ss=sessionsForRange();
-      $('#section-reconcile').innerHTML=`${timeFilterHtml('reconcile')}<div class="data-note">${icon('shield',16)}<span>Chọn một phiên rồi bấm <b>Xem đơn</b>. Các đơn được gắn thẻ rõ theo trạng thái giao hàng/hậu mãi và có thể lọc nhanh ngay trên từng phiên.</span></div><div class="reconcile-list">${ss.length?ss.map(reconcileSessionCard).join(''):'<div class="empty">Không có phiên LIVE trong khoảng thời gian này.</div>'}</div>`;
+      $('#section-reconcile').innerHTML=`${timeFilterHtml('reconcile')}<div class="data-note">${icon('shield',16)}<span>Chọn một phiên rồi bấm <b>Xem đơn</b>. Chi tiết mở trong popup riêng và khóa cuộn nền để không vuốt nhầm sang phiên LIVE khác.</span></div><div class="reconcile-list">${ss.length?ss.map(reconcileSessionCard).join(''):'<div class="empty">Không có phiên LIVE trong khoảng thời gian này.</div>'}</div>`;
       bindTimeFilter('reconcile');
-      document.querySelectorAll('[data-reconcile-load]').forEach(b=>b.onclick=()=>loadReconciliation(b.dataset.reconcileLoad,false));
-      document.querySelectorAll('[data-reconcile-refresh]').forEach(b=>b.onclick=()=>loadReconciliation(b.dataset.reconcileRefresh,true));
+      document.querySelectorAll('[data-reconcile-open]').forEach(b=>b.onclick=()=>openReconciliationModal(b.dataset.reconcileOpen,b));
     }
     function liveEndTime(s){
       const explicit=s?.endTime?.toDate?.();
