@@ -4,7 +4,7 @@
 
 ### Báo cáo TikTok LIVE · KPI nhân sự · Tự đồng bộ 24/24
 
-**Phiên bản hiện tại: v1.45.0**
+**Phiên bản hiện tại: v1.45.1**
 
 [![GitHub Release](https://img.shields.io/github/v/release/hunghienhoa/sellerkbb?label=Release)](https://github.com/hunghienhoa/sellerkbb/releases)
 [![GitHub Actions](https://img.shields.io/github/actions/workflow/status/hunghienhoa/sellerkbb/deploy.yml?branch=main&label=Ki%E1%BB%83m%20tra%20%26%20Backup)](https://github.com/hunghienhoa/sellerkbb/actions)
@@ -17,14 +17,12 @@
 
 ---
 
-## 🆕 Cập nhật mới nhất — v1.45.0
+## 🆕 Cập nhật mới nhất — v1.45.1
 
-- Sau khi lưu **Ngày Campaign** hoặc **Mega Live**, ô chọn loại phiên và nút lưu tự thu gọn; chỉ còn loại phiên đã lưu và nút **Sửa**.
-- Bấm **Sửa** sẽ mở lại ô chọn Campaign/Mega và nút **Lưu/Lưu thiết lập** để đổi loại phiên.
-- Sau khi bấm **Lưu KPI thủ công**, cả khối nhập KPI của phiên tự thu gọn thành trạng thái **✓ KPI thủ công đã lưu** kèm GMV Host, số nhóm và nút **Sửa KPI**.
-- Bấm **Sửa KPI** mở lại phần nhập; từng cặp Host/Vận hành đã lưu vẫn tiếp tục có nút **Chi tiết** riêng như trước.
-- Cả hai trạng thái thu gọn vẫn giữ sau khi reload trang trên PC/mobile.
-- Quy trình cập nhật được ghi thành quy tắc dự án: mỗi bản phải cập nhật README, kiểm thử, đưa bản chính + bản demo lên web và chỉ giữ **5 GitHub Releases mới nhất**.
+- Sửa bố cục trạng thái **Loại phiên đã lưu** của Ngày Campaign/Mega Live trên điện thoại.
+- Tên loại phiên nằm gọn bên trái, nút **Sửa** giữ kích thước nhỏ bên phải; không còn bị kéo full chiều ngang hoặc ép chữ xuống nhiều dòng.
+- Bổ sung kiểm thử mobile để chặn lỗi tràn khung/lệch nút khi các style nút chung thay đổi ở những bản sau.
+- Giữ nguyên toàn bộ logic v1.45.0: lưu xong tự thu gọn và bấm **Sửa** để mở lại lựa chọn.
 
 ---
 
@@ -107,7 +105,7 @@ Nếu một phiên kéo dài nhiều giờ và nhiều người thay ca:
 2. SellerKBB hiện thêm ô **Gắn thẻ loại phiên**.
 3. Chọn **Ngày Campaign** hoặc **Mega Live**. Đây là lựa chọn bắt buộc trước khi lưu.
 4. SellerKBB tự xóa lựa chọn Host/Operator tự động của phiên đó và **ẩn hẳn hai ô Host Livestream / Nhân viên vận hành** khỏi card phiên LIVE.
-5. Bấm **Lưu/Lưu thiết lập**. Sau khi lưu, ô chọn loại phiên tự thu gọn, chỉ còn loại đã chọn và nút **Sửa**. Bấm **Sửa** để mở lại ô chọn khi cần đổi Campaign/Mega.
+5. Bấm **Lưu/Lưu thiết lập**. Sau khi lưu, ô chọn loại phiên tự thu gọn, chỉ còn loại đã chọn ở bên trái và nút **Sửa** gọn bên phải. Bấm **Sửa** để mở lại ô chọn khi cần đổi Campaign/Mega.
 6. Thẻ loại phiên vẫn hiển thị ngay trên phiên LIVE và trong tab KPI thủ công. Nếu bỏ tích KPI thủ công, hai ô Host/Vận hành sẽ hiện lại để cấu hình lại chế độ KPI tự động.
 7. Phiên vẫn xuất hiện trong doanh thu/báo cáo nhưng **không cộng KPI tự động**.
 8. Phiên được đưa vào tab **KPI thủ công** trong nhóm **Công cụ**.
@@ -236,6 +234,7 @@ README giữ lại phần này để nhân sự có thể biết **vì sao giao 
 
 | Phiên bản | Thay đổi chính |
 |---|---|
+| **v1.45.1** | Fix bố cục Campaign/Mega đã lưu trên mobile: tên loại phiên và nút **Sửa** cân đối, không tràn/không kéo nút full width. |
 | **v1.45.0** | Thu gọn loại Campaign/Mega sau khi lưu và thu gọn toàn bộ khối KPI thủ công sau khi lưu; thêm nút **Sửa** / **Sửa KPI** để mở lại khi cần chỉnh. |
 | **v1.44.0** | Mobile Phiên LIVE tự thu gọn Host/Vận hành sau khi lưu đủ, hiển thị tên đã gán và nút **Sửa** để mở lại bộ chọn khi cần đổi người. |
 | **v1.43.0** | Phiên LIVE đã chốt trên Tổng quan/Phiên LIVE dùng **✓ xanh + nền/viền xanh nhẹ**, không còn nhìn như trạng thái hồng tạm tính. |

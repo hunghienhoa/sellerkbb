@@ -40,6 +40,8 @@ assert(html.includes("card.querySelector('[data-assignment-editor]')?.classList.
 assert(html.includes("function hasSavedManualKpiType(session)"), "Saved Campaign/Mega compact-state helper missing");
 assert(html.includes("data-manual-type-summary"), "Saved Campaign/Mega summary missing");
 assert(html.includes("data-edit-manual-type"), "Campaign/Mega edit control missing");
+assert(html.includes(".mobile-live-list .manual-type-edit{width:auto!important}"), "Mobile Campaign/Mega edit button width override missing");
+assert(html.includes("grid-template-columns:minmax(0,1fr) auto"), "Campaign/Mega saved summary must use balanced two-column layout");
 assert(html.includes("data-manual-kpi-session-summary"), "Saved manual KPI session summary missing");
 assert(html.includes("data-manual-kpi-session-editor"), "Manual KPI session editor wrapper missing");
 assert(html.includes("data-manual-kpi-edit"), "Manual KPI session edit control missing");

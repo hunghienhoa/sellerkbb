@@ -620,6 +620,24 @@ try {
   await page.click(mobileSavedCard+' [data-save-session]');
   await sleep(100);
   assert(await page.$eval('#actionToast',e=>e.textContent.includes('Ngày Campaign')&&e.textContent.includes('KPI thủ công')),"Mobile Campaign classification save toast missing");
+  const mobileTypeLayout=await page.$eval(mobileSavedCard+' [data-manual-type-summary]',e=>{
+    const button=e.querySelector('[data-edit-manual-type]');
+    const copy=e.querySelector('.manual-type-summary-copy');
+    const box=e.getBoundingClientRect();
+    const buttonBox=button.getBoundingClientRect();
+    const copyBox=copy.getBoundingClientRect();
+    return {
+      display:getComputedStyle(e).display,
+      width:box.width,
+      buttonWidth:buttonBox.width,
+      copyWidth:copyBox.width,
+      overflow:e.scrollWidth>e.clientWidth+1,
+      buttonInside:buttonBox.right<=box.right+1&&buttonBox.left>=box.left-1
+    };
+  });
+  assert(mobileTypeLayout.display==='grid',"Mobile Campaign/Mega saved summary must use grid layout");
+  assert(!mobileTypeLayout.overflow&&mobileTypeLayout.buttonInside,"Mobile Campaign/Mega saved summary must not overflow its card");
+  assert(mobileTypeLayout.buttonWidth<mobileTypeLayout.width*.4&&mobileTypeLayout.copyWidth>mobileTypeLayout.buttonWidth,"Mobile Sửa button must stay compact beside the saved type");
 
   await page.click('#section-live [data-range-mode="custom"]');
   await page.waitForSelector('#section-live [data-date-calendar="live"] [data-calendar-day]');
