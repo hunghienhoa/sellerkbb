@@ -1321,7 +1321,31 @@ td .manual-type-choice+.btn{width:100%}
 .auto-person-wrap{display:block}
 .manual-session .auto-person-wrap{display:none!important}
 .mobile-auto-person-fields{display:grid;gap:8px}
+.mobile-person-assignment-summary{
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap:10px;
+  padding:9px 10px;
+  border:1px solid var(--line);
+  border-radius:9px;
+  background:#fff;
+}
+.mobile-person-assignment-copy{display:grid;gap:6px;min-width:0;flex:1}
+.mobile-person-assignment-item{
+  display:grid;
+  grid-template-columns:minmax(0,1fr) minmax(0,1.4fr);
+  align-items:baseline;
+  gap:8px;
+}
+.mobile-person-assignment-item span{color:var(--muted);font-size:10px;font-weight:700}
+.mobile-person-assignment-item b{min-width:0;text-align:right;color:#5f4050;font-size:12px;overflow-wrap:anywhere}
+.mobile-assignment-edit{width:auto!important;min-height:34px!important;padding:6px 9px!important;flex:0 0 auto}
+.mobile-assignment-editor{display:grid;gap:8px}
+.mobile-assignment-editor.hidden,.mobile-person-assignment-summary.hidden{display:none!important}
+.mobile-live-card.reconciled .mobile-person-assignment-summary{border-color:#d9ebe4;background:#f8fcfa}
 .manual-session .mobile-auto-person-fields{display:none!important}
+.manual-session .mobile-person-assignment-summary{display:none!important}
 @media(max-width:700px){
   .manual-type-choice{margin:2px 0 4px}
   .manual-type-choice .input{width:100%}
@@ -2747,7 +2771,7 @@ tbody tr:hover td{background:#fffafb}
       <header class="topbar">
         <div class="topbar-title-wrap"><button id="menuToggle" class="menu-toggle" type="button" aria-label="Mở menu" aria-expanded="false">☰</button><div><h1 id="pageTitle" class="page-title">Tổng quan</h1><div id="pageSub" class="tiny"></div></div></div>
         <div class="topbar-right">
-          <span id="syncBadge" class="pill">v1.43.0</span>
+          <span id="syncBadge" class="pill">v1.44.0</span>
           <div class="account-menu-wrap">
             <button id="topbarAccountBtn" class="topbar-account-btn" type="button" aria-expanded="false" aria-controls="accountPopover" aria-label="Mở thông tin tài khoản">
               <img id="userAvatar" class="avatar topbar-account-avatar" alt="Ảnh đại diện Google">
@@ -3111,7 +3135,7 @@ tbody tr:hover td{background:#fffafb}
 
     function previewTs(iso){ return {toDate:()=>new Date(iso)}; }
     function enterPreview(){
-      state.config={version:'1.43.0-preview',tiktokConfigured:true};
+      state.config={version:'1.44.0-preview',tiktokConfigured:true};
       state.user={uid:'preview-admin',email:'admin@sellerkbb.demo',displayName:'Quản trị viên Demo',photoURL:avatarFallbackData('Quản trị viên Demo')};
       state.profile={role:'admin',status:'approved',displayName:'Quản trị viên Demo',photoURL:state.user.photoURL,permissions:['live.read','kpi.read']};
       state.maintenance={settings:{retentionDays:180,autoCleanup:true,emergencyPercent:85,firestoreSoftLimitMb:600,firestoreMaxSessions:12000,kvSoftKeyLimit:5000},github:{usedBytes:124000,limitBytes:10000000000,available:true},cloudflare:{keyCount:5,lastRun:{ranAt:new Date().toISOString(),deleted:0},usedBytes:428000,storageLimitBytes:1000000000,storageComplete:true},firebase:{freePlanMode:true,ttlEnabled:false,ttlRecommended:false,storageLimitBytes:1073741824}};
@@ -3886,6 +3910,11 @@ tbody tr:hover td{background:#fffafb}
       return `${startDate} Vào lúc ${startTime}-${endDate} ${endTime}`;
     }
     function isManualKpi(s){ return s?.kpiMode==='manual'; }
+    function hasSavedAutoAssignment(session){
+      return !isManualKpi(session)
+        && Boolean(String(session?.hostUid||session?.hostName||'').trim())
+        && Boolean(String(session?.operatorUid||session?.operatorName||'').trim());
+    }
     function manualKpiType(s){ return s?.manualKpiType==='campaign'?'campaign':s?.manualKpiType==='mega'?'mega':''; }
     function manualKpiTypeLabel(s){
       const type=manualKpiType(s);
@@ -3993,6 +4022,7 @@ tbody tr:hover td{background:#fffafb}
       }).join('')}</tbody></table></div>`;
       const mobile=`<div class="mobile-live-list">${rows.map(s=>{
         const figures=sessionGmvFigures(s), reconciled=figures.final!==null;
+        const savedAssignment=hasSavedAutoAssignment(s);
         return `<article class="mobile-live-card ${reconciled?'reconciled':''}" data-live-session="${s.id}">
         <div class="mobile-live-head"><div><div class="mobile-live-title">${esc(s.title||'Phiên LIVE')}</div><div class="kpi-state-line">${reconciled?'<span class="live-reconciled-badge">✓ Đã đối soát</span>':''}${isManualKpi(s)?'<span class="pill warn manual-live-type-pill">'+esc(manualKpiTypeLabel(s))+' · tính thủ công</span>':kpiStatusPill(s)}</div><div class="tiny">@${esc(s.channelUsername||'—')}</div><div class="mobile-live-time">${icon('clock',13)} <b>${fmtLiveTimeRange(s)}</b></div></div><span class="pill">${fmtDuration(s.durationSeconds)}</span></div>
         <div class="mobile-grid">
@@ -4001,7 +4031,7 @@ tbody tr:hover td{background:#fffafb}
           <div class="mobile-field"><span class="tiny">GMV sau khi hoàn hủy</span><strong>${gmvFinalDisplay(s)}</strong><small>${reconciled?'✓ Đã đối soát · số chốt để tính KPI':'Chưa đủ điều kiện chốt'}</small></div>
           <div class="mobile-field"><span class="tiny">Số món bán đã ghi nhận</span><strong>${new Intl.NumberFormat('vi-VN').format(Number(s.currentItemsSold??s.recordedItemsSold??0))}</strong></div>
         </div>
-        ${editable?`<div class="mobile-assign"><label class="manual-kpi-check"><input type="checkbox" data-manual-kpi="${s.id}" ${isManualKpi(s)?'checked':''}> <span>Ngày Campaign/Mega Live · tính KPI thủ công</span></label>${manualKpiTypeSelect(s)}<div class="mobile-auto-person-fields auto-person-wrap" data-auto-person-wrap><label><span class="tiny">Host Livestream</span>${personSelect('host',s.id,s.hostUid,approvedHosts,s.hostName)}</label><label><span class="tiny">Nhân viên vận hành</span>${personSelect('operator',s.id,s.operatorUid,operators,s.operatorName)}</label></div><button class="btn primary" data-save-session="${s.id}">${icon('check',15)} Lưu thiết lập</button></div>`:`<div class="mobile-assign">${isManualKpi(s)?'<div class="notice warn">'+esc(manualKpiTypeLabel(s))+' · phiên này không cộng vào KPI tự động.</div>':''}<div class="row space"><span class="tiny">Host</span><b>${esc(s.hostName||'—')}</b></div><div class="row space"><span class="tiny">Vận hành</span><b>${esc(s.operatorName||'—')}</b></div></div>`}
+        ${editable?`<div class="mobile-assign"><label class="manual-kpi-check"><input type="checkbox" data-manual-kpi="${s.id}" ${isManualKpi(s)?'checked':''}> <span>Ngày Campaign/Mega Live · tính KPI thủ công</span></label>${manualKpiTypeSelect(s)}${savedAssignment?`<div class="mobile-person-assignment-summary" data-assignment-summary><div class="mobile-person-assignment-copy"><div class="mobile-person-assignment-item"><span>Host Livestream</span><b>${esc(s.hostName||'—')}</b></div><div class="mobile-person-assignment-item"><span>Nhân viên vận hành</span><b>${esc(s.operatorName||'—')}</b></div></div><button class="btn small mobile-assignment-edit" type="button" data-edit-assignment="${s.id}">${icon('edit',14)} Sửa</button></div>`:''}<div class="mobile-assignment-editor ${savedAssignment?'hidden':''}" data-assignment-editor><div class="mobile-auto-person-fields auto-person-wrap" data-auto-person-wrap><label><span class="tiny">Host Livestream</span>${personSelect('host',s.id,s.hostUid,approvedHosts,s.hostName)}</label><label><span class="tiny">Nhân viên vận hành</span>${personSelect('operator',s.id,s.operatorUid,operators,s.operatorName)}</label></div><button class="btn primary" data-save-session="${s.id}">${icon('check',15)} Lưu thiết lập</button></div></div>`:`<div class="mobile-assign">${isManualKpi(s)?'<div class="notice warn">'+esc(manualKpiTypeLabel(s))+' · phiên này không cộng vào KPI tự động.</div>':''}<div class="row space"><span class="tiny">Host</span><b>${esc(s.hostName||'—')}</b></div><div class="row space"><span class="tiny">Vận hành</span><b>${esc(s.operatorName||'—')}</b></div></div>`}
       </article>`;
       }).join('')}</div>`;
       return desktop+mobile;
@@ -4039,11 +4069,21 @@ tbody tr:hover td{background:#fffafb}
       });
       if(isAdmin()){
         document.querySelectorAll('[data-save-session]').forEach(b=>b.onclick=()=>saveAssignment(b.dataset.saveSession,b));
+        document.querySelectorAll('[data-edit-assignment]').forEach(b=>b.onclick=()=>{
+          const card=b.closest('.mobile-live-card');
+          if(!card)return;
+          card.querySelector('[data-assignment-summary]')?.classList.add('hidden');
+          card.querySelector('[data-assignment-editor]')?.classList.remove('hidden');
+        });
         document.querySelectorAll('[data-manual-kpi]').forEach(c=>{
           const apply=()=>{
             const scopeEl=c.closest('tr,.mobile-live-card');
             scopeEl?.classList.toggle('manual-session',c.checked);
             scopeEl?.querySelector('[data-manual-type-wrap]')?.classList.toggle('hidden',!c.checked);
+            if(c.checked){
+              scopeEl?.querySelector('[data-assignment-summary]')?.classList.add('hidden');
+              scopeEl?.querySelector('[data-assignment-editor]')?.classList.remove('hidden');
+            }
             scopeEl?.querySelectorAll('[data-person]').forEach(sel=>{
               if(c.checked) sel.value='';
               sel.disabled=c.checked;

@@ -559,13 +559,16 @@ try {
   await page.waitForFunction(()=>!document.querySelector('#sidebar')?.classList.contains('open'));
   await sleep(200);
 
-  const mobileId=await page.$$eval('#section-live .mobile-live-card',cards=>{
-    const card=cards.find(e=>!e.classList.contains('manual-session'));
+  const mobileId=await page.$eval('#section-live .mobile-live-card',cards=>{
+    const automatic=cards.filter(e=>!e.classList.contains('manual-session'));
+    const card=automatic.find(e=>!e.querySelector('[data-assignment-editor]')?.classList.contains('hidden'))||automatic[0];
     return card?.querySelector('[data-save-session]')?.dataset.saveSession||'';
   });
   assert(mobileId,"No automatic mobile LIVE card available for assignment test");
   const mobileCard='#section-live .mobile-live-card:has([data-save-session="'+mobileId+'"])';
   assert(await page.$eval(mobileCard+' .mobile-live-time',e=>/^\d{2}\/\d{2}\/\d{4} Vào lúc \d{2}:\d{2}-/.test(e.textContent.trim())),"Mobile compact LIVE time range not rendered");
+  if(await page.$(mobileCard+' [data-edit-assignment]')) await page.click(mobileCard+' [data-edit-assignment]');
+  assert(await page.$eval(mobileCard+' [data-assignment-editor]',e=>!e.classList.contains('hidden')&&getComputedStyle(e).display!=='none'),"Mobile Host/Operator editor must be open before assignment");
   await page.select(mobileCard+' select[data-person="host"]','staff-dung');
   await page.select(mobileCard+' select[data-person="operator"]','staff-hung-hh');
   await page.click(mobileCard+' [data-save-session]');
@@ -583,6 +586,11 @@ try {
   await sleep(320);
   await page.click('#section-live [data-range-mode="30d"]');
   const mobileSavedCard='#section-live .mobile-live-card:has([data-save-session="'+mobileId+'"])';
+  assert(await page.$eval(mobileSavedCard+' [data-assignment-summary]',e=>getComputedStyle(e).display!=='none'&&e.textContent.includes('Dung')&&e.textContent.includes('Hùng Hiền Hoà')),"Saved mobile Host/Operator must collapse into a readable summary");
+  assert(await page.$eval(mobileSavedCard+' [data-assignment-editor]',e=>e.classList.contains('hidden')||getComputedStyle(e).display==='none'),"Saved mobile Host/Operator selectors must stay hidden");
+  await page.click(mobileSavedCard+' [data-edit-assignment]');
+  assert(await page.$eval(mobileSavedCard+' [data-assignment-summary]',e=>e.classList.contains('hidden')||getComputedStyle(e).display==='none'),"Mobile saved assignment summary must hide while editing");
+  assert(await page.$eval(mobileSavedCard+' [data-assignment-editor]',e=>!e.classList.contains('hidden')&&getComputedStyle(e).display!=='none'),"Sửa must reopen the mobile Host/Operator selectors");
   assert(await page.$eval(mobileSavedCard+' select[data-person="host"]',e=>e.value)==='staff-dung',"Mobile Host save read the wrong hidden desktop selector");
   assert(await page.$eval(mobileSavedCard+' select[data-person="operator"]',e=>e.value)==='staff-hung-hh',"Mobile Operator save read the wrong hidden desktop selector");
 

@@ -4,7 +4,7 @@
 
 ### Báo cáo TikTok LIVE · KPI nhân sự · Tự đồng bộ 24/24
 
-**Phiên bản hiện tại: v1.43.0**
+**Phiên bản hiện tại: v1.44.0**
 
 [![GitHub Release](https://img.shields.io/github/v/release/hunghienhoa/sellerkbb?label=Release)](https://github.com/hunghienhoa/sellerkbb/releases)
 [![GitHub Actions](https://img.shields.io/github/actions/workflow/status/hunghienhoa/sellerkbb/deploy.yml?branch=main&label=Ki%E1%BB%83m%20tra%20%26%20Backup)](https://github.com/hunghienhoa/sellerkbb/actions)
@@ -17,18 +17,14 @@
 
 ---
 
-## 🆕 Cập nhật mới nhất — v1.43.0
+## 🆕 Cập nhật mới nhất — v1.44.0
 
-- Sửa trạng thái phiên **đã chốt/đã đối soát** trên danh sách LIVE ở **Tổng quan** và **Phiên LIVE** để không còn nhìn như phiên màu hồng/tạm tính.
-- Phiên đã chốt nay có:
-  - thẻ xanh **✓ Đã đối soát**;
-  - KPI **✓ Đã chốt** màu xanh;
-  - nền/viền xanh rất nhẹ trên card mobile;
-  - các ô GMV trên card đã chốt chuyển sang tông xanh nhạt;
-  - dòng desktop đã chốt cũng có nền xanh nhẹ.
-- Dòng **GMV sau khi hoàn hủy** trên card đã chốt hiển thị rõ **✓ Đã đối soát · số chốt để tính KPI**.
-- Phiên chưa chốt vẫn giữ trạng thái tạm tính/cảnh báo hiện tại để phân biệt ngay bằng màu sắc.
-- README, kiểm thử PC/mobile và GitHub Release được cập nhật cùng phiên bản.
+- Trên điện thoại, sau khi đã lưu đủ **Host Livestream** và **Nhân viên vận hành**, SellerKBB tự thu gọn phần chọn người để card LIVE gọn hơn.
+- Trạng thái đã lưu chỉ còn hiển thị tên **Host / Vận hành** và nút **Sửa**.
+- Bấm **Sửa** sẽ mở lại hai ô chọn và nút **Lưu thiết lập**; lưu xong tự thu gọn lại.
+- Nếu mới gán thiếu Host hoặc Vận hành thì phần chọn vẫn mở để Admin hoàn tất.
+- Chế độ **Ngày Campaign/Mega Live · tính KPI thủ công** vẫn giữ nguyên: khi bật sẽ ẩn Host/Vận hành tự động và vẫn có nút lưu loại phiên.
+- README, kiểm thử mobile và GitHub Release được cập nhật cùng phiên bản.
 
 ---
 
@@ -96,10 +92,12 @@ Trong **Phiên LIVE**:
 
 1. Chọn Host.
 2. Chọn Livestream operator.
-3. Bấm **Lưu**.
-4. Reload lại trang vẫn phải giữ đúng người đã lưu.
+3. Bấm **Lưu** / **Lưu thiết lập**.
+4. Khi đã lưu đủ cả hai người trên điện thoại, phần chọn tự thu gọn và chỉ hiện tên Host/Vận hành cùng nút **Sửa**.
+5. Khi cần đổi người, bấm **Sửa** để mở lại hai ô chọn rồi lưu lại.
+6. Reload lại trang vẫn phải giữ đúng người đã lưu và tiếp tục ở trạng thái thu gọn nếu đã đủ Host/Vận hành.
 
-Phiên LIVE tự đồng bộ mới luôn để Host/Operator **trống** để tránh tính nhầm KPI.
+Phiên LIVE tự đồng bộ mới luôn để Host/Operator **trống** để tránh tính nhầm KPI; nếu mới gán thiếu một người thì SellerKBB chưa thu gọn phần chọn.
 
 ### 4. Campaign/Mega Live
 
@@ -236,6 +234,7 @@ README giữ lại phần này để nhân sự có thể biết **vì sao giao 
 
 | Phiên bản | Thay đổi chính |
 |---|---|
+| **v1.44.0** | Mobile Phiên LIVE tự thu gọn Host/Vận hành sau khi lưu đủ, hiển thị tên đã gán và nút **Sửa** để mở lại bộ chọn khi cần đổi người. |
 | **v1.43.0** | Phiên LIVE đã chốt trên Tổng quan/Phiên LIVE dùng **✓ xanh + nền/viền xanh nhẹ**, không còn nhìn như trạng thái hồng tạm tính. |
 | **v1.42.0** | KPI thủ công thu gọn người đã lưu, sửa ô tiền với hậu tố **đ** cố định, bố trí lại nút xóa và thêm trạng thái xanh **Đã đối soát**. |
 | **v1.41.0** | Tổng quan bổ sung thẻ full-width **GMV sau khi hoàn hủy** chỉ cộng các phiên đã chốt/đã đối soát. |
