@@ -533,7 +533,7 @@ try {
   await page.waitForFunction(()=>!document.querySelector('#sidebar')?.classList.contains('open'));
   await sleep(200);
 
-  const mobileId=await page.$eval('#section-live .mobile-live-card',cards=>{
+  const mobileId=await page.$$eval('#section-live .mobile-live-card',cards=>{
     const card=cards.find(e=>!e.classList.contains('manual-session'));
     return card?.querySelector('[data-save-session]')?.dataset.saveSession||'';
   });
