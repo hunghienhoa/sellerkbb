@@ -53,6 +53,15 @@ assert(html.includes("fmtLiveTimeRange(s)"), "Compact LIVE time range formatter 
 assert(html.includes('live-time-cell"><b>${fmtLiveTimeRange(s)}</b>'), "Desktop compact LIVE time missing");
 assert(worker.includes('"/api/tiktok/autosync/status"'), "Auto-sync status endpoint missing");
 assert(worker.includes('"/api/tiktok/autosync/sessions"'), "Auto-sync sessions endpoint missing");
+assert(html.includes('id="section-reconcile"'), "LIVE reconciliation section missing");
+assert(html.includes("{id:'reconcile',icon:'history',label:'Đối soát đơn LIVE'"), "LIVE reconciliation navigation missing");
+assert(html.includes("function renderReconcile()"), "LIVE reconciliation renderer missing");
+assert(html.includes("async function loadReconciliation"), "LIVE reconciliation loader missing");
+assert(worker.includes('"/api/tiktok/reconcile/live"'), "LIVE reconciliation API endpoint missing");
+assert(worker.includes('"/order/202309/orders/search"'), "TikTok Order List API integration missing");
+assert(worker.includes('"/order/202309/orders"'), "TikTok Order Detail API integration missing");
+assert(worker.includes("seller.order.info"), "TikTok Order Information scope guidance missing");
+assert(read("README.md").includes("Đối soát đơn LIVE"), "README reconciliation guide missing");
 assert(html.includes("function storageQuotaCard"), "Storage quota card renderer missing");
 assert(html.includes("provider:'GitHub'"), "GitHub storage card missing");
 assert(html.includes("provider:'Firebase'"), "Firebase storage card missing");
