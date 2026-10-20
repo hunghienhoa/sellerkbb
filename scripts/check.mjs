@@ -80,7 +80,7 @@ assert(worker.includes('"/order/202309/orders/search"'), "TikTok Order List API 
 assert(worker.includes('"/order/202309/orders"'), "TikTok Order Detail API integration missing");
 assert(worker.includes("seller.order.info"), "TikTok Order Information scope guidance missing");
 assert(worker.includes("async function searchReturnsForOrders"), "Batch Return/Refund lookup missing");
-assert(worker.includes('order_ids: ids.join(",")'), "Return/Refund lookup must batch order IDs");
+assert(worker.includes("order_ids: ids"), "Return/Refund lookup must batch order IDs as a list");
 assert(worker.includes("function summarizeLiveReconciliation"), "Reconciliation KPI summary missing");
 assert(worker.includes("async function refreshKpiReconciliations"), "Scheduled KPI reconciliation refresher missing");
 assert(worker.includes('status === "COMPLETED" && active.length === 0'), "Completed-order finalization rule missing");
