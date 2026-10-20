@@ -201,6 +201,11 @@ assert(html.includes("Xóa người"), "Manual KPI delete control label missing"
 assert(html.includes("manual-entry-footer"), "Manual KPI delete control footer missing");
 assert(html.includes("manual-kpi-session.reconciled"), "Reconciled manual KPI green styling missing");
 assert(html.includes("✓ Đã đối soát"), "Reconciliation success badge missing");
+assert(html.includes("live-reconciled-badge"), "Finalized LIVE green badge missing");
+assert(html.includes("live-row-reconciled"), "Finalized desktop LIVE row state missing");
+assert(html.includes("mobile-live-card ${reconciled?'reconciled':''}"), "Finalized mobile LIVE card state missing");
+assert(html.includes(".mobile-live-card.reconciled"), "Finalized mobile LIVE green styling missing");
+assert(html.includes("const mark=basis.status==='final'?'✓ ':''"), "Final KPI pill checkmark missing");
 assert(html.includes("reconcile-session.reconciled"), "Reconciliation list green success styling missing");
 assert(html.includes("replace(/[^0-9]/g,''"), "Manual KPI money parser missing");
 assert(html.includes('data-manual-host-person'), "Host Livestream selector missing");
