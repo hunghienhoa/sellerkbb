@@ -1866,7 +1866,27 @@ tbody tr:hover td{background:#fffafb}
 .manual-kpi-entry.readonly{grid-template-columns:repeat(2,minmax(0,1fr));align-items:center}
 .manual-kpi-entry.readonly>div{display:grid;gap:3px}
 .manual-kpi-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:10px}
-.manual-kpi-entry [data-manual-host-kpi][readonly],.manual-kpi-entry [data-manual-operator-kpi][readonly]{background:#fff5f8;color:#a45579;font-weight:750}
+.manual-kpi-static-field{display:grid;gap:4px;min-width:0}
+.manual-kpi-static-field>span{font-size:9.5px;color:var(--muted);font-weight:650}
+.manual-kpi-output{
+  width:100%;
+  min-height:40px;
+  display:flex;
+  align-items:center;
+  padding:8px 10px;
+  border:1px solid var(--line-strong);
+  border-radius:8px;
+  background:#fff5f8;
+  color:#a45579;
+  font-size:13px;
+  font-weight:750;
+  line-height:1.2;
+  user-select:none;
+  -webkit-user-select:none;
+  pointer-events:none;
+  cursor:default;
+  touch-action:manipulation;
+}
 .manual-kpi-value{color:#7654a6!important;font-weight:750}
 @media(max-width:1050px){
   .metrics-grid.metrics-4{grid-template-columns:repeat(2,minmax(0,1fr))}
@@ -1924,7 +1944,7 @@ tbody tr:hover td{background:#fffafb}
       </div>
     </aside>
     <main class="main">
-      <header class="topbar"><div class="topbar-title-wrap"><button id="menuToggle" class="menu-toggle" type="button" aria-label="Mở menu" aria-expanded="false">☰</button><div><h1 id="pageTitle" class="page-title">Tổng quan</h1><div id="pageSub" class="tiny"></div></div></div><div class="row"><span id="syncBadge" class="pill">v1.24.0</span></div></header>
+      <header class="topbar"><div class="topbar-title-wrap"><button id="menuToggle" class="menu-toggle" type="button" aria-label="Mở menu" aria-expanded="false">☰</button><div><h1 id="pageTitle" class="page-title">Tổng quan</h1><div id="pageSub" class="tiny"></div></div></div><div class="row"><span id="syncBadge" class="pill">v1.25.0</span></div></header>
       <div class="content">
         <section id="section-dashboard" class="section active"></section>
         <section id="section-live" class="section"></section>
@@ -2259,7 +2279,7 @@ tbody tr:hover td{background:#fffafb}
 
     function previewTs(iso){ return {toDate:()=>new Date(iso)}; }
     function enterPreview(){
-      state.config={version:'1.24.0-preview',tiktokConfigured:true};
+      state.config={version:'1.25.0-preview',tiktokConfigured:true};
       state.user={uid:'preview-admin',email:'admin@sellerkbb.demo',displayName:'Quản trị viên Demo',photoURL:avatarFallbackData('Quản trị viên Demo')};
       state.profile={role:'admin',status:'approved',displayName:'Quản trị viên Demo',photoURL:state.user.photoURL,permissions:['live.read','kpi.read']};
       state.maintenance={settings:{retentionDays:180,autoCleanup:true,emergencyPercent:85,firestoreSoftLimitMb:600,firestoreMaxSessions:12000,kvSoftKeyLimit:5000},github:{usedBytes:124000,limitBytes:10000000000,available:true},cloudflare:{keyCount:5,lastRun:{ranAt:new Date().toISOString(),deleted:0},usedBytes:428000,storageLimitBytes:1000000000,storageComplete:true},firebase:{freePlanMode:true,ttlEnabled:false,ttlRecommended:false,storageLimitBytes:1073741824}};
@@ -2947,7 +2967,10 @@ tbody tr:hover td{background:#fffafb}
     }
 
     function setManualMoneyInput(input,value){
-      if(input)input.value=manualMoneyDisplay(value);
+      if(!input)return;
+      const display=manualMoneyDisplay(value);
+      if('value' in input)input.value=display;
+      else input.textContent=display;
     }
 
     function manualKpiPeople(role=''){
@@ -2996,8 +3019,8 @@ tbody tr:hover td{background:#fffafb}
         <label><span>Host Livestream</span><select class="input" data-manual-host-person>${manualKpiPersonOptions('host',staffSelectionId('host',host.uid,host.name))}</select></label>
         <label><span>Nhân viên vận hành Livestream</span><select class="input" data-manual-operator-person>${manualKpiPersonOptions('operator',staffSelectionId('operator',operator.uid,operator.name))}</select></label>
         <label class="manual-host-gmv-field"><span>GMV sau hoàn/hủy của Host Livestream</span><input class="input" type="text" inputmode="numeric" autocomplete="off" data-manual-host-gmv value="${manualMoneyDisplay(gmv)}"></label>
-        <label class="manual-host-kpi-field"><span>KPI của Host Livestream (0,3%)</span><input class="input" type="text" inputmode="numeric" data-manual-host-kpi value="${manualMoneyDisplay(hostKpi)}" readonly></label>
-        <label class="manual-operator-kpi-field"><span>KPI của Nhân viên vận hành Livestream (0,1%)</span><input class="input" type="text" inputmode="numeric" data-manual-operator-kpi value="${manualMoneyDisplay(operatorKpi)}" readonly></label>
+        <div class="manual-host-kpi-field manual-kpi-static-field"><span>KPI của Host Livestream (0,3%)</span><div class="manual-kpi-output" data-manual-host-kpi aria-live="polite">${manualMoneyDisplay(hostKpi)}</div></div>
+        <div class="manual-operator-kpi-field manual-kpi-static-field"><span>KPI của Nhân viên vận hành Livestream (0,1%)</span><div class="manual-kpi-output" data-manual-operator-kpi aria-live="polite">${manualMoneyDisplay(operatorKpi)}</div></div>
         <button class="btn small danger manual-entry-remove" type="button" data-manual-remove aria-label="Xóa nhóm người này">×</button>
       </div>`;
     }
@@ -3011,8 +3034,6 @@ tbody tr:hover td{background:#fffafb}
         const gmv=manualMoneyNumber(gmvInput?.value);
         setManualMoneyInput(hostKpiInput,Math.round(gmv*.003));
         setManualMoneyInput(operatorKpiInput,Math.round(gmv*.001));
-        if(hostKpiInput)hostKpiInput.readOnly=true;
-        if(operatorKpiInput)operatorKpiInput.readOnly=true;
       };
 
       setManualMoneyInput(gmvInput,manualMoneyNumber(gmvInput?.value));

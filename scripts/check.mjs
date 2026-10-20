@@ -113,7 +113,10 @@ assert(html.includes('data-manual-host-kpi'), "Host computed KPI field missing")
 assert(html.includes("KPI của Host Livestream (0,3%)"), "Host 0.3% KPI label missing");
 assert(html.includes("Math.round(gmv*.003)"), "Host 0.3% KPI calculation missing");
 assert(html.includes("setManualMoneyInput(hostKpiInput,Math.round(gmv*.003))"), "Host KPI live recalculation missing");
-assert(html.includes("if(hostKpiInput)hostKpiInput.readOnly=true"), "Host KPI must be read-only");
+assert(html.includes('class="manual-kpi-output" data-manual-host-kpi'), "Host KPI must be a static output");
+assert(html.includes('class="manual-kpi-output" data-manual-operator-kpi'), "Operator KPI must be a static output");
+assert(html.includes("pointer-events:none;")&&html.includes("-webkit-user-select:none;"), "Static KPI outputs must be non-interactive");
+assert(!html.includes('data-manual-host-kpi value=')&&!html.includes('data-manual-operator-kpi value='), "Computed KPI outputs must not be input values");
 assert(html.includes('data-manual-operator-kpi'), "Operator KPI field missing");
 assert(html.includes("KPI của Nhân viên vận hành Livestream (0,1%)"), "Operator KPI label missing");
 assert(html.includes("Math.round(gmv*.001)"), "Operator 0.1% KPI calculation missing");
