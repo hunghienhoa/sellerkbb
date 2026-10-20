@@ -697,20 +697,300 @@ tbody tr:hover td{background:#fffafd}
   .card:hover{box-shadow:0 11px 28px rgba(144,77,111,.09)}
   .nav button:hover{transform:translateX(2px)}
   .mobile-live-card:hover{transform:translateY(-1px)}
-  .reconcile-list{display:grid;gap:12px}
-  .reconcile-session{border:1px solid var(--line);border-radius:12px;background:#fff;padding:14px}
-  .reconcile-head{display:flex;justify-content:space-between;gap:14px;align-items:flex-start}
-  .reconcile-actions{display:flex;gap:8px;flex-wrap:wrap}
-  .reconcile-summary{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin-top:12px}
-  .reconcile-summary>div{padding:10px;border:1px solid var(--line);border-radius:8px;background:var(--surface-soft)}
-  .reconcile-summary span{display:block;color:var(--muted);font-size:10px;margin-bottom:3px}
-  .reconcile-orders{margin-top:12px}
-  .reconcile-order{display:grid;grid-template-columns:minmax(120px,.85fr) minmax(100px,.55fr) minmax(110px,.6fr) minmax(120px,.7fr) minmax(120px,.7fr);gap:8px;align-items:center;padding:10px 0;border-bottom:1px solid #f2e6eb}
-  .reconcile-order:last-child{border-bottom:0}
-  .reconcile-status{font-weight:700}
-  .reconcile-note{margin-top:10px}
-  @media(max-width:900px){.reconcile-summary{grid-template-columns:repeat(2,minmax(0,1fr))}.reconcile-order{grid-template-columns:1fr 1fr}}
-  @media(max-width:700px){.reconcile-head{flex-direction:column}.reconcile-actions{width:100%}.reconcile-actions .btn{flex:1}.reconcile-summary{grid-template-columns:1fr 1fr}.reconcile-order{grid-template-columns:1fr;border:1px solid var(--line);border-radius:8px;padding:10px;margin-bottom:8px}}
+
+}
+
+.reconcile-list{display:grid;gap:12px}
+.reconcile-session{
+  overflow:hidden;
+  border:1px solid var(--line);
+  border-radius:14px;
+  background:#fff;
+  box-shadow:var(--shadow-sm);
+}
+.reconcile-session-head{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:14px;
+  padding:15px 16px;
+}
+.reconcile-session-copy{min-width:0}
+.reconcile-session-title{
+  color:#513544;
+  font-size:15px;
+  font-weight:850;
+  line-height:1.35;
+}
+.reconcile-session-meta{
+  display:flex;
+  flex-wrap:wrap;
+  gap:5px 12px;
+  margin-top:4px;
+  color:var(--muted);
+  font-size:11.5px;
+}
+.reconcile-session-gmv{
+  display:inline-flex;
+  align-items:center;
+  gap:5px;
+  margin-top:7px;
+  padding:5px 8px;
+  border:1px solid #f0d5e2;
+  border-radius:999px;
+  background:#fff7fb;
+  color:#714b60;
+  font-size:11px;
+  font-weight:750;
+}
+.reconcile-actions{display:flex;gap:7px;flex:0 0 auto}
+.reconcile-result{
+  padding:0 16px 16px;
+  border-top:1px solid transparent;
+}
+.reconcile-result.has-data{
+  padding-top:14px;
+  border-top-color:var(--line);
+}
+.reconcile-loading{
+  padding:13px;
+  border:1px dashed var(--line-strong);
+  border-radius:10px;
+  background:var(--surface-soft);
+  color:var(--muted);
+  font-size:12px;
+}
+.reconcile-overview{
+  display:grid;
+  grid-template-columns:.7fr 1fr 1fr;
+  gap:8px;
+}
+.reconcile-overview-card{
+  min-width:0;
+  padding:10px 11px;
+  border:1px solid var(--line);
+  border-radius:11px;
+  background:var(--surface-soft);
+}
+.reconcile-overview-card.primary{
+  background:#fff1f7;
+  border-color:#efc9db;
+}
+.reconcile-overview-card span{
+  display:block;
+  margin-bottom:3px;
+  color:var(--muted);
+  font-size:10.5px;
+  line-height:1.35;
+}
+.reconcile-overview-card b{
+  display:block;
+  color:#513746;
+  font-size:14px;
+  line-height:1.35;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+.reconcile-filter-wrap{margin-top:12px}
+.reconcile-filter-label{
+  margin-bottom:6px;
+  color:#6b4b5b;
+  font-size:11px;
+  font-weight:800;
+}
+.reconcile-filterbar{
+  display:flex;
+  gap:6px;
+  overflow-x:auto;
+  padding:1px 1px 5px;
+  scrollbar-width:thin;
+}
+.reconcile-filter-chip{
+  display:inline-flex;
+  align-items:center;
+  gap:5px;
+  min-height:32px;
+  padding:6px 9px;
+  border:1px solid var(--line);
+  border-radius:999px;
+  background:#fff;
+  color:#735466;
+  font:inherit;
+  font-size:11px;
+  font-weight:750;
+  white-space:nowrap;
+  cursor:pointer;
+}
+.reconcile-filter-chip b{
+  display:grid;
+  place-items:center;
+  min-width:18px;
+  height:18px;
+  padding:0 5px;
+  border-radius:999px;
+  background:#f7eaf0;
+  font-size:10px;
+}
+.reconcile-filter-chip.active{
+  border-color:#df96b7;
+  background:#fbe3ee;
+  color:#824460;
+}
+.reconcile-filter-chip.active b{background:#fff}
+.reconcile-order-grid{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:8px;
+  margin-top:8px;
+}
+.reconcile-order-card{
+  min-width:0;
+  padding:11px;
+  border:1px solid var(--line);
+  border-radius:11px;
+  background:#fff;
+}
+.reconcile-order-card[hidden]{display:none!important}
+.reconcile-order-top{
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap:8px;
+}
+.reconcile-order-id{
+  min-width:0;
+  color:#523847;
+  font-size:12px;
+  font-weight:850;
+  overflow-wrap:anywhere;
+}
+.reconcile-order-value{
+  flex:0 0 auto;
+  color:#593a4a;
+  font-size:12px;
+  font-weight:850;
+  white-space:nowrap;
+}
+.reconcile-badges{
+  display:flex;
+  flex-wrap:wrap;
+  gap:5px;
+  margin-top:7px;
+}
+.order-status{
+  display:inline-flex;
+  align-items:center;
+  min-height:24px;
+  padding:4px 7px;
+  border:1px solid transparent;
+  border-radius:999px;
+  font-size:10.5px;
+  font-weight:800;
+  line-height:1.15;
+}
+.order-status.packing{background:#fff5d9;border-color:#eedb9e;color:#745b16}
+.order-status.carrier{background:#fff0e4;border-color:#f0caaa;color:#86512b}
+.order-status.transport{background:#eef4ff;border-color:#cfdcf5;color:#42618b}
+.order-status.delivery{background:#eaf7ff;border-color:#c6e2f0;color:#356d83}
+.order-status.delivered{background:#eaf8f1;border-color:#c6e4d5;color:#37745e}
+.order-status.returning{background:#fff0e4;border-color:#efc7a4;color:#99562d}
+.order-status.refunded{background:#e9f7ef;border-color:#bee1ce;color:#347257}
+.order-status.cancelled{background:#fff0f3;border-color:#efc7d0;color:#a44c61}
+.order-status.completed{background:#f1f0f4;border-color:#dad5de;color:#645d69}
+.order-status.processing{background:#f7eef8;border-color:#e3d1e6;color:#76557a}
+.order-status.attribution{background:#fff;border-color:var(--line);color:var(--muted);font-weight:700}
+.reconcile-order-bottom{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:6px;
+  margin-top:9px;
+  padding-top:8px;
+  border-top:1px dashed var(--line);
+}
+.reconcile-order-bottom span{
+  display:block;
+  color:var(--muted);
+  font-size:9.5px;
+  margin-bottom:2px;
+}
+.reconcile-order-bottom b{
+  display:block;
+  color:#624353;
+  font-size:11px;
+  line-height:1.3;
+}
+.reconcile-empty-filter{
+  display:none;
+  margin-top:8px;
+  padding:14px;
+  border:1px dashed var(--line-strong);
+  border-radius:10px;
+  color:var(--muted);
+  text-align:center;
+  font-size:11.5px;
+}
+.reconcile-empty-filter.show{display:block}
+.reconcile-policy{
+  margin-top:10px;
+  border-top:1px solid var(--line);
+  padding-top:9px;
+}
+.reconcile-policy summary{
+  color:#76566a;
+  font-size:10.5px;
+  font-weight:750;
+  cursor:pointer;
+}
+.reconcile-policy-body{
+  display:grid;
+  gap:4px;
+  margin-top:7px;
+  color:var(--muted);
+  font-size:10.5px;
+  line-height:1.45;
+}
+.reconcile-no-data{
+  padding:12px 0 0;
+  color:var(--muted);
+  font-size:11.5px;
+}
+.reconcile-retention-note{
+  display:flex;
+  gap:8px;
+  align-items:flex-start;
+  margin-bottom:10px;
+  padding:9px 10px;
+  border:1px solid #cce6dc;
+  border-radius:10px;
+  background:var(--ok-soft);
+  color:#397761;
+  font-size:11px;
+  line-height:1.45;
+}
+@media(hover:hover){
+  .reconcile-session:hover{box-shadow:0 10px 26px rgba(144,77,111,.08)}
+  .reconcile-filter-chip:hover{border-color:#dfa2bd;background:#fff8fb}
+}
+@media(max-width:900px){
+  .reconcile-order-grid{grid-template-columns:1fr}
+}
+@media(max-width:700px){
+  .reconcile-session{border-radius:12px}
+  .reconcile-session-head{align-items:flex-start;padding:12px;gap:10px}
+  .reconcile-session-title{font-size:13.5px}
+  .reconcile-session-meta{display:grid;gap:2px;font-size:10.5px}
+  .reconcile-actions{display:grid;gap:6px}
+  .reconcile-actions .btn{min-width:92px;min-height:36px;padding:6px 9px;font-size:11px}
+  .reconcile-result{padding:0 12px 12px}
+  .reconcile-result.has-data{padding-top:11px}
+  .reconcile-overview{grid-template-columns:1fr 1fr}
+  .reconcile-overview-card:first-child{grid-column:1/-1}
+  .reconcile-overview-card{padding:9px}
+  .reconcile-overview-card b{font-size:12.5px}
+  .reconcile-filterbar{margin-right:-12px;padding-right:12px}
+  .reconcile-order-card{padding:10px}
+  .reconcile-order-bottom{grid-template-columns:1fr 1fr}
 }
 
 @media(max-width:1050px) and (min-width:701px){
@@ -2050,7 +2330,7 @@ tbody tr:hover td{background:#fffafb}
       <header class="topbar">
         <div class="topbar-title-wrap"><button id="menuToggle" class="menu-toggle" type="button" aria-label="Mở menu" aria-expanded="false">☰</button><div><h1 id="pageTitle" class="page-title">Tổng quan</h1><div id="pageSub" class="tiny"></div></div></div>
         <div class="topbar-right">
-          <span id="syncBadge" class="pill">v1.33.0</span>
+          <span id="syncBadge" class="pill">v1.34.0</span>
           <div class="account-menu-wrap">
             <button id="topbarAccountBtn" class="topbar-account-btn" type="button" aria-expanded="false" aria-controls="accountPopover" aria-label="Mở thông tin tài khoản">
               <img id="userAvatar" class="avatar topbar-account-avatar" alt="Ảnh đại diện Google">
@@ -2315,6 +2595,7 @@ tbody tr:hover td{background:#fffafb}
     const PREVIEW = location.pathname === '/preview' || new URLSearchParams(location.search).get('preview') === '1';
 
     const LIVE_PAGE_SIZE = 20;
+    const RECONCILIATION_PROTECTION_DAYS = 60;
     const state = { config:null, auth:null, db:null, user:null, profile:null, sessions:[], users:[], staff:[], section:'dashboard', livePage:1, rangeMode:'today', customStart:'', customEnd:'', customPickerScope:null, maintenance:{settings:{retentionDays:180,autoCleanup:true,emergencyPercent:85,firestoreSoftLimitMb:600,firestoreMaxSessions:12000,kvSoftKeyLimit:5000},github:{usedBytes:0,limitBytes:10000000000,available:false},cloudflare:{keyCount:0,lastRun:null,usedBytes:0,storageLimitBytes:1000000000,storageComplete:true},firebase:{freePlanMode:true,ttlEnabled:false,ttlRecommended:false,storageLimitBytes:1073741824}}, autoSyncStatus:null, autoSyncRefreshing:false, autoSyncWatcher:null, autoSyncVisibilityBound:false };
 
     const DEFAULT_STAFF_MEMBERS=[
@@ -2396,7 +2677,7 @@ tbody tr:hover td{background:#fffafb}
 
     function previewTs(iso){ return {toDate:()=>new Date(iso)}; }
     function enterPreview(){
-      state.config={version:'1.33.0-preview',tiktokConfigured:true};
+      state.config={version:'1.34.0-preview',tiktokConfigured:true};
       state.user={uid:'preview-admin',email:'admin@sellerkbb.demo',displayName:'Quản trị viên Demo',photoURL:avatarFallbackData('Quản trị viên Demo')};
       state.profile={role:'admin',status:'approved',displayName:'Quản trị viên Demo',photoURL:state.user.photoURL,permissions:['live.read','kpi.read']};
       state.maintenance={settings:{retentionDays:180,autoCleanup:true,emergencyPercent:85,firestoreSoftLimitMb:600,firestoreMaxSessions:12000,kvSoftKeyLimit:5000},github:{usedBytes:124000,limitBytes:10000000000,available:true},cloudflare:{keyCount:5,lastRun:{ranAt:new Date().toISOString(),deleted:0},usedBytes:428000,storageLimitBytes:1000000000,storageComplete:true},firebase:{freePlanMode:true,ttlEnabled:false,ttlRecommended:false,storageLimitBytes:1073741824}};
@@ -2784,57 +3065,192 @@ tbody tr:hover td{background:#fffafb}
 
     function finalGmv(s){ return Number(s.finalGmvAmount ?? s.currentGmvAmount ?? s.recordedGmvAmount ?? 0); }
 
-    function reconcileStatusLabel(status){
-      const map={UNPAID:'Chờ thanh toán',ON_HOLD:'Đang xử lý',AWAITING_SHIPMENT:'Chờ gửi hàng',AWAITING_COLLECTION:'Chờ đơn vị vận chuyển lấy',PARTIALLY_SHIPPING:'Đang giao một phần',IN_TRANSIT:'Đang vận chuyển',DELIVERED:'Đã giao',COMPLETED:'Hoàn tất',CANCELLED:'Đã hủy'};
-      return map[status]||status||'Chưa rõ';
-    }
-    function reconcileAfterSaleLabel(order){
+    function reconcileAfterSaleState(order){
       const rows=Array.isArray(order?.aftersales)?order.aftersales:[];
-      if(rows.some(x=>['RETURN_OR_REFUND_REQUEST_PENDING','AWAITING_BUYER_SHIP','BUYER_SHIPPED_ITEM','REPLACEMENT_REQUEST_PENDING'].includes(x.status)))return 'Đang hoàn/trả';
-      if(rows.some(x=>['RETURN_OR_REFUND_REQUEST_SUCCESS','RETURN_OR_REFUND_REQUEST_COMPLETE','REPLACEMENT_REQUEST_REFUND_SUCCESS','REPLACEMENT_REQUEST_COMPLETE'].includes(x.status)))return 'Đã hoàn tiền';
-      return rows.length?'Đã đóng hậu mãi':'Không có';
+      if(rows.some(x=>['RETURN_OR_REFUND_REQUEST_PENDING','AWAITING_BUYER_SHIP','BUYER_SHIPPED_ITEM','REPLACEMENT_REQUEST_PENDING'].includes(x.status)))return 'returning';
+      if(rows.some(x=>['RETURN_OR_REFUND_REQUEST_SUCCESS','RETURN_OR_REFUND_REQUEST_COMPLETE','REPLACEMENT_REQUEST_REFUND_SUCCESS','REPLACEMENT_REQUEST_COMPLETE'].includes(x.status)))return 'refunded';
+      if(rows.length)return 'closed';
+      return 'none';
+    }
+    function reconcileOrderState(order){
+      const after=reconcileAfterSaleState(order);
+      if(after==='returning'||after==='refunded')return after;
+      const map={
+        AWAITING_SHIPMENT:'packing',
+        AWAITING_COLLECTION:'carrier',
+        PARTIALLY_SHIPPING:'transport',
+        IN_TRANSIT:'delivery',
+        DELIVERED:'delivered',
+        COMPLETED:'completed',
+        CANCELLED:'cancelled'
+      };
+      return map[order?.status]||'processing';
+    }
+    function reconcileStatusMeta(order){
+      const key=reconcileOrderState(order);
+      const map={
+        packing:{label:'Chờ đóng hàng',tone:'packing'},
+        carrier:{label:'Chờ vận chuyển',tone:'carrier'},
+        transport:{label:'Đang vận chuyển',tone:'transport'},
+        delivery:{label:'Đang giao',tone:'delivery'},
+        delivered:{label:'Đã giao',tone:'delivered'},
+        returning:{label:'Đang hoàn / trả',tone:'returning'},
+        refunded:{label:'Đã hoàn tiền',tone:'refunded'},
+        cancelled:{label:'Đã hủy',tone:'cancelled'},
+        completed:{label:'Hoàn tất',tone:'completed'},
+        processing:{label:'Đang xử lý',tone:'processing'}
+      };
+      return {key,...map[key]};
     }
     function reconcileAttributionLabel(order){ return order?.attribution==='live_signal'?'Có tín hiệu LIVE':'Khớp theo thời gian'; }
     function reconcileSessionCard(session){
-      return `<div class="reconcile-session" data-reconcile-session="${session.id}">
-        <div class="reconcile-head"><div><b>${esc(session.title||'Phiên LIVE')}</b><div class="tiny">@${esc(session.channelUsername||'—')} · ${fmtLiveTimeRange(session)}</div><div class="tiny">GMV TikTok LIVE hiện tại: ${fmtMoney(finalGmv(session),session.currency)}</div></div>
-        <div class="reconcile-actions"><button class="btn" type="button" data-reconcile-load="${session.id}">${icon('history',15)} Xem đơn</button><button class="btn primary hidden" type="button" data-reconcile-refresh="${session.id}">${icon('refresh',15)} Làm mới</button></div></div>
-        <div class="reconcile-result" data-reconcile-result="${session.id}"><div class="tiny reconcile-note">Chưa tải đối soát. SellerKBB chỉ lấy đơn nằm trong khoảng thời gian phiên LIVE; đơn thiếu tín hiệu LIVE sẽ được ghi rõ là “khớp theo thời gian”.</div></div>
-      </div>`;
+      return `<article class="reconcile-session" data-reconcile-session="${session.id}">
+        <div class="reconcile-session-head">
+          <div class="reconcile-session-copy">
+            <div class="reconcile-session-title">${esc(session.title||'Phiên LIVE')}</div>
+            <div class="reconcile-session-meta"><span>@${esc(session.channelUsername||'—')}</span><span>${fmtLiveTimeRange(session)}</span></div>
+            <div class="reconcile-session-gmv">${icon('money',13)} GMV LIVE gộp: ${fmtMoney(finalGmv(session),session.currency)}</div>
+          </div>
+          <div class="reconcile-actions">
+            <button class="btn" type="button" data-reconcile-load="${session.id}">${icon('history',14)} Xem đơn</button>
+            <button class="btn primary hidden" type="button" data-reconcile-refresh="${session.id}" aria-label="Làm mới đối soát">${icon('refresh',14)} Làm mới</button>
+          </div>
+        </div>
+        <div class="reconcile-result" data-reconcile-result="${session.id}">
+          <div class="reconcile-no-data">Bấm <b>Xem đơn</b> để tải trạng thái vận chuyển và hậu mãi của phiên này.</div>
+        </div>
+      </article>`;
+    }
+    function reconcileFilterDefinitions(orders){
+      const defs=[
+        ['all','Tất cả'],
+        ['packing','Chờ đóng hàng'],
+        ['carrier','Chờ vận chuyển'],
+        ['transport','Đang vận chuyển'],
+        ['delivery','Đang giao'],
+        ['delivered','Đã giao'],
+        ['returning','Đang hoàn / trả'],
+        ['refunded','Đã hoàn tiền'],
+        ['cancelled','Đã hủy'],
+        ['completed','Hoàn tất'],
+        ['processing','Đang xử lý']
+      ];
+      const counter={all:orders.length};
+      orders.forEach(o=>{const key=reconcileOrderState(o);counter[key]=(counter[key]||0)+1;});
+      return defs.filter(([key])=>key==='all'||counter[key]>0).map(([key,label])=>({key,label,count:counter[key]||0}));
+    }
+    function reconcileOrderCard(session,order){
+      const meta=reconcileStatusMeta(order);
+      const after=reconcileAfterSaleState(order);
+      return `<article class="reconcile-order-card" data-order-state="${meta.key}">
+        <div class="reconcile-order-top">
+          <div class="reconcile-order-id">#${esc(order.id||'—')}</div>
+          <div class="reconcile-order-value">${fmtMoney(order.amount,order.currency||session.currency)}</div>
+        </div>
+        <div class="reconcile-badges">
+          <span class="order-status ${meta.tone}">${esc(meta.label)}</span>
+          <span class="order-status attribution">${esc(reconcileAttributionLabel(order))}</span>
+        </div>
+        <div class="reconcile-order-bottom">
+          <div><span>Sau hủy/hoàn đã biết</span><b>${fmtMoney(order.netAmount,order.currency||session.currency)}</b></div>
+          <div><span>Hậu mãi</span><b>${after==='returning'?'Đang xử lý hoàn/trả':after==='refunded'?'Đã hoàn tiền':after==='closed'?'Đã đóng':'Không có'}</b></div>
+        </div>
+      </article>`;
+    }
+    function applyReconcileFilter(root,key){
+      let visible=0;
+      root.querySelectorAll('[data-order-state]').forEach(card=>{
+        const show=key==='all'||card.dataset.orderState===key;
+        card.hidden=!show;
+        if(show)visible++;
+      });
+      root.querySelectorAll('[data-reconcile-filter]').forEach(btn=>btn.classList.toggle('active',btn.dataset.reconcileFilter===key));
+      root.querySelector('.reconcile-empty-filter')?.classList.toggle('show',visible===0);
     }
     function renderReconcileResult(session,result){
       const root=document.querySelector('[data-reconcile-result="'+session.id+'"]'); if(!root)return;
-      const counts=result?.counts||{}, totals=result?.totals||{}, orders=Array.isArray(result?.orders)?result.orders:[], aftersalesAvailable=result?.scope?.aftersalesAvailable!==false;
+      const totals=result?.totals||{}, orders=Array.isArray(result?.orders)?result.orders:[], aftersalesAvailable=result?.scope?.aftersalesAvailable!==false;
+      const filters=reconcileFilterDefinitions(orders);
+      root.classList.add('has-data');
       root.innerHTML=`
-        <div class="reconcile-summary">
-          <div><span>Tổng đơn trong khung LIVE</span><b>${new Intl.NumberFormat('vi-VN').format(Number(counts.total||0))}</b></div>
-          <div><span>Đang vận chuyển</span><b>${new Intl.NumberFormat('vi-VN').format(Number(counts.shipping||0))}</b></div>
-          <div><span>Đang hoàn/trả</span><b>${new Intl.NumberFormat('vi-VN').format(Number(counts.returning||0))}</b></div>
-          <div><span>Đã hủy</span><b>${new Intl.NumberFormat('vi-VN').format(Number(counts.cancelled||0))}</b></div>
-          <div><span>Giá trị đơn trong khung LIVE</span><b>${fmtMoney(totals.orderWindowAmount,session.currency)}</b></div>
-          <div><span>Giá trị sau hủy/hoàn đã biết</span><b>${fmtMoney(totals.provisionalNetAmount,session.currency)}</b></div>
-          <div><span>Giá trị có tín hiệu LIVE</span><b>${fmtMoney(totals.confirmedLiveSignalAmount,session.currency)}</b></div>
-          <div><span>GMV Analytics TikTok</span><b>${fmtMoney(result?.live?.analyticsGmvAmount,session.currency)}</b></div>
+        <div class="reconcile-retention-note">${icon('shield',15)}<span><b>Bảo vệ đối soát 60 ngày:</b> tự dọn không được xóa phiên LIVE trong 60 ngày gần nhất, kể cả khi hệ thống chạm ngưỡng khẩn cấp.</span></div>
+        <div class="reconcile-overview">
+          <div class="reconcile-overview-card"><span>Đơn trong phiên</span><b>${new Intl.NumberFormat('vi-VN').format(orders.length)}</b></div>
+          <div class="reconcile-overview-card"><span>GMV LIVE TikTok · gộp</span><b>${fmtMoney(result?.live?.analyticsGmvAmount,session.currency)}</b></div>
+          <div class="reconcile-overview-card primary"><span>Sau hủy/hoàn đã biết</span><b>${fmtMoney(totals.provisionalNetAmount,session.currency)}</b></div>
         </div>
-        <div class="notice ${aftersalesAvailable?'ok':'warn'} reconcile-note">${aftersalesAvailable?'Đã đọc được dữ liệu hậu mãi. Chính sách Việt Nam hiện có cửa sổ hoàn/trả tới 15 ngày sau Delivered; một số danh mục chỉ 6 ngày.':'TikTok chưa cho phép đọc đầy đủ dữ liệu Return/Refund bằng token hiện tại. SellerKBB vẫn hiển thị trạng thái đơn, nhưng chưa coi số sau hoàn là số chốt.'}</div>
-        <div class="tiny reconcile-note">“Khớp theo thời gian” không phải bằng chứng tuyệt đối đơn phát sinh từ LIVE. SellerKBB không dùng số này thay KPI tự động khi chưa có tín hiệu LIVE/đối soát chắc chắn.</div>
-        <div class="reconcile-orders">${orders.length?orders.map(order=>`<div class="reconcile-order"><div><span class="tiny">Mã đơn</span><b>${esc(order.id||'—')}</b><div class="tiny">${esc(reconcileAttributionLabel(order))}</div></div><div><span class="tiny">Trạng thái</span><div class="reconcile-status">${esc(reconcileStatusLabel(order.status))}</div></div><div><span class="tiny">Hậu mãi</span><b>${esc(reconcileAfterSaleLabel(order))}</b></div><div><span class="tiny">Giá trị đơn</span><b>${fmtMoney(order.amount,order.currency||session.currency)}</b></div><div><span class="tiny">Sau hoàn/hủy đã biết</span><b>${fmtMoney(order.netAmount,order.currency||session.currency)}</b></div></div>`).join(''):'<div class="empty">Không tìm thấy đơn nào được tạo trong đúng khoảng thời gian phiên LIVE này.</div>'}</div>`;
+        <div class="reconcile-filter-wrap">
+          <div class="reconcile-filter-label">Lọc nhanh theo trạng thái đơn</div>
+          <div class="reconcile-filterbar">${filters.map((x,i)=>`<button type="button" class="reconcile-filter-chip ${i===0?'active':''}" data-reconcile-filter="${x.key}"><span>${esc(x.label)}</span><b>${x.count}</b></button>`).join('')}</div>
+        </div>
+        <div class="reconcile-order-grid">${orders.length?orders.map(order=>reconcileOrderCard(session,order)).join(''):'<div class="empty">Không tìm thấy đơn nào trong khung thời gian phiên LIVE.</div>'}</div>
+        <div class="reconcile-empty-filter">Không có đơn ở trạng thái này.</div>
+        <details class="reconcile-policy">
+          <summary>Giải thích đối soát & dữ liệu hậu mãi</summary>
+          <div class="reconcile-policy-body">
+            <span>${aftersalesAvailable?'Đã đọc được dữ liệu Return/Refund của TikTok.':'Token hiện tại chưa đọc đủ Return/Refund; trạng thái hậu mãi có thể chưa đầy đủ.'}</span>
+            <span>Cửa sổ trả/hoàn có thể kéo dài tới 15 ngày sau Delivered; một số danh mục là 6 ngày.</span>
+            <span>Đơn “Khớp theo thời gian” chưa được coi là bằng chứng tuyệt đối phát sinh từ LIVE và chưa dùng để tự chốt KPI.</span>
+          </div>
+        </details>`;
+      root.querySelectorAll('[data-reconcile-filter]').forEach(btn=>btn.onclick=()=>applyReconcileFilter(root,btn.dataset.reconcileFilter));
     }
     async function loadReconciliation(sessionId,force=false){
       const session=state.sessions.find(s=>s.id===sessionId), root=document.querySelector('[data-reconcile-result="'+sessionId+'"]'); if(!session||!root)return;
-      root.innerHTML='<div class="tiny">Đang tải trạng thái đơn từ TikTok…</div>';
-      try{ const result=PREVIEW?previewReconciliation(session):await api('/api/tiktok/reconcile/live?live_id='+encodeURIComponent(session.liveId||session.id)+(force?'&refresh=1':'')); renderReconcileResult(session,result); document.querySelector('[data-reconcile-refresh="'+sessionId+'"]')?.classList.remove('hidden');}
-      catch(error){root.innerHTML='<div class="notice bad">Không đối soát được phiên này: '+esc(error.message||String(error))+'</div>';}
+      root.classList.remove('has-data');
+      root.innerHTML='<div class="reconcile-loading">Đang tải trạng thái đơn từ TikTok…</div>';
+      try{
+        const result=PREVIEW?previewReconciliation(session):await api('/api/tiktok/reconcile/live?live_id='+encodeURIComponent(session.liveId||session.id)+(force?'&refresh=1':''));
+        renderReconcileResult(session,result);
+        document.querySelector('[data-reconcile-refresh="'+sessionId+'"]')?.classList.remove('hidden');
+      }catch(error){
+        root.classList.add('has-data');
+        root.innerHTML='<div class="notice bad">Không đối soát được phiên này: '+esc(error.message||String(error))+'</div>';
+      }
     }
     function previewReconciliation(session){
-      const statuses=['COMPLETED','IN_TRANSIT','DELIVERED','CANCELLED'];
-      const orders=Array.from({length:6},(_,i)=>{const status=statuses[i%statuses.length],amount=Math.round(finalGmv(session)/8)+(i*120000),refunded=i===4;return {id:'ORD-'+String(i+1).padStart(4,'0'),status,amount,netAmount:status==='CANCELLED'?0:(refunded?Math.round(amount*.65):amount),currency:session.currency||'VND',attribution:i<3?'live_signal':'time_window',aftersales:refunded?[{status:'RETURN_OR_REFUND_REQUEST_COMPLETE',refundTotal:Math.round(amount*.35)}]:(i===2?[{status:'BUYER_SHIPPED_ITEM',refundTotal:0}]:[])}}); 
-      return {live:{analyticsGmvAmount:finalGmv(session)},scope:{aftersalesAvailable:true},counts:{total:6,shipping:1,returning:1,cancelled:1},totals:{orderWindowAmount:orders.reduce((a,o)=>a+o.amount,0),provisionalNetAmount:orders.reduce((a,o)=>a+o.netAmount,0),confirmedLiveSignalAmount:orders.filter(o=>o.attribution==='live_signal').reduce((a,o)=>a+o.netAmount,0)},orders};
+      const samples=[
+        {status:'AWAITING_SHIPMENT',after:null},
+        {status:'AWAITING_COLLECTION',after:null},
+        {status:'PARTIALLY_SHIPPING',after:null},
+        {status:'IN_TRANSIT',after:null},
+        {status:'DELIVERED',after:null},
+        {status:'IN_TRANSIT',after:'BUYER_SHIPPED_ITEM'},
+        {status:'DELIVERED',after:'RETURN_OR_REFUND_REQUEST_COMPLETE'},
+        {status:'CANCELLED',after:null},
+        {status:'COMPLETED',after:null}
+      ];
+      const orders=samples.map((sample,i)=>{
+        const amount=Math.round(finalGmv(session)/11)+(i*95000);
+        const refunded=sample.after==='RETURN_OR_REFUND_REQUEST_COMPLETE';
+        return {
+          id:'ORD-'+String(i+1).padStart(4,'0'),
+          status:sample.status,
+          amount,
+          netAmount:sample.status==='CANCELLED'?0:(refunded?Math.round(amount*.62):amount),
+          currency:session.currency||'VND',
+          attribution:i<5?'live_signal':'time_window',
+          aftersales:sample.after?[{status:sample.after,refundTotal:refunded?Math.round(amount*.38):0}]:[]
+        };
+      });
+      const counts={total:orders.length,awaitingPacking:1,awaitingCarrier:1,transporting:1,outForDelivery:2,delivered:2,completed:1,cancelled:1,returning:1,refunded:1};
+      return {
+        live:{analyticsGmvAmount:finalGmv(session)},
+        scope:{aftersalesAvailable:true},
+        policy:{reconciliationProtectionDays:60},
+        counts,
+        totals:{
+          orderWindowAmount:orders.reduce((a,o)=>a+o.amount,0),
+          provisionalNetAmount:orders.reduce((a,o)=>a+o.netAmount,0),
+          confirmedLiveSignalAmount:orders.filter(o=>o.attribution==='live_signal').reduce((a,o)=>a+o.netAmount,0)
+        },
+        orders
+      };
     }
     function renderReconcile(){
       if(!can('live.read')){ $('#section-reconcile').innerHTML='';return; }
       const ss=sessionsForRange();
-      $('#section-reconcile').innerHTML=`${timeFilterHtml('reconcile')}<div class="data-note">${icon('shield',16)}<span>Đối soát theo từng phiên LIVE. SellerKBB hiển thị tất cả đơn tạo trong khung thời gian phiên và đánh dấu mức độ liên kết LIVE; không tự coi đơn khớp giờ là chắc chắn thuộc LIVE.</span></div><div class="reconcile-list">${ss.length?ss.map(reconcileSessionCard).join(''):'<div class="empty">Không có phiên LIVE trong khoảng thời gian này.</div>'}</div>`;
+      $('#section-reconcile').innerHTML=`${timeFilterHtml('reconcile')}<div class="data-note">${icon('shield',16)}<span>Chọn một phiên rồi bấm <b>Xem đơn</b>. Các đơn được gắn thẻ rõ theo trạng thái giao hàng/hậu mãi và có thể lọc nhanh ngay trên từng phiên.</span></div><div class="reconcile-list">${ss.length?ss.map(reconcileSessionCard).join(''):'<div class="empty">Không có phiên LIVE trong khoảng thời gian này.</div>'}</div>`;
       bindTimeFilter('reconcile');
       document.querySelectorAll('[data-reconcile-load]').forEach(b=>b.onclick=()=>loadReconciliation(b.dataset.reconcileLoad,false));
       document.querySelectorAll('[data-reconcile-refresh]').forEach(b=>b.onclick=()=>loadReconciliation(b.dataset.reconcileRefresh,true));
@@ -3611,34 +4027,39 @@ tbody tr:hover td{background:#fffafb}
       </div>`;
     }
 
+    function effectiveRetentionDays(){
+      return Math.max(RECONCILIATION_PROTECTION_DAYS,Number(state.maintenance.settings.retentionDays||180));
+    }
     function maintenanceStats(){
       const settings=state.maintenance.settings;
       const totalBytes=state.sessions.reduce((a,s)=>a+estimateSessionBytes(s),0)*3;
       const totalMb=totalBytes/1024/1024;
       const count=state.sessions.length;
-      const cutoff=Date.now()-Number(settings.retentionDays||180)*86400000;
+      const retention=effectiveRetentionDays();
+      const cutoff=Date.now()-retention*86400000;
+      const protectCutoff=Date.now()-RECONCILIATION_PROTECTION_DAYS*86400000;
       const expired=state.sessions.filter(s=>(s.startTime?.toDate?.()?.getTime?.()||0)<cutoff).length;
+      const protectedCount=state.sessions.filter(s=>(s.startTime?.toDate?.()?.getTime?.()||0)>=protectCutoff).length;
       const countPct=Math.min(999,Math.round(count/Math.max(1,Number(settings.firestoreMaxSessions||12000))*100));
       const mbPct=Math.min(999,Math.round(totalMb/Math.max(1,Number(settings.firestoreSoftLimitMb||600))*100));
-      return {count,totalMb,expired,countPct,mbPct,pressure:Math.max(countPct,mbPct)};
+      return {count,totalMb,expired,protectedCount,retention,countPct,mbPct,pressure:Math.max(countPct,mbPct)};
     }
 
     async function cleanupFirestoreData(emergency=false){
+      const settings=state.maintenance.settings;
+      const retention=effectiveRetentionDays();
+      const cutoff=Date.now()-retention*86400000;
+      const protectCutoff=Date.now()-RECONCILIATION_PROTECTION_DAYS*86400000;
       if(PREVIEW){
-        const retention=Number(state.maintenance.settings.retentionDays||180);
-        const cutoff=Date.now()-retention*86400000;
         const before=state.sessions.length;
         state.sessions=state.sessions.filter(s=>(s.startTime?.toDate?.()?.getTime?.()||0)>=cutoff);
         return before-state.sessions.length;
       }
       if(!isAdmin()||!state.db)return 0;
-      const settings=state.maintenance.settings;
       if(settings.autoCleanup===false && emergency)return 0;
-      const retention=Number(settings.retentionDays||180);
-      const cutoff=Date.now()-retention*86400000;
       const sorted=[...state.sessions].sort((a,b)=>(a.startTime?.toDate?.()?.getTime?.()||0)-(b.startTime?.toDate?.()?.getTime?.()||0));
       const deleteIds=new Set();
-      // Free-plan cleanup: read at most 300 expired docs per run, then delete them in one batch.
+      // Chỉ đọc/xóa tối đa 300 phiên thực sự quá hạn. Vùng 60 ngày gần nhất luôn được bảo vệ.
       const staleQuery=query(collection(state.db,'liveSessions'),where('startTime','<',Timestamp.fromMillis(cutoff)),orderBy('startTime','asc'),limit(300));
       const staleSnap=await getDocs(staleQuery);
       staleSnap.docs.forEach(d=>deleteIds.add(d.id));
@@ -3651,6 +4072,8 @@ tbody tr:hover td{background:#fffafb}
         const targetMb=Number(settings.firestoreSoftLimitMb||600)*.70;
         for(const item of sorted){
           if(deleteIds.has(item.id)) continue;
+          const started=item.startTime?.toDate?.()?.getTime?.()||0;
+          if(started>=protectCutoff) continue;
           if(remainingCount<=targetCount && remainingBytes<=targetMb) break;
           deleteIds.add(item.id);
           remainingCount--;
@@ -3703,34 +4126,35 @@ tbody tr:hover td{background:#fffafb}
         <div class="storage-health-row">
           <div><span>Phiên LIVE đang quản lý</span><b>${new Intl.NumberFormat('vi-VN').format(st.count)} phiên</b></div>
           <div><span>Áp lực dọn dữ liệu</span><b class="${pressureClass}">${st.pressure}%</b></div>
+          <div><span>Phiên được bảo vệ đối soát</span><b>${new Intl.NumberFormat('vi-VN').format(st.protectedCount||0)} phiên · 60 ngày</b></div>
           <div><span>Cloudflare KV</span><b>${new Intl.NumberFormat('vi-VN').format(cf.keyCount||0)} khóa</b></div>
-          <div><span>Kiểm tra KV gần nhất</span><b>${last}</b></div>
         </div>
 
         <div class="card">
-          <div class="row space"><div><h3 class="heading-with-icon">${icon('settings',18)} Cài đặt tự động dọn dữ liệu</h3><div class="sub">Chỉ áp dụng cho dữ liệu báo cáo và cache. Source website, GitHub, tài khoản người dùng và token TikTok được bảo vệ.</div></div><span class="pill ok">Tối đa 6 tháng</span></div>
+          <div class="row space"><div><h3 class="heading-with-icon">${icon('settings',18)} Cài đặt tự động dọn dữ liệu</h3><div class="sub">Chỉ áp dụng cho dữ liệu báo cáo và cache. Source website, GitHub, tài khoản người dùng và token TikTok được bảo vệ.</div></div><span class="pill ok">60–180 ngày</span></div>
+          <div class="notice ok" style="margin-top:12px"><b>Bảo vệ đối soát:</b> hệ thống không tự xóa phiên LIVE trong 60 ngày gần nhất, kể cả khi chạm ngưỡng dọn khẩn cấp. Cache đối soát 10 phút có thể hết hạn và được tải lại từ TikTok, nên không làm mất dữ liệu nguồn.</div>
           <div class="settings-grid">
-            <label><span class="tiny">Thời gian lưu dữ liệu LIVE</span><select id="retentionDays" class="input"><option value="30">30 ngày</option><option value="60">60 ngày</option><option value="90">90 ngày</option><option value="120">120 ngày</option><option value="150">150 ngày</option><option value="180">180 ngày (6 tháng)</option></select></label>
+            <label><span class="tiny">Thời gian lưu dữ liệu LIVE</span><select id="retentionDays" class="input"><option value="60">60 ngày · tối thiểu để đối soát</option><option value="90">90 ngày</option><option value="120">120 ngày</option><option value="150">150 ngày</option><option value="180">180 ngày (6 tháng)</option></select></label>
             <label><span class="tiny">Ngưỡng bắt đầu dọn khẩn cấp</span><select id="emergencyPercent" class="input"><option value="75">75%</option><option value="80">80%</option><option value="85">85% (khuyến nghị)</option><option value="90">90%</option></select></label>
             <label><span class="tiny">Ngưỡng Firestore của ứng dụng</span><div class="input-unit"><input id="firestoreSoftLimitMb" class="input" type="number" min="100" max="900" value="${m.firestoreSoftLimitMb}"><span>MB</span></div></label>
             <label><span class="tiny">Số phiên LIVE tối đa trước khi dọn</span><input id="firestoreMaxSessions" class="input" type="number" min="500" max="50000" value="${m.firestoreMaxSessions}"></label>
             <label><span class="tiny">Ngưỡng số khóa Cloudflare KV</span><input id="kvSoftKeyLimit" class="input" type="number" min="100" max="50000" value="${m.kvSoftKeyLimit}"></label>
-            <label class="toggle-row"><input id="autoCleanup" type="checkbox" ${m.autoCleanup!==false?'checked':''}><span><b>Tự động dọn khi chạm ngưỡng</b><small>Ưu tiên xóa dữ liệu cũ nhất; không xóa source hoặc khóa được bảo vệ.</small></span></label>
+            <label class="toggle-row"><input id="autoCleanup" type="checkbox" ${m.autoCleanup!==false?'checked':''}><span><b>Tự động dọn khi chạm ngưỡng</b><small>Chỉ xóa dữ liệu đủ cũ; tuyệt đối bỏ qua phiên LIVE thuộc vùng bảo vệ 60 ngày.</small></span></label>
           </div>
           <div class="row storage-actions"><button id="saveMaintenance" class="btn primary">${icon('check',15)} Lưu và áp dụng</button><button id="cleanupNow" class="btn">${icon('database',15)} Dọn dữ liệu ngay</button><button id="runKvCleanup" class="btn">${icon('shield',15)} Kiểm tra Cloudflare</button></div>
         </div>
 
         <div class="card free-plan-note">
           <h3 class="heading-with-icon">${icon('shield',18)} Chế độ Firebase Free</h3>
-          <div class="notice ok"><b>Không dùng Firestore TTL trả phí.</b> SellerKBB chỉ đọc tối đa dữ liệu trong thời gian lưu và tự dọn tối đa 300 phiên quá hạn mỗi lượt khi Admin đăng nhập hoặc bấm dọn thủ công.</div>
+          <div class="notice ok"><b>Không dùng Firestore TTL trả phí.</b> SellerKBB chỉ đọc tối đa dữ liệu trong thời gian lưu và tự dọn tối đa 300 phiên quá hạn mỗi lượt; phiên trong 60 ngày gần nhất không nằm trong danh sách xóa.</div>
           <div class="sub" style="margin-top:10px">Thanh Firebase phía trên là ước tính dữ liệu SellerKBB đang quản lý; số liệu Firestore thực tế có thể cao hơn do index và metadata. Cách này vẫn ưu tiên giữ trong quota Free và tránh tạo lượng đọc/ghi/xóa lớn bất ngờ.</div>
         </div>
 
         <div class="card">
           <h3 class="heading-with-icon">${icon('settings',18)} Gợi ý cài đặt</h3>
           <div class="recommend-list">
-            <div><b>Khuyến nghị hiện tại</b><span>180 ngày · dọn ở 85% · TikTok tự đồng bộ mỗi 1 giờ · dọn KV 1 lần/ngày</span></div>
-            <div><b>Nếu dữ liệu tăng rất nhanh</b><span>Giữ 120–150 ngày hoặc hạ ngưỡng khẩn cấp xuống 80%.</span></div>
+            <div><b>Khuyến nghị hiện tại</b><span>180 ngày · bảo vệ đối soát tối thiểu 60 ngày · dọn ở 85% · TikTok tự đồng bộ mỗi 1 giờ.</span></div>
+            <div><b>Nếu dữ liệu tăng rất nhanh</b><span>Có thể giảm còn 60–120 ngày; hệ thống vẫn không xóa vùng 60 ngày gần nhất.</span></div>
             <div><b>Nếu muốn ưu tiên lịch sử</b><span>Giữ 180 ngày và nâng ngưỡng ứng dụng; không được vượt quá 180 ngày.</span></div>
           </div>
         </div>`;
