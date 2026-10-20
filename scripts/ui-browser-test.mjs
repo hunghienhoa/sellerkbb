@@ -213,9 +213,15 @@ try {
   assert(await page.$('#section-kpi [data-manual-session]')===null,"Manual KPI editor must not remain inside KPI nhân sự");
   const manualCard='#section-manual-kpi [data-manual-session]:first-of-type';
   assert(await page.$eval(manualCard,e=>e.textContent.includes('Mega Live')),"Manual KPI card must show saved Mega Live classification");
+  assert(await page.$eval(manualCard,e=>e.classList.contains('reconciled')&&e.textContent.includes('✓ Đã đối soát')),"Finalized manual KPI session must use green reconciled styling/badge");
   assert(await page.$eval(manualCard,e=>e.textContent.includes('không tự chia GMV tổng')),"Manual KPI no-equal-split notice missing");
   assert(await page.$eval(manualCard,e=>e.textContent.includes('Host Livestream')&&e.textContent.includes('Nhân viên vận hành Livestream')),"Paired Host/Operator labels missing");
   assert(await page.$eval(manualCard,e=>e.textContent.includes('Thêm người')&&!e.textContent.includes('Thêm Host riêng')&&!e.textContent.includes('Thêm Vận hành riêng')),"Manual add control must match v1.18 Thêm người");
+  assert((await page.$(manualCard+' [data-manual-entry-saved="1"]')).length>=1,"Saved manual KPI people must render as compact rows");
+  assert(await page.$eval(manualCard+' [data-manual-entry-saved="1"] [data-manual-entry-details]',e=>e.classList.contains('hidden')),"Saved manual KPI details must start collapsed");
+  assert(await page.$eval(manualCard+' [data-manual-entry-saved="1"] .manual-kpi-entry-summary',e=>e.textContent.includes('Host:')&&e.textContent.includes('Vận hành:')&&e.textContent.includes('Chi tiết')),"Collapsed manual KPI summary must show Host Operator and Chi tiết");
+  await page.click(manualCard+' [data-manual-entry-saved="1"] [data-manual-detail-toggle]');
+  assert(!(await page.$eval(manualCard+' [data-manual-entry-saved="1"] [data-manual-entry-details]',e=>e.classList.contains('hidden'))),"Chi tiết must expand saved manual KPI row");
 
   const hostOptions=await page.$$eval(manualCard+' [data-manual-host-person] option',els=>els.map(e=>e.textContent.trim()));
   assert(hostOptions.includes('Thảo My')&&hostOptions.includes('Dung')&&hostOptions.includes('Tâm')&&!hostOptions.includes('Hùng Bắc Giang'),"Host Livestream selector must show Host staff only");
@@ -227,14 +233,21 @@ try {
 
   assert(await page.$eval(manualCard,e=>e.textContent.includes('KPI của Host Livestream (0,3%)')),"Host 0.3% KPI label is missing");
   await page.$eval(manualCard+' [data-manual-host-gmv]',e=>{e.value='10000';e.dispatchEvent(new Event('input',{bubbles:true}));});
-  assert(await page.$eval(manualCard+' [data-manual-host-gmv]',e=>e.value)==='10.000đ',"Host GMV did not format 10000 as 10.000đ");
+  assert(await page.$eval(manualCard+' [data-manual-host-gmv]',e=>e.value)==='10.000',"Host GMV did not format 10000 as 10.000");
+  assert(await page.$eval(manualCard+' .manual-money-input-suffix',e=>e.textContent.trim())==='đ',"Host GMV currency suffix must stay outside the editable value");
   assert(await page.$eval(manualCard+' [data-manual-host-kpi]',e=>e.textContent.trim())==='30đ',"Host KPI did not auto-calculate 0.3% from Host GMV");
   assert(await page.$eval(manualCard+' [data-manual-host-kpi]',e=>e.tagName==='DIV'&&getComputedStyle(e).pointerEvents==='none'&&e.tabIndex===-1),"Host KPI must be a non-interactive static output");
   assert(await page.$eval(manualCard+' [data-manual-operator-kpi]',e=>e.textContent.trim())==='10đ',"Operator KPI did not auto-calculate 0.1% from Host GMV");
   assert(await page.$eval(manualCard+' [data-manual-operator-kpi]',e=>e.tagName==='DIV'&&getComputedStyle(e).pointerEvents==='none'&&e.tabIndex===-1),"Operator KPI must be a non-interactive static output");
 
   await page.$eval(manualCard+' [data-manual-host-gmv]',e=>{e.value='1234000';e.dispatchEvent(new Event('input',{bubbles:true}));});
-  assert(await page.$eval(manualCard+' [data-manual-host-gmv]',e=>e.value)==='1.234.000đ',"Formatted Host GMV is incorrect");
+  assert(await page.$eval(manualCard+' [data-manual-host-gmv]',e=>e.value)==='1.234.000',"Formatted Host GMV is incorrect");
+  await page.click(manualCard+' [data-manual-host-gmv]');
+  await page.keyboard.press('End');
+  await page.keyboard.press('Backspace');
+  assert(await page.$eval(manualCard+' [data-manual-host-gmv]',e=>e.value)==='123.400',"Backspace at the end must delete a digit while preserving number formatting");
+  assert(await page.$eval(manualCard+' .manual-money-input-suffix',e=>e.textContent.trim())==='đ',"Backspace must never delete the fixed currency suffix");
+  await page.$eval(manualCard+' [data-manual-host-gmv]',e=>{e.value='1234000';e.dispatchEvent(new Event('input',{bubbles:true}));});
   assert(await page.$eval(manualCard+' [data-manual-host-kpi]',e=>e.textContent.trim())==='3.702đ',"Host KPI 0.3% is incorrect");
   assert(await page.$eval(manualCard+' [data-manual-operator-kpi]',e=>e.textContent.trim())==='1.234đ',"Operator KPI 0.1% is incorrect");
   assert(await page.$eval(manualCard+' [data-manual-validation-status]',e=>['under','matched'].includes(e.dataset.manualValidationStatus)),"Valid manual GMV should be under or matched against finalized GMV");
@@ -250,7 +263,8 @@ try {
   await page.click(manualCard+' [data-manual-add]');
   assert((await page.$$(manualCard+' [data-manual-entry]')).length===2,"Thêm người did not add a new paired Host/Operator block");
   assert((await page.$$(manualCard+' [data-manual-host-person]')).length===2,"New paired block is missing Host selector");
-  assert((await page.$$(manualCard+' [data-manual-operator-person]')).length===2,"New paired block is missing Operator selector");
+  assert((await page.$(manualCard+' [data-manual-operator-person]')).length===2,"New paired block is missing Operator selector");
+  assert(await page.$eval(manualCard+' [data-manual-entry]:nth-child(2) .manual-entry-footer',e=>e.textContent.includes('Xóa người')),"Delete control must be placed in the row footer with a clear label");
   await page.click(manualCard+' [data-manual-entry]:nth-child(2) [data-manual-remove]');
 
   await page.click(manualCard+' [data-manual-save]');
@@ -274,7 +288,8 @@ try {
   assert(await page.$eval(savedManualCard+' [data-manual-host-person]',e=>e.value)==='staff-dung',"Saved Host Livestream did not persist");
   assert(await page.$eval(savedManualCard+' [data-manual-operator-person]',e=>e.value)==='staff-hung-bg',"Saved Operator did not persist");
   assert(await page.$eval(savedManualCard+' [data-manual-host-kpi]',e=>e.textContent.trim())==='3.702đ',"Computed Host KPI did not persist after reload");
-  assert(await page.$eval(savedManualCard+' [data-manual-host-gmv]',e=>e.value)==='1.234.000đ',"Formatted Host GMV did not persist after reload");
+  assert(await page.$eval(savedManualCard+' [data-manual-host-gmv]',e=>e.value)==='1.234.000',"Formatted Host GMV did not persist after reload");
+  assert(await page.$eval(savedManualCard+' [data-manual-entry-saved="1"] [data-manual-entry-details]',e=>e.classList.contains('hidden')),"Saved KPI row must return collapsed after reload");
   assert(await page.$eval(savedManualCard+' [data-manual-operator-kpi]',e=>e.textContent.trim())==='1.234đ',"Operator auto KPI did not persist after reload");
 
   await page.click('[data-section="export"]');
@@ -453,6 +468,7 @@ try {
   assert(await page.$eval('#section-reconcile',e=>e.classList.contains('active')),"Mobile reconciliation section did not activate");
   await page.click('#section-reconcile [data-range-mode="30d"]');
   const mobileReconcile='#section-reconcile .reconcile-session:first-of-type';
+  assert(await page.$eval(mobileReconcile,e=>e.classList.contains('reconciled')&&e.textContent.includes('Đã đối soát')),"Finalized reconciliation session must show green success status");
   const mobileOpenButton=mobileReconcile+' [data-reconcile-open]';
   const pageScrollBefore=await page.evaluate(()=>window.scrollY);
   await page.click(mobileOpenButton);
@@ -502,6 +518,9 @@ try {
   await sleep(200);
   await page.click('#section-manual-kpi [data-range-mode="30d"]');
   const mobileManualCard='#section-manual-kpi [data-manual-session]:first-of-type';
+  assert(await page.$eval(mobileManualCard+' [data-manual-entry-saved="1"] [data-manual-entry-details]',e=>e.classList.contains('hidden')),"Mobile saved KPI row must start collapsed");
+  await page.click(mobileManualCard+' [data-manual-entry-saved="1"] [data-manual-detail-toggle]');
+  assert(!(await page.$eval(mobileManualCard+' [data-manual-entry-saved="1"] [data-manual-entry-details]',e=>e.classList.contains('hidden'))),"Mobile Chi tiết must expand KPI row");
   assert(await page.$eval(mobileManualCard+' [data-manual-host-gmv]',e=>parseFloat(getComputedStyle(e).fontSize)>=16),"Mobile Host GMV input must be >=16px to prevent focus zoom");
   const focusBefore=await page.evaluate(()=>document.activeElement?.tagName||'');
   await page.$eval(mobileManualCard+' [data-manual-host-kpi]',e=>e.dispatchEvent(new PointerEvent('pointerdown',{bubbles:true})));

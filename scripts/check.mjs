@@ -190,6 +190,18 @@ assert(readme.includes("Lịch sử thay đổi gần đây"), "README version h
 assert(html.includes("Phiên KPI thủ công"), "Manual KPI section missing");
 assert(html.includes("GMV sau hoàn/hủy của Host Livestream"), "Host manual GMV field missing");
 assert(html.includes("function manualMoneyDisplay(value)"), "Manual KPI VND formatter missing");
+assert(html.includes("function manualMoneyInputDisplay(value)"), "Manual KPI editable amount formatter missing");
+assert(html.includes("function formatManualMoneyInput(input)"), "Manual KPI caret-preserving formatter missing");
+assert(html.includes('class="manual-money-input-suffix">đ</span>'), "Manual KPI fixed currency suffix missing");
+assert(html.includes("input.value=manualMoneyInputDisplay(value)"), "Editable manual GMV must exclude currency suffix from input value");
+assert(html.includes('data-manual-entry-saved="'), "Saved manual KPI compact row marker missing");
+assert(html.includes("manual-kpi-entry-summary"), "Saved manual KPI compact summary missing");
+assert(html.includes("data-manual-detail-toggle"), "Manual KPI detail toggle missing");
+assert(html.includes("Xóa người"), "Manual KPI delete control label missing");
+assert(html.includes("manual-entry-footer"), "Manual KPI delete control footer missing");
+assert(html.includes("manual-kpi-session.reconciled"), "Reconciled manual KPI green styling missing");
+assert(html.includes("✓ Đã đối soát"), "Reconciliation success badge missing");
+assert(html.includes("reconcile-session.reconciled"), "Reconciliation list green success styling missing");
 assert(html.includes("replace(/[^0-9]/g,''"), "Manual KPI money parser missing");
 assert(html.includes('data-manual-host-person'), "Host Livestream selector missing");
 assert(html.includes('data-manual-operator-person'), "Operator Livestream selector missing");

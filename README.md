@@ -4,7 +4,7 @@
 
 ### Báo cáo TikTok LIVE · KPI nhân sự · Tự đồng bộ 24/24
 
-**Phiên bản hiện tại: v1.41.0**
+**Phiên bản hiện tại: v1.42.0**
 
 [![GitHub Release](https://img.shields.io/github/v/release/hunghienhoa/sellerkbb?label=Release)](https://github.com/hunghienhoa/sellerkbb/releases)
 [![GitHub Actions](https://img.shields.io/github/actions/workflow/status/hunghienhoa/sellerkbb/deploy.yml?branch=main&label=Ki%E1%BB%83m%20tra%20%26%20Backup)](https://github.com/hunghienhoa/sellerkbb/actions)
@@ -17,13 +17,15 @@
 
 ---
 
-## 🆕 Cập nhật mới nhất — v1.41.0
+## 🆕 Cập nhật mới nhất — v1.42.0
 
-- Bổ sung **GMV sau khi hoàn hủy** ngay trên trang **Tổng quan**.
-- Không nhét thêm thành ô thứ 5 trong hàng metric cũ; SellerKBB dùng một thẻ ngang full-width riêng để bố cục không bị lệch trên PC/mobile.
-- Số này chỉ cộng **GMV cuối cùng của các phiên đã chốt/đã đối soát**, không cộng GMV chờ đối soát.
-- Thẻ hiển thị thêm **số phiên đã chốt / tổng số phiên** trong khoảng thời gian đang chọn để Admin biết số GMV này đã phủ được bao nhiêu phiên.
-- Hàng 4 ô cũ **Phiên LIVE / GMV đã ghi nhận / Sản phẩm bán / Tổng thời lượng** giữ nguyên.
+- Tab **KPI thủ công** gọn hơn: sau khi một cặp Host/Vận hành đã được lưu, dòng đó tự **thu gọn** và chỉ hiện **Host / Vận hành / Chi tiết**.
+- Bấm **Chi tiết** mới mở lại phần GMV sau hoàn/hủy và các KPI 0,3% / 0,1% để xem hoặc sửa.
+- Ô nhập GMV được sửa cách nhập tiền: chữ **đ** là hậu tố cố định bên ngoài ô số; con trỏ chỉ nằm trong phần số, bấm Backspace ở cuối vẫn xóa được số và không bao giờ xóa mất chữ **đ**.
+- Nút xóa được chuyển xuống cuối phần chi tiết, có nhãn rõ **Xóa người** thay vì nút × nằm lệch bố cục.
+- Phiên đã đối soát/chốt thành công được chuyển sang nền trắng/viền xanh nhẹ và có thẻ **✓ Đã đối soát**, tránh toàn bộ card đều mang màu hồng.
+- Danh sách **Đối soát đơn LIVE** cũng dùng trạng thái xanh **Đã đối soát** cho phiên đã chốt.
+- Không bổ sung giờ riêng cho từng người; KPI thủ công vẫn quản lý theo cặp Host + Vận hành của phiên.
 - README, kiểm thử PC/mobile và GitHub Release được cập nhật cùng phiên bản.
 
 ---
@@ -109,6 +111,15 @@ Nếu một phiên kéo dài nhiều giờ và nhiều người thay ca:
 8. Admin thêm những Host/Operator thực sự cần tính và nhập **GMV sau hoàn/hủy của từng Host**.
 9. KPI Host tự tính = GMV Host × **0,3%**; KPI Vận hành đi cùng Host = GMV Host × **0,1%**.
 10. SellerKBB không tự chia GMV tổng phiên cho các Host.
+
+#### Cách nhập từng cặp Host / Vận hành
+
+- Khi thêm người mới, SellerKBB mở đầy đủ ô **Host / Vận hành / GMV sau hoàn hủy của Host / KPI Host / KPI Vận hành**.
+- Sau khi bấm **Lưu KPI thủ công**, cặp đã lưu được thu gọn thành một dòng chỉ còn tên **Host**, tên **Vận hành** và nút **Chi tiết**.
+- Bấm **Chi tiết** để mở lại phần tính KPI và chỉnh sửa.
+- Ô GMV chỉ chứa phần số; chữ **đ** được giữ cố định bên phải nên có thể đặt con trỏ/xóa số bình thường.
+- Nút **Xóa người** nằm ở cuối phần Chi tiết của đúng cặp, tránh bấm nhầm khi đang nhập người mới.
+- SellerKBB không yêu cầu nhập giờ riêng cho từng cặp nhân sự.
 
 #### Kiểm soát GMV thủ công
 
@@ -200,6 +211,7 @@ Vào tab **Đối soát đơn LIVE**:
 12. Chỉ đơn **Có tín hiệu LIVE** mới được cộng vào GMV dùng KPI.
 13. Đơn **Khớp theo thời gian** vẫn hiển thị để kiểm tra nhưng được ghi rõ **không tính KPI**.
 14. Nếu thiếu quyền/dữ liệu Return & Refund, phiên chuyển sang **Chờ đối soát** và không lấy GMV đã ghi nhận để tính thay.
+15. Phiên đã chốt/đối soát thành công được gắn thẻ xanh **✓ Đã đối soát** và dùng nền trung tính để dễ phân biệt với phiên còn xử lý.
 
 > **Vì sao chưa chốt ngay sau khi giao?** Người mua vẫn có thể mở yêu cầu trả/hoàn sau khi đơn ở trạng thái Delivered. Với chính sách TikTok Shop Việt Nam hiện hành, cửa sổ này có thể tới 15 ngày với đa số nhóm hàng và 6 ngày với một số nhóm hàng. Vì vậy muốn gọi là “GMV đã chốt” phải dựa trên trạng thái đơn + hậu mãi, không chỉ dựa vào ngày LIVE.
 
@@ -220,6 +232,7 @@ README giữ lại phần này để nhân sự có thể biết **vì sao giao 
 
 | Phiên bản | Thay đổi chính |
 |---|---|
+| **v1.42.0** | KPI thủ công thu gọn người đã lưu, sửa ô tiền với hậu tố **đ** cố định, bố trí lại nút xóa và thêm trạng thái xanh **Đã đối soát**. |
 | **v1.41.0** | Tổng quan bổ sung thẻ full-width **GMV sau khi hoàn hủy** chỉ cộng các phiên đã chốt/đã đối soát. |
 | **v1.40.0** | Khi bật KPI thủ công, ẩn hẳn Host/Vận hành tự động trên PC/mobile; bỏ tích thì hiện lại. |
 | **v1.39.0** | Tách KPI nhân sự thành **KPI chưa chốt** và **KPI đã chốt** để không trộn số tạm tính với số dùng thanh toán. |
