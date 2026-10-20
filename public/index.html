@@ -3807,8 +3807,8 @@ tbody tr:hover td{background:#fffafb}
     }
 
     function exportCsv(rows){
-      const header=['title','channel_username','channel_id','start_time','duration_seconds','gmv_recorded','items_sold','gmv_live_gross','gmv_reconciled_for_kpi','kpi_status','currency','kpi_mode','host','operator'];
-      const lines=[header,...rows.map(s=>{const basis=automaticKpiBasis(s);return [s.title||'',s.channelUsername||'',s.channelId||'',s.startTime?.toDate?.().toISOString?.()||'',s.durationSeconds||0,s.recordedGmvAmount||0,s.currentItemsSold??s.recordedItemsSold??0,finalGmv(s),isManualKpi(s)?'':(basis.usable?basis.gmv:''),isManualKpi(s)?'manual':kpiStatusLabel(basis.status),s.currency||'',isManualKpi(s)?'manual':'auto',isManualKpi(s)?'':(s.hostName||''),isManualKpi(s)?'':(s.operatorName||'')]} )];
+      const header=['title','channel_username','channel_id','start_time','duration_seconds','gmv_recorded_latest','gmv_pending_reconciliation','gmv_after_cancel_refund_final','gmv_time_window_excluded','items_sold','kpi_status','currency','kpi_mode','host','operator'];
+      const lines=[header,...rows.map(s=>{const figures=sessionGmvFigures(s);const basis=automaticKpiBasis(s);return [s.title||'',s.channelUsername||'',s.channelId||'',s.startTime?.toDate?.().toISOString?.()||'',s.durationSeconds||0,figures.recorded,figures.pending??'',figures.final??'',figures.excludedTimeWindow,s.currentItemsSold??s.recordedItemsSold??0,isManualKpi(s)?'manual':kpiStatusLabel(basis.status),s.currency||'',isManualKpi(s)?'manual':'auto',isManualKpi(s)?'':(s.hostName||''),isManualKpi(s)?'':(s.operatorName||'')]} )];
       const csv=lines.map(r=>r.map(v=>`"${String(v??'').replaceAll('"','""')}"`).join(',')).join('\n'); const blob=new Blob(['\ufeff'+csv],{type:'text/csv;charset=utf-8'}); const a=document.createElement('a');a.href=URL.createObjectURL(blob);const range=selectedRange();a.download=`tiktok-live-${range.startKey}_${range.endKey}.csv`;a.click();URL.revokeObjectURL(a.href);
     }
 
