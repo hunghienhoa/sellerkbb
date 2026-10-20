@@ -345,4 +345,8 @@ assert(wranglerV146.includes("keep_vars = true"), "Cloudflare keep_vars safety m
 assert(workflow.includes("Warn when Cloudflare deploy is not configured")&&workflow.includes("Warn when Firebase deploy is not configured"), "Skipped-deploy warnings missing");
 assert(readme.includes("Bảng hướng dẫn cài đặt để đưa SellerKBB vào chạy thật"), "README production setup checklist missing");
 assert(readme.includes("Đồng bộ ngay 30 ngày")&&readme.includes("Tải backup JSON"), "README pre-production operation guide missing");
+assert(html.includes("startAfter")&&html.includes("loadRecentLiveSessions"), "Firestore pagination loader missing");
+assert(html.includes("const pageSize=5000"), "Firestore page size must stay below the 10000 structured-query limit");
+assert(!html.includes("limit(maxDocs)"), "Firestore must not send a limit above the platform maximum");
+assert(html.includes("auth startup")&&html.includes("retryBoot"), "Startup error boundary missing");
 console.log("Project structure, syntax, persistence, calendar, storage/backup, Google profiles, pink pastel UI, overlap-safe reconciliation, full pagination, readiness, descriptive Releases, README, and auto-sync checks OK");

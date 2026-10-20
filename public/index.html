@@ -2823,7 +2823,7 @@ tbody tr:hover td{background:#fffafb}
       <header class="topbar">
         <div class="topbar-title-wrap"><button id="menuToggle" class="menu-toggle" type="button" aria-label="Mở menu" aria-expanded="false">☰</button><div><h1 id="pageTitle" class="page-title">Tổng quan</h1><div id="pageSub" class="tiny"></div></div></div>
         <div class="topbar-right">
-          <span id="syncBadge" class="pill">v1.46.0</span>
+          <span id="syncBadge" class="pill">v1.46.1</span>
           <div class="account-menu-wrap">
             <button id="topbarAccountBtn" class="topbar-account-btn" type="button" aria-expanded="false" aria-controls="accountPopover" aria-label="Mở thông tin tài khoản">
               <img id="userAvatar" class="avatar topbar-account-avatar" alt="Ảnh đại diện Google">
@@ -2870,7 +2870,7 @@ tbody tr:hover td{background:#fffafb}
     const FIREBASE_VERSION = "12.19.0";
     const { initializeApp } = await import(`https://www.gstatic.com/firebasejs/${FIREBASE_VERSION}/firebase-app.js`);
     const { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } = await import(`https://www.gstatic.com/firebasejs/${FIREBASE_VERSION}/firebase-auth.js`);
-    const { getFirestore, doc, getDoc, setDoc, updateDoc, deleteDoc, getDocs, collection, query, orderBy, where, limit, writeBatch, serverTimestamp, Timestamp } = await import(`https://www.gstatic.com/firebasejs/${FIREBASE_VERSION}/firebase-firestore.js`);
+    const { getFirestore, doc, getDoc, setDoc, updateDoc, deleteDoc, getDocs, collection, query, orderBy, where, limit, startAfter, writeBatch, serverTimestamp, Timestamp } = await import(`https://www.gstatic.com/firebasejs/${FIREBASE_VERSION}/firebase-firestore.js`);
 
     const $ = (s) => document.querySelector(s);
     const esc = (v="") => String(v).replace(/[&<>'"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;","'":"&#39;",'"':"&quot;"}[c]));
@@ -3187,7 +3187,7 @@ tbody tr:hover td{background:#fffafb}
 
     function previewTs(iso){ return {toDate:()=>new Date(iso)}; }
     function enterPreview(){
-      state.config={version:'1.46.0-preview',tiktokConfigured:true};
+      state.config={version:'1.46.1-preview',tiktokConfigured:true};
       state.user={uid:'preview-admin',email:'admin@sellerkbb.demo',displayName:'Quản trị viên Demo',photoURL:avatarFallbackData('Quản trị viên Demo')};
       state.profile={role:'admin',status:'approved',displayName:'Quản trị viên Demo',photoURL:state.user.photoURL,permissions:['live.read','kpi.read']};
       state.maintenance={settings:{retentionDays:180,autoCleanup:true,emergencyPercent:85,firestoreSoftLimitMb:600,firestoreMaxSessions:12000,kvSoftKeyLimit:5000},github:{usedBytes:124000,limitBytes:10000000000,available:true},cloudflare:{keyCount:5,lastRun:{ranAt:new Date().toISOString(),deleted:0},usedBytes:428000,storageLimitBytes:1000000000,storageComplete:true},firebase:{freePlanMode:true,ttlEnabled:false,ttlRecommended:false,storageLimitBytes:1073741824}};
@@ -3261,7 +3261,11 @@ tbody tr:hover td{background:#fffafb}
       }
       const app=initializeApp(config.firebase);
       state.auth=getAuth(app); state.db=getFirestore(app);
-      onAuthStateChanged(state.auth, handleAuth);
+      onAuthStateChanged(state.auth,user=>handleAuth(user).catch(error=>{
+        console.error('auth startup',error);
+        showBoot('<b>Không tải được dữ liệu hệ thống.</b><br><br>'+esc(error?.message||'Lỗi không xác định')+'<br><br><span class="tiny">Firebase đã đăng nhập nhưng một bước đọc dữ liệu đang gặp lỗi.</span>', '<button id="retryBoot" class="btn primary">Thử tải lại</button>');
+        const retry=$('#retryBoot'); if(retry)retry.onclick=()=>location.reload();
+      }));
     }
 
     async function handleAuth(user){
@@ -3535,6 +3539,24 @@ tbody tr:hover td{background:#fffafb}
       }
     }
 
+    async function loadRecentLiveSessions(cutoff,maxDocs){
+      const target=Math.max(1,Math.min(12000,Number(maxDocs||12000)));
+      const pageSize=5000;
+      const docs=[];
+      let cursor=null;
+      while(docs.length<target){
+        const take=Math.min(pageSize,target-docs.length);
+        const constraints=[where('startTime','>=',cutoff),orderBy('startTime','desc')];
+        if(cursor)constraints.push(startAfter(cursor));
+        constraints.push(limit(take));
+        const snap=await getDocs(query(collection(state.db,'liveSessions'),...constraints));
+        docs.push(...snap.docs);
+        if(snap.docs.length<take)break;
+        cursor=snap.docs[snap.docs.length-1];
+        if(!cursor)break;
+      }
+      return docs;
+    }
     async function loadData(){
       state.sessions=[]; state.users=[]; state.staff=[];
       await loadStaffDirectory();
@@ -3549,9 +3571,8 @@ tbody tr:hover td{background:#fffafb}
         const days=Math.min(180,Number(state.maintenance.settings.retentionDays||180));
         const cutoff=Timestamp.fromMillis(Date.now()-days*86400000);
         const maxDocs=Math.min(12000,Number(state.maintenance.settings.firestoreMaxSessions||12000));
-        const q=query(collection(state.db,'liveSessions'),where('startTime','>=',cutoff),orderBy('startTime','desc'),limit(maxDocs));
-        const snap=await getDocs(q);
-        state.sessions=snap.docs.map(d=>({id:d.id,...d.data()})).map(x=>isManualKpi(x)?{...x,hostUid:'',hostName:'',operatorUid:'',operatorName:''}:x);
+        const liveDocs=await loadRecentLiveSessions(cutoff,maxDocs);
+        state.sessions=liveDocs.map(d=>({id:d.id,...d.data()})).map(x=>isManualKpi(x)?{...x,hostUid:'',hostName:'',operatorUid:'',operatorName:''}:x);
         await mergeAutoSyncedSessions();
       }
       if(isAdmin()){

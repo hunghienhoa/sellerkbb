@@ -4,7 +4,7 @@
 
 ### Báo cáo TikTok LIVE · KPI nhân sự · Tự đồng bộ 24/24
 
-**Phiên bản hiện tại: v1.46.0**
+**Phiên bản hiện tại: v1.46.1**
 
 [![GitHub Release](https://img.shields.io/github/v/release/hunghienhoa/sellerkbb?label=Release)](https://github.com/hunghienhoa/sellerkbb/releases)
 [![GitHub Actions](https://img.shields.io/github/actions/workflow/status/hunghienhoa/sellerkbb/deploy.yml?branch=main&label=Ki%E1%BB%83m%20tra%20%26%20Backup)](https://github.com/hunghienhoa/sellerkbb/actions)
@@ -17,16 +17,14 @@
 
 ---
 
-## 🆕 Cập nhật mới nhất — v1.46.0
+## 🆕 Cập nhật mới nhất — v1.46.1
 
-- Bỏ giới hạn cắt im lặng **1.000 đơn/phiên**: SellerKBB tiếp tục phân trang đầy đủ; nếu TikTok trả quá nhiều trang hoặc page token lặp, hệ thống **dừng an toàn và không chốt KPI thiếu dữ liệu**.
-- Thêm bảo vệ **LIVE chồng thời gian cùng shop**. Khi không thể xác định duy nhất đơn thuộc phiên nào, KPI tự động chuyển sang **blocked/chưa chốt** thay vì đoán.
-- Cron đối soát giờ dùng **Order Details** để lấy tín hiệu LIVE đầy đủ hơn trước khi tính KPI.
-- Thêm nút **Đồng bộ ngay 30 ngày** cho Admin và khung **Kiểm tra sẵn sàng chạy thật**: Firebase, TikTok App, token, scopes và lần đồng bộ gần nhất.
-- Thêm **Backup dữ liệu nghiệp vụ JSON** trong Lưu trữ; file không chứa TikTok token, App Secret, Firebase service account hay Cloudflare token.
-- Cloudflare Wrangler bật **`keep_vars = true`** để deploy source không vô tình xóa các biến Firebase/TikTok đã cấu hình trên Dashboard.
-- GitHub Actions hiển thị cảnh báo rõ khi Cloudflare/Firebase Secrets chưa được cấu hình; Release vẫn tự tạo và chỉ giữ **5 bản gần nhất**.
-- README bổ sung **bảng checklist + hướng dẫn cài đặt chạy thật từng bước, kèm đầy đủ câu lệnh** cho người không biết lập trình.
+- Sửa lỗi production khi Firebase báo `Limit value in the structured query is over the maximum value of 10000`.
+- Nguyên nhân: SellerKBB cho phép giữ tối đa 12.000 phiên nhưng trước đây gửi một truy vấn Firestore với `limit(12000)`; Firestore chỉ chấp nhận tối đa 10.000 cho một structured query.
+- SellerKBB giờ đọc dữ liệu LIVE theo nhiều trang **5.000 phiên/lần** bằng cursor `startAfter`, nên vẫn hỗ trợ mức lưu 12.000 phiên mà không vượt giới hạn Firestore.
+- Thêm lớp bắt lỗi lúc khởi động: nếu Firebase/Firestore gặp lỗi khác, web sẽ hiện lỗi và nút **Thử tải lại** thay vì để màn hình trắng.
+- Không thay đổi dữ liệu Firebase đã tạo, tài khoản Admin, KPI hay dữ liệu TikTok.
+
 
 ---
 
@@ -238,6 +236,7 @@ README giữ lại phần này để nhân sự có thể biết **vì sao giao 
 
 | Phiên bản | Thay đổi chính |
 |---|---|
+| **v1.46.1** | Sửa màn hình trắng khi bật Firebase thật: phân trang Firestore dưới giới hạn 10.000/truy vấn và thêm xử lý lỗi startup. |
 | **v1.46.0** | Hardening trước khi chạy thật: quét đủ đơn không cắt 1.000, khóa KPI khi LIVE cùng shop chồng giờ, Order Details cho cron, Đồng bộ ngay, readiness checklist, backup JSON và `keep_vars` an toàn khi deploy. |
 | **v1.45.2** | Nút **Làm mới** trong popup Đối soát đơn LIVE dùng icon đồng bộ và xoay khi đang tải, có trạng thái Đang tải/aria-busy và tự dừng khi hoàn tất. |
 | **v1.45.1** | Fix bố cục Campaign/Mega đã lưu trên mobile: tên loại phiên và nút **Sửa** cân đối, không tràn/không kéo nút full width. |
