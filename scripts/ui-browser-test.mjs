@@ -50,8 +50,8 @@ try {
   assert(await page.$eval('html',e=>getComputedStyle(e).getPropertyValue('--accent').trim())==='#e7a3c0',"Pastel pink theme accent is not active");
   assert(await page.$('#sidebar #userAvatar')===null,"Current user must no longer be inside the sidebar");
   assert(await page.$('#topbarAccountBtn #userAvatar')!==null,"Current user avatar must be the topbar trigger");
-  assert(await page.$eval('.topbar-right',e=>!e.textContent.includes('Quản trị viên Demo')&&!e.textContent.includes('Quản trị viên')),"Topbar must hide persistent account name/role");
-  assert(await page.$eval('#topbarAccountBtn',e=>!e.querySelector('.account-chevron')&&!e.querySelector('[data-icon="settings"]')),"Avatar trigger must have no arrow or settings icon");
+  assert(await page.$eval('#topbarAccountBtn',e=>e.textContent.trim()===''&&!e.querySelector('.account-chevron')&&!e.querySelector('[data-icon="settings"]')),"Topbar avatar trigger must contain no persistent name/role, arrow or settings icon");
+  assert(await page.$eval('#topbarAccountBtn',e=>getComputedStyle(e).borderLeftWidth==='1px'&&getComputedStyle(e.parentElement).borderLeftWidth==='0px'),"Account area must not have the old vertical divider");
   const topbarAccountGeometry=await page.$eval('.topbar',e=>{
     const title=e.querySelector('.topbar-title-wrap').getBoundingClientRect();
     const account=e.querySelector('#topbarAccountBtn').getBoundingClientRect();
@@ -321,7 +321,7 @@ try {
   assert(await page.$('#usersDockBtn')===null,"Mobile duplicate Users dock must be removed");
   assert(await page.$('#sidebar #userAvatar')===null,"Mobile sidebar must not contain the current-user block");
   assert(await page.$('#topbarAccountBtn #userAvatar')!==null,"Mobile topbar avatar trigger missing");
-  assert(await page.$eval('.topbar-right',e=>!e.textContent.includes('Quản trị viên Demo')),"Mobile topbar must show avatar only");
+  assert(await page.$eval('#topbarAccountBtn',e=>e.textContent.trim()===''&&!!e.querySelector('#userAvatar')),"Mobile topbar must show avatar only");
   await page.click('#topbarAccountBtn');
   assert(!(await page.$eval('#accountPopover',e=>e.classList.contains('hidden'))),"Mobile account popup did not open");
   assert(await page.$eval('#accountPopover',e=>e.textContent.includes('admin@sellerkbb.demo')&&(e.textContent.includes('Đăng xuất')||e.textContent.includes('Thoát Preview'))),"Mobile account popup information/logout missing");
