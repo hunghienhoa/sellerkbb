@@ -5,16 +5,35 @@ import assert from 'node:assert/strict';
 const version=fs.readFileSync(new URL('../VERSION',import.meta.url),'utf8').trim();
 const source=fs.readFileSync(new URL('../public/index.html',import.meta.url),'utf8').replace(/\r\n/g,'\n');
 const origin='https://sellerkbb.doanhsokpis.workers.dev';
-for(const path of ['/api/health','/','/preview']) {
-  const response=await fetch(origin+path,{cache:'no-store'});
-  assert(response.ok,`${path}: HTTP ${response.status}`);
-  if(path==='/api/health') {
-    const health=await response.json();
-    assert.equal(health.ok,true);
-    assert.equal(health.version,version,'Production APP_VERSION mismatch');
-  } else {
-    assert.equal((await response.text()).replace(/\r\n/g,'\n'),source,`${path}: served source differs from tested source`);
+const sleep=ms=>new Promise(resolve=>setTimeout(resolve,ms));
+
+async function fetchUntil(path,validate,{attempts=8,delayMs=1200}={}) {
+  let lastError;
+  for(let attempt=1;attempt<=attempts;attempt++){
+    try{
+      const response=await fetch(origin+path,{cache:'no-store'});
+      assert(response.ok,`${path}: HTTP ${response.status}`);
+      const payload=path==='/api/health'?await response.json():(await response.text()).replace(/\r\n/g,'\n');
+      validate(payload);
+      if(attempt>1)console.log(`Verified ${path} after propagation retry ${attempt}/${attempts}`);
+      return;
+    }catch(error){
+      lastError=error;
+      if(attempt===attempts)break;
+      await sleep(delayMs);
+    }
   }
+  throw lastError;
+}
+
+await fetchUntil('/api/health',health=>{
+  assert.equal(health.ok,true);
+  assert.equal(health.version,version,'Production APP_VERSION mismatch');
+});
+console.log(`Verified /api/health: v${version}`);
+
+for(const path of ['/','/preview']) {
+  await fetchUntil(path,body=>assert.equal(body,source,`${path}: served source differs from tested source`));
   console.log(`Verified ${path}: v${version}`);
 }
 

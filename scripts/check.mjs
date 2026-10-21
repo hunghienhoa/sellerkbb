@@ -393,6 +393,10 @@ assert(html.includes("function buildKpiRows(sessions=kpiSessionsForMonth())"), "
 assert(html.includes("const rangeSessions=kpiSessionsForMonth();")&&html.includes("const rows=buildKpiRows(rangeSessions);"), "KPI page must aggregate selected month");
 assert(!html.includes("timeFilterHtml('kpi')")&&!html.includes("bindTimeFilter('kpi')"), "KPI page must not use day/7-day/30-day filter");
 assert(html.includes("KPI nhân sự được tổng hợp theo tháng."), "Monthly KPI explanation missing");
+assert(html.includes("kpi-month-select-shell")&&html.includes("kpi-month-chevron")&&html.includes("appearance:none"), "KPI month selector must use SellerKBB custom styling");
+const kpiMonthMarkup=html.slice(html.indexOf("function kpiMonthFilterHtml()"),html.indexOf("function bindKpiMonthFilter()",html.indexOf("function kpiMonthFilterHtml()")));
+assert(!kpiMonthMarkup.includes("range-summary")&&!kpiMonthMarkup.includes("range.label"), "KPI month filter must not show explicit date range text");
+assert(!html.includes("tính toàn bộ phiên từ ${displayDateKey(monthRange.startKey)} đến ${displayDateKey(monthRange.endKey)}"), "KPI monthly note must not repeat start/end date text");
 assert(html.includes('id="dataRefreshBtn"')&&html.includes('id="dataRefreshPopover"'), "Dashboard latest-data refresh control missing");
 assert(html.includes("async function refreshLatestData()")&&html.includes("await withTimeout(loadData(),STARTUP_TIMEOUT_MS,'Cập nhật dữ liệu')"), "Latest-data control must reload SellerKBB data");
 const refreshLatestBlock=html.slice(html.indexOf("async function refreshLatestData()"),html.indexOf("function bindShell()",html.indexOf("async function refreshLatestData()")));

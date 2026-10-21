@@ -269,7 +269,14 @@ try {
   assert((await page.$$('#section-kpi [data-range-mode]')).length===0,"KPI page must not show Today/7-day/30-day filters");
   const kpiMonthValue=await page.$eval('#section-kpi [data-kpi-month-select]',e=>e.value);
   assert(/^\d{4}-\d{2}$/.test(kpiMonthValue),"KPI month selector value invalid");
-  assert(await page.$eval('#section-kpi .data-note',e=>e.textContent.includes('KPI nhân sự được tổng hợp theo tháng')&&/01\/\d{2}\/\d{4}/.test(e.textContent)),"KPI monthly full-range explanation missing");
+  assert(await page.$eval('#section-kpi .data-note',e=>e.textContent.includes('KPI nhân sự được tổng hợp theo tháng')&&e.textContent.includes('hệ thống tự tính toàn bộ phiên trong tháng đã chọn')&&!/01\/\d{2}\/\d{4}/.test(e.textContent)),"KPI monthly explanation must not repeat explicit start/end dates");
+  assert(await page.$('#section-kpi .range-summary')===null,"KPI month filter must not show the 01/MM/YYYY – DD/MM/YYYY summary");
+  const kpiMonthStyle=await page.$eval('#section-kpi .kpi-month-select-shell',e=>{
+    const select=e.querySelector('[data-kpi-month-select]');
+    const shell=getComputedStyle(e),selectStyle=getComputedStyle(select);
+    return {radius:shell.borderRadius,background:shell.backgroundImage,appearance:selectStyle.appearance,height:e.getBoundingClientRect().height};
+  });
+  assert(kpiMonthStyle.height>=40&&kpiMonthStyle.radius!=='0px'&&kpiMonthStyle.background!=='none'&&kpiMonthStyle.appearance==='none',"KPI month selector must use custom pastel styling instead of browser default");
   assert(await page.$eval('#section-kpi .kpi-rate-guide',e=>e.textContent.includes('KPI tự động dùng đối soát theo từng phiên')&&e.textContent.includes('2 kênh chồng giờ')&&e.textContent.includes('tránh cộng trùng')),"KPI guide must explain overlap-safe reconciliation");
   assert(await page.$eval('#section-kpi',e=>e.textContent.includes('KPI đã chốt')&&e.textContent.includes('KPI tạm tính')&&e.textContent.includes('KPI dự kiến')&&e.textContent.includes('Chờ đối soát')),"KPI final/provisional/waiting summary labels missing");
   assert(await page.$('[data-kpi-table="pending"]')!==null&&await page.$('[data-kpi-table="final"]')!==null,"KPI page must split pending and finalized data into two tables");

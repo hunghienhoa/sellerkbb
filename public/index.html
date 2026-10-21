@@ -564,6 +564,75 @@ body.data-refresh-modal-open{overflow:hidden}
 .input option{background:#fff;color:var(--text)}
 .month-select{min-width:190px}
 
+/* KPI nhân sự: month-only selector, visually aligned with SellerKBB pastel controls. */
+.kpi-month-filter{padding-block:10px}
+.kpi-month-filter .range-row{gap:8px}
+.kpi-month-filter .kpi-month-controls{align-items:center;gap:8px}
+.kpi-month-filter .kpi-month-mode{
+  min-height:40px;
+  display:inline-flex;
+  align-items:center;
+  padding:8px 13px;
+  border-color:#e8b4cb;
+  background:linear-gradient(135deg,#fff,#fdeaf3);
+  color:#8d4869;
+  box-shadow:0 4px 12px rgba(164,75,117,.06);
+  cursor:default;
+}
+.kpi-month-select-shell{
+  position:relative;
+  min-width:190px;
+  height:40px;
+  display:grid;
+  grid-template-columns:20px minmax(0,1fr) 14px;
+  align-items:center;
+  gap:7px;
+  padding:0 10px;
+  border:1px solid #e7c0d2;
+  border-radius:11px;
+  background:linear-gradient(135deg,#fffafd,#fff3f8);
+  box-shadow:0 4px 14px rgba(158,80,118,.06);
+  color:#6d475a;
+  transition:transform .16s ease,border-color .18s ease,box-shadow .18s ease,background-color .18s ease;
+}
+.kpi-month-select-shell:hover{
+  transform:translateY(-1px);
+  border-color:#dda5bf;
+  box-shadow:0 8px 18px rgba(158,80,118,.1);
+}
+.kpi-month-select-shell:focus-within{
+  border-color:#d97aa6;
+  box-shadow:0 0 0 4px rgba(224,123,169,.12),0 8px 18px rgba(158,80,118,.08);
+}
+.kpi-month-select-icon{width:20px;height:20px;display:grid;place-items:center;color:#a85c7e;pointer-events:none}
+.kpi-month-select{
+  width:100%;
+  min-width:0;
+  height:38px;
+  padding:0;
+  border:0;
+  outline:0;
+  appearance:none;
+  -webkit-appearance:none;
+  background:transparent;
+  color:#684557;
+  font-size:13px;
+  font-weight:800;
+  cursor:pointer;
+}
+.kpi-month-select option{background:#fff;color:#5c3e4d}
+.kpi-month-chevron{
+  width:8px;
+  height:8px;
+  justify-self:center;
+  border-right:1.7px solid #a75f80;
+  border-bottom:1.7px solid #a75f80;
+  transform:rotate(45deg) translateY(-2px);
+  pointer-events:none;
+  transition:transform .18s ease;
+}
+.kpi-month-select-shell:focus-within .kpi-month-chevron{transform:rotate(225deg) translate(-1px,-1px)}
+
 .table-wrap{
   overflow:auto;
   border:1px solid var(--line);
@@ -1289,6 +1358,11 @@ body.reconcile-modal-open .reconcile-modal-body{touch-action:pan-y}
   .range-row{align-items:stretch}
   .range-tabs{width:100%;display:grid;grid-template-columns:repeat(4,1fr);gap:5px}
   .range-btn{min-width:0;padding:7px 5px;font-size:11px}
+  .kpi-month-filter .range-row{align-items:center}
+  .kpi-month-filter .range-tabs{display:flex;width:100%;grid-template-columns:none;flex-wrap:nowrap;gap:7px}
+  .kpi-month-filter .kpi-month-mode{flex:0 0 auto;min-height:42px;padding-inline:11px;font-size:11.5px}
+  .kpi-month-select-shell{flex:1;min-width:0;height:42px}
+  .kpi-month-select{font-size:16px}
   .range-summary{width:100%;text-align:center}
   .range-actions{width:100%;margin-left:0}
   .range-actions .btn{flex:1}
@@ -3019,7 +3093,7 @@ body.account-modal-open{overflow:hidden}
       <header class="topbar">
         <div class="topbar-title-wrap"><button id="menuToggle" class="menu-toggle" type="button" aria-label="Mở menu" aria-expanded="false">☰</button><div><h1 id="pageTitle" class="page-title">Tổng quan</h1><div id="pageSub" class="tiny"></div></div></div>
         <div class="topbar-right">
-          <span id="syncBadge" class="pill">v1.47.5</span>
+          <span id="syncBadge" class="pill">v1.47.6</span>
           <div id="dataRefreshWrap" class="data-refresh-wrap">
             <button id="dataRefreshBtn" class="data-refresh-btn" type="button" aria-haspopup="true" aria-expanded="false" aria-controls="dataRefreshPopover" title="Tải lại dữ liệu SellerKBB hiện có · không chạy đồng bộ TikTok">
               <span id="dataRefreshIcon" class="data-refresh-icon">↻</span>
@@ -3255,15 +3329,17 @@ body.account-modal-open{overflow:hidden}
     }
     function kpiMonthFilterHtml(){
       const selected=selectedKpiMonthKey();
-      const range=kpiMonthRange(selected);
       const options=kpiMonthOptionKeys().map(key=>`<option value="${key}" ${key===selected?'selected':''}>${displayMonthKey(key)}</option>`).join('');
       return `<div class="time-filter kpi-month-filter">
         <div class="range-row">
-          <div class="range-tabs">
-            <span class="range-btn active">Theo tháng</span>
-            <select class="input" data-kpi-month-select aria-label="Chọn tháng xem KPI nhân sự" style="min-width:160px">${options}</select>
+          <div class="range-tabs kpi-month-controls">
+            <span class="range-btn active kpi-month-mode">Theo tháng</span>
+            <label class="kpi-month-select-shell">
+              <span class="kpi-month-select-icon">${icon('calendar',15)}</span>
+              <select class="kpi-month-select" data-kpi-month-select aria-label="Chọn tháng xem KPI nhân sự">${options}</select>
+              <span class="kpi-month-chevron" aria-hidden="true"></span>
+            </label>
           </div>
-          <div class="range-summary">${icon('calendar',15)}<span>${range.label}</span></div>
         </div>
       </div>`;
     }
@@ -3504,7 +3580,7 @@ body.account-modal-open{overflow:hidden}
 
     function previewTs(iso){ return {toDate:()=>new Date(iso)}; }
     function enterPreview(){
-      state.config={version:'1.47.5-preview',tiktokConfigured:true};
+      state.config={version:'1.47.6-preview',tiktokConfigured:true};
       state.user={uid:'preview-admin',email:'admin@sellerkbb.demo',displayName:'Quản trị viên Demo',photoURL:avatarFallbackData('Quản trị viên Demo')};
       state.profile={role:'admin',status:'approved',displayName:'Quản trị viên Demo',photoURL:state.user.photoURL,permissions:['live.read','kpi.read']};
       state.maintenance={settings:{retentionDays:180,autoCleanup:true,emergencyPercent:85,firestoreSoftLimitMb:600,firestoreMaxSessions:FIRESTORE_TOTAL_SESSION_CAP,kvSoftKeyLimit:5000},github:{usedBytes:124000,limitBytes:10000000000,available:true},cloudflare:{keyCount:5,lastRun:{ranAt:new Date().toISOString(),deleted:0},usedBytes:428000,storageLimitBytes:1000000000,storageComplete:true},firebase:{freePlanMode:true,ttlEnabled:false,ttlRecommended:false,storageLimitBytes:1073741824}};
@@ -5418,7 +5494,7 @@ body.account-modal-open{overflow:hidden}
 
       $('#section-kpi').innerHTML=`
         ${kpiMonthFilterHtml()}
-        <div class="data-note">${icon('calendar',16)}<span><b>KPI nhân sự được tổng hợp theo tháng.</b> ${monthRange.monthLabel}: tính toàn bộ phiên từ ${displayDateKey(monthRange.startKey)} đến ${displayDateKey(monthRange.endKey)}. Chọn tháng khác ở phía trên để xem lại KPI.</span></div>
+        <div class="data-note">${icon('calendar',16)}<span><b>KPI nhân sự được tổng hợp theo tháng.</b> Đang xem ${monthRange.monthLabel}; hệ thống tự tính toàn bộ phiên trong tháng đã chọn. Chọn tháng khác ở phía trên để xem lại KPI.</span></div>
         <div class="kpi-rate-guide">
           <div class="kpi-rate-guide-icon">${icon('shield',16)}</div>
           <div class="kpi-rate-guide-copy">
