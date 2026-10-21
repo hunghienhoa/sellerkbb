@@ -112,6 +112,8 @@ try {
   assert((await page.$eval('#actionToast',e=>e.textContent))===toastBeforeRefresh,"Latest-data refresh must not show a toast notification");
   assert(await page.$('#dataRefreshModalBackdrop')===null&&await page.$('#dataRefreshPopover')===null,"Latest-data popup/modal must stay removed after refresh");
 
+  assert(await page.$('#section-dashboard .sync-status')===null,"Desktop Dashboard must hide redundant TikTok sync timestamp");
+  assert(await page.$eval('#section-dashboard',e=>!e.textContent.includes('Dữ liệu Tiktok được đồng bộ lúc:')),"Desktop Dashboard sync timestamp text must be absent");
   assert(await page.$eval('#section-dashboard [data-range-mode="today"]',e=>e.classList.contains('active')),"Dashboard must default to Today");
   await page.click('#section-dashboard [data-range-mode="7d"]');
   assert(await page.$eval('#section-dashboard [data-range-mode="7d"]',e=>e.classList.contains('active')),"7-day filter did not activate");
@@ -547,6 +549,8 @@ try {
   const mobileCreatorLayout=await page.$$eval('#section-tiktok [data-creator-channel]',els=>els.map(e=>{const r=e.getBoundingClientRect();return {left:r.left,right:r.right,width:r.width,vw:innerWidth};}));
   assert(mobileCreatorLayout.length===2&&mobileCreatorLayout.every(x=>x.left>=0&&x.right<=x.vw&&x.width<=x.vw),"Mobile Creator cards must fit viewport without overflow");
   await page.$eval('#nav [data-section="dashboard"]',e=>e.click());
+  assert(await page.$('#section-dashboard .sync-status')===null,"Mobile Dashboard must hide redundant TikTok sync timestamp");
+  assert(await page.$eval('#section-dashboard',e=>!e.textContent.includes('Dữ liệu Tiktok được đồng bộ lúc:')),"Mobile Dashboard sync timestamp text must be absent");
   assert(await page.$eval('#dataRefreshBtn',e=>e.checkVisibility()),"Mobile latest-data refresh button must remain visible on Tổng quan");
   const mobileRefreshGeometry=await page.$eval('.topbar',e=>{
     const refresh=e.querySelector('#dataRefreshBtn').getBoundingClientRect();

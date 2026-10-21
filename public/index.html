@@ -2121,9 +2121,6 @@ tbody tr:hover td{background:#fcfafb}
     line-height:1.45;
   }
 }
-.sync-status{min-height:22px}
-.sync-status b{color:#5b414e}
-.sync-status.is-refreshing .ui-icon{animation:sync-spin .75s linear infinite}
 #reconcileModalRefresh.is-refreshing .ui-icon{animation:sync-spin .75s linear infinite}
 #reconcileModalRefresh.is-refreshing{cursor:wait}
 @keyframes sync-spin{to{transform:rotate(360deg)}}
@@ -2505,7 +2502,7 @@ body{
 .btn.primary:hover{border-color:#c96e98;background:#c96e98}
 th{background:#fff4f8;color:#7b6670}
 tbody tr:hover td{background:#fffafb}
-.pair-card b,.status-item b,.api-foot b,.sync-status b,.live-time-cell b,.mobile-live-time b{color:#654854}
+.pair-card b,.status-item b,.api-foot b,.live-time-cell b,.mobile-live-time b{color:#654854}
 .status-item{color:#a15d7c}
 .eyebrow,.heading-with-icon .ui-icon,.data-note .ui-icon,.mobile-live-time .ui-icon{color:#b45e85}
 .toggle-row{border-left-color:#e5b8cc;background:#fff6f9}
@@ -3057,7 +3054,7 @@ body.account-modal-open{overflow:hidden}
       <header class="topbar">
         <div class="topbar-title-wrap"><button id="menuToggle" class="menu-toggle" type="button" aria-label="Mở menu" aria-expanded="false">☰</button><div><h1 id="pageTitle" class="page-title">Tổng quan</h1><div id="pageSub" class="tiny"></div></div></div>
         <div class="topbar-right">
-          <span id="syncBadge" class="pill">v1.49.2</span>
+          <span id="syncBadge" class="pill">v1.49.3</span>
           <div id="dataRefreshWrap" class="data-refresh-wrap">
             <button id="dataRefreshBtn" class="data-refresh-btn" type="button" title="Tải lại dữ liệu SellerKBB hiện có · không chạy đồng bộ TikTok">
               <span id="dataRefreshIcon" class="data-refresh-icon">↻</span>
@@ -3539,7 +3536,7 @@ body.account-modal-open{overflow:hidden}
 
     function previewTs(iso){ return {toDate:()=>new Date(iso)}; }
     function enterPreview(){
-      state.config={version:'1.49.2-preview',tiktokConfigured:true};
+      state.config={version:'1.49.3-preview',tiktokConfigured:true};
       state.user={uid:'preview-admin',email:'admin@sellerkbb.demo',displayName:'Quản trị viên Demo',photoURL:avatarFallbackData('Quản trị viên Demo')};
       state.profile={role:'admin',status:'approved',displayName:'Quản trị viên Demo',photoURL:state.user.photoURL,permissions:['live.read','kpi.read']};
       state.maintenance={settings:{retentionDays:180,autoCleanup:true,emergencyPercent:85,firestoreSoftLimitMb:600,firestoreMaxSessions:FIRESTORE_TOTAL_SESSION_CAP,kvSoftKeyLimit:5000},github:{usedBytes:124000,limitBytes:10000000000,available:true},cloudflare:{keyCount:5,lastRun:{ranAt:new Date().toISOString(),deleted:0},usedBytes:428000,storageLimitBytes:1000000000,storageComplete:true},firebase:{freePlanMode:true,ttlEnabled:false,ttlRecommended:false,storageLimitBytes:1073741824}};
@@ -3701,15 +3698,6 @@ body.account-modal-open{overflow:hidden}
       requestAnimationFrame(()=>el.classList.add('show'));
       clearTimeout(showToast.timer);
       showToast.timer=setTimeout(()=>el.classList.remove('show'),3200);
-    }
-
-    function fmtSyncMoment(iso){
-      if(!iso)return 'Chưa có lần đồng bộ';
-      const d=new Date(iso);
-      if(Number.isNaN(d.getTime()))return 'Chưa có lần đồng bộ';
-      const parts=new Intl.DateTimeFormat('vi-VN',{timeZone:'Asia/Ho_Chi_Minh',hour:'2-digit',minute:'2-digit',second:'2-digit',day:'2-digit',month:'2-digit',year:'numeric',hourCycle:'h23'}).formatToParts(d);
-      const get=t=>parts.find(x=>x.type===t)?.value||'00';
-      return get('hour')+':'+get('minute')+':'+get('second')+' , Ngày '+get('day')+'/'+get('month')+'/'+get('year')+'.';
     }
 
     async function fetchAutoSyncStatus(){
@@ -4711,7 +4699,6 @@ body.account-modal-open{overflow:hidden}
       const monthlyHint=monthly?`<div class="dashboard-range-note">${icon('calendar',15)}<span>Tổng số liệu phía trên tính đủ 30 ngày. Danh sách dưới đây chỉ hiển thị 7 ngày gần nhất.</span></div>`:'';
       $('#section-dashboard').innerHTML=`
         ${timeFilterHtml('dashboard')}
-        <div class="data-note sync-status ${state.autoSyncRefreshing?'is-refreshing':''}">${icon('sync',16)}<span>Dữ liệu Tiktok được đồng bộ lúc: <b>${fmtSyncMoment(state.autoSyncStatus?.finishedAt)}</b></span></div>
         <div class="metrics-grid">${metricCard('live','Phiên LIVE',ss.length)}${metricCard('money','GMV đã ghi nhận',fmtMoney(gmv,currency),'TikTok cập nhật theo đúng dữ liệu phiên')}${metricCard('box','Sản phẩm bán',new Intl.NumberFormat('vi-VN').format(items))}${metricCard('clock','Tổng thời lượng',fmtDuration(totalSec))}</div>
         <div class="dashboard-final-gmv" data-dashboard-final-gmv>
           <div class="dashboard-final-gmv-icon">${icon('check',20)}</div>

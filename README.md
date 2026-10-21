@@ -4,7 +4,7 @@
 
 ### Báo cáo TikTok LIVE · KPI nhân sự · Tự đồng bộ 24/24
 
-**Phiên bản hiện tại: v1.49.2**
+**Phiên bản hiện tại: v1.49.3**
 
 [![GitHub Release](https://img.shields.io/github/v/release/hunghienhoa/sellerkbb?label=Release)](https://github.com/hunghienhoa/sellerkbb/releases)
 [![GitHub Actions](https://img.shields.io/github/actions/workflow/status/hunghienhoa/sellerkbb/deploy.yml?branch=main&label=Ki%E1%BB%83m%20tra%20%26%20Backup)](https://github.com/hunghienhoa/sellerkbb/actions)
@@ -17,7 +17,13 @@
 
 ---
 
-## 🆕 Cập nhật mới nhất — v1.49.2
+## 🆕 Cập nhật mới nhất — v1.49.3
+
+- Ẩn hoàn toàn dòng **“Dữ liệu Tiktok được đồng bộ lúc…”** dưới bộ lọc thời gian trong tab **Tổng quan**, trên cả PC và điện thoại; không để khoảng trống.
+- Thời điểm đồng bộ và trạng thái đồng bộ vẫn được lưu ở backend và tiếp tục xem trong tab **TikTok / API**. Không thay đổi cron, quy trình đồng bộ 30 ngày, số liệu LIVE hoặc công thức KPI.
+- Thêm regression test xác nhận không còn dòng thông báo này ở giao diện Tổng quan desktop/mobile.
+
+### v1.49.2 — Đồng bộ TikTok chạy nền
 
 - Đồng bộ ngay 30 ngày nay chạy nền trên Cloudflare Worker; web gửi tác vụ và nhận phản hồi nhanh thay vì chờ toàn bộ API TikTok trong 12 giây.
 - Trạng thái tác vụ được lưu riêng và kiểm tra định kỳ, hiển thị Đang đồng bộ / Thành công / Lỗi thật; ngăn người dùng gửi lặp khi một tác vụ đang chạy.
@@ -268,6 +274,7 @@ README giữ lại phần này để nhân sự có thể biết **vì sao giao 
 
 | Phiên bản | Thay đổi chính |
 |---|---|
+| **v1.49.3** | Bỏ dòng mốc đồng bộ TikTok dư thừa khỏi Tổng quan PC/mobile; giữ nguyên timestamp nội bộ, tab TikTok/API và công thức KPI. |
 | **v1.49.2** | Sửa lỗi timeout 12 giây khi đồng bộ 30 ngày; xử lý nền, theo dõi tiến trình và cảnh báo mốc Refresh Token bất thường. |
 | **v1.49.1** | Bổ sung Refresh Token riêng cho 2 Creator: tự refresh theo giờ, nút làm mới thủ công, hiển thị hạn token/lần refresh và validate user_type/open_id/scopes. |
 | **v1.49.0** | Thêm Creator OAuth riêng cho shopkhangbaby/mekhangsua: auto-state, callback dùng chung nhưng token tách riêng, kiểm tra user_type/scopes/profile và UI kết nối từng kênh. |

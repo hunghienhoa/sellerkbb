@@ -55,7 +55,7 @@ assert(html.includes("restorePreviewState();"), "Preview restore missing");
 assert(html.includes("hostUid:manual?'':"), "Campaign/Mega must persist Host blank");
 assert(html.includes("operatorUid:manual?'':"), "Campaign/Mega must persist Operator blank");
 assert(html.includes("hostUid:old.kpiMode==='manual'?'':"), "Auto-sync merge must not restore staff for manual KPI sessions");
-assert(html.includes("Dữ liệu Tiktok được đồng bộ lúc:"), "Sync status text missing");
+assert(!html.includes("Dữ liệu Tiktok được đồng bộ lúc:")&&!html.includes("fmtSyncMoment(")&&!html.includes("sync-status"), "Dashboard must not display the redundant TikTok sync timestamp");
 assert(html.includes("rangeMode:'today'"), "Default filter must be Today");
 assert(html.includes("['30d','30 Ngày']"), "30-day filter label missing");
 assert(html.includes("function dashboardSessionsForRange()"), "Dashboard 7-day monthly preview helper missing");
