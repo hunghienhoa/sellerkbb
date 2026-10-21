@@ -346,6 +346,16 @@ assert(worker.includes("function findOverlappingLiveSessions")&&worker.includes(
 assert(worker.includes("{ hydrateDetails: true, allSessions: sessions }"), "Scheduled reconciliation must hydrate Order Details");
 assert(html.includes("Kiểm tra sẵn sàng chạy thật")&&html.includes("data-readiness-grid"), "Go-live readiness UI missing");
 assert(html.includes('id="syncTikTokNow"')&&html.includes('id="previewSyncNow"'), "Sync-now controls missing");
+assert(worker.includes('CREATOR_OAUTH_STATE_PREFIX = "creator_oauth_state:"')&&worker.includes('CREATOR_TOKEN_PREFIX = "creator_token:"'), "Creator OAuth/token namespaces missing");
+assert(worker.includes('CREATOR_AUTH_URL = "https://shop.tiktok.com/alliance/creator/auth"'), "Creator authorization URL missing");
+assert(worker.includes("async function handleCreatorOAuthStart")&&worker.includes('/api/tiktok/creator/oauth/start')&&worker.includes('/api/tiktok/creator/status'), "Creator OAuth API routes missing");
+assert(worker.includes("Number(token?.user_type) !== 1")&&worker.includes('"/affiliate_creator/202405/profiles"'), "Creator token type/profile verification missing");
+assert(worker.includes("authorizedUsername !== channel")&&worker.includes("Đăng nhập nhầm tài khoản Creator"), "Creator username mismatch safety missing");
+assert(worker.includes("REQUIRED_CREATOR_SCOPES")&&worker.includes("creator.data.live.read.public")&&worker.includes("creator.affiliate.info"), "Creator required scopes missing");
+assert(worker.includes("name.startsWith(CREATOR_TOKEN_PREFIX)"), "Creator tokens must be protected from KV cleanup");
+assert(worker.includes("CREATOR_OAUTH_STATE_PREFIX + state")&&worker.includes("oauth_state:${state}"), "Shared callback must distinguish Creator and Seller OAuth state");
+assert(html.includes("Creator Authorization")&&html.includes("data-connect-creator")&&html.includes("shopkhangbaby")&&html.includes("mekhangsua"), "Creator connection UI missing");
+assert(html.includes("Creator token riêng · không dùng Seller token")&&html.includes("user_type = 1"), "Creator UI safety explanation missing");
 assert(html.includes("function downloadBusinessBackup()")&&html.includes('id="downloadBusinessBackup"'), "Business backup JSON UI missing");
 assert(wranglerV146.includes("keep_vars = true"), "Cloudflare keep_vars safety missing");
 assert(workflow.includes("Warn when Cloudflare deploy is not configured")&&workflow.includes("Warn when Firebase deploy is not configured"), "Skipped-deploy warnings missing");

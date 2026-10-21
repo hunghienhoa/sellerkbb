@@ -17,6 +17,10 @@ const KPI_RECONCILE_HOURLY_LOOKBACK_SECONDS = 3 * 86400;
 const KPI_RECONCILE_DAILY_LOOKBACK_SECONDS = RECONCILIATION_PROTECTION_DAYS * 86400;
 const MAX_ORDER_SEARCH_PAGES = 200;
 const REQUIRED_TIKTOK_SCOPES = ["data.shop_analytics.public.read", "seller.order.info", "seller.return_refund.basic"];
+const REQUIRED_CREATOR_SCOPES = ["creator.data.live.read.public", "creator.affiliate.info"];
+const CREATOR_TOKEN_PREFIX = "creator_token:";
+const CREATOR_OAUTH_STATE_PREFIX = "creator_oauth_state:";
+const CREATOR_AUTH_URL = "https://shop.tiktok.com/alliance/creator/auth";
 const DEFAULT_MAINTENANCE = {
   retentionDays: 180,
   autoCleanup: true,
@@ -57,11 +61,21 @@ async function listAllKvKeys(env) {
 }
 
 function isProtectedKvKey(name) {
-  return name === "seller_token" || name === MAINTENANCE_SETTINGS_KEY || name === AUTO_SYNC_DATA_KEY || name === AUTO_SYNC_STATUS_KEY || name === GITHUB_REPO_CACHE_KEY;
+  return name === "seller_token"
+    || name.startsWith(CREATOR_TOKEN_PREFIX)
+    || name === MAINTENANCE_SETTINGS_KEY
+    || name === AUTO_SYNC_DATA_KEY
+    || name === AUTO_SYNC_STATUS_KEY
+    || name === GITHUB_REPO_CACHE_KEY;
 }
 
 function isExpendableKvKey(name) {
-  return name.startsWith("oauth_state:") || name.startsWith("cache:") || name.startsWith("maintenance_log:") || name.startsWith(LIVE_RECONCILE_CACHE_PREFIX) || name === MAINTENANCE_LAST_RUN_KEY;
+  return name.startsWith("oauth_state:")
+    || name.startsWith(CREATOR_OAUTH_STATE_PREFIX)
+    || name.startsWith("cache:")
+    || name.startsWith("maintenance_log:")
+    || name.startsWith(LIVE_RECONCILE_CACHE_PREFIX)
+    || name === MAINTENANCE_LAST_RUN_KEY;
 }
 
 async function measureKvStorage(env, keys = []) {
@@ -170,7 +184,8 @@ function publicConfig(env) {
     version: env.APP_VERSION || "1.0.0",
     firebase,
     firebaseConfigured: Boolean(firebase.apiKey && firebase.authDomain && firebase.projectId && firebase.storageBucket && firebase.messagingSenderId && firebase.appId),
-    tiktokConfigured: Boolean(env.TIKTOK_APP_KEY && env.TIKTOK_APP_SECRET && env.TIKTOK_SERVICE_ID && env.TIKTOK_SELLER_AUTH_URL && env.TIKTOK_KV)
+    tiktokConfigured: Boolean(env.TIKTOK_APP_KEY && env.TIKTOK_APP_SECRET && env.TIKTOK_SERVICE_ID && env.TIKTOK_SELLER_AUTH_URL && env.TIKTOK_KV),
+    tiktokCreatorConfigured: Boolean(env.TIKTOK_APP_KEY && env.TIKTOK_APP_SECRET && env.TIKTOK_KV)
   };
 }
 
@@ -287,6 +302,69 @@ async function tiktokCall(env, token, path, query = {}, method = "GET", bodyObj 
   let payload;
   try { payload = await res.json(); } catch { payload = { code: -1, message: await res.text() }; }
   return { httpStatus: res.status, payload };
+}
+
+async function exchangeTikTokAuthCode(env, authCode) {
+  const url = new URL(TIKTOK_TOKEN_HOST + "/api/v2/token/get");
+  url.searchParams.set("app_key", env.TIKTOK_APP_KEY);
+  url.searchParams.set("app_secret", env.TIKTOK_APP_SECRET);
+  url.searchParams.set("auth_code", authCode);
+  url.searchParams.set("grant_type", "authorized_code");
+  const res = await fetch(url);
+  const payload = await res.json();
+  if (payload.code !== 0 || !payload.data?.access_token) {
+    throw new Error(payload.message || "TikTok token exchange failed");
+  }
+  return payload.data;
+}
+
+async function getCreatorProfile(env, accessToken) {
+  const result = await tiktokCall(env, accessToken, "/affiliate_creator/202405/profiles");
+  if (result.payload?.code !== 0 || !result.payload?.data?.creator_user_id) {
+    throw new Error(result.payload?.message || "Không lấy được Creator Profile");
+  }
+  return result.payload.data;
+}
+
+async function getStoredCreatorToken(env, channel) {
+  if (!env.TIKTOK_KV) return null;
+  const key = creatorTokenKey(channel);
+  if (!key) return null;
+  const raw = await env.TIKTOK_KV.get(key);
+  if (!raw) return null;
+  try { return JSON.parse(raw); } catch { return null; }
+}
+
+async function refreshCreatorToken(env, channel, current, reason = "expiry") {
+  const key = creatorTokenKey(channel);
+  if (!key || !current?.refresh_token) return current;
+  const url = new URL(TIKTOK_TOKEN_HOST + "/api/v2/token/refresh");
+  url.searchParams.set("app_key", env.TIKTOK_APP_KEY);
+  url.searchParams.set("app_secret", env.TIKTOK_APP_SECRET);
+  url.searchParams.set("refresh_token", current.refresh_token);
+  url.searchParams.set("grant_type", "refresh_token");
+  const res = await fetch(url);
+  const payload = await res.json();
+  if (payload.code !== 0 || !payload.data?.access_token) throw new Error(payload.message || "Creator token refresh failed");
+  if (payload.data?.user_type != null && Number(payload.data.user_type) !== 1) throw new Error("Creator refresh token trả về user_type không hợp lệ");
+  const nextScopes = normalizeScopes(payload.data?.granted_scopes || payload.data?.scope || payload.data?.scopes || current?.granted_scopes || []);
+  const missing = REQUIRED_CREATOR_SCOPES.filter(scope => !nextScopes.includes(scope));
+  if (nextScopes.length && missing.length) throw new Error("Creator token thiếu scope: " + missing.join(", "));
+  const next = { ...current, ...payload.data, channel: normalizeCreatorChannel(channel), refreshed_at: Date.now(), refresh_reason: reason };
+  await env.TIKTOK_KV.put(key, JSON.stringify(next));
+  return next;
+}
+
+async function getCreatorToken(env, channel) {
+  const current = await getStoredCreatorToken(env, channel);
+  if (!current?.access_token) return current;
+  const expireAt = tokenExpirySeconds(current);
+  const now = Math.floor(Date.now() / 1000);
+  if (expireAt && expireAt <= now + 3600) {
+    try { return await refreshCreatorToken(env, channel, current, "api_request"); }
+    catch { return current; }
+  }
+  return current;
 }
 
 async function refreshTikTokToken(env, current, reason = "expiry") {
@@ -1156,6 +1234,15 @@ async function refreshKpiReconciliations(env, accessToken, sessions, reason = "h
 
 const SELLERKBB_ALLOWED_LIVE_CHANNELS = new Set(["shopkhangbaby", "mekhangsua"]);
 
+function normalizeCreatorChannel(value) {
+  return String(value || "").trim().replace(/^@+/, "").toLowerCase();
+}
+
+function creatorTokenKey(channel) {
+  const key = normalizeCreatorChannel(channel);
+  return SELLERKBB_ALLOWED_LIVE_CHANNELS.has(key) ? CREATOR_TOKEN_PREFIX + key : "";
+}
+
 function sellerKbbChannelKey(session) {
   return String(session?.channelUsername || session?.username || "").trim().toLowerCase();
 }
@@ -1325,33 +1412,102 @@ async function handleOAuthStart(request, env) {
   await requireAdmin(request, env);
   if (!env.TIKTOK_KV || !env.TIKTOK_SERVICE_ID || !env.TIKTOK_SELLER_AUTH_URL) return json({ error: "tiktok_not_configured" }, 503);
   const state = crypto.randomUUID().replaceAll("-", "");
-  await env.TIKTOK_KV.put(`oauth_state:${state}`, JSON.stringify({ createdAt: Date.now() }), { expirationTtl: 600 });
+  await env.TIKTOK_KV.put(`oauth_state:${state}`, JSON.stringify({ createdAt: Date.now(), type: "seller" }), { expirationTtl: 600 });
   const url = new URL(env.TIKTOK_SELLER_AUTH_URL);
   url.searchParams.set("service_id", env.TIKTOK_SERVICE_ID);
   url.searchParams.set("state", state);
   return json({ url: url.toString() });
 }
 
+async function handleCreatorOAuthStart(request, env) {
+  await requireAdmin(request, env);
+  if (!env.TIKTOK_KV || !env.TIKTOK_APP_KEY || !env.TIKTOK_APP_SECRET) return json({ error: "creator_oauth_not_configured" }, 503);
+  const body = await request.json().catch(() => ({}));
+  const channel = normalizeCreatorChannel(body?.channel);
+  if (!SELLERKBB_ALLOWED_LIVE_CHANNELS.has(channel)) return json({ error: "invalid_creator_channel", message: "Chỉ hỗ trợ shopkhangbaby và mekhangsua." }, 400);
+  const state = crypto.randomUUID().replaceAll("-", "");
+  await env.TIKTOK_KV.put(
+    CREATOR_OAUTH_STATE_PREFIX + state,
+    JSON.stringify({ createdAt: Date.now(), type: "creator", channel }),
+    { expirationTtl: 600 }
+  );
+  const url = new URL(CREATOR_AUTH_URL);
+  url.searchParams.set("app_key", env.TIKTOK_APP_KEY);
+  url.searchParams.set("state", state);
+  return json({ url: url.toString(), channel });
+}
+
+function creatorOAuthErrorPage(title, detail, status = 400) {
+  return html(`<!doctype html><html lang="vi"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${escapeHtml(title)}</title><body style="font-family:system-ui,-apple-system,sans-serif;background:#fff7fb;color:#553746;padding:32px"><main style="max-width:680px;margin:10vh auto;background:#fff;border:1px solid #efd4e2;border-radius:18px;padding:24px;box-shadow:0 20px 50px rgba(80,45,64,.12)"><h1 style="margin-top:0;font-size:24px">${escapeHtml(title)}</h1><p style="line-height:1.6">${escapeHtml(detail)}</p><p><a href="/?section=tiktok" style="color:#a84475;font-weight:700">Quay lại SellerKBB</a></p></main></body></html>`, status);
+}
+
 async function handleOAuthCallback(request, env) {
   const url = new URL(request.url);
   const code = url.searchParams.get("code") || url.searchParams.get("auth_code");
   const state = url.searchParams.get("state") || "";
-  if (!code || !state || !env.TIKTOK_KV) return html("<h1>Kết nối TikTok không hợp lệ</h1>", 400);
-  const stateData = await env.TIKTOK_KV.get(`oauth_state:${state}`);
-  if (!stateData) return html("<h1>Phiên xác thực TikTok đã hết hạn hoặc không hợp lệ</h1>", 400);
+  if (!code || !state || !env.TIKTOK_KV) return creatorOAuthErrorPage("Kết nối TikTok không hợp lệ", "Callback thiếu code/state hoặc KV chưa được cấu hình.");
+
+  const creatorStateRaw = await env.TIKTOK_KV.get(CREATOR_OAUTH_STATE_PREFIX + state);
+  if (creatorStateRaw) {
+    await env.TIKTOK_KV.delete(CREATOR_OAUTH_STATE_PREFIX + state);
+    let creatorState;
+    try { creatorState = JSON.parse(creatorStateRaw); } catch { creatorState = null; }
+    const channel = normalizeCreatorChannel(creatorState?.channel);
+    if (!SELLERKBB_ALLOWED_LIVE_CHANNELS.has(channel)) return creatorOAuthErrorPage("Creator không hợp lệ", "SellerKBB không nhận diện được kênh Creator cần kết nối.");
+
+    let token;
+    try { token = await exchangeTikTokAuthCode(env, code); }
+    catch (error) { return creatorOAuthErrorPage("Kết nối Creator thất bại", String(error?.message || error)); }
+
+    if (Number(token?.user_type) !== 1) {
+      return creatorOAuthErrorPage("Sai loại tài khoản TikTok", "Token trả về không phải Creator token (user_type phải bằng 1). Seller token hiện tại không bị thay đổi.");
+    }
+    const scopes = normalizeScopes(token?.granted_scopes || token?.scope || token?.scopes || []);
+    const missingScopes = REQUIRED_CREATOR_SCOPES.filter(scope => !scopes.includes(scope));
+    if (missingScopes.length) {
+      return creatorOAuthErrorPage("Creator chưa cấp đủ quyền", "Thiếu scope: " + missingScopes.join(", ") + ". Hãy bật scope trong Partner Center rồi ủy quyền lại.");
+    }
+
+    let profile;
+    try { profile = await getCreatorProfile(env, token.access_token); }
+    catch (error) { return creatorOAuthErrorPage("Không xác minh được Creator", String(error?.message || error) + ". Hãy kiểm tra quyền creator.affiliate.info rồi ủy quyền lại."); }
+
+    const authorizedUsername = normalizeCreatorChannel(profile?.username);
+    if (authorizedUsername !== channel) {
+      return creatorOAuthErrorPage(
+        "Đăng nhập nhầm tài khoản Creator",
+        "Bạn đang kết nối @" + authorizedUsername + " nhưng SellerKBB đang chờ @" + channel + ". Token chưa được lưu; hãy đăng xuất TikTok và thử lại đúng tài khoản."
+      );
+    }
+
+    const key = creatorTokenKey(channel);
+    const record = {
+      ...token,
+      channel,
+      connected_at: Date.now(),
+      creator_profile: {
+        creator_user_id: String(profile?.creator_user_id || ""),
+        username: String(profile?.username || ""),
+        register_region: String(profile?.register_region || ""),
+        selection_region: String(profile?.selection_region || ""),
+        permissions: Array.isArray(profile?.permissions) ? profile.permissions : []
+      }
+    };
+    await env.TIKTOK_KV.put(key, JSON.stringify(record));
+    return Response.redirect(new URL("/?tiktok_creator=connected&channel=" + encodeURIComponent(channel), request.url).toString(), 302);
+  }
+
+  const sellerStateData = await env.TIKTOK_KV.get(`oauth_state:${state}`);
+  if (!sellerStateData) return creatorOAuthErrorPage("Phiên xác thực TikTok đã hết hạn hoặc không hợp lệ", "State không tồn tại hoặc đã quá 10 phút. Hãy bắt đầu lại từ nút Kết nối trong SellerKBB.");
   await env.TIKTOK_KV.delete(`oauth_state:${state}`);
 
-  const tokenUrl = new URL(TIKTOK_TOKEN_HOST + "/api/v2/token/get");
-  tokenUrl.searchParams.set("app_key", env.TIKTOK_APP_KEY);
-  tokenUrl.searchParams.set("app_secret", env.TIKTOK_APP_SECRET);
-  tokenUrl.searchParams.set("auth_code", code);
-  tokenUrl.searchParams.set("grant_type", "authorized_code");
-  const res = await fetch(tokenUrl);
-  const payload = await res.json();
-  if (payload.code !== 0 || !payload.data?.access_token) {
-    return html(`<h1>Kết nối TikTok thất bại</h1><pre>${escapeHtml(JSON.stringify(payload, null, 2))}</pre>`, 400);
+  let token;
+  try { token = await exchangeTikTokAuthCode(env, code); }
+  catch (error) { return creatorOAuthErrorPage("Kết nối TikTok Seller thất bại", String(error?.message || error)); }
+  if (token?.user_type != null && Number(token.user_type) !== 0) {
+    return creatorOAuthErrorPage("Sai loại tài khoản TikTok", "Callback Seller nhận được token không phải Seller (user_type phải bằng 0). Token hiện tại không bị thay đổi.");
   }
-  await env.TIKTOK_KV.put("seller_token", JSON.stringify({ ...payload.data, connected_at: Date.now() }));
+  await env.TIKTOK_KV.put("seller_token", JSON.stringify({ ...token, connected_at: Date.now() }));
   return Response.redirect(new URL("/?tiktok=connected", request.url).toString(), 302);
 }
 
@@ -1455,6 +1611,34 @@ async function handleApi(request, env) {
   }
 
   if (url.pathname === "/api/tiktok/oauth/start" && request.method === "POST") return handleOAuthStart(request, env);
+  if (url.pathname === "/api/tiktok/creator/oauth/start" && request.method === "POST") return handleCreatorOAuthStart(request, env);
+
+  if (url.pathname === "/api/tiktok/creator/status" && request.method === "GET") {
+    await requireAdmin(request, env);
+    const channels = [];
+    for (const channel of SELLERKBB_ALLOWED_LIVE_CHANNELS) {
+      let token = null;
+      let error = "";
+      try { token = await getCreatorToken(env, channel); } catch (e) { error = String(e?.message || e); }
+      const scopes = normalizeScopes(token?.granted_scopes || token?.scope || token?.scopes || []);
+      const missingScopes = token?.access_token ? REQUIRED_CREATOR_SCOPES.filter(scope => !scopes.includes(scope)) : [...REQUIRED_CREATOR_SCOPES];
+      const profile = token?.creator_profile || {};
+      channels.push({
+        channel,
+        connected: Boolean(token?.access_token),
+        username: String(profile?.username || token?.channel || ""),
+        creatorUserId: String(profile?.creator_user_id || ""),
+        userType: token?.user_type == null ? null : Number(token.user_type),
+        grantedScopes: scopes,
+        missingScopes,
+        accessTokenExpiresAt: tokenExpirySeconds(token) || null,
+        refreshTokenExpiresAt: refreshTokenExpirySeconds(token) || null,
+        connectedAt: token?.connected_at || null,
+        error
+      });
+    }
+    return json({ ok: true, requiredScopes: REQUIRED_CREATOR_SCOPES, channels });
+  }
 
   if (url.pathname === "/api/tiktok/autosync/run" && request.method === "POST") {
     await requireAdmin(request, env);

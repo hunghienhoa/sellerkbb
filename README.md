@@ -4,7 +4,7 @@
 
 ### Báo cáo TikTok LIVE · KPI nhân sự · Tự đồng bộ 24/24
 
-**Phiên bản hiện tại: v1.48.1**
+**Phiên bản hiện tại: v1.49.0**
 
 [![GitHub Release](https://img.shields.io/github/v/release/hunghienhoa/sellerkbb?label=Release)](https://github.com/hunghienhoa/sellerkbb/releases)
 [![GitHub Actions](https://img.shields.io/github/actions/workflow/status/hunghienhoa/sellerkbb/deploy.yml?branch=main&label=Ki%E1%BB%83m%20tra%20%26%20Backup)](https://github.com/hunghienhoa/sellerkbb/actions)
@@ -17,14 +17,15 @@
 
 ---
 
-## 🆕 Cập nhật mới nhất — v1.48.1
+## 🆕 Cập nhật mới nhất — v1.49.0
 
-- Ẩn hoàn toàn phần commission Affiliate khỏi giao diện SellerKBB; chỉ giữ **GMV Affiliate**.
-- Phiên LIVE trên PC/mobile giờ chỉ tách **GMV LIVE tổng / GMV hàng nhà / GMV Affiliate** cùng các trạng thái đối soát.
-- Popup **Đối soát đơn LIVE** chỉ giữ GMV Affiliate; không còn ô commission.
-- File CSV bỏ cột commission; vẫn xuất GMV Affiliate và số món Affiliate.
-- Công thức KPI không thay đổi: **GMV Affiliate vẫn được cộng vào GMV phiên và vẫn tính KPI Host 0,3% / Vận hành 0,1%**.
-- Dữ liệu commission ở backend được giữ nội bộ để có thể dùng lại về sau nếu cần, nhưng không hiển thị và không ảnh hưởng GMV/KPI.
+- Thêm **Creator Authorization riêng cho 2 kênh `shopkhangbaby` và `mekhangsua`** ngay trong tab **TikTok / API**. Không cần tự thêm `state` vào URL nữa.
+- SellerKBB tự sinh `state` ngẫu nhiên, lưu tạm 10 phút và mở đúng link Creator Authorization của TikTok.
+- TikTok vẫn redirect về callback hiện tại `/api/tiktok/oauth/callback`, nhưng backend phân biệt Creator/Seller bằng namespace state riêng nên **Creator token không bao giờ ghi đè `seller_token`**.
+- Sau khi đổi `code` lấy token, SellerKBB bắt buộc kiểm tra **`user_type = 1`**, đủ `creator.data.live.read.public` + `creator.affiliate.info`, sau đó gọi **Get Creator Profile** để xác minh đúng username trước khi lưu.
+- Creator token được lưu riêng thành `creator_token:shopkhangbaby` và `creator_token:mekhangsua`; token Creator cũng có cơ chế refresh riêng.
+- Nếu đăng nhập nhầm tài khoản Creator, thiếu scope hoặc callback hết hạn, SellerKBB dừng an toàn và **không thay đổi Seller token hiện tại**.
+- Bổ sung trạng thái **Đã kết nối / Thiếu quyền / Chưa kết nối** cùng nút **Kết nối Creator / Ủy quyền lại** cho từng kênh.
 
 
 ---
@@ -267,6 +268,7 @@ README giữ lại phần này để nhân sự có thể biết **vì sao giao 
 
 | Phiên bản | Thay đổi chính |
 |---|---|
+| **v1.49.0** | Thêm Creator OAuth riêng cho shopkhangbaby/mekhangsua: auto-state, callback dùng chung nhưng token tách riêng, kiểm tra user_type/scopes/profile và UI kết nối từng kênh. |
 | **v1.48.1** | Ẩn commission Affiliate khỏi UI/Đối soát/CSV; chỉ giữ GMV Affiliate, không đổi công thức KPI. |
 | **v1.48.0** | Theo dõi Affiliate theo phiên: tách GMV LIVE tổng/hàng nhà/Affiliate, hoa hồng đứng riêng; Affiliate GMV vẫn tính KPI, commission không tính; mở rộng đối soát + CSV và fail-closed khi dữ liệu tách không nhất quán. |
 | **v1.47.7** | Ẩn hoàn toàn popup “Dữ liệu mới nhất”; Cập nhật dữ liệu chỉ phản hồi trên nút, không modal/backdrop/toast. |

@@ -76,6 +76,13 @@ try {
   await page.click('#nav [data-section="tiktok"]');
   await page.waitForSelector('#section-tiktok [data-readiness-grid]');
   assert((await page.$$eval('#section-tiktok [data-readiness-grid] [data-readiness-item]',els=>els.length))>=5,"Go-live readiness checklist must show Firebase, TikTok, token, scopes and sync");
+  assert(await page.$('[data-creator-auth-card]')!==null,"Creator Authorization card missing");
+  const creatorPreview=await page.$$eval('#section-tiktok [data-creator-channel]',els=>els.map(e=>({channel:e.getAttribute('data-creator-channel'),text:e.textContent})));
+  assert(creatorPreview.length===2&&creatorPreview.some(x=>x.channel==='shopkhangbaby')&&creatorPreview.some(x=>x.channel==='mekhangsua'),"Creator Authorization must show exactly the two SellerKBB channels");
+  assert(creatorPreview.every(x=>x.text.includes('Đã kết nối')&&x.text.includes('Creator token riêng')),"Creator preview connection/safety copy missing");
+  assert((await page.$$('[data-connect-creator]')).length===2,"Creator connect/re-authorize controls missing");
+  await page.click('[data-connect-creator="shopkhangbaby"]');
+  assert(await page.$eval('#actionToast',e=>e.textContent.includes('shopkhangbaby')&&e.textContent.includes('mô phỏng kết nối')),"Creator preview connect interaction missing");
   assert(await page.$('#previewSyncNow')!==null,"Preview Sync-now button missing");
   await page.click('#previewSyncNow');
   await sleep(750);
@@ -532,6 +539,11 @@ try {
   await page.setViewport({width:390,height:844,deviceScaleFactor:1});
   await page.reload({waitUntil:"domcontentloaded"});
   await page.waitForSelector("#app:not(.hidden)",{timeout:30000});
+  await page.click('#nav [data-section="tiktok"]');
+  await page.waitForSelector('#section-tiktok [data-creator-auth-card]');
+  const mobileCreatorLayout=await page.$$eval('#section-tiktok [data-creator-channel]',els=>els.map(e=>{const r=e.getBoundingClientRect();return {left:r.left,right:r.right,width:r.width,vw:innerWidth};}));
+  assert(mobileCreatorLayout.length===2&&mobileCreatorLayout.every(x=>x.left>=0&&x.right<=x.vw&&x.width<=x.vw),"Mobile Creator cards must fit viewport without overflow");
+  await page.click('#nav [data-section="dashboard"]');
   assert(await page.$eval('#dataRefreshBtn',e=>e.checkVisibility()),"Mobile latest-data refresh button must remain visible on Tổng quan");
   const mobileRefreshGeometry=await page.$eval('.topbar',e=>{
     const refresh=e.querySelector('#dataRefreshBtn').getBoundingClientRect();
