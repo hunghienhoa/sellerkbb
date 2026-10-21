@@ -4,7 +4,7 @@
 
 ### Báo cáo TikTok LIVE · KPI nhân sự · Tự đồng bộ 24/24
 
-**Phiên bản hiện tại: v1.49.0**
+**Phiên bản hiện tại: v1.49.1**
 
 [![GitHub Release](https://img.shields.io/github/v/release/hunghienhoa/sellerkbb?label=Release)](https://github.com/hunghienhoa/sellerkbb/releases)
 [![GitHub Actions](https://img.shields.io/github/actions/workflow/status/hunghienhoa/sellerkbb/deploy.yml?branch=main&label=Ki%E1%BB%83m%20tra%20%26%20Backup)](https://github.com/hunghienhoa/sellerkbb/actions)
@@ -17,15 +17,14 @@
 
 ---
 
-## 🆕 Cập nhật mới nhất — v1.49.0
+## 🆕 Cập nhật mới nhất — v1.49.1
 
-- Thêm **Creator Authorization riêng cho 2 kênh `shopkhangbaby` và `mekhangsua`** ngay trong tab **TikTok / API**. Không cần tự thêm `state` vào URL nữa.
-- SellerKBB tự sinh `state` ngẫu nhiên, lưu tạm 10 phút và mở đúng link Creator Authorization của TikTok.
-- TikTok vẫn redirect về callback hiện tại `/api/tiktok/oauth/callback`, nhưng backend phân biệt Creator/Seller bằng namespace state riêng nên **Creator token không bao giờ ghi đè `seller_token`**.
-- Sau khi đổi `code` lấy token, SellerKBB bắt buộc kiểm tra **`user_type = 1`**, đủ `creator.data.live.read.public` + `creator.affiliate.info`, sau đó gọi **Get Creator Profile** để xác minh đúng username trước khi lưu.
-- Creator token được lưu riêng thành `creator_token:shopkhangbaby` và `creator_token:mekhangsua`; token Creator cũng có cơ chế refresh riêng.
-- Nếu đăng nhập nhầm tài khoản Creator, thiếu scope hoặc callback hết hạn, SellerKBB dừng an toàn và **không thay đổi Seller token hiện tại**.
-- Bổ sung trạng thái **Đã kết nối / Thiếu quyền / Chưa kết nối** cùng nút **Kết nối Creator / Ủy quyền lại** cho từng kênh.
+- Bổ sung **Refresh Token riêng cho Creator Authorization** của cả `shopkhangbaby` và `mekhangsua`.
+- Mỗi Creator giờ có trạng thái riêng cho **Access Token / Refresh Token / thời điểm hết hạn / lần làm mới gần nhất** trong tab **TikTok / API**; SellerKBB không hiển thị giá trị token bí mật.
+- SellerKBB tự kiểm tra token Creator mỗi giờ và tự refresh Access Token khi còn gần hết hạn. Job đối soát hằng ngày cũng kiểm tra trước 24 giờ để giảm nguy cơ token hết hạn giữa phiên.
+- Thêm nút **Làm mới token** cho từng Creator để Admin chủ động refresh ngay; sau refresh hệ thống kiểm tra lại `user_type = 1`, `open_id` và `granted_scopes` trước khi lưu token mới.
+- Nếu TikTok xoay (rotate) `refresh_token` trong response, SellerKBB lưu token mới; nếu response không trả refresh token mới thì giữ token cũ hợp lệ.
+- Nếu thiếu Refresh Token, refresh lỗi, token bị thu hồi hoặc scope bị thiếu, SellerKBB báo rõ để **Ủy quyền lại** và không đụng tới `seller_token`.
 
 
 ---
@@ -54,6 +53,7 @@ Bạn không cần hiểu hết code. Chỉ cần nhớ 4 nơi chính:
 - Admin chọn vai trò: **Host Livestream / Livestream operator / Admin**.
 - Host và Operator không nhìn thấy phần TikTok API.
 - TikTok LIVE tự đồng bộ **mỗi giờ, chạy 24/24**.
+- Creator Authorization của `shopkhangbaby` và `mekhangsua` có **Access Token + Refresh Token riêng**; hệ thống tự gia hạn Creator token và có nút làm mới thủ công trong **TikTok / API**.
 - LIVE Analytics được quét lại hằng ngày; riêng từ v1.33.0 có thêm tab đối soát cấp đơn để xem vận chuyển/hủy/hoàn rõ ràng hơn.
 - Phiên LIVE mới **không tự chọn Host/Operator**; Admin chọn thủ công.
 - KPI mặc định:
@@ -82,6 +82,8 @@ Giao diện v1.47.1 giữ hồng pastel, dùng chữ rõ cho nhãn số liệu v
 **Khi mở web:** SellerKBB sẽ giữ màn hình **Đang tải dữ liệu** cho tới khi dữ liệu cần thiết sẵn sàng. Nếu mạng/Firebase/API phản hồi quá lâu, trang sẽ hiện thông báo và nút **Thử tải lại**, không để màn hình trắng. Phần thống kê dung lượng chỉ tải khi Admin mở **Lưu trữ**, nên không còn chặn màn hình Tổng quan.
 
 **Phiên LIVE chưa hoàn tất dữ liệu TikTok:** nếu TikTok chưa trả `end_time`, SellerKBB chỉ hiện giờ bắt đầu và nhãn **Chờ TikTok hoàn tất phiên**; không hiện năm 1970, không đối soát và không dùng GMV đó để chốt KPI. Hệ thống sẽ tự quét lại ở các lần đồng bộ tiếp theo và tự mở đối soát khi giờ kết thúc hợp lệ.
+
+**Creator Refresh Token:** vào **TikTok / API → Creator Authorization** để xem từng kênh có Refresh Token hay chưa, ngày hết hạn và lần làm mới gần nhất. Nút **Làm mới token** chỉ làm mới Creator token của đúng kênh, không thay Seller token. Nếu trạng thái báo thiếu Refresh Token hoặc refresh lỗi, dùng **Ủy quyền lại** cho kênh đó.
 
 **KPI nhân sự theo tháng:** tab KPI nhân sự mặc định cộng toàn bộ KPI của tháng hiện tại. Dùng control **Theo tháng** để chọn lại tháng cần xem; giao diện chỉ hiển thị tên tháng, không lặp lại khoảng ngày 01–cuối tháng. Tab này không dùng bộ lọc Hôm nay / 7 ngày / 30 ngày; các tab báo cáo khác vẫn giữ bộ lọc riêng như trước.
 
@@ -268,6 +270,7 @@ README giữ lại phần này để nhân sự có thể biết **vì sao giao 
 
 | Phiên bản | Thay đổi chính |
 |---|---|
+| **v1.49.1** | Bổ sung Refresh Token riêng cho 2 Creator: tự refresh theo giờ, nút làm mới thủ công, hiển thị hạn token/lần refresh và validate user_type/open_id/scopes. |
 | **v1.49.0** | Thêm Creator OAuth riêng cho shopkhangbaby/mekhangsua: auto-state, callback dùng chung nhưng token tách riêng, kiểm tra user_type/scopes/profile và UI kết nối từng kênh. |
 | **v1.48.1** | Ẩn commission Affiliate khỏi UI/Đối soát/CSV; chỉ giữ GMV Affiliate, không đổi công thức KPI. |
 | **v1.48.0** | Theo dõi Affiliate theo phiên: tách GMV LIVE tổng/hàng nhà/Affiliate, hoa hồng đứng riêng; Affiliate GMV vẫn tính KPI, commission không tính; mở rộng đối soát + CSV và fail-closed khi dữ liệu tách không nhất quán. |

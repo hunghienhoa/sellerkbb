@@ -355,7 +355,14 @@ assert(worker.includes("REQUIRED_CREATOR_SCOPES")&&worker.includes("creator.data
 assert(worker.includes("name.startsWith(CREATOR_TOKEN_PREFIX)"), "Creator tokens must be protected from KV cleanup");
 assert(worker.includes("CREATOR_OAUTH_STATE_PREFIX + state")&&worker.includes("oauth_state:${state}"), "Shared callback must distinguish Creator and Seller OAuth state");
 assert(html.includes("Creator Authorization")&&html.includes("data-connect-creator")&&html.includes("shopkhangbaby")&&html.includes("mekhangsua"), "Creator connection UI missing");
-assert(html.includes("Creator token riêng · không dùng Seller token")&&html.includes("user_type = 1"), "Creator UI safety explanation missing");
+assert(html.includes("Access Token + Refresh Token riêng · không dùng Seller token")&&html.includes("user_type = 1"), "Creator UI safety explanation missing");
+assert(worker.includes("async function refreshCreatorTokenIfNeeded")&&worker.includes("async function refreshAllCreatorTokens"), "Creator proactive Refresh Token lifecycle missing");
+assert(worker.includes('/api/tiktok/creator/refresh')&&worker.includes('missing_creator_refresh_token'), "Creator manual Refresh Token endpoint missing");
+assert(worker.includes('refresh_token: payload.data?.refresh_token || current.refresh_token'), "Creator rotated Refresh Token must be preserved");
+assert(worker.includes("open_id khác tài khoản đã kết nối"), "Creator refresh must protect against open_id changes");
+assert(worker.includes('refreshAllCreatorTokens(env, 3600, "hourly")')&&worker.includes('refreshAllCreatorTokens(env, 86400, "daily_reconcile")'), "Scheduled Creator token refresh missing");
+assert(html.includes("data-refresh-creator")&&html.includes("Refresh Token hết hạn")&&html.includes("Làm mới token"), "Creator Refresh Token UI/status missing");
+assert(readme.includes("Refresh Token")&&readme.includes("v1.49.1"), "README Creator Refresh Token documentation missing");
 assert(html.includes("function downloadBusinessBackup()")&&html.includes('id="downloadBusinessBackup"'), "Business backup JSON UI missing");
 assert(wranglerV146.includes("keep_vars = true"), "Cloudflare keep_vars safety missing");
 assert(workflow.includes("Warn when Cloudflare deploy is not configured")&&workflow.includes("Warn when Firebase deploy is not configured"), "Skipped-deploy warnings missing");

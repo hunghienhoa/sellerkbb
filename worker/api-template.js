@@ -337,7 +337,8 @@ async function getStoredCreatorToken(env, channel) {
 
 async function refreshCreatorToken(env, channel, current, reason = "expiry") {
   const key = creatorTokenKey(channel);
-  if (!key || !current?.refresh_token) return current;
+  if (!key) throw new Error("Kênh Creator không hợp lệ");
+  if (!current?.refresh_token) throw new Error("Creator chưa có Refresh Token. Hãy ủy quyền lại tài khoản.");
   const url = new URL(TIKTOK_TOKEN_HOST + "/api/v2/token/refresh");
   url.searchParams.set("app_key", env.TIKTOK_APP_KEY);
   url.searchParams.set("app_secret", env.TIKTOK_APP_SECRET);
@@ -346,25 +347,72 @@ async function refreshCreatorToken(env, channel, current, reason = "expiry") {
   const res = await fetch(url);
   const payload = await res.json();
   if (payload.code !== 0 || !payload.data?.access_token) throw new Error(payload.message || "Creator token refresh failed");
-  if (payload.data?.user_type != null && Number(payload.data.user_type) !== 1) throw new Error("Creator refresh token trả về user_type không hợp lệ");
+  if (Number(payload.data?.user_type) !== 1) throw new Error("Creator refresh token trả về user_type không hợp lệ");
+  if (current?.open_id && payload.data?.open_id && String(current.open_id) !== String(payload.data.open_id)) {
+    throw new Error("Creator refresh token trả về open_id khác tài khoản đã kết nối");
+  }
   const nextScopes = normalizeScopes(payload.data?.granted_scopes || payload.data?.scope || payload.data?.scopes || current?.granted_scopes || []);
   const missing = REQUIRED_CREATOR_SCOPES.filter(scope => !nextScopes.includes(scope));
-  if (nextScopes.length && missing.length) throw new Error("Creator token thiếu scope: " + missing.join(", "));
-  const next = { ...current, ...payload.data, channel: normalizeCreatorChannel(channel), refreshed_at: Date.now(), refresh_reason: reason };
+  if (missing.length) throw new Error("Creator token thiếu scope: " + missing.join(", "));
+  const next = {
+    ...current,
+    ...payload.data,
+    refresh_token: payload.data?.refresh_token || current.refresh_token,
+    channel: normalizeCreatorChannel(channel),
+    refreshed_at: Date.now(),
+    refresh_reason: reason,
+    refresh_error: ""
+  };
   await env.TIKTOK_KV.put(key, JSON.stringify(next));
   return next;
 }
 
-async function getCreatorToken(env, channel) {
+async function refreshCreatorTokenIfNeeded(env, channel, thresholdSeconds = 3600, reason = "proactive") {
   const current = await getStoredCreatorToken(env, channel);
-  if (!current?.access_token) return current;
+  if (!current?.access_token) return { token: current, connected: false, refreshed: false, error: "" };
   const expireAt = tokenExpirySeconds(current);
   const now = Math.floor(Date.now() / 1000);
-  if (expireAt && expireAt <= now + 3600) {
-    try { return await refreshCreatorToken(env, channel, current, "api_request"); }
-    catch { return current; }
+  if (!expireAt || expireAt > now + Math.max(0, Number(thresholdSeconds) || 0)) {
+    return { token: current, connected: true, refreshed: false, error: "" };
   }
-  return current;
+  try {
+    const next = await refreshCreatorToken(env, channel, current, reason);
+    return { token: next, connected: true, refreshed: true, error: "" };
+  } catch (error) {
+    const message = String(error?.message || error);
+    if (env.TIKTOK_KV) {
+      const key = creatorTokenKey(channel);
+      if (key) await env.TIKTOK_KV.put(key, JSON.stringify({ ...current, refresh_error: message, refresh_failed_at: Date.now() }));
+    }
+    return { token: current, connected: true, refreshed: false, error: message };
+  }
+}
+
+async function getCreatorToken(env, channel) {
+  const result = await refreshCreatorTokenIfNeeded(env, channel, 3600, "api_request");
+  return result.token;
+}
+
+async function refreshAllCreatorTokens(env, thresholdSeconds = 3600, reason = "scheduled") {
+  const results = [];
+  for (const channel of SELLERKBB_ALLOWED_LIVE_CHANNELS) {
+    const current = await getStoredCreatorToken(env, channel);
+    if (!current?.access_token) {
+      results.push({ channel, connected: false, refreshed: false, hasRefreshToken: false, error: "" });
+      continue;
+    }
+    const result = await refreshCreatorTokenIfNeeded(env, channel, thresholdSeconds, reason);
+    results.push({
+      channel,
+      connected: true,
+      refreshed: result.refreshed === true,
+      hasRefreshToken: Boolean(result.token?.refresh_token),
+      accessTokenExpiresAt: tokenExpirySeconds(result.token) || null,
+      refreshTokenExpiresAt: refreshTokenExpirySeconds(result.token) || null,
+      error: result.error || ""
+    });
+  }
+  return results;
 }
 
 async function refreshTikTokToken(env, current, reason = "expiry") {
@@ -1481,10 +1529,16 @@ async function handleOAuthCallback(request, env) {
     }
 
     const key = creatorTokenKey(channel);
+    if (!token?.refresh_token) {
+      return creatorOAuthErrorPage("Creator chưa có Refresh Token", "TikTok không trả refresh_token. Hãy hủy quyền và ủy quyền lại Creator trước khi dùng dữ liệu tự động.");
+    }
+
     const record = {
       ...token,
       channel,
       connected_at: Date.now(),
+      refreshed_at: null,
+      refresh_error: "",
       creator_profile: {
         creator_user_id: String(profile?.creator_user_id || ""),
         username: String(profile?.username || ""),
@@ -1617,9 +1671,8 @@ async function handleApi(request, env) {
     await requireAdmin(request, env);
     const channels = [];
     for (const channel of SELLERKBB_ALLOWED_LIVE_CHANNELS) {
-      let token = null;
-      let error = "";
-      try { token = await getCreatorToken(env, channel); } catch (e) { error = String(e?.message || e); }
+      const refreshResult = await refreshCreatorTokenIfNeeded(env, channel, 3600, "status_check");
+      const token = refreshResult.token;
       const scopes = normalizeScopes(token?.granted_scopes || token?.scope || token?.scopes || []);
       const missingScopes = token?.access_token ? REQUIRED_CREATOR_SCOPES.filter(scope => !scopes.includes(scope)) : [...REQUIRED_CREATOR_SCOPES];
       const profile = token?.creator_profile || {};
@@ -1631,13 +1684,43 @@ async function handleApi(request, env) {
         userType: token?.user_type == null ? null : Number(token.user_type),
         grantedScopes: scopes,
         missingScopes,
+        hasRefreshToken: Boolean(token?.refresh_token),
+        autoRefresh: Boolean(token?.refresh_token),
         accessTokenExpiresAt: tokenExpirySeconds(token) || null,
         refreshTokenExpiresAt: refreshTokenExpirySeconds(token) || null,
         connectedAt: token?.connected_at || null,
-        error
+        lastRefreshedAt: token?.refreshed_at || null,
+        refreshedNow: refreshResult.refreshed === true,
+        refreshError: refreshResult.error || token?.refresh_error || "",
+        refreshFailedAt: token?.refresh_failed_at || null,
+        error: refreshResult.error || ""
       });
     }
     return json({ ok: true, requiredScopes: REQUIRED_CREATOR_SCOPES, channels });
+  }
+
+  if (url.pathname === "/api/tiktok/creator/refresh" && request.method === "POST") {
+    await requireAdmin(request, env);
+    const body = await request.json().catch(() => ({}));
+    const channel = normalizeCreatorChannel(body?.channel);
+    if (!SELLERKBB_ALLOWED_LIVE_CHANNELS.has(channel)) return json({ error: "invalid_creator_channel", message: "Chỉ hỗ trợ shopkhangbaby và mekhangsua." }, 400);
+    const current = await getStoredCreatorToken(env, channel);
+    if (!current?.access_token) return json({ error: "creator_not_connected", message: "Creator chưa được kết nối." }, 409);
+    if (!current?.refresh_token) return json({ error: "missing_creator_refresh_token", message: "Creator chưa có Refresh Token. Hãy ủy quyền lại." }, 409);
+    try {
+      const token = await refreshCreatorToken(env, channel, current, "manual");
+      return json({
+        ok: true,
+        channel,
+        refreshed: true,
+        hasRefreshToken: Boolean(token?.refresh_token),
+        accessTokenExpiresAt: tokenExpirySeconds(token) || null,
+        refreshTokenExpiresAt: refreshTokenExpirySeconds(token) || null,
+        lastRefreshedAt: token?.refreshed_at || null
+      });
+    } catch (error) {
+      return json({ error: "creator_refresh_failed", message: String(error?.message || error), channel }, 502);
+    }
   }
 
   if (url.pathname === "/api/tiktok/autosync/run" && request.method === "POST") {
@@ -1700,12 +1783,18 @@ async function handleApi(request, env) {
 export default {
   async scheduled(controller, env, ctx) {
     if (controller.cron === "0 * * * *") {
-      ctx.waitUntil(runAutoSync(env, 2, "hourly"));
+      ctx.waitUntil(Promise.all([
+        runAutoSync(env, 2, "hourly"),
+        refreshAllCreatorTokens(env, 3600, "hourly")
+      ]));
       return;
     }
     if (controller.cron === "15 3 * * *") {
       ctx.waitUntil((async () => {
-        await runAutoSync(env, 30, "daily_reconcile");
+        await Promise.all([
+          runAutoSync(env, 30, "daily_reconcile"),
+          refreshAllCreatorTokens(env, 86400, "daily_reconcile")
+        ]);
         await runKvMaintenance(env, "daily_free_plan");
       })());
       return;

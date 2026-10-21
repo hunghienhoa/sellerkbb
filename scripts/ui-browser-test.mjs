@@ -79,8 +79,11 @@ try {
   assert(await page.$('[data-creator-auth-card]')!==null,"Creator Authorization card missing");
   const creatorPreview=await page.$$eval('#section-tiktok [data-creator-channel]',els=>els.map(e=>({channel:e.getAttribute('data-creator-channel'),text:e.textContent})));
   assert(creatorPreview.length===2&&creatorPreview.some(x=>x.channel==='shopkhangbaby')&&creatorPreview.some(x=>x.channel==='mekhangsua'),"Creator Authorization must show exactly the two SellerKBB channels");
-  assert(creatorPreview.every(x=>x.text.includes('Đã kết nối')&&x.text.includes('Creator token riêng')),"Creator preview connection/safety copy missing");
+  assert(creatorPreview.every(x=>x.text.includes('Đã kết nối')&&x.text.includes('Access Token + Refresh Token riêng')&&x.text.includes('Refresh Token:')&&x.text.includes('Có · tự gia hạn')),"Creator preview Refresh Token status/safety copy missing");
   assert((await page.$$('[data-connect-creator]')).length===2,"Creator connect/re-authorize controls missing");
+  assert((await page.$$('[data-refresh-creator]')).length===2,"Creator manual Refresh Token controls missing");
+  await page.click('[data-refresh-creator="shopkhangbaby"]');
+  assert(await page.$eval('#actionToast',e=>e.textContent.includes('Refresh Token')&&e.textContent.includes('shopkhangbaby')),"Creator preview manual Refresh Token flow missing");
   await page.click('[data-connect-creator="shopkhangbaby"]');
   assert(await page.$eval('#actionToast',e=>e.textContent.includes('shopkhangbaby')&&e.textContent.includes('mô phỏng kết nối')),"Creator preview connect interaction missing");
   assert(await page.$('#previewSyncNow')!==null,"Preview Sync-now button missing");
