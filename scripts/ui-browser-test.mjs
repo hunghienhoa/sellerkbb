@@ -98,15 +98,9 @@ try {
   await sleep(70);
   assert(await page.$eval('#dataRefreshBtn',e=>e.disabled&&e.getAttribute('aria-busy')==='true'&&e.textContent.includes('Đang cập nhật')),"Latest-data loading state missing");
   await sleep(520);
-  assert(await page.$eval('#dataRefreshModalBackdrop',e=>e.classList.contains('is-open')&&e.getAttribute('aria-hidden')==='false'),"Latest-data centered modal did not open after refresh");
-  const refreshModalGeometry=await page.$eval('#dataRefreshModal',e=>{const r=e.getBoundingClientRect();return {cx:r.left+r.width/2,cy:r.top+r.height/2,vw:innerWidth,vh:innerHeight};});
-  assert(Math.abs(refreshModalGeometry.cx-refreshModalGeometry.vw/2)<4&&Math.abs(refreshModalGeometry.cy-refreshModalGeometry.vh/2)<4,"Latest-data modal must be centered in the viewport");
-  assert(await page.$eval('#dataRefreshPopover',e=>e.textContent.includes('SellerKBB')&&e.textContent.includes('TikTok LIVE cache')&&!e.textContent.includes('Firestore')&&e.textContent.includes('Không phải Đồng bộ TikTok')),"Latest-data modal copy must omit Firestore and remain clearly non-sync");
   assert(await page.$eval('#dataRefreshBtn',e=>e.classList.contains('is-success')&&e.textContent.includes('Đã cập nhật')),"Latest-data success state missing");
   assert((await page.$eval('#actionToast',e=>e.textContent))===toastBeforeRefresh,"Latest-data refresh must not show a toast notification");
-  await page.click('[data-close-data-refresh]');
-  await sleep(260);
-  assert(!(await page.$eval('#dataRefreshModalBackdrop',e=>e.classList.contains('is-open'))),"Latest-data modal did not animate closed");
+  assert(await page.$('#dataRefreshModalBackdrop')===null&&await page.$('#dataRefreshPopover')===null,"Latest-data popup/modal must stay removed after refresh");
 
   assert(await page.$eval('#section-dashboard [data-range-mode="today"]',e=>e.classList.contains('active')),"Dashboard must default to Today");
   await page.click('#section-dashboard [data-range-mode="7d"]');
@@ -543,11 +537,8 @@ try {
   assert(mobileRefreshGeometry.refreshWidth<=44&&mobileRefreshGeometry.refreshRight<=mobileRefreshGeometry.accountLeft&&mobileRefreshGeometry.refreshRight<=mobileRefreshGeometry.barRight,"Mobile latest-data button must compact without overlapping avatar");
   await page.click('#dataRefreshBtn');
   await sleep(520);
-  const mobileRefreshModal=await page.$eval('#dataRefreshModal',e=>{const r=e.getBoundingClientRect();return {left:r.left,right:r.right,cx:r.left+r.width/2,vw:innerWidth,text:e.textContent};});
-  assert(Math.abs(mobileRefreshModal.cx-mobileRefreshModal.vw/2)<4&&mobileRefreshModal.left>=10&&mobileRefreshModal.right<=mobileRefreshModal.vw-10,"Mobile latest-data modal must be centered and fit the viewport");
-  assert(!mobileRefreshModal.text.includes('Firestore'),"Mobile latest-data modal must not show Firestore row");
-  await page.click('[data-close-data-refresh]');
-  await sleep(260);
+  assert(await page.$eval('#dataRefreshBtn',e=>e.textContent.includes('Đã cập nhật')),"Mobile latest-data button must show success feedback");
+  assert(await page.$('#dataRefreshModalBackdrop')===null&&await page.$('#dataRefreshPopover')===null,"Mobile latest-data popup/modal must stay removed");
   const mobileFormFonts=await page.evaluate(()=>[...document.querySelectorAll('input,select,textarea')].map(e=>({
     tag:e.tagName,
     type:e.getAttribute('type')||'',
