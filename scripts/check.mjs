@@ -393,5 +393,12 @@ assert(html.includes("function buildKpiRows(sessions=kpiSessionsForMonth())"), "
 assert(html.includes("const rangeSessions=kpiSessionsForMonth();")&&html.includes("const rows=buildKpiRows(rangeSessions);"), "KPI page must aggregate selected month");
 assert(!html.includes("timeFilterHtml('kpi')")&&!html.includes("bindTimeFilter('kpi')"), "KPI page must not use day/7-day/30-day filter");
 assert(html.includes("KPI nhân sự được tổng hợp theo tháng."), "Monthly KPI explanation missing");
+assert(html.includes('id="dataRefreshBtn"')&&html.includes('id="dataRefreshPopover"'), "Dashboard latest-data refresh control missing");
+assert(html.includes("async function refreshLatestData()")&&html.includes("await withTimeout(loadData(),STARTUP_TIMEOUT_MS,'Cập nhật dữ liệu')"), "Latest-data control must reload SellerKBB data");
+const refreshLatestBlock=html.slice(html.indexOf("async function refreshLatestData()"),html.indexOf("function bindShell()",html.indexOf("async function refreshLatestData()")));
+assert(!refreshLatestBlock.includes("/api/tiktok/autosync/run")&&!refreshLatestBlock.includes("runAutoSync"), "Latest-data control must not trigger TikTok sync");
+assert(html.includes("Không phải Đồng bộ TikTok.")&&html.includes("Tải lại dữ liệu SellerKBB hiện có · không chạy đồng bộ TikTok"), "Latest-data control must explicitly distinguish refresh from sync");
+assert(html.includes(".data-refresh-btn.is-loading")&&html.includes(".data-refresh-btn.is-success")&&html.includes("@keyframes data-refresh-spin"), "Refresh control loading/success motion states missing");
+assert(html.includes("state.section==='dashboard'"), "Latest-data control must stay scoped to Tổng quan");
 assert(html.includes("LIVE chồng thời gian")&&html.includes("Thiếu dữ liệu hậu mãi"), "Blocked KPI reasons must be labeled separately");
 console.log("Project structure, syntax, persistence, calendar, storage/backup, Google profiles, pink pastel UI, overlap-safe reconciliation, full pagination, readiness, descriptive Releases, README, and auto-sync checks OK");

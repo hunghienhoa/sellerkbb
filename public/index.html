@@ -223,6 +223,68 @@ button{-webkit-tap-highlight-color:transparent}
 .topbar-title-wrap{display:flex;align-items:center;gap:12px;min-width:0;flex:1}
 .topbar-title-wrap>div{min-width:0}
 .topbar-right{display:flex;align-items:center;justify-content:flex-end;gap:10px;flex:0 0 auto;min-width:0}
+.data-refresh-wrap{position:relative;display:flex;align-items:center}
+.data-refresh-btn{
+  min-width:136px;
+  height:42px;
+  display:grid;
+  grid-template-columns:22px minmax(0,1fr);
+  align-items:center;
+  gap:8px;
+  padding:6px 11px;
+  border:1px solid #e89dbc;
+  border-radius:11px;
+  background:linear-gradient(135deg,#f7bad5,#e76ea8);
+  color:#532d40;
+  box-shadow:0 7px 18px rgba(189,78,132,.15);
+  cursor:pointer;
+  text-align:left;
+  transition:transform .15s ease,box-shadow .18s ease,border-color .18s ease,background .18s ease,color .18s ease;
+}
+.data-refresh-btn:hover{transform:translateY(-1px);box-shadow:0 10px 22px rgba(189,78,132,.2)}
+.data-refresh-btn:active{transform:scale(.975)}
+.data-refresh-btn:focus-visible{outline:3px solid rgba(216,112,161,.22);outline-offset:2px}
+.data-refresh-btn[disabled]{cursor:wait;opacity:.86;transform:none}
+.data-refresh-icon{width:22px;height:22px;display:grid;place-items:center}
+.data-refresh-copy{display:grid;gap:1px;min-width:0;line-height:1.15}
+.data-refresh-copy b{font-size:11.5px;font-weight:850;white-space:nowrap}
+.data-refresh-copy small{font-size:9.5px;font-weight:700;opacity:.76;white-space:nowrap}
+.data-refresh-btn.is-loading .data-refresh-icon{animation:data-refresh-spin .8s linear infinite}
+.data-refresh-btn.is-success{
+  border-color:#a9d9c0;
+  background:linear-gradient(135deg,#dff6e9,#bfe8d1);
+  color:#2f6d50;
+  box-shadow:0 7px 18px rgba(72,143,106,.12);
+}
+.data-refresh-btn.is-error{
+  border-color:#efb8c4;
+  background:linear-gradient(135deg,#fff0f3,#f8d6de);
+  color:#8d4356;
+}
+@keyframes data-refresh-spin{to{transform:rotate(360deg)}}
+.data-refresh-popover{
+  position:absolute;
+  top:calc(100% + 9px);
+  right:0;
+  z-index:55;
+  width:min(330px,calc(100vw - 28px));
+  padding:13px;
+  border:1px solid #edd0df;
+  border-radius:14px;
+  background:rgba(255,255,255,.98);
+  box-shadow:0 18px 48px rgba(96,55,75,.18);
+  animation:account-modal-in .16s ease-out both;
+}
+.data-refresh-popover-head{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:9px}
+.data-refresh-popover-head b{font-size:12.5px;color:#553746}
+.data-refresh-popover-head span{display:block;margin-top:2px;color:var(--muted);font-size:10px;line-height:1.4}
+.data-refresh-popover-close{width:28px;height:28px;display:grid;place-items:center;border:0;border-radius:50%;background:#fff0f6;color:#9a5674;cursor:pointer}
+.data-refresh-detail{display:grid;grid-template-columns:10px minmax(0,1fr) auto;align-items:center;gap:8px;padding:7px 0;border-top:1px solid #f3e3eb;font-size:10.5px}
+.data-refresh-detail:first-of-type{border-top:0}
+.data-refresh-dot{width:8px;height:8px;border-radius:50%;background:#55ad7d}
+.data-refresh-detail span{color:#604653;font-weight:700}
+.data-refresh-detail time,.data-refresh-detail em{color:var(--muted);font-style:normal;font-size:10px;text-align:right}
+.data-refresh-note{margin-top:8px;padding:8px 9px;border-radius:9px;background:#fff6fa;color:#7d5d6d;font-size:9.8px;line-height:1.45}
 .account-menu-wrap{position:relative;display:flex;align-items:center}
 .topbar-account-btn{
   width:40px;
@@ -1136,6 +1198,11 @@ body.reconcile-modal-open .reconcile-modal-body{touch-action:pan-y}
   .page-title{font-size:clamp(19px,5.2vw,22px);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .topbar .pill{display:none}
   .topbar-right{gap:7px;flex:0 0 auto}
+  .data-refresh-btn{min-width:104px;height:38px;padding:5px 8px;grid-template-columns:18px minmax(0,1fr);gap:6px;border-radius:10px}
+  .data-refresh-icon{width:18px;height:18px}
+  .data-refresh-copy b{font-size:10.5px}
+  .data-refresh-copy small{font-size:9px}
+  .data-refresh-popover{position:fixed;top:68px;right:10px;width:min(320px,calc(100vw - 20px))}
   .topbar-account-btn{width:38px;height:38px;flex-basis:38px;padding:2px}
   .topbar-account-avatar{width:32px;height:32px}
   .account-modal-backdrop{padding:14px}
@@ -1249,6 +1316,8 @@ body.reconcile-modal-open .reconcile-modal-body{touch-action:pan-y}
 }
 
 @media(max-width:420px){
+  .data-refresh-btn{min-width:42px;width:42px;padding:0;display:grid;grid-template-columns:1fr;place-items:center;text-align:center}
+  .data-refresh-copy{display:none}
   .stats{grid-template-columns:repeat(2,minmax(0,1fr))}
   .mobile-grid{grid-template-columns:1fr 1fr}
   .range-tabs{grid-template-columns:repeat(2,1fr)}
@@ -2899,7 +2968,14 @@ body.account-modal-open{overflow:hidden}
       <header class="topbar">
         <div class="topbar-title-wrap"><button id="menuToggle" class="menu-toggle" type="button" aria-label="Mở menu" aria-expanded="false">☰</button><div><h1 id="pageTitle" class="page-title">Tổng quan</h1><div id="pageSub" class="tiny"></div></div></div>
         <div class="topbar-right">
-          <span id="syncBadge" class="pill">v1.47.3</span>
+          <span id="syncBadge" class="pill">v1.47.4</span>
+          <div id="dataRefreshWrap" class="data-refresh-wrap">
+            <button id="dataRefreshBtn" class="data-refresh-btn" type="button" aria-haspopup="true" aria-expanded="false" aria-controls="dataRefreshPopover" title="Tải lại dữ liệu SellerKBB hiện có · không chạy đồng bộ TikTok">
+              <span id="dataRefreshIcon" class="data-refresh-icon">↻</span>
+              <span class="data-refresh-copy"><b id="dataRefreshLabel">Cập nhật dữ liệu</b><small id="dataRefreshMeta">Dữ liệu mới nhất</small></span>
+            </button>
+            <div id="dataRefreshPopover" class="data-refresh-popover hidden" role="dialog" aria-label="Chi tiết cập nhật dữ liệu"></div>
+          </div>
           <div class="account-menu-wrap">
             <button id="topbarAccountBtn" class="topbar-account-btn" type="button" aria-expanded="false" aria-controls="accountPopover" aria-label="Mở thông tin tài khoản">
               <img id="userAvatar" class="avatar topbar-account-avatar" alt="Ảnh đại diện Google">
@@ -3292,7 +3368,7 @@ body.account-modal-open{overflow:hidden}
       const requested=Math.max(1,Math.floor(Number(value)||1));
       return Math.min(FIRESTORE_STRUCTURED_QUERY_HARD_LIMIT,requested);
     }
-    const state = { config:null, auth:null, db:null, user:null, profile:null, sessions:[], users:[], staff:[], section:'dashboard', livePage:1, rangeMode:'today', customStart:'', customEnd:'', customPickerScope:null, kpiMonthKey:'', maintenance:{settings:{retentionDays:180,autoCleanup:true,emergencyPercent:85,firestoreSoftLimitMb:600,firestoreMaxSessions:FIRESTORE_TOTAL_SESSION_CAP,kvSoftKeyLimit:5000},github:{usedBytes:0,limitBytes:10000000000,available:false},cloudflare:{keyCount:0,lastRun:null,usedBytes:0,storageLimitBytes:1000000000,storageComplete:true},firebase:{freePlanMode:true,ttlEnabled:false,ttlRecommended:false,storageLimitBytes:1073741824}}, maintenanceLoaded:false, maintenanceLoading:false, maintenanceError:'', maintenancePromise:null, autoSyncStatus:null, autoSyncRefreshing:false, autoSyncWatcher:null, autoSyncVisibilityBound:false, reconcileModalSessionId:'' };
+    const state = { config:null, auth:null, db:null, user:null, profile:null, sessions:[], users:[], staff:[], section:'dashboard', livePage:1, rangeMode:'today', customStart:'', customEnd:'', customPickerScope:null, kpiMonthKey:'', maintenance:{settings:{retentionDays:180,autoCleanup:true,emergencyPercent:85,firestoreSoftLimitMb:600,firestoreMaxSessions:FIRESTORE_TOTAL_SESSION_CAP,kvSoftKeyLimit:5000},github:{usedBytes:0,limitBytes:10000000000,available:false},cloudflare:{keyCount:0,lastRun:null,usedBytes:0,storageLimitBytes:1000000000,storageComplete:true},firebase:{freePlanMode:true,ttlEnabled:false,ttlRecommended:false,storageLimitBytes:1073741824}}, maintenanceLoaded:false, maintenanceLoading:false, maintenanceError:'', maintenancePromise:null, autoSyncStatus:null, autoSyncRefreshing:false, autoSyncWatcher:null, autoSyncVisibilityBound:false, reconcileModalSessionId:'', dataRefresh:{status:'idle',lastAt:'',error:'',popover:false} };
 
     const DEFAULT_STAFF_MEMBERS=[
       {id:'staff-thao-my',displayName:'Thảo My',role:'host'},
@@ -3373,7 +3449,7 @@ body.account-modal-open{overflow:hidden}
 
     function previewTs(iso){ return {toDate:()=>new Date(iso)}; }
     function enterPreview(){
-      state.config={version:'1.47.3-preview',tiktokConfigured:true};
+      state.config={version:'1.47.4-preview',tiktokConfigured:true};
       state.user={uid:'preview-admin',email:'admin@sellerkbb.demo',displayName:'Quản trị viên Demo',photoURL:avatarFallbackData('Quản trị viên Demo')};
       state.profile={role:'admin',status:'approved',displayName:'Quản trị viên Demo',photoURL:state.user.photoURL,permissions:['live.read','kpi.read']};
       state.maintenance={settings:{retentionDays:180,autoCleanup:true,emergencyPercent:85,firestoreSoftLimitMb:600,firestoreMaxSessions:FIRESTORE_TOTAL_SESSION_CAP,kvSoftKeyLimit:5000},github:{usedBytes:124000,limitBytes:10000000000,available:true},cloudflare:{keyCount:5,lastRun:{ranAt:new Date().toISOString(),deleted:0},usedBytes:428000,storageLimitBytes:1000000000,storageComplete:true},firebase:{freePlanMode:true,ttlEnabled:false,ttlRecommended:false,storageLimitBytes:1073741824}};
@@ -3415,6 +3491,7 @@ body.account-modal-open{overflow:hidden}
         session.reconciliation={status,usableForKpi:true,gmvAmount:gmv,analyticsGmvAmount:gross,orderWindowAmount:Math.round(gross*.94),orderCount:9+(index%5),pendingOrderCount:status==='final'?0:3+(index%4),cancelledCount:index%3,returningCount:status==='final'?0:1,refundedCount:index%2,aftersalesAvailable:true,liveSignalOrders:status==='final'?(9+(index%5)):5,timeWindowOrders:status==='final'?0:4,timeWindowNetAmount:status==='final'?0:Math.round(gross*.08),attribution:status==='final'?'live_signal':'mixed',generatedAt:new Date().toISOString(),finalizedAt:status==='final'?new Date().toISOString():'',reason:status==='final'?'GMV sau khi hoàn hủy đã chốt từ các đơn có tín hiệu LIVE.':'GMV chờ đối soát chỉ gồm đơn có tín hiệu LIVE; đơn chỉ khớp thời gian không tính KPI.'};
       });
       restorePreviewState();
+      state.dataRefresh.lastAt=new Date().toISOString();
       renderAll(); bindShell(); showApp(); startAutoSyncWatcher();
       const bar=document.createElement('div');
       bar.style.cssText='position:fixed;left:50%;transform:translateX(-50%);bottom:18px;z-index:15;background:#f7c5dc;color:#653a50;padding:8px 12px;border:1px solid #edb4cf;border-radius:999px;font-weight:800;font-size:10px;box-shadow:0 8px 24px rgba(156,91,124,.16);white-space:nowrap;pointer-events:none';
@@ -3485,6 +3562,7 @@ body.account-modal-open{overflow:hidden}
       }
       showBoot('<b>Đang tải dữ liệu SellerKBB…</b><br><br><span class="tiny">Đang lấy phiên LIVE và thông tin cần thiết. Giao diện chỉ mở khi dữ liệu đã sẵn sàng.</span>');
       await withTimeout(loadData(),STARTUP_TIMEOUT_MS,'Tải dữ liệu ban đầu');
+      state.dataRefresh.lastAt=new Date().toISOString();
       renderAll();
       bindShell();
       showApp();
@@ -3634,6 +3712,85 @@ body.account-modal-open{overflow:hidden}
       if(logout)logout.onclick=()=>{ if(PREVIEW) location.href='/'; else signOut(state.auth); };
     }
 
+    function refreshMoment(iso,withSeconds=false){
+      if(!iso)return '';
+      const d=new Date(iso);
+      if(Number.isNaN(d.getTime()))return '';
+      const options={timeZone:'Asia/Ho_Chi_Minh',hour:'2-digit',minute:'2-digit',hourCycle:'h23'};
+      if(withSeconds){options.second='2-digit';options.day='2-digit';options.month='2-digit';options.year='numeric';}
+      return new Intl.DateTimeFormat('vi-VN',options).format(d);
+    }
+
+    function renderDataRefreshControl(){
+      const wrap=$('#dataRefreshWrap'),button=$('#dataRefreshBtn'),label=$('#dataRefreshLabel'),meta=$('#dataRefreshMeta'),popover=$('#dataRefreshPopover');
+      if(!wrap||!button||!label||!meta||!popover)return;
+      const visible=state.section==='dashboard';
+      wrap.classList.toggle('hidden',!visible);
+      if(!visible)return;
+      const status=state.dataRefresh?.status||'idle';
+      const last=refreshMoment(state.dataRefresh?.lastAt);
+      button.classList.toggle('is-loading',status==='loading');
+      button.classList.toggle('is-success',status==='success');
+      button.classList.toggle('is-error',status==='error');
+      button.disabled=status==='loading';
+      button.setAttribute('aria-busy',String(status==='loading'));
+      button.setAttribute('aria-expanded',String(Boolean(state.dataRefresh?.popover)));
+      label.textContent=status==='loading'?'Đang cập nhật…':status==='success'?'Đã cập nhật':status==='error'?'Thử lại':'Cập nhật dữ liệu';
+      meta.textContent=status==='loading'?'Đang tải dữ liệu mới nhất':last?('Lúc '+last):'Dữ liệu mới nhất';
+      const iconName=status==='success'?'check':status==='error'?'history':'refresh';
+      $('#dataRefreshIcon').innerHTML=icon(iconName,16);
+      const tikTokMoment=refreshMoment(state.autoSyncStatus?.finishedAt,true);
+      const loadedMoment=refreshMoment(state.dataRefresh?.lastAt,true);
+      popover.classList.toggle('hidden',!state.dataRefresh?.popover);
+      if(state.dataRefresh?.popover){
+        popover.innerHTML=`
+          <div class="data-refresh-popover-head">
+            <div><b>${status==='error'?'Không thể cập nhật dữ liệu':'Dữ liệu mới nhất'}</b><span>${status==='error'?esc(state.dataRefresh.error||'Đã có lỗi khi đọc lại dữ liệu.'):'Mốc thời gian SellerKBB vừa đọc lại dữ liệu hiện có.'}</span></div>
+            <button class="data-refresh-popover-close" type="button" data-close-data-refresh aria-label="Đóng">×</button>
+          </div>
+          <div class="data-refresh-detail"><i class="data-refresh-dot"></i><span>SellerKBB</span><time>${loadedMoment||'Chưa tải lại'}</time></div>
+          <div class="data-refresh-detail"><i class="data-refresh-dot"></i><span>TikTok LIVE cache</span><time>${tikTokMoment||'Chưa có mốc nguồn'}</time></div>
+          <div class="data-refresh-detail"><i class="data-refresh-dot"></i><span>Firestore</span><em>${status==='error'?'Chưa hoàn tất':'Đã đọc lại'}</em></div>
+          <div class="data-refresh-detail"><i class="data-refresh-dot"></i><span>Đối soát đơn</span><em>Theo từng phiên</em></div>
+          <div class="data-refresh-note"><b>Không phải Đồng bộ TikTok.</b> Nút này chỉ tải lại dữ liệu SellerKBB đang có để màn hình hiển thị bản mới nhất.</div>`;
+        popover.querySelector('[data-close-data-refresh]')?.addEventListener('click',e=>{e.stopPropagation();state.dataRefresh.popover=false;renderDataRefreshControl();});
+      }
+    }
+
+    async function refreshLatestData(){
+      if(state.dataRefresh?.status==='loading')return;
+      state.dataRefresh.status='loading';
+      state.dataRefresh.error='';
+      state.dataRefresh.popover=false;
+      renderDataRefreshControl();
+      try{
+        if(PREVIEW){
+          await new Promise(resolve=>setTimeout(resolve,450));
+        }else{
+          await withTimeout(loadData(),STARTUP_TIMEOUT_MS,'Cập nhật dữ liệu');
+        }
+        state.dataRefresh.lastAt=new Date().toISOString();
+        state.dataRefresh.status='success';
+        renderAll();
+        bindShell();
+        state.dataRefresh.popover=true;
+        renderDataRefreshControl();
+        showToast('Đã tải lại dữ liệu SellerKBB mới nhất');
+        clearTimeout(refreshLatestData.resetTimer);
+        refreshLatestData.resetTimer=setTimeout(()=>{
+          if(state.dataRefresh.status==='success')state.dataRefresh.status='idle';
+          renderDataRefreshControl();
+        },1800);
+      }catch(error){
+        console.error('refresh latest data',error);
+        state.dataRefresh.status='error';
+        state.dataRefresh.error=String(error?.message||error);
+        state.dataRefresh.popover=true;
+        renderDataRefreshControl();
+        showToast('Không thể cập nhật dữ liệu: '+state.dataRefresh.error);
+      }
+    }
+
     function bindShell(){
       $('#menuToggle').onclick=()=>setMobileMenu(!$('#sidebar').classList.contains('open'));
       $('#mobileMenuOverlay').onclick=()=>{ setAccountMenu(false); setMobileMenu(false); };
@@ -3665,7 +3822,10 @@ body.account-modal-open{overflow:hidden}
       $('#topbarAccountBtn').setAttribute('aria-label',`Mở thông tin tài khoản ${currentRecord.displayName}`);
       renderAccountPopover();
       $('#topbarAccountBtn').onclick=e=>{ e.stopPropagation(); setAccountMenu($('#accountModalBackdrop').classList.contains('hidden')); };
+      const refreshBtn=$('#dataRefreshBtn');
+      if(refreshBtn)refreshBtn.onclick=e=>{ e.stopPropagation(); refreshLatestData(); };
       $('#syncBadge').textContent=`v${state.config.version||'1.0.0'}`;
+      renderDataRefreshControl();
     }
 
     function validAutoSyncStartSeconds(value){
@@ -3874,7 +4034,7 @@ body.account-modal-open{overflow:hidden}
       $('#nav').querySelectorAll('button').forEach(b=>b.onclick=()=>switchSection(b.dataset.section));
     }
 
-    function switchSection(id){ if(state.reconcileModalSessionId&&id!==state.section)closeReconciliationModal(); state.section=id; setAccountMenu(false); setMobileMenu(false); document.querySelectorAll('.section').forEach(s=>s.classList.remove('active')); $(`#section-${id}`).classList.add('active'); renderNav(); if(id==='storage'&&isAdmin()&&!PREVIEW&&!state.maintenanceLoaded)ensureMaintenanceDetails().catch(()=>{}); const meta={dashboard:['Tổng quan','Báo cáo LIVE & KPI'],live:['Phiên LIVE','Gắn Host/Operator cho từng phiên'],reconcile:['Đối soát đơn LIVE','Xem trạng thái đơn và hậu mãi theo từng phiên LIVE'],kpi:['KPI nhân sự','Tổng hợp KPI tự động + KPI thủ công đã lưu'], 'manual-kpi':['KPI thủ công','Nhập KPI theo từng người cho các phiên tính thủ công'],users:['Quản lý tài khoản','Duyệt, chỉnh quyền hoặc xóa user'],staff:['Quản lý nhân sự','Danh sách Host/Vận hành dùng chung cho toàn hệ thống'],export:['Xuất file','Xuất báo cáo theo khoảng thời gian đã chọn'],tiktok:['TikTok / API','Tự động đồng bộ LIVE và gia hạn token 24/24'],storage:['Lưu trữ & tự dọn','Giữ dữ liệu tối đa 6 tháng và bảo vệ dung lượng']}[id]; $('#pageTitle').textContent=meta[0]; $('#pageSub').textContent=meta[1]; }
+    function switchSection(id){ if(state.reconcileModalSessionId&&id!==state.section)closeReconciliationModal(); state.section=id; state.dataRefresh.popover=false; setAccountMenu(false); setMobileMenu(false); document.querySelectorAll('.section').forEach(s=>s.classList.remove('active')); $(`#section-${id}`).classList.add('active'); renderNav(); if(id==='storage'&&isAdmin()&&!PREVIEW&&!state.maintenanceLoaded)ensureMaintenanceDetails().catch(()=>{}); const meta={dashboard:['Tổng quan','Báo cáo LIVE & KPI'],live:['Phiên LIVE','Gắn Host/Operator cho từng phiên'],reconcile:['Đối soát đơn LIVE','Xem trạng thái đơn và hậu mãi theo từng phiên LIVE'],kpi:['KPI nhân sự','Tổng hợp KPI tự động + KPI thủ công đã lưu'], 'manual-kpi':['KPI thủ công','Nhập KPI theo từng người cho các phiên tính thủ công'],users:['Quản lý tài khoản','Duyệt, chỉnh quyền hoặc xóa user'],staff:['Quản lý nhân sự','Danh sách Host/Vận hành dùng chung cho toàn hệ thống'],export:['Xuất file','Xuất báo cáo theo khoảng thời gian đã chọn'],tiktok:['TikTok / API','Tự động đồng bộ LIVE và gia hạn token 24/24'],storage:['Lưu trữ & tự dọn','Giữ dữ liệu tối đa 6 tháng và bảo vệ dung lượng']}[id]; $('#pageTitle').textContent=meta[0]; $('#pageSub').textContent=meta[1]; renderDataRefreshControl(); }
 
     function finalGmv(s){ return Number(s.finalGmvAmount ?? s.currentGmvAmount ?? s.recordedGmvAmount ?? 0); }
 

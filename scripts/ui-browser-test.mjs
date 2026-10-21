@@ -85,6 +85,24 @@ try {
   assert(await page.$('[data-business-backup-card]')!==null,"Business backup card missing");
   await page.click('#nav [data-section="dashboard"]');
 
+  assert(await page.$('#dataRefreshBtn')!==null,"Latest-data refresh button missing beside user avatar");
+  assert(await page.$eval('#dataRefreshBtn',e=>e.checkVisibility()&&e.textContent.includes('Cập nhật dữ liệu')&&!e.textContent.includes('Đồng bộ')),"Latest-data button must be visible and must not be labeled as sync");
+  const refreshGeometry=await page.$eval('.topbar',e=>{
+    const refresh=e.querySelector('#dataRefreshBtn').getBoundingClientRect();
+    const account=e.querySelector('#topbarAccountBtn').getBoundingClientRect();
+    return {refreshRight:refresh.right,accountLeft:account.left};
+  });
+  assert(refreshGeometry.refreshRight<=refreshGeometry.accountLeft,"Latest-data button must sit directly before the user avatar without overlap");
+  await page.click('#dataRefreshBtn');
+  await sleep(70);
+  assert(await page.$eval('#dataRefreshBtn',e=>e.disabled&&e.getAttribute('aria-busy')==='true'&&e.textContent.includes('Đang cập nhật')),"Latest-data loading state missing");
+  await sleep(520);
+  assert(!(await page.$eval('#dataRefreshPopover',e=>e.classList.contains('hidden'))),"Latest-data detail popover did not open after refresh");
+  assert(await page.$eval('#dataRefreshPopover',e=>e.textContent.includes('SellerKBB')&&e.textContent.includes('TikTok LIVE cache')&&e.textContent.includes('Firestore')&&e.textContent.includes('Không phải Đồng bộ TikTok')),"Latest-data detail popover copy missing or misleading");
+  assert(await page.$eval('#dataRefreshBtn',e=>e.classList.contains('is-success')&&e.textContent.includes('Đã cập nhật')),"Latest-data success state missing");
+  await page.click('[data-close-data-refresh]');
+  assert(await page.$eval('#dataRefreshPopover',e=>e.classList.contains('hidden')),"Latest-data popover did not close");
+
   assert(await page.$eval('#section-dashboard [data-range-mode="today"]',e=>e.classList.contains('active')),"Dashboard must default to Today");
   await page.click('#section-dashboard [data-range-mode="7d"]');
   assert(await page.$eval('#section-dashboard [data-range-mode="7d"]',e=>e.classList.contains('active')),"7-day filter did not activate");
@@ -503,6 +521,14 @@ try {
   await page.setViewport({width:390,height:844,deviceScaleFactor:1});
   await page.reload({waitUntil:"domcontentloaded"});
   await page.waitForSelector("#app:not(.hidden)",{timeout:30000});
+  assert(await page.$eval('#dataRefreshBtn',e=>e.checkVisibility()),"Mobile latest-data refresh button must remain visible on Tổng quan");
+  const mobileRefreshGeometry=await page.$eval('.topbar',e=>{
+    const refresh=e.querySelector('#dataRefreshBtn').getBoundingClientRect();
+    const account=e.querySelector('#topbarAccountBtn').getBoundingClientRect();
+    const bar=e.getBoundingClientRect();
+    return {refreshWidth:refresh.width,refreshRight:refresh.right,accountLeft:account.left,barLeft:bar.left,barRight:bar.right};
+  });
+  assert(mobileRefreshGeometry.refreshWidth<=44&&mobileRefreshGeometry.refreshRight<=mobileRefreshGeometry.accountLeft&&mobileRefreshGeometry.refreshRight<=mobileRefreshGeometry.barRight,"Mobile latest-data button must compact without overlapping avatar");
   const mobileFormFonts=await page.evaluate(()=>[...document.querySelectorAll('input,select,textarea')].map(e=>({
     tag:e.tagName,
     type:e.getAttribute('type')||'',
