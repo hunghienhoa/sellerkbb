@@ -5,6 +5,7 @@ import puppeteer from "puppeteer-core";
 const html = fs.readFileSync(new URL("../public/index.html", import.meta.url), "utf8");
 const chrome = [
   process.env.CHROME_BIN,
+  'C:/Program Files/Google/Chrome/Application/chrome.exe',
   "/usr/bin/google-chrome",
   "/usr/bin/google-chrome-stable",
   "/usr/bin/chromium",
@@ -30,11 +31,14 @@ const sleep = ms => new Promise(r=>setTimeout(r,ms));
 try {
   const page = await browser.newPage();
   await page.setViewport({width:1440,height:1000,deviceScaleFactor:1});
-  await page.goto("http://127.0.0.1:4173/preview",{waitUntil:"domcontentloaded"});
+  const previewUrl=process.env.UI_TEST_ORIGIN?new URL('/preview',process.env.UI_TEST_ORIGIN).href:'http://127.0.0.1:4173/preview';
+  await page.goto(previewUrl,{waitUntil:"domcontentloaded"});
   await page.waitForSelector("#app:not(.hidden)",{timeout:30000});
+  await page.evaluate(()=>document.fonts.ready);
   await page.evaluate(()=>localStorage.clear());
   await page.reload({waitUntil:"domcontentloaded"});
   await page.waitForSelector("#app:not(.hidden)",{timeout:30000});
+  await page.evaluate(()=>document.fonts.ready);
 
   assert((await page.$eval('#userAvatar',e=>e.getAttribute('src')||'')).length>0,"Sidebar Google avatar is missing");
   const navGroups=await page.$$eval('#nav .nav-group-title',els=>els.map(e=>e.textContent.trim()));
@@ -60,6 +64,7 @@ try {
   assert(topbarAccountGeometry.accountLeft>=topbarAccountGeometry.titleRight,"Avatar must sit to the right of the page title");
   assert(topbarAccountGeometry.barRight-topbarAccountGeometry.accountRight<40,"Avatar must stay at the right edge");
   await page.click('#topbarAccountBtn');
+  await page.$eval('#accountPopover', async el => Promise.all(el.getAnimations().map(a => a.finished)));
   assert(!(await page.$eval('#accountModalBackdrop',e=>e.classList.contains('hidden'))),"Account modal did not open from avatar");
   assert(await page.$eval('#accountPopover',e=>e.textContent.includes('Quản trị viên Demo')&&e.textContent.includes('admin@sellerkbb.demo')&&e.textContent.includes('Quản trị viên')&&e.textContent.includes('Đã duyệt')),"Account popup basic information missing");
   assert(await page.$('#accountLogoutBtn')!==null&&await page.$('#accountModalClose')!==null,"Account modal logout/close controls missing");
@@ -136,6 +141,7 @@ try {
   const reconcileCard='#section-reconcile .reconcile-session:first-of-type';
   const desktopOpenButton=reconcileCard+' [data-reconcile-open]';
   await page.click(desktopOpenButton);
+  await page.$eval('#reconcileModal', async el => Promise.all(el.getAnimations().map(a => a.finished)));
   await page.waitForSelector('#reconcileModalBackdrop:not(.hidden) #reconcileModalBody .reconcile-overview');
   assert(await page.$eval(desktopOpenButton,e=>e.classList.contains('hidden')),"Xem đơn must hide while its popup is open");
   assert(await page.$eval('body',e=>e.classList.contains('reconcile-modal-open')),"Reconciliation popup must lock background scroll");
@@ -559,6 +565,7 @@ try {
   assert(await page.$('#topbarAccountBtn #userAvatar')!==null,"Mobile topbar avatar trigger missing");
   assert(await page.$eval('#topbarAccountBtn',e=>e.textContent.trim()===''&&!!e.querySelector('#userAvatar')),"Mobile topbar must show avatar only");
   await page.click('#topbarAccountBtn');
+  await page.$eval('#accountPopover', async el => Promise.all(el.getAnimations().map(a => a.finished)));
   assert(!(await page.$eval('#accountModalBackdrop',e=>e.classList.contains('hidden'))),"Mobile account modal did not open");
   assert(await page.$eval('#accountPopover',e=>e.textContent.includes('admin@sellerkbb.demo')&&(e.textContent.includes('Đăng xuất')||e.textContent.includes('Thoát Preview'))),"Mobile account popup information/logout missing");
   const mobilePopup=await page.$eval('#accountPopover',e=>{const r=e.getBoundingClientRect();return {cx:r.left+r.width/2,cy:r.top+r.height/2,width:r.width,vw:innerWidth,vh:innerHeight};});
@@ -574,6 +581,7 @@ try {
   const mobileOpenButton=mobileReconcile+' [data-reconcile-open]';
   const pageScrollBefore=await page.evaluate(()=>window.scrollY);
   await page.click(mobileOpenButton);
+  await page.$eval('#reconcileModal', async el => Promise.all(el.getAnimations().map(a => a.finished)));
   await page.waitForSelector('#reconcileModalBackdrop:not(.hidden) #reconcileModalBody .reconcile-order-grid');
   const mobileReconLayout=await page.$eval('#reconcileModal',e=>{
     const grid=e.querySelector('.reconcile-order-grid');
@@ -714,6 +722,15 @@ try {
   assert(await page.$('#section-live [data-date-calendar="live"]')===null,"Mobile calendar did not collapse after Apply");
 
   console.log("Desktop + mobile browser smoke tests passed");
+} catch(error) {
+  fs.mkdirSync('../verification',{recursive:true});
+  for(const page of await browser.pages()) {
+    if(page.url().includes('/preview')) {
+      await page.screenshot({path:'../verification/smoke-failure.png'});
+      console.error(await page.evaluate(()=>({section:document.querySelector('.section.active')?.id,inert:document.querySelector('#app')?.inert,focus:document.activeElement?.outerHTML.slice(0,250)})));
+    }
+  }
+  throw error;
 } finally {
   await browser.close();
   await new Promise(resolve=>server.close(resolve));
