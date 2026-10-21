@@ -205,7 +205,8 @@ assert(html.includes("GMV chờ đối soát")&&html.includes("Tổng KPI đã c
 assert(html.includes("Cùng một nhân sự có thể xuất hiện ở cả hai bảng"), "Split KPI explanation missing");
 assert(html.includes("KPI tự động dùng đối soát theo từng phiên")&&html.includes("tránh cộng trùng"), "KPI guide must explain overlap-safe reconciliation");
 assert(!html.includes("KPI tự động đang tạm dùng GMV LIVE gộp"), "Legacy gross-GMV KPI warning must be removed");
-assert(html.includes("gmv_live_total")&&html.includes("gmv_shop_products")&&html.includes("gmv_affiliate")&&html.includes("affiliate_items_sold")&&html.includes("affiliate_commission")&&html.includes("gmv_pending_reconciliation")&&html.includes("gmv_after_cancel_refund_final")&&html.includes("gmv_time_window_excluded")&&html.includes("kpi_status"), "LIVE CSV affiliate/GMV fields missing");
+assert(html.includes("gmv_live_total")&&html.includes("gmv_shop_products")&&html.includes("gmv_affiliate")&&html.includes("affiliate_items_sold")&&html.includes("gmv_pending_reconciliation")&&html.includes("gmv_after_cancel_refund_final")&&html.includes("gmv_time_window_excluded")&&html.includes("kpi_status"), "LIVE CSV affiliate/GMV fields missing");
+assert(!html.includes("affiliate_commission"), "LIVE CSV must not expose Affiliate commission");
 assert(html.includes("gmv_auto_final")&&html.includes("gmv_auto_provisional"), "KPI CSV final/provisional fields missing");
 assert(readme.includes("**GMV đã ghi nhận**")&&readme.includes("**GMV chờ đối soát**")&&readme.includes("**GMV sau khi hoàn hủy**"), "README must document the three GMV stages");
 assert(readme.includes("GMV Analytics riêng từng phiên")&&readme.includes("tỷ lệ hủy/hoàn"), "README must document overlap-safe KPI reconciliation");
@@ -380,12 +381,11 @@ assert(worker.includes("async function fetchLiveShopProductBreakdown")&&worker.i
 assert(worker.includes("affiliateDataAvailable: consistent"), "Affiliate split must fail closed when product GMV is inconsistent");
 assert(worker.includes("affiliateGmvAmount")&&worker.includes("shopProductGmvAmount"), "Affiliate/shop GMV data fields missing");
 assert(worker.includes("singleLiveTotalKpiGmvAmount = Math.round(analyticsGmvAmount * singleLiveAdjustmentRatio)"), "Single-LIVE KPI must use total LIVE GMV, including Affiliate, after cancellation/refund ratio");
-assert(worker.includes("affiliateCommissionAvailable")&&worker.includes("affiliateCommissionAmount"), "Affiliate commission fields missing");
-assert(worker.includes("hoa hồng Affiliate không được cộng vào GMV/KPI"), "Backend must explicitly exclude Affiliate commission from GMV/KPI");
+assert(worker.includes("affiliateCommissionAvailable")&&worker.includes("affiliateCommissionAmount"), "Dormant Affiliate commission backend fields missing");
 assert(worker.includes("target.affiliateGmvAmount = moneyNumber(summary.affiliateGmvAmount)"), "Affiliate reconciliation data must persist to LIVE cache");
 assert(html.includes("function affiliateFigures(session)")&&html.includes("function affiliateSummaryHtml(sessions)"), "Affiliate LIVE UI helpers missing");
-assert(html.includes("GMV LIVE tổng")&&html.includes("GMV hàng nhà")&&html.includes("GMV Affiliate")&&html.includes("Hoa hồng Affiliate"), "Affiliate LIVE labels missing");
-assert(html.includes("Không cộng vào GMV · không tính KPI")&&html.includes("Chưa có Creator Authorization"), "Affiliate commission exclusion / unavailable state missing");
+assert(html.includes("GMV LIVE tổng")&&html.includes("GMV hàng nhà")&&html.includes("GMV Affiliate"), "Affiliate LIVE labels missing");
+assert(!html.includes("Hoa hồng Affiliate")&&!html.includes("Không cộng vào GMV · không tính KPI")&&!html.includes("Chưa có Creator Authorization"), "Affiliate commission UI must stay hidden");
 assert(html.includes("singleLiveTotalKpiGmvAmount=Math.round(analytics*singleLiveAdjustmentRatio)"), "Frontend KPI fallback must include Affiliate GMV in total LIVE basis");
 assert(html.includes("affiliateDataAvailable:src.affiliateDataAvailable===true"), "Auto-sync frontend merge must carry Affiliate split fields");
 assert(worker.includes("filter(Boolean).filter(isAllowedSellerKbbLiveChannel)"), "Cached LIVE data must be sanitized then whitelist-filtered");
@@ -423,5 +423,5 @@ const refreshLatestNoToastBlock=html.slice(html.indexOf("async function refreshL
 assert(!refreshLatestNoToastBlock.includes("showToast("), "Latest-data refresh flow must not emit toast notifications");
 assert(refreshLatestNoToastBlock.includes("state.dataRefresh.status='success'")&&refreshLatestNoToastBlock.includes("renderDataRefreshControl()"), "Latest-data refresh must keep button-level success feedback");
 assert(html.includes("LIVE chồng thời gian")&&html.includes("Thiếu dữ liệu hậu mãi"), "Blocked KPI reasons must be labeled separately");
-assert(readme.includes("GMV Affiliate")&&readme.includes("Hoa hồng Affiliate")&&readme.includes("không tính KPI"), "README Affiliate rule missing");
+assert(readme.includes("GMV Affiliate")&&!readme.includes("Hoa hồng Affiliate"), "README must document GMV Affiliate without commission UI");
 console.log("Project structure, syntax, persistence, calendar, storage/backup, Google profiles, pink pastel UI, overlap-safe reconciliation, full pagination, readiness, descriptive Releases, README, and auto-sync checks OK");

@@ -131,11 +131,10 @@ try {
   assert(await page.$eval('#section-live',e=>e.classList.contains('active')),"View More did not switch to LIVE section");
   assert(await page.$eval('#section-live [data-range-mode="30d"]',e=>e.classList.contains('active')),"View More did not preserve the 30-day filter");
   assert(await page.$eval('#section-live .desktop-live-table thead',e=>e.textContent.includes('Thời gian phiên LIVE')),"Desktop LIVE time header missing");
-  assert(await page.$eval('#section-live .affiliate-live-summary',e=>e.textContent.includes('GMV LIVE tổng')&&e.textContent.includes('GMV hàng nhà')&&e.textContent.includes('GMV Affiliate')&&e.textContent.includes('Hoa hồng Affiliate')),"Affiliate LIVE summary cards missing");
-  assert(await page.$eval('#section-live .affiliate-live-summary',e=>e.textContent.includes('Chưa có dữ liệu')&&e.textContent.includes('Không cộng vào GMV · không tính KPI')),"Affiliate commission unavailable/exclusion state missing");
-  assert(await page.$eval('#section-live .desktop-live-table thead',e=>e.textContent.includes('GMV LIVE tổng')&&e.textContent.includes('GMV hàng nhà')&&e.textContent.includes('GMV Affiliate')&&e.textContent.includes('Hoa hồng Affiliate')),"Desktop Affiliate LIVE columns missing");
+  assert(await page.$eval('#section-live .affiliate-live-summary',e=>e.textContent.includes('GMV LIVE tổng')&&e.textContent.includes('GMV hàng nhà')&&e.textContent.includes('GMV Affiliate')&&!e.textContent.includes('Hoa hồng Affiliate')),"Affiliate LIVE summary must show GMV only");
+  assert(await page.$eval('#section-live .desktop-live-table thead',e=>e.textContent.includes('GMV LIVE tổng')&&e.textContent.includes('GMV hàng nhà')&&e.textContent.includes('GMV Affiliate')&&!e.textContent.includes('Hoa hồng Affiliate')),"Desktop Affiliate LIVE columns must hide commission");
   const affiliateDesktopRow=await page.$eval('#section-live .desktop-live-table tbody tr:first-child',e=>e.textContent);
-  assert(affiliateDesktopRow.includes('món Affiliate')&&affiliateDesktopRow.includes('Không cộng GMV/KPI'),"Desktop Affiliate row breakdown missing");
+  assert(affiliateDesktopRow.includes('món Affiliate')&&!affiliateDesktopRow.includes('Hoa hồng Affiliate')&&!affiliateDesktopRow.includes('Không cộng GMV/KPI'),"Desktop Affiliate row must keep GMV details only");
   assert(await page.$eval('#section-live .desktop-live-table tbody tr:first-child .live-time-cell',e=>/^\d{2}\/\d{2}\/\d{4} Vào lúc \d{2}:\d{2}-/.test(e.textContent.trim())),"Desktop compact LIVE time range not rendered");
   assert(!(await page.$eval('#section-live',e=>e.textContent.includes('01/01/1970'))),"LIVE UI must never render Unix epoch as a session end time");
   await page.$eval('#section-live [data-range-mode="custom"]',e=>e.click());
@@ -173,8 +172,8 @@ try {
   assert(await page.$eval('#reconcileModalBody',e=>e.textContent.includes('Đang hoàn / trả')&&e.textContent.includes('Đã hoàn tiền')&&e.textContent.includes('Đã hủy')&&e.textContent.includes('Hoàn tất')),"Aftersale/final-state chips missing");
   assert(await page.$eval('#reconcileModalBody',e=>e.textContent.includes('Có tín hiệu LIVE')&&e.textContent.includes('1 kênh nội bộ LIVE')),"LIVE attribution confidence labels missing");
   assert(await page.$eval('#reconcileModalBody',e=>e.textContent.includes('Bảo vệ đối soát 60 ngày')&&e.textContent.includes('15 ngày')&&e.textContent.includes('6 ngày')),"Reconciliation retention/return-window explanation missing");
-  assert(await page.$eval('#reconcileModalBody',e=>e.textContent.includes('GMV LIVE tổng')&&e.textContent.includes('GMV hàng nhà')&&e.textContent.includes('GMV Affiliate')&&e.textContent.includes('Hoa hồng Affiliate')&&e.textContent.includes('GMV chờ đối soát')&&e.textContent.includes('Đơn hủy từ Livestream')&&e.textContent.includes('GMV sau khi hoàn hủy')&&e.textContent.includes('KPI tự động:')),"Reconciliation popup Affiliate/GMV overview missing");
-  assert(await page.$eval('#reconcileModalBody',e=>e.textContent.includes('Quy tắc Affiliate:')&&e.textContent.includes('Hoa hồng Affiliate không cộng vào GMV/KPI')&&e.textContent.includes('Chưa có Creator Authorization')),"Reconciliation popup must explain Affiliate GMV vs commission");
+  assert(await page.$eval('#reconcileModalBody',e=>e.textContent.includes('GMV LIVE tổng')&&e.textContent.includes('GMV hàng nhà')&&e.textContent.includes('GMV Affiliate')&&!e.textContent.includes('Hoa hồng Affiliate')&&e.textContent.includes('GMV chờ đối soát')&&e.textContent.includes('Đơn hủy từ Livestream')&&e.textContent.includes('GMV sau khi hoàn hủy')&&e.textContent.includes('KPI tự động:')),"Reconciliation popup must show Affiliate GMV without commission");
+  assert(await page.$eval('#reconcileModalBody',e=>e.textContent.includes('Quy tắc Affiliate:')&&e.textContent.includes('GMV sản phẩm Affiliate vẫn được cộng vào GMV phiên và cơ sở tính KPI')),"Reconciliation popup Affiliate KPI rule missing");
   assert(await page.$eval('#reconcileModalBody',e=>e.textContent.includes('KPI tạm tính')&&e.textContent.includes('Có tín hiệu LIVE · tính KPI')),"Reconciliation attribution must show confirmed/provisional KPI inclusion");
   const returnFilter=[...await page.$$('#reconcileModalBody [data-reconcile-filter]')];
   assert(returnFilter.length>=8,"Reconciliation filter chips missing");
@@ -602,8 +601,7 @@ try {
   await page.$eval('#nav [data-section="live"]',e=>e.click());
   await sleep(80);
   await page.click('#section-live [data-range-mode="30d"]');
-  assert(await page.$eval('#section-live .mobile-live-card:first-of-type',e=>e.textContent.includes('GMV LIVE tổng')&&e.textContent.includes('GMV hàng nhà')&&e.textContent.includes('GMV Affiliate')&&e.textContent.includes('Hoa hồng Affiliate')&&e.textContent.includes('GMV chờ đối soát')&&e.textContent.includes('GMV sau khi hoàn hủy')),"Mobile LIVE card must show Affiliate and all GMV stages");
-  assert(await page.$eval('#section-live .mobile-live-card:first-of-type',e=>e.textContent.includes('Không cộng GMV/KPI')),"Mobile Affiliate commission exclusion copy missing");
+  assert(await page.$eval('#section-live .mobile-live-card:first-of-type',e=>e.textContent.includes('GMV LIVE tổng')&&e.textContent.includes('GMV hàng nhà')&&e.textContent.includes('GMV Affiliate')&&!e.textContent.includes('Hoa hồng Affiliate')&&e.textContent.includes('GMV chờ đối soát')&&e.textContent.includes('GMV sau khi hoàn hủy')),"Mobile LIVE card must show Affiliate GMV without commission");
   assert(await page.$('#nav .nav-group:nth-child(3) [data-section="users"]')!==null,"Mobile Quản lý tài khoản must stay inside Quản trị");
   assert(await page.$('#nav .nav-group:nth-child(3) [data-section="staff"]')!==null,"Mobile Quản lý nhân sự must stay inside Quản trị");
   assert(await page.$('#usersDockBtn')===null,"Mobile duplicate Users dock must be removed");

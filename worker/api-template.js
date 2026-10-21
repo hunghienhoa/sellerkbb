@@ -989,8 +989,8 @@ function summarizeLiveReconciliation(result) {
       gmvAmount = overlapAdjustedGmvAmount;
       status = allFinal ? "final" : "provisional";
       reason = allFinal
-        ? "LIVE nội bộ chồng giờ đã được xử lý: SellerKBB dùng GMV TikTok Analytics riêng của phiên (đã gồm hàng nhà + Affiliate) và áp dụng tỷ lệ hủy/hoàn từ các đơn trong đúng khung giờ. Hoa hồng Affiliate không tính vào GMV/KPI. Toàn bộ đơn đối soát đã kết thúc nên số này đã chốt."
-        : "LIVE nội bộ chồng giờ đã được xử lý: SellerKBB dùng GMV TikTok Analytics riêng của phiên (đã gồm hàng nhà + Affiliate) và áp dụng tỷ lệ hủy/hoàn từ các đơn trong đúng khung giờ. Hoa hồng Affiliate không tính vào GMV/KPI. Không gán cùng một đơn trực tiếp cho hai phiên; số này sẽ tự cập nhật khi đơn hủy/hoàn thay đổi.";
+        ? "LIVE nội bộ chồng giờ đã được xử lý: SellerKBB dùng GMV TikTok Analytics riêng của phiên (đã gồm hàng nhà + Affiliate) và áp dụng tỷ lệ hủy/hoàn từ các đơn trong đúng khung giờ. Toàn bộ đơn đối soát đã kết thúc nên số này đã chốt."
+        : "LIVE nội bộ chồng giờ đã được xử lý: SellerKBB dùng GMV TikTok Analytics riêng của phiên (đã gồm hàng nhà + Affiliate) và áp dụng tỷ lệ hủy/hoàn từ các đơn trong đúng khung giờ. Không gán cùng một đơn trực tiếp cho hai phiên; số này sẽ tự cập nhật khi đơn hủy/hoàn thay đổi.";
     }
   } else if (!hasSingleLiveData) {
     status = "waiting";
@@ -998,8 +998,8 @@ function summarizeLiveReconciliation(result) {
   } else {
     gmvAmount = singleLiveTotalKpiGmvAmount;
     const affiliateNote = affiliateDataAvailable && affiliateGmvAmount > 0
-      ? " GMV Affiliate được cộng vào cơ sở KPI; hoa hồng Affiliate không được cộng vào GMV/KPI."
-      : " GMV TikTok của phiên vẫn là cơ sở KPI; hoa hồng Affiliate không được cộng vào GMV/KPI.";
+      ? " GMV Affiliate được cộng vào cơ sở KPI."
+      : " GMV TikTok của phiên vẫn là cơ sở KPI.";
     if (allFinal) {
       status = "final";
       reason = (provisionalTimeWindowOrders > 0

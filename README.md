@@ -4,7 +4,7 @@
 
 ### Báo cáo TikTok LIVE · KPI nhân sự · Tự đồng bộ 24/24
 
-**Phiên bản hiện tại: v1.48.0**
+**Phiên bản hiện tại: v1.48.1**
 
 [![GitHub Release](https://img.shields.io/github/v/release/hunghienhoa/sellerkbb?label=Release)](https://github.com/hunghienhoa/sellerkbb/releases)
 [![GitHub Actions](https://img.shields.io/github/actions/workflow/status/hunghienhoa/sellerkbb/deploy.yml?branch=main&label=Ki%E1%BB%83m%20tra%20%26%20Backup)](https://github.com/hunghienhoa/sellerkbb/actions)
@@ -17,14 +17,14 @@
 
 ---
 
-## 🆕 Cập nhật mới nhất — v1.48.0
+## 🆕 Cập nhật mới nhất — v1.48.1
 
-- Bổ sung theo dõi **Affiliate theo từng phiên LIVE** cho hai kênh shopkhangbaby và mekhangsua: giao diện Phiên LIVE có **GMV LIVE tổng / GMV hàng nhà / GMV Affiliate / Hoa hồng Affiliate** trên PC và mobile.
-- SellerKBB dùng TikTok **Get Shop LIVE Products Performance List v202512** để đọc GMV sản phẩm thuộc shop trong đúng phiên; từ đó chỉ tách phần Affiliate khi dữ liệu sản phẩm khớp an toàn với GMV LIVE tổng. Nếu số liệu không nhất quán, hệ thống hiển thị **Chưa có dữ liệu** thay vì tự đoán.
-- Quy tắc KPI được chốt theo nghiệp vụ: **GMV Affiliate vẫn nằm trong doanh số phiên và vẫn được tính KPI Host 0,3% / Vận hành 0,1%**. Khi đối soát, SellerKBB dùng toàn GMV LIVE rồi áp dụng tỷ lệ hủy/hoàn đã biết; không bỏ phần Affiliate khỏi KPI.
-- **Hoa hồng Affiliate là khoản riêng**: không cộng vào GMV, không cộng vào cơ sở KPI. Trước khi bổ sung Creator Authorization (creator.data.live.read.public), hoa hồng hiển thị **Chưa có dữ liệu** và tuyệt đối không ước tính giả.
-- Popup Đối soát đơn LIVE và file CSV được mở rộng để hiển thị/xuất phần Affiliate; dữ liệu Affiliate lấy được khi đối soát được lưu lại vào cache phiên.
-- Auto-sync làm giàu dữ liệu Affiliate theo lô có giới hạn, fail-closed khi API trả số bất thường và vẫn giữ whitelist chỉ shopkhangbaby / mekhangsua.
+- Ẩn hoàn toàn phần commission Affiliate khỏi giao diện SellerKBB; chỉ giữ **GMV Affiliate**.
+- Phiên LIVE trên PC/mobile giờ chỉ tách **GMV LIVE tổng / GMV hàng nhà / GMV Affiliate** cùng các trạng thái đối soát.
+- Popup **Đối soát đơn LIVE** chỉ giữ GMV Affiliate; không còn ô commission.
+- File CSV bỏ cột commission; vẫn xuất GMV Affiliate và số món Affiliate.
+- Công thức KPI không thay đổi: **GMV Affiliate vẫn được cộng vào GMV phiên và vẫn tính KPI Host 0,3% / Vận hành 0,1%**.
+- Dữ liệu commission ở backend được giữ nội bộ để có thể dùng lại về sau nếu cần, nhưng không hiển thị và không ảnh hưởng GMV/KPI.
 
 
 ---
@@ -58,8 +58,8 @@ Bạn không cần hiểu hết code. Chỉ cần nhớ 4 nơi chính:
 - KPI mặc định:
   - Host Livestream: **0,3% GMV dùng KPI**.
   - Livestream operator: **0,1% GMV dùng KPI**.
-- Giao diện theo dõi **GMV LIVE tổng / GMV hàng nhà / GMV Affiliate / Hoa hồng Affiliate** cùng các trạng thái **GMV chờ đối soát / GMV sau khi hoàn hủy**.
-- KPI tự động dùng GMV LIVE sau đối soát. **GMV Affiliate vẫn tính KPI**, còn **Hoa hồng Affiliate không tính KPI**. Khi chỉ có một kênh nội bộ LIVE, các đơn khớp thời gian có thể được dùng để ước tính tỷ lệ hủy/hoàn; khi hai kênh chồng giờ vẫn dùng cơ chế chống cộng trùng.
+- Giao diện theo dõi **GMV LIVE tổng / GMV hàng nhà / GMV Affiliate** cùng các trạng thái **GMV chờ đối soát / GMV sau khi hoàn hủy**.
+- KPI tự động dùng GMV LIVE sau đối soát. **GMV Affiliate vẫn tính KPI**. Khi chỉ có một kênh nội bộ LIVE, các đơn khớp thời gian có thể được dùng để ước tính tỷ lệ hủy/hoàn; khi hai kênh chồng giờ vẫn dùng cơ chế chống cộng trùng.
 - **Ngày Campaign/Mega Live** có thể bật chế độ KPI thủ công; sau khi tích phải chọn rõ **Ngày Campaign** hoặc **Mega Live**. Hai ô Host/Operator tự động được ẩn hẳn và phiên đó không cộng KPI tự động.
 - Bộ lọc: **Hôm nay / 7 ngày / 30 Ngày / Chọn ngày**.
 - Có trang Xuất file riêng.
@@ -102,10 +102,8 @@ SellerKBB chỉ dùng `shopkhangbaby` và `mekhangsua`.
 
 - **GMV LIVE tổng = doanh số hàng nhà + doanh số sản phẩm Affiliate** mà TikTok ghi nhận cho phiên.
 - **GMV Affiliate vẫn được tính KPI** Host/Vận hành giống phần doanh số còn lại của phiên.
-- **Hoa hồng Affiliate không phải GMV** và luôn đứng ngoài công thức KPI.
 - SellerKBB thử tách **GMV hàng nhà / GMV Affiliate** bằng dữ liệu sản phẩm của TikTok trong đúng LIVE. Nếu dữ liệu sản phẩm không khớp GMV phiên, hệ thống để **Chưa có dữ liệu** thay vì suy diễn.
-- Trước khi kết nối Creator Authorization (creator.data.live.read.public), **Hoa hồng Affiliate = Chưa có dữ liệu**. Đây là trạng thái chủ động để tránh cộng nhầm hoặc tự ước tính hoa hồng.
-- Đối với KPI tạm tính, SellerKBB lấy **toàn GMV LIVE (đã gồm Affiliate)** và áp dụng tỷ lệ hủy/hoàn đã biết từ đối soát. Khi có Creator data đầy đủ sau này, phần Affiliate có thể được đối soát chi tiết hơn mà không đổi quy tắc hoa hồng.
+- Đối với KPI tạm tính, SellerKBB lấy **toàn GMV LIVE (đã gồm Affiliate)** và áp dụng tỷ lệ hủy/hoàn đã biết từ đối soát. Phần Affiliate có thể được đối soát chi tiết hơn về sau mà không đổi quy tắc KPI.
 
 ### 2. Kiểm tra Tổng quan
 
@@ -121,7 +119,7 @@ Trong danh sách phiên bên dưới, phiên đã chốt được đánh dấu b
 
 ### 3. Gắn người cho phiên LIVE
 
-Trong **Phiên LIVE**, phía trên bảng có 4 ô tổng hợp Affiliate. Mỗi dòng phiên cũng tách **GMV LIVE tổng / GMV hàng nhà / GMV Affiliate / Hoa hồng Affiliate**. Nếu chưa có Creator token thì cột hoa hồng sẽ ghi **Chưa có dữ liệu**; không ảnh hưởng GMV/KPI hiện tại.
+Trong **Phiên LIVE**, phía trên bảng có 4 ô tổng hợp Affiliate. Mỗi dòng phiên cũng tách **GMV LIVE tổng / GMV hàng nhà / GMV Affiliate**. Nếu chưa có Creator token thì cột hoa hồng sẽ ghi **Chưa có dữ liệu**; không ảnh hưởng GMV/KPI hiện tại.
 
 1. Chọn Host.
 2. Chọn Livestream operator.
@@ -269,6 +267,7 @@ README giữ lại phần này để nhân sự có thể biết **vì sao giao 
 
 | Phiên bản | Thay đổi chính |
 |---|---|
+| **v1.48.1** | Ẩn commission Affiliate khỏi UI/Đối soát/CSV; chỉ giữ GMV Affiliate, không đổi công thức KPI. |
 | **v1.48.0** | Theo dõi Affiliate theo phiên: tách GMV LIVE tổng/hàng nhà/Affiliate, hoa hồng đứng riêng; Affiliate GMV vẫn tính KPI, commission không tính; mở rộng đối soát + CSV và fail-closed khi dữ liệu tách không nhất quán. |
 | **v1.47.7** | Ẩn hoàn toàn popup “Dữ liệu mới nhất”; Cập nhật dữ liệu chỉ phản hồi trên nút, không modal/backdrop/toast. |
 | **v1.47.6** | Làm lại control chọn tháng KPI nhân sự theo style SellerKBB, bỏ text khoảng ngày 01–cuối tháng chỉ ở KPI nhân sự, giữ modal cập nhật dữ liệu không-toast và tăng độ ổn định verify sau deploy. |
