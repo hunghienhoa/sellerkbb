@@ -375,7 +375,7 @@ assert(html.includes("KPI tạm tính"), "Single-LIVE provisional KPI badge miss
 assert(html.includes("đối soát chồng LIVE")&&html.includes("dùng tính tỷ lệ hủy/hoàn"), "Overlap reconciliation UI labels missing");
 assert(html.includes("Tỷ lệ hủy/hoàn hiện tại"), "Overlap aftersales ratio explanation missing");
 assert(worker.includes("SELLERKBB_ALLOWED_LIVE_CHANNELS"), "SellerKBB LIVE channel whitelist missing");
-assert(worker.includes('"/analytics/202512/shop/')&&worker.includes('/products_performance'), "TikTok LIVE products performance integration missing");
+assert(worker.includes("/analytics/202512/shop/")&&worker.includes("/products_performance"), "TikTok LIVE products performance integration missing");
 assert(worker.includes("async function fetchLiveShopProductBreakdown")&&worker.includes("async function enrichLiveAffiliateBreakdowns"), "Affiliate LIVE enrichment helpers missing");
 assert(worker.includes("affiliateDataAvailable: consistent"), "Affiliate split must fail closed when product GMV is inconsistent");
 assert(worker.includes("affiliateGmvAmount")&&worker.includes("shopProductGmvAmount"), "Affiliate/shop GMV data fields missing");
