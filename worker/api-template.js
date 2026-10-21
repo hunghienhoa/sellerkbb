@@ -352,9 +352,28 @@ async function getAuthorizedShops(env, accessToken) {
   return result.payload?.data?.shops || [];
 }
 
+const LIVE_TIMESTAMP_MIN_SECONDS = 1577836800; // 01/01/2020 UTC
+const LIVE_TIMESTAMP_FUTURE_SKEW_SECONDS = 6 * 3600;
+
+function validLiveStartSeconds(value, nowSeconds = Math.floor(Date.now() / 1000)) {
+  const n = Number(value || 0);
+  return Number.isFinite(n) && n >= LIVE_TIMESTAMP_MIN_SECONDS && n <= nowSeconds + LIVE_TIMESTAMP_FUTURE_SKEW_SECONDS;
+}
+
+function validLiveEndSeconds(value, startSeconds, nowSeconds = Math.floor(Date.now() / 1000)) {
+  const end = Number(value || 0);
+  const start = Number(startSeconds || 0);
+  return validLiveStartSeconds(start, nowSeconds)
+    && Number.isFinite(end)
+    && end >= start
+    && end <= nowSeconds + LIVE_TIMESTAMP_FUTURE_SKEW_SECONDS;
+}
+
 function normalizeLiveSession(s, shop, requestedAccountType = "") {
-  const start = Number(s.start_time || 0);
-  const end = Number(s.end_time || 0);
+  const rawStart = Number(s.start_time || 0);
+  const rawEnd = Number(s.end_time || 0);
+  const start = validLiveStartSeconds(rawStart) ? rawStart : 0;
+  const end = validLiveEndSeconds(rawEnd, start) ? rawEnd : 0;
   const sales = s.sales_performance || {};
   const gmv = sales.gmv || {};
   return {
@@ -368,7 +387,9 @@ function normalizeLiveSession(s, shop, requestedAccountType = "") {
     shopName: shop?.name || "",
     startTimeSeconds: start,
     endTimeSeconds: end,
-    durationSeconds: Math.max(0, end - start),
+    durationSeconds: end ? Math.max(0, end - start) : 0,
+    dataComplete: Boolean(start && end),
+    syncState: !start ? "invalid_start_time" : (end ? "complete" : "pending_end_time"),
     gmvAmount: String(gmv.amount || "0"),
     currency: gmv.currency || "VND",
     itemsSold: Number(sales.items_sold || 0),
@@ -378,9 +399,60 @@ function normalizeLiveSession(s, shop, requestedAccountType = "") {
       productsAdded: Number(sales.products_added || 0),
       differentProductsSold: Number(sales.different_products_sold || 0),
       createdSkuOrders: Number(sales.created_sku_orders || 0),
-      live24hGmv: sales["24h_live_gmv"] || null
+      live24hGmv: sales["24h_live_gmv"] || null,
+      rawStartTimeSeconds: rawStart,
+      rawEndTimeSeconds: rawEnd
     }
   };
+}
+
+function sanitizeStoredLiveSession(item) {
+  if (!item || typeof item !== "object") return null;
+  const rawStart = Number(item.startTimeSeconds || 0);
+  const rawEnd = Number(item.endTimeSeconds || 0);
+  const start = validLiveStartSeconds(rawStart) ? rawStart : 0;
+  const end = validLiveEndSeconds(rawEnd, start) ? rawEnd : 0;
+  return {
+    ...item,
+    startTimeSeconds: start,
+    endTimeSeconds: end,
+    durationSeconds: end ? Math.max(0, end - start) : 0,
+    dataComplete: Boolean(start && end),
+    syncState: !start ? "invalid_start_time" : (end ? "complete" : "pending_end_time")
+  };
+}
+
+function mergeLiveSessionSnapshots(previous = {}, incoming = {}) {
+  const prev = sanitizeStoredLiveSession(previous) || {};
+  const next = sanitizeStoredLiveSession(incoming) || {};
+  const prevComplete = prev.dataComplete === true;
+  const nextComplete = next.dataComplete === true;
+  const nextStartValid = validLiveStartSeconds(next.startTimeSeconds);
+  const prevStartValid = validLiveStartSeconds(prev.startTimeSeconds);
+  const startTimeSeconds = nextStartValid ? Number(next.startTimeSeconds) : (prevStartValid ? Number(prev.startTimeSeconds) : 0);
+  const preserveCompletedSnapshot = prevComplete && !nextComplete;
+  const endTimeSeconds = preserveCompletedSnapshot
+    ? Number(prev.endTimeSeconds || 0)
+    : (validLiveEndSeconds(next.endTimeSeconds, startTimeSeconds) ? Number(next.endTimeSeconds) : 0);
+  const dataComplete = Boolean(startTimeSeconds && endTimeSeconds);
+  const merged = {
+    ...prev,
+    ...next,
+    startTimeSeconds,
+    endTimeSeconds,
+    durationSeconds: dataComplete ? Math.max(0, endTimeSeconds - startTimeSeconds) : 0,
+    dataComplete,
+    syncState: !startTimeSeconds ? "invalid_start_time" : (dataComplete ? "complete" : "pending_end_time")
+  };
+  if (preserveCompletedSnapshot) {
+    merged.gmvAmount = prev.gmvAmount;
+    merged.currency = prev.currency || next.currency || "VND";
+    merged.itemsSold = prev.itemsSold;
+    merged.skuOrders = prev.skuOrders;
+    merged.customers = prev.customers;
+  }
+  merged.reconciliation = previous?.reconciliation || incoming?.reconciliation || null;
+  return merged;
 }
 
 function moneyNumber(value) {
@@ -924,8 +996,9 @@ async function syncLivePerformance(env, accessToken, startDate, endDate) {
       const data = result.payload?.data || {};
       for (const session of data.live_stream_sessions || []) {
         const normalized = normalizeLiveSession(session, shop, "ALL");
-        if (!normalized.liveId || !isAllowedSellerKbbLiveChannel(normalized)) continue;
-        byLiveId.set(String(normalized.liveId), normalized);
+        if (!normalized.liveId || !normalized.startTimeSeconds || !isAllowedSellerKbbLiveChannel(normalized)) continue;
+        const id = String(normalized.liveId);
+        byLiveId.set(id, mergeLiveSessionSnapshots(byLiveId.get(id) || {}, normalized));
       }
       pageToken = data.next_page_token || data.page_token || "";
     } while (pageToken);
@@ -952,7 +1025,9 @@ async function getAutoSyncData(env) {
   if (!raw) return [];
   try {
     const parsed = JSON.parse(raw);
-    return Array.isArray(parsed) ? parsed.filter(isAllowedSellerKbbLiveChannel) : [];
+    return Array.isArray(parsed)
+      ? parsed.map(sanitizeStoredLiveSession).filter(Boolean).filter(isAllowedSellerKbbLiveChannel)
+      : [];
   } catch {
     return [];
   }
@@ -1004,11 +1079,7 @@ async function runAutoSync(env, lookbackDays = 2, reason = "hourly") {
       if (!item?.liveId) continue;
       const id = String(item.liveId);
       const previous = byId.get(id) || {};
-      byId.set(id, {
-        ...previous,
-        ...item,
-        reconciliation: previous?.reconciliation || item?.reconciliation || null
-      });
+      byId.set(id, mergeLiveSessionSnapshots(previous, item));
     }
 
     const merged = [...byId.values()]
@@ -1031,6 +1102,8 @@ async function runAutoSync(env, lookbackDays = 2, reason = "hourly") {
       windowEndExclusive: endDate,
       fetched: Number(data.sessions?.length || 0),
       cached: merged.length,
+      pendingSessions: merged.filter(item => item?.syncState === "pending_end_time").length,
+      invalidTimeSessions: merged.filter(item => item?.syncState === "invalid_start_time").length,
       allowedChannels: data.allowedChannels || [...SELLERKBB_ALLOWED_LIVE_CHANNELS],
       tokenRefreshed: Boolean(tokenResult.refreshed),
       reconciliation

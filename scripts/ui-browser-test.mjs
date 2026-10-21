@@ -115,6 +115,7 @@ try {
   assert(await page.$eval('#section-live [data-range-mode="30d"]',e=>e.classList.contains('active')),"View More did not preserve the 30-day filter");
   assert(await page.$eval('#section-live .desktop-live-table thead',e=>e.textContent.includes('Thời gian phiên LIVE')),"Desktop LIVE time header missing");
   assert(await page.$eval('#section-live .desktop-live-table tbody tr:first-child .live-time-cell',e=>/^\d{2}\/\d{2}\/\d{4} Vào lúc \d{2}:\d{2}-/.test(e.textContent.trim())),"Desktop compact LIVE time range not rendered");
+  assert(!(await page.$eval('#section-live',e=>e.textContent.includes('01/01/1970'))),"LIVE UI must never render Unix epoch as a session end time");
   await page.click('#section-live [data-range-mode="custom"]');
   await page.waitForSelector('#section-live [data-date-calendar="live"] [data-calendar-day]');
   assert(await page.$('#section-live input[placeholder="DD/MM/YYYY"]') === null,"Manual date field still exists on desktop");

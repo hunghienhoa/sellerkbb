@@ -2899,7 +2899,7 @@ body.account-modal-open{overflow:hidden}
       <header class="topbar">
         <div class="topbar-title-wrap"><button id="menuToggle" class="menu-toggle" type="button" aria-label="Mở menu" aria-expanded="false">☰</button><div><h1 id="pageTitle" class="page-title">Tổng quan</h1><div id="pageSub" class="tiny"></div></div></div>
         <div class="topbar-right">
-          <span id="syncBadge" class="pill">v1.47.1</span>
+          <span id="syncBadge" class="pill">v1.47.2</span>
           <div class="account-menu-wrap">
             <button id="topbarAccountBtn" class="topbar-account-btn" type="button" aria-expanded="false" aria-controls="accountPopover" aria-label="Mở thông tin tài khoản">
               <img id="userAvatar" class="avatar topbar-account-avatar" alt="Ảnh đại diện Google">
@@ -3298,7 +3298,7 @@ body.account-modal-open{overflow:hidden}
 
     function previewTs(iso){ return {toDate:()=>new Date(iso)}; }
     function enterPreview(){
-      state.config={version:'1.47.1-preview',tiktokConfigured:true};
+      state.config={version:'1.47.2-preview',tiktokConfigured:true};
       state.user={uid:'preview-admin',email:'admin@sellerkbb.demo',displayName:'Quản trị viên Demo',photoURL:avatarFallbackData('Quản trị viên Demo')};
       state.profile={role:'admin',status:'approved',displayName:'Quản trị viên Demo',photoURL:state.user.photoURL,permissions:['live.read','kpi.read']};
       state.maintenance={settings:{retentionDays:180,autoCleanup:true,emergencyPercent:85,firestoreSoftLimitMb:600,firestoreMaxSessions:FIRESTORE_TOTAL_SESSION_CAP,kvSoftKeyLimit:5000},github:{usedBytes:124000,limitBytes:10000000000,available:true},cloudflare:{keyCount:5,lastRun:{ranAt:new Date().toISOString(),deleted:0},usedBytes:428000,storageLimitBytes:1000000000,storageComplete:true},firebase:{freePlanMode:true,ttlEnabled:false,ttlRecommended:false,storageLimitBytes:1073741824}};
@@ -3593,6 +3593,15 @@ body.account-modal-open{overflow:hidden}
       $('#syncBadge').textContent=`v${state.config.version||'1.0.0'}`;
     }
 
+    function validAutoSyncStartSeconds(value){
+      const n=Number(value||0),now=Math.floor(Date.now()/1000);
+      return Number.isFinite(n)&&n>=1577836800&&n<=now+6*3600;
+    }
+    function validAutoSyncEndSeconds(value,startSeconds){
+      const end=Number(value||0),start=Number(startSeconds||0),now=Math.floor(Date.now()/1000);
+      return validAutoSyncStartSeconds(start)&&Number.isFinite(end)&&end>=start&&end<=now+6*3600;
+    }
+
     async function mergeAutoSyncedSessions(){
       if(PREVIEW || !(can('live.read')||can('kpi.read'))) return;
       try{
@@ -3602,10 +3611,17 @@ body.account-modal-open{overflow:hidden}
           const id=String(src.liveId||'');
           if(!id)continue;
           const old=byId.get(id)||{};
-          const startMs=Number(src.startTimeSeconds||0)*1000;
-          const endMs=Number(src.endTimeSeconds||0)*1000;
+          const srcStartSeconds=Number(src.startTimeSeconds||0);
+          const srcEndSeconds=Number(src.endTimeSeconds||0);
+          const startValid=validAutoSyncStartSeconds(srcStartSeconds);
+          const endValid=startValid&&validAutoSyncEndSeconds(srcEndSeconds,srcStartSeconds);
+          const startMs=startValid?srcStartSeconds*1000:(old.startTime?.toDate?.()?.getTime?.()||0);
+          const oldEnd=old.endTime?.toDate?.();
+          const oldEndValid=oldEnd instanceof Date&&!Number.isNaN(oldEnd.getTime())&&oldEnd.getTime()>startMs;
+          const endMs=endValid?srcEndSeconds*1000:(oldEndValid?oldEnd.getTime():0);
           const amount=Number(src.gmvAmount||0);
-          byId.set(id,{
+          const pending=!endValid&&!oldEndValid;
+          const next={
             ...old,
             id,
             liveId:id,
@@ -3615,23 +3631,27 @@ body.account-modal-open{overflow:hidden}
             accountType:src.accountType||old.accountType||'',
             shopId:src.shopId||old.shopId||'',
             shopName:src.shopName||old.shopName||'',
-            startTime:{toDate:()=>new Date(startMs)},
-            endTime:{toDate:()=>new Date(endMs)},
-            durationSeconds:Number(src.durationSeconds||0),
+            durationSeconds:endMs&&startMs?Math.max(0,Math.round((endMs-startMs)/1000)):0,
             currency:src.currency||old.currency||'VND',
             recordedGmvAmount:old.recordedGmvAmount??amount,
             recordedItemsSold:old.recordedItemsSold??Number(src.itemsSold||0),
             currentGmvAmount:amount,
             finalGmvAmount:amount,
             currentItemsSold:Number(src.itemsSold||0),
-            reconciliation:src.reconciliation||old.reconciliation||null,
+            reconciliation:pending?null:(src.reconciliation||old.reconciliation||null),
+            syncPending:pending,
+            syncState:pending?'pending_end_time':'complete',
             hostUid:old.kpiMode==='manual'?'':(old.hostUid||''),
             hostName:old.kpiMode==='manual'?'':(old.hostName||''),
             operatorUid:old.kpiMode==='manual'?'':(old.operatorUid||''),
             operatorName:old.kpiMode==='manual'?'':(old.operatorName||''),
             kpiMode:old.kpiMode||'auto',
             source:'tiktok-auto'
-          });
+          };
+          if(startMs)next.startTime={toDate:()=>new Date(startMs)};
+          if(endMs)next.endTime={toDate:()=>new Date(endMs)};
+          else delete next.endTime;
+          byId.set(id,next);
         }
         state.sessions=[...byId.values()].sort((a,b)=>(b.startTime?.toDate?.()?.getTime?.()||0)-(a.startTime?.toDate?.()?.getTime?.()||0));
       }catch(e){
@@ -3784,6 +3804,9 @@ body.account-modal-open{overflow:hidden}
     function finalGmv(s){ return Number(s.finalGmvAmount ?? s.currentGmvAmount ?? s.recordedGmvAmount ?? 0); }
 
     function automaticKpiBasis(session){
+      if(session?.syncPending===true){
+        return {status:'waiting',usable:false,gmv:0,gross:finalGmv(session),reason:'TikTok chưa trả giờ kết thúc hợp lệ. GMV hiện tại chỉ là số tạm tính và chưa dùng chốt KPI.'};
+      }
       const summary=session?.reconciliation||null;
       if(!summary||summary.usableForKpi!==true){
         return {
@@ -3805,10 +3828,10 @@ body.account-modal-open{overflow:hidden}
     }
 
     function sessionGmvFigures(session){
-      const summary=session?.reconciliation||null;
+      const summary=session?.syncPending===true?null:(session?.reconciliation||null);
       const recorded=Math.max(0,Number(finalGmv(session)||0));
       const usable=summary?.usableForKpi===true;
-      const status=summary?.status||'waiting';
+      const status=session?.syncPending===true?'waiting':(summary?.status||'waiting');
       return {
         recorded,
         pending:usable&&status!=='final'?Math.max(0,Number(summary.gmvAmount||0)):null,
@@ -3845,6 +3868,7 @@ body.account-modal-open{overflow:hidden}
 
     function kpiStatusPill(session){
       if(isManualKpi(session))return '<span class="pill ok kpi-status-final">KPI thủ công</span>';
+      if(session?.syncPending===true)return '<span class="pill warn kpi-status-waiting">⏳ Chờ TikTok hoàn tất phiên</span>';
       const basis=automaticKpiBasis(session);
       const cls=basis.status==='final'?'kpi-status-final':basis.status==='provisional'?'kpi-status-provisional':'kpi-status-waiting';
       const value=basis.usable?' · '+fmtMoney(basis.gmv,session.currency):'';
@@ -4002,18 +4026,20 @@ body.account-modal-open{overflow:hidden}
     }
     function reconcileSessionCard(session){
       const isOpen=state.reconcileModalSessionId===session.id;
-      const reconciled=sessionGmvFigures(session).final!==null;
+      const waitingTikTok=session?.syncPending===true;
+      const reconciled=!waitingTikTok&&sessionGmvFigures(session).final!==null;
       return `<article class="reconcile-session ${reconciled?'reconciled':''}" data-reconcile-session="${session.id}">
         <div class="reconcile-session-head">
           <div class="reconcile-session-copy">
             <div class="reconcile-session-title">${esc(session.title||'Phiên LIVE')}</div>
             <div class="reconcile-session-meta"><span>@${esc(session.channelUsername||'—')}</span><span>${fmtLiveTimeRange(session)}</span></div>
-            <div class="reconcile-session-gmv">${icon('money',13)} GMV đã ghi nhận: ${fmtMoney(finalGmv(session),session.currency)}</div>
+            <div class="reconcile-session-gmv">${icon('money',13)} GMV đã ghi nhận: ${fmtMoney(finalGmv(session),session.currency)}${waitingTikTok?' · tạm tính':''}</div>
+            ${waitingTikTok?'<div class="pill warn" style="margin-top:8px">⏳ Chờ TikTok trả giờ kết thúc để đối soát</div>':''}
             ${reconciled?'<div class="reconcile-success-badge">✓ Đã đối soát</div>':''}
             ${isOpen?'<div class="reconcile-card-open-note">Đang mở chi tiết đơn trong popup</div>':''}
           </div>
           <div class="reconcile-actions">
-            <button class="btn ${isOpen?'hidden':''}" type="button" data-reconcile-open="${session.id}">${icon('history',14)} Xem đơn</button>
+            ${waitingTikTok?'<button class="btn" type="button" disabled>Chờ kết thúc</button>':`<button class="btn ${isOpen?'hidden':''}" type="button" data-reconcile-open="${session.id}">${icon('history',14)} Xem đơn</button>`}
           </div>
         </div>
       </article>`;
@@ -4221,26 +4247,31 @@ body.account-modal-open{overflow:hidden}
       document.querySelectorAll('[data-reconcile-open]').forEach(b=>b.onclick=()=>openReconciliationModal(b.dataset.reconcileOpen,b));
     }
     function liveEndTime(s){
-      const explicit=s?.endTime?.toDate?.();
-      if(explicit instanceof Date && !Number.isNaN(explicit.getTime())) return s.endTime;
       const start=s?.startTime?.toDate?.();
+      const explicit=s?.endTime?.toDate?.();
+      if(start instanceof Date&&!Number.isNaN(start.getTime())&&explicit instanceof Date&&!Number.isNaN(explicit.getTime())&&explicit.getTime()>start.getTime()) return s.endTime;
       const duration=Number(s?.durationSeconds||0);
       if(!(start instanceof Date)||Number.isNaN(start.getTime())||duration<=0)return null;
-      return {toDate:()=>new Date(start.getTime()+duration*1000)};
+      const calculated=new Date(start.getTime()+duration*1000);
+      if(Number.isNaN(calculated.getTime())||calculated.getTime()<=start.getTime())return null;
+      return {toDate:()=>calculated};
     }
     function fmtLiveTimeRange(s){
       const start=s?.startTime?.toDate?.();
       const end=liveEndTime(s)?.toDate?.();
-      if(!(start instanceof Date)||Number.isNaN(start.getTime()))return '—';
+      if(!(start instanceof Date)||Number.isNaN(start.getTime())||start.getFullYear()<2020)return '—';
       const p=n=>String(n).padStart(2,'0');
       const startDate=`${p(start.getDate())}/${p(start.getMonth()+1)}/${start.getFullYear()}`;
       const startTime=`${p(start.getHours())}:${p(start.getMinutes())}`;
-      if(!(end instanceof Date)||Number.isNaN(end.getTime()))return `${startDate} Vào lúc ${startTime}`;
+      if(!(end instanceof Date)||Number.isNaN(end.getTime())||end.getFullYear()<2020)return `${startDate} Vào lúc ${startTime}`;
       const endTime=`${p(end.getHours())}:${p(end.getMinutes())}`;
       const sameDay=start.getFullYear()===end.getFullYear()&&start.getMonth()===end.getMonth()&&start.getDate()===end.getDate();
       if(sameDay)return `${startDate} Vào lúc ${startTime}-${endTime}`;
       const endDate=`${p(end.getDate())}/${p(end.getMonth()+1)}/${end.getFullYear()}`;
       return `${startDate} Vào lúc ${startTime}-${endDate} ${endTime}`;
+    }
+    function fmtLiveDuration(s){
+      return s?.syncPending===true?'Chờ TikTok':fmtDuration(s?.durationSeconds);
     }
     function isManualKpi(s){ return s?.kpiMode==='manual'; }
     function hasSavedAutoAssignment(session){
@@ -4354,8 +4385,8 @@ body.account-modal-open{overflow:hidden}
         return `<tr class="${reconciled?'live-row-reconciled':''}" data-live-session="${s.id}">
         <td><b>${esc(s.title||'Phiên LIVE')}</b><div class="kpi-state-line">${reconciled?'<span class="live-reconciled-badge">✓ Đã đối soát</span>':''}${isManualKpi(s)?'<span class="pill warn manual-live-type-pill">'+esc(manualKpiTypeLabel(s))+' · tính thủ công</span>':kpiStatusPill(s)}</div><div class="tiny">@${esc(s.channelUsername||'—')} ${s.channelId?`· ID kênh ${esc(s.channelId)}`:''}</div></td>
         <td class="live-time-cell"><b>${fmtLiveTimeRange(s)}</b></td>
-        <td>${fmtDuration(s.durationSeconds)}</td>
-        <td class="money"><b>${fmtMoney(figures.recorded,s.currency)}</b><div class="tiny">TikTok cập nhật mới nhất</div></td>
+        <td>${fmtLiveDuration(s)}</td>
+        <td class="money"><b>${fmtMoney(figures.recorded,s.currency)}</b><div class="tiny">${s.syncPending===true?'TikTok đang cập nhật · số tạm tính':'TikTok cập nhật mới nhất'}</div></td>
         <td class="money">${gmvPendingDisplay(s)}<div class="tiny">${figures.pending!==null?'Tạm tính · chỉ đơn có tín hiệu LIVE':reconciled?'Đã chuyển sang số chốt':'Chưa đủ dữ liệu đối soát'}</div></td>
         <td class="money"><b>${gmvFinalDisplay(s)}</b><div class="tiny">${reconciled?'Số cuối cùng dùng chốt KPI':'Chưa đủ điều kiện chốt'}</div></td>
         <td>${new Intl.NumberFormat('vi-VN').format(Number(s.currentItemsSold??s.recordedItemsSold??0))}</td>
@@ -4368,9 +4399,9 @@ body.account-modal-open{overflow:hidden}
         const figures=sessionGmvFigures(s), reconciled=figures.final!==null;
         const savedAssignment=hasSavedAutoAssignment(s);
         return `<article class="mobile-live-card ${reconciled?'reconciled':''}" data-live-session="${s.id}">
-        <div class="mobile-live-head"><div><div class="mobile-live-title">${esc(s.title||'Phiên LIVE')}</div><div class="kpi-state-line">${reconciled?'<span class="live-reconciled-badge">✓ Đã đối soát</span>':''}${isManualKpi(s)?'<span class="pill warn manual-live-type-pill">'+esc(manualKpiTypeLabel(s))+' · tính thủ công</span>':kpiStatusPill(s)}</div><div class="tiny">@${esc(s.channelUsername||'—')}</div><div class="mobile-live-time">${icon('clock',13)} <b>${fmtLiveTimeRange(s)}</b></div></div><span class="pill">${fmtDuration(s.durationSeconds)}</span></div>
+        <div class="mobile-live-head"><div><div class="mobile-live-title">${esc(s.title||'Phiên LIVE')}</div><div class="kpi-state-line">${reconciled?'<span class="live-reconciled-badge">✓ Đã đối soát</span>':''}${isManualKpi(s)?'<span class="pill warn manual-live-type-pill">'+esc(manualKpiTypeLabel(s))+' · tính thủ công</span>':kpiStatusPill(s)}</div><div class="tiny">@${esc(s.channelUsername||'—')}</div><div class="mobile-live-time">${icon('clock',13)} <b>${fmtLiveTimeRange(s)}</b></div></div><span class="pill">${fmtLiveDuration(s)}</span></div>
         <div class="mobile-grid">
-          <div class="mobile-field"><span class="tiny">GMV đã ghi nhận</span><strong>${fmtMoney(figures.recorded,s.currency)}</strong><small>TikTok cập nhật mới nhất</small></div>
+          <div class="mobile-field"><span class="tiny">GMV đã ghi nhận</span><strong>${fmtMoney(figures.recorded,s.currency)}</strong><small>${s.syncPending===true?'TikTok đang cập nhật · chưa dùng chốt KPI':'TikTok cập nhật mới nhất'}</small></div>
           <div class="mobile-field"><span class="tiny">GMV chờ đối soát</span><strong>${gmvPendingDisplay(s)}</strong><small>${reconciled?'Đã chuyển sang số chốt':'Tạm tính · chỉ đơn có tín hiệu LIVE'}</small></div>
           <div class="mobile-field"><span class="tiny">GMV sau khi hoàn hủy</span><strong>${gmvFinalDisplay(s)}</strong><small>${reconciled?'✓ Đã đối soát · số chốt để tính KPI':'Chưa đủ điều kiện chốt'}</small></div>
           <div class="mobile-field"><span class="tiny">Số món bán đã ghi nhận</span><strong>${new Intl.NumberFormat('vi-VN').format(Number(s.currentItemsSold??s.recordedItemsSold??0))}</strong></div>

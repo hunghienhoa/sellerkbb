@@ -377,5 +377,14 @@ assert(html.includes("Tỷ lệ hủy/hoàn hiện tại"), "Overlap aftersales 
 assert(worker.includes("SELLERKBB_ALLOWED_LIVE_CHANNELS"), "SellerKBB LIVE channel whitelist missing");
 assert(worker.includes("parsed.filter(isAllowedSellerKbbLiveChannel)"), "Cached LIVE data must be whitelist-filtered");
 assert(worker.includes("insideRefreshedWindow")&&worker.includes("freshIds.has(id)"), "Refreshed sync window must prune stale affiliate sessions");
+assert(worker.includes("function validLiveStartSeconds")&&worker.includes("function validLiveEndSeconds"), "LIVE timestamp validation missing");
+assert(worker.includes("function sanitizeStoredLiveSession")&&worker.includes("function mergeLiveSessionSnapshots"), "LIVE cache sanitation/safe merge missing");
+assert(worker.includes('syncState: !start ? "invalid_start_time" : (end ? "complete" : "pending_end_time")'), "Incomplete LIVE state marker missing");
+assert(worker.includes("preserveCompletedSnapshot = prevComplete && !nextComplete"), "Incomplete TikTok snapshot must not overwrite a completed snapshot");
+assert(html.includes("function validAutoSyncEndSeconds")&&html.includes("delete next.endTime"), "Frontend must discard invalid end_time instead of creating Date(0)");
+assert(html.includes("explicit.getTime()>start.getTime()"), "LIVE end time must be after start time");
+assert(html.includes("fmtLiveDuration(s)")&&html.includes("Chờ TikTok"), "Incomplete LIVE duration state missing");
+assert(html.includes("TikTok đang cập nhật · số tạm tính")&&html.includes("chưa dùng chốt KPI"), "Incomplete LIVE GMV warning missing");
+assert(html.includes("Chờ TikTok trả giờ kết thúc để đối soát"), "Reconciliation must block sessions without valid end time");
 assert(html.includes("LIVE chồng thời gian")&&html.includes("Thiếu dữ liệu hậu mãi"), "Blocked KPI reasons must be labeled separately");
 console.log("Project structure, syntax, persistence, calendar, storage/backup, Google profiles, pink pastel UI, overlap-safe reconciliation, full pagination, readiness, descriptive Releases, README, and auto-sync checks OK");
