@@ -640,11 +640,15 @@ async function buildLiveReconciliationForSession(env, accessToken, session, opti
   let orderWindowAmount = 0;
   let provisionalNetAmount = 0;
   let confirmedLiveSignalAmount = 0;
+  let cancelledAmount = 0;
   for (const order of normalized) {
     orderWindowAmount += order.amount;
     provisionalNetAmount += order.netAmount;
     if (order.attribution === "live_signal") confirmedLiveSignalAmount += order.netAmount;
-    if (order.status === "CANCELLED") counts.cancelled++;
+    if (order.status === "CANCELLED") {
+      counts.cancelled++;
+      cancelledAmount += order.amount;
+    }
     else if (order.status === "AWAITING_SHIPMENT") counts.awaitingPacking++;
     else if (order.status === "AWAITING_COLLECTION") counts.awaitingCarrier++;
     else if (order.status === "PARTIALLY_SHIPPING") counts.transporting++;
@@ -686,7 +690,8 @@ async function buildLiveReconciliationForSession(env, accessToken, session, opti
     totals: {
       orderWindowAmount,
       provisionalNetAmount,
-      confirmedLiveSignalAmount
+      confirmedLiveSignalAmount,
+      cancelledAmount
     },
     orders: normalized
   };
@@ -699,6 +704,7 @@ function summarizeLiveReconciliation(result) {
   const analyticsGmvAmount = moneyNumber(result?.live?.analyticsGmvAmount);
   const orderWindowAmount = moneyNumber(result?.totals?.orderWindowAmount);
   const confirmedLiveSignalAmount = moneyNumber(result?.totals?.confirmedLiveSignalAmount);
+  const cancelledAmount = moneyNumber(result?.totals?.cancelledAmount);
   const aftersalesAvailable = result?.scope?.aftersalesAvailable !== false;
   const aftersalesError = String(result?.scope?.aftersalesError || "");
   const overlapAmbiguous = result?.scope?.overlapAmbiguous === true;
@@ -780,6 +786,7 @@ function summarizeLiveReconciliation(result) {
     kpiOrderCount: overlapAmbiguous ? orders.length : singleLiveKpiRows.length,
     pendingOrderCount: finalRows.filter(order => order?.finalized !== true).length,
     cancelledCount: Number(result?.counts?.cancelled || 0),
+    cancelledAmount,
     returningCount: Number(result?.counts?.returning || 0),
     refundedCount: Number(result?.counts?.refunded || 0),
     aftersalesAvailable,
