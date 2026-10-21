@@ -453,4 +453,14 @@ assert(!refreshLatestNoToastBlock.includes("showToast("), "Latest-data refresh f
 assert(refreshLatestNoToastBlock.includes("state.dataRefresh.status='success'")&&refreshLatestNoToastBlock.includes("renderDataRefreshControl()"), "Latest-data refresh must keep button-level success feedback");
 assert(html.includes("LIVE chồng thời gian")&&html.includes("Thiếu dữ liệu hậu mãi"), "Blocked KPI reasons must be labeled separately");
 assert(readme.includes("GMV Affiliate")&&!readme.includes("Hoa hồng Affiliate"), "README must document GMV Affiliate without commission UI");
-console.log("Project structure, syntax, persistence, calendar, storage/backup, Google profiles, pink pastel UI, overlap-safe reconciliation, full pagination, readiness, descriptive Releases, README, and auto-sync checks OK");
+assert(fs.existsSync(new URL(".agents/skills/design-taste-frontend/SKILL.md",root)), "Taste Skill missing");
+assert(fs.existsSync(new URL(".agents/skills/design-taste-frontend/references/app-screens.md",root)), "Taste app-screen instructions missing");
+assert(fs.existsSync(new URL(".agents/skills/design-taste-frontend/scripts/inspect.mjs",root)), "Taste browser audit script missing");
+assert(fs.existsSync(new URL(".agents/skills/design-taste-frontend/LICENSE",root)), "Taste upstream license missing");
+assert(fs.existsSync(new URL(".agents/skills/emil-design-eng/SKILL.md",root)), "Emil Design Engineering skill missing");
+assert(fs.existsSync(new URL(".agents/skills/impeccable/SKILL.md",root)), "Impeccable skill missing");
+assert(read("AGENTS.md").includes("Mandatory UI/design skills")&&read("AGENTS.md").includes("design-taste-frontend"), "Agent design-skill routing missing");
+assert(read("PRODUCT.md").includes("shopkhangbaby")&&read("PRODUCT.md").includes("mekhangsua"), "Impeccable product context missing");
+assert(read("DESIGN.md").includes("Three-skill design workflow"), "Design guidelines must connect all three skills");
+assert(read("README.md").includes("v1.49.5")&&read("README.md").includes("Taste Skill"), "Design-skill release docs missing");
+console.log("Project structure, syntax, business safety, desktop/mobile UI, three design skills, documented routing and release checks OK");

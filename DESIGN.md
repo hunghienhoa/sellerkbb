@@ -18,3 +18,7 @@ References consulted: [Emil Kowalski — purposeful animation](https://emilkowal
 Run `npm run check`, `node scripts/ui-browser-test.mjs`, and `node scripts/ui-audit.mjs`. Set `CHROME_BIN` if Chromium is not installed at a standard path. The audit stores screenshots and findings in `AUDIT_OUTPUT` (default `../verification/audit`). Optionally set `AXE_PATH` to an installed axe-core `axe.min.js` for WCAG A/AA automated checks across all ten sections at desktop/mobile sizes. Automated checks supplement visual review and do not establish complete WCAG compliance.
 
 Publish only after checks pass; update VERSION, README and Release, deploy production and /preview, verify live version/commit, and retain the five newest GitHub Releases, as required by AGENTS.md.
+
+## Three-skill design workflow
+
+SellerKBB is an **Operate** interface; the existing UI above is authoritative. For frontend tasks consult `PRODUCT.md`, then `.agents/skills/design-taste-frontend/SKILL.md` + `references/app-screens.md` (Taste app-screen composition/critique), `.agents/skills/impeccable/SKILL.md` (accessibility, density, hierarchy, responsive and hardening), and `.agents/skills/emil-design-eng/SKILL.md` (interaction, mobile-native, restrained animation). Follow `AGENTS.md` for applicability and precedence. Do not import landing-page flourishes, rewrite data, or restyle the current brand merely because a skill suggests a different aesthetic.

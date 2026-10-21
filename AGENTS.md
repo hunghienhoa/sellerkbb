@@ -19,3 +19,17 @@ These rules are mandatory for every SellerKBB feature/fix release.
 
 Production: https://sellerkbb.doanhsokpis.workers.dev/
 Demo: https://sellerkbb.doanhsokpis.workers.dev/preview
+
+## Mandatory UI/design skills (all coding agents)
+
+These are repository-local skills; read the actual files before UI work, not just their names. The user requests consistent **Taste Skill + Emil Kowalski + Impeccable** guidance on future UI changes. For backend-only TikTok/API/KPI/data tasks, skip design-tool execution unless the user also requests UI changes.
+
+1. **Project truth first:** read `PRODUCT.md` and `DESIGN.md`. Treat SellerKBB as an existing Vietnamese **Operate-mode dashboard**, not a greenfield landing page. Its current pastel-pink/Be Vietnam Pro identity, navigation, copy, data definitions and mobile workflows are pinned. A skill's generic palette, random design direction or layout recipe MUST NOT override these without an explicit redesign request.
+2. **Taste Skill (visual judgment & app-screen clarity):** read `.agents/skills/design-taste-frontend/SKILL.md` and, specifically for SellerKBB, `.agents/skills/design-taste-frontend/references/app-screens.md`. Audit the existing dashboard first; use this to judge data density, metric alignment, information hierarchy and UI details. Run its `scripts/inspect.mjs --app` only when Node 22+, Chrome/Chromium and a safe preview are available; never run against authenticated production data or fabricate chart values. Its app-specific guidance takes precedence over its landing-page guidance.
+3. **Emil Kowalski (interaction & motion):** read `.agents/skills/emil-design-eng/SKILL.md`, plus `mobile-native`, `animate`, `review-animations` or `animation-performance` when relevant. Prefer immediate feedback and purposeful, restrained motion; respect `prefers-reduced-motion`, 16px mobile inputs and accessible controls.
+4. **Impeccable (design QA and hardening):** read `.agents/skills/impeccable/SKILL.md`. Use its Operate-mode rules and, as supported by the coding environment, `context`, `audit`, `harden`, `polish` for the affected surface; respect project hooks when available. If its launcher is unavailable, follow the documented fallback and use `PRODUCT.md`/`DESIGN.md` plus its reference guides.
+5. **Workflow:** understand the change → review incumbent UI → apply Taste to prioritise improvements → implement structure with Impeccable → refine interactions with Emil → run automated and visual desktop/mobile checks → review against design constraints → publish under the release rules above. Only execute relevant steps, not every command indiscriminately. Never install runtime dependencies, remote scripts or enable hooks in a user environment without explicit need.
+6. **Business safety:** never change LIVE GMV, Affiliate classification, aftersales, orders, authorization, KPI rules, Firestore schema or stored data merely to polish a screen. Do not replace actual business data with demonstrations; use isolated `/preview` fixtures in tests. Never leak tokens, personal or order data to external design services.
+7. **Evidence:** in the delivery notes say which skills were actually read/run, which tests ran, and whether deployment was verified. Distinguish a GitHub commit from a production deployment. The skills are guidance, not a guarantee of automatic hook execution in every AI client.
+
+See `docs/DESIGN-SKILLS.md` for paths, update instructions, environment limitations and QA criteria.

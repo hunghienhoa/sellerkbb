@@ -1,0 +1,3 @@
+# SellerKBB GitHub Copilot repository instructions
+
+For every coding task, follow the root `AGENTS.md`. On frontend/UI work, read `PRODUCT.md`, `DESIGN.md` and `docs/DESIGN-SKILLS.md` before editing. The repository includes Taste Skill (`.agents/skills/design-taste-frontend`), Emil Kowalski (`.agents/skills/emil-design-eng` and related), and Impeccable (`.github/skills/impeccable` / `.agents/skills/impeccable`). Use their relevant guidance and do not assume any CLI/hook has executed until it actually has. Do not rewrite TikTok/KPI data logic for design-only tasks. Preserve the current pastel-pink Vietnamese operations dashboard, verify PC/mobile/a11y and follow version + release + deploy instructions.
