@@ -73,5 +73,8 @@ try {
   }
   fs.writeFileSync(`${out}/findings.json`,JSON.stringify(findings,null,2));
   console.log(JSON.stringify({findingGroups:findings.length,output:out}));
-  if(findings.length) process.exitCode=1;
+  if(findings.length) {
+    console.error("UI_AUDIT_FINDINGS="+JSON.stringify(findings));
+    process.exitCode=1;
+  }
 } finally {await browser.close();await new Promise(resolve=>server.close(resolve));}
