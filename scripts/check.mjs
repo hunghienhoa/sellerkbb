@@ -94,7 +94,7 @@ assert(worker.includes("provisionalTimeWindowAmount")&&worker.includes("excluded
 assert(worker.includes("Chỉ có một kênh nội bộ LIVE trong khung giờ"), "Backend must explain single-LIVE provisional KPI rule");
 assert(worker.includes("overlapProrated")&&worker.includes("overlapAdjustmentRatio")&&worker.includes("overlapAdjustedGmvAmount"), "Overlapping internal LIVE must use analytics GMV with aftersales ratio instead of blocking");
 assert(!worker.includes('status = "blocked";\n    reason = "Có " + overlapCount + " phiên LIVE nội bộ chồng thời gian'), "Overlapping internal LIVE must not hard-block KPI");
-assert(worker.includes("reconciliation: previous?.reconciliation"), "Auto-sync must preserve reconciliation summary");
+assert(worker.includes("merged.reconciliation = previous?.reconciliation"), "Auto-sync must preserve reconciliation summary");
 assert(worker.includes("await refreshKpiReconciliations(env, token.access_token, merged, reason)"), "Auto-sync must refresh reconciled KPI basis");
 assert(worker.includes("await persistReconciliationSummary(env, liveId, result.kpiSummary)"), "Manual reconciliation must persist KPI summary");
 assert(read("README.md").includes("Đối soát đơn LIVE"), "README reconciliation guide missing");
