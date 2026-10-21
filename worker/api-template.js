@@ -460,6 +460,138 @@ function moneyNumber(value) {
   return Number.isFinite(n) ? n : 0;
 }
 
+function moneyObjectNumber(value) {
+  if (value && typeof value === "object" && "amount" in value) return moneyNumber(value.amount);
+  return moneyNumber(value);
+}
+
+function liveProductSalesGmv(sales = {}) {
+  const totals = [
+    sales.gmv,
+    sales.total_gmv,
+    sales.live_attributed_gmv,
+    sales.gross_merchandise_value
+  ];
+  for (const value of totals) {
+    const n = moneyObjectNumber(value);
+    if (n > 0) return n;
+  }
+  const direct = moneyObjectNumber(sales.direct_gmv);
+  const indirect = moneyObjectNumber(sales.indirect_gmv);
+  if (direct > 0 || indirect > 0) return Math.max(0, direct + indirect);
+  return 0;
+}
+
+async function fetchLiveShopProductBreakdown(env, accessToken, session) {
+  const liveId = String(session?.liveId || "");
+  const shopCipher = String(session?.shopCipher || "");
+  const totalGmv = moneyNumber(session?.gmvAmount);
+  if (!liveId || !shopCipher) {
+    return { affiliateDataAvailable: false, affiliateError: "missing_live_or_shop" };
+  }
+  const path = `/analytics/202512/shop/${encodeURIComponent(liveId)}/products_performance`;
+  const query = {
+    shop_cipher: shopCipher,
+    sort_order: "DESC",
+    sort_field: "gmv",
+    currency: "LOCAL"
+  };
+  const result = await tiktokCall(env, accessToken, path, query);
+  if (result.payload?.code === 105002) {
+    const refreshed = await refreshTikTokToken(env, await getTikTokToken(env));
+    if (refreshed?.access_token && refreshed.access_token !== accessToken) {
+      return fetchLiveShopProductBreakdown(env, refreshed.access_token, session);
+    }
+  }
+  if (result.payload?.code !== 0) {
+    return {
+      affiliateDataAvailable: false,
+      affiliateError: String(result.payload?.message || "LIVE products performance unavailable")
+    };
+  }
+
+  const products = Array.isArray(result.payload?.data?.products) ? result.payload.data.products : [];
+  let shopProductGmvAmount = 0;
+  let shopProductItemsSold = 0;
+  let shopProductSkuOrders = 0;
+  let shopProductMainOrders = 0;
+  const normalizedProducts = products.map(product => {
+    const sales = product?.sales || {};
+    const gmvAmount = liveProductSalesGmv(sales);
+    const itemsSold = Number(sales.items_sold || 0);
+    const skuOrders = Number(sales.sku_orders || sales.created_sku_orders || 0);
+    const mainOrders = Number(sales.main_orders || 0);
+    shopProductGmvAmount += gmvAmount;
+    shopProductItemsSold += itemsSold;
+    shopProductSkuOrders += skuOrders;
+    shopProductMainOrders += mainOrders;
+    return {
+      id: String(product?.id || ""),
+      name: String(product?.name || ""),
+      gmvAmount,
+      itemsSold,
+      skuOrders,
+      mainOrders
+    };
+  });
+
+  const totalItems = Math.max(0, Number(session?.itemsSold || 0));
+  const totalSkuOrders = Math.max(0, Number(session?.skuOrders || 0));
+  const affiliateGmvAmount = Math.max(0, totalGmv - Math.max(0, shopProductGmvAmount));
+  const affiliateItemsSold = Math.max(0, totalItems - Math.max(0, shopProductItemsSold));
+  const affiliateSkuOrders = Math.max(0, totalSkuOrders - Math.max(0, shopProductSkuOrders));
+  const consistent = shopProductGmvAmount <= totalGmv + Math.max(1000, totalGmv * 0.02);
+
+  return {
+    affiliateDataAvailable: consistent,
+    affiliateDataConsistent: consistent,
+    affiliateError: consistent ? "" : "LIVE product GMV is inconsistent with LIVE total GMV",
+    affiliateSource: "tiktok_live_products_202512_difference",
+    affiliateUpdatedAt: new Date().toISOString(),
+    shopProductGmvAmount: Math.max(0, shopProductGmvAmount),
+    affiliateGmvAmount,
+    shopProductItemsSold: Math.max(0, shopProductItemsSold),
+    affiliateItemsSold,
+    shopProductSkuOrders: Math.max(0, shopProductSkuOrders),
+    affiliateSkuOrders,
+    shopProductMainOrders: Math.max(0, shopProductMainOrders),
+    affiliateCommissionAmount: null,
+    affiliateCommissionAvailable: false,
+    affiliateProducts: normalizedProducts.slice(0, 100)
+  };
+}
+
+async function enrichLiveAffiliateBreakdowns(env, accessToken, sessions, limit = 12) {
+  const candidates = (sessions || [])
+    .filter(session => session?.liveId && session?.shopCipher && isAllowedSellerKbbLiveChannel(session))
+    .sort((a, b) => Number(b?.startTimeSeconds || 0) - Number(a?.startTimeSeconds || 0))
+    .slice(0, Math.max(1, Number(limit || 12)));
+
+  let enriched = 0;
+  const errors = [];
+  const concurrency = 3;
+  for (let i = 0; i < candidates.length; i += concurrency) {
+    const batch = candidates.slice(i, i + concurrency);
+    const values = await Promise.all(batch.map(async session => {
+      try {
+        const breakdown = await fetchLiveShopProductBreakdown(env, accessToken, session);
+        return { session, breakdown };
+      } catch (error) {
+        return { session, breakdown: { affiliateDataAvailable: false, affiliateError: String(error?.message || error) } };
+      }
+    }));
+    for (const { session, breakdown } of values) {
+      if (breakdown?.affiliateDataAvailable) {
+        Object.assign(session, breakdown);
+        enriched++;
+      } else if (breakdown?.affiliateError) {
+        errors.push({ liveId: String(session?.liveId || ""), message: String(breakdown.affiliateError) });
+      }
+    }
+  }
+  return { checked: candidates.length, enriched, errors: errors.slice(0, 5) };
+}
+
 function orderSubtotal(order) {
   const payment = order?.payment || {};
   const candidates = [
@@ -648,6 +780,12 @@ async function buildLiveReconciliationForSession(env, accessToken, session, opti
   if (!session) throw new Error("Không tìm thấy phiên LIVE trong dữ liệu TikTok đang lưu.");
   const hydrateDetails = options.hydrateDetails !== false;
   const overlappingSessions = findOverlappingLiveSessions(session, options.allSessions || []);
+  if (session?.affiliateDataAvailable !== true) {
+    try {
+      const affiliateBreakdown = await fetchLiveShopProductBreakdown(env, accessToken, session);
+      if (affiliateBreakdown?.affiliateDataAvailable) Object.assign(session, affiliateBreakdown);
+    } catch {}
+  }
   const listedOrders = await searchOrdersForLiveWindow(env, accessToken, session);
   const orders = hydrateDetails
     ? await hydrateOrderDetails(env, accessToken, session.shopCipher, listedOrders)
@@ -741,6 +879,15 @@ async function buildLiveReconciliationForSession(env, accessToken, session, opti
       startTimeSeconds: Number(session.startTimeSeconds || 0),
       endTimeSeconds: Number(session.endTimeSeconds || 0),
       analyticsGmvAmount: moneyNumber(session.gmvAmount),
+      shopProductGmvAmount: session?.affiliateDataAvailable === true ? moneyNumber(session.shopProductGmvAmount) : null,
+      affiliateGmvAmount: session?.affiliateDataAvailable === true ? moneyNumber(session.affiliateGmvAmount) : null,
+      affiliateItemsSold: session?.affiliateDataAvailable === true ? Number(session.affiliateItemsSold || 0) : null,
+      affiliateSkuOrders: session?.affiliateDataAvailable === true ? Number(session.affiliateSkuOrders || 0) : null,
+      affiliateCommissionAmount: session?.affiliateCommissionAvailable === true ? moneyNumber(session.affiliateCommissionAmount) : null,
+      affiliateCommissionAvailable: session?.affiliateCommissionAvailable === true,
+      affiliateDataAvailable: session?.affiliateDataAvailable === true,
+      affiliateDataConsistent: session?.affiliateDataConsistent !== false,
+      affiliateSource: session?.affiliateSource || "",
       currency: session.currency || "VND"
     },
     policy: {
@@ -777,6 +924,13 @@ function summarizeLiveReconciliation(result) {
   const orderWindowAmount = moneyNumber(result?.totals?.orderWindowAmount);
   const confirmedLiveSignalAmount = moneyNumber(result?.totals?.confirmedLiveSignalAmount);
   const cancelledAmount = moneyNumber(result?.totals?.cancelledAmount);
+  const affiliateDataAvailable = result?.live?.affiliateDataAvailable === true;
+  const shopProductGmvAmount = affiliateDataAvailable ? moneyNumber(result?.live?.shopProductGmvAmount) : 0;
+  const affiliateGmvAmount = affiliateDataAvailable ? moneyNumber(result?.live?.affiliateGmvAmount) : 0;
+  const affiliateItemsSold = affiliateDataAvailable ? Number(result?.live?.affiliateItemsSold || 0) : 0;
+  const affiliateSkuOrders = affiliateDataAvailable ? Number(result?.live?.affiliateSkuOrders || 0) : 0;
+  const affiliateCommissionAvailable = result?.live?.affiliateCommissionAvailable === true;
+  const affiliateCommissionAmount = affiliateCommissionAvailable ? moneyNumber(result?.live?.affiliateCommissionAmount) : 0;
   const aftersalesAvailable = result?.scope?.aftersalesAvailable !== false;
   const aftersalesError = String(result?.scope?.aftersalesError || "");
   const overlapAmbiguous = result?.scope?.overlapAmbiguous === true;
@@ -794,6 +948,17 @@ function summarizeLiveReconciliation(result) {
   const excludedTimeWindowAmount = excludedTimeWindowRows.reduce((sum, order) => sum + moneyNumber(order?.netAmount), 0);
   const timeWindowNetAmount = provisionalTimeWindowAmount + excludedTimeWindowAmount;
   const singleLiveKpiGmvAmount = singleLiveKpiRows.reduce((sum, order) => sum + moneyNumber(order?.netAmount), 0);
+  const singleLiveOrderGross = singleLiveKpiRows.reduce((sum, order) => sum + moneyNumber(order?.amount), 0);
+  const singleLiveAdjustmentRatio = singleLiveOrderGross > 0
+    ? Math.max(0, Math.min(1, singleLiveKpiGmvAmount / singleLiveOrderGross))
+    : 1;
+  const affiliateAdjustedGmvAmount = affiliateDataAvailable
+    ? Math.round(affiliateGmvAmount * singleLiveAdjustmentRatio)
+    : 0;
+  // The LIVE analytics GMV is the KPI revenue base for SellerKBB and already includes
+  // affiliate-product GMV in the user's operating model. We only apply the known
+  // cancellation/refund ratio; affiliate commission is never added to this number.
+  const singleLiveTotalKpiGmvAmount = Math.round(analyticsGmvAmount * singleLiveAdjustmentRatio);
 
   const overlapOrderGross = orders.reduce((sum, order) => sum + moneyNumber(order?.amount), 0);
   const overlapOrderNet = orders.reduce((sum, order) => sum + moneyNumber(order?.netAmount), 0);
@@ -824,23 +989,26 @@ function summarizeLiveReconciliation(result) {
       gmvAmount = overlapAdjustedGmvAmount;
       status = allFinal ? "final" : "provisional";
       reason = allFinal
-        ? "LIVE nội bộ chồng giờ đã được xử lý: SellerKBB dùng GMV TikTok Analytics riêng của phiên và áp dụng tỷ lệ hủy/hoàn từ các đơn trong đúng khung giờ. Toàn bộ đơn đối soát đã kết thúc nên số này đã chốt."
-        : "LIVE nội bộ chồng giờ đã được xử lý: SellerKBB dùng GMV TikTok Analytics riêng của phiên và áp dụng tỷ lệ hủy/hoàn từ các đơn trong đúng khung giờ. Không gán cùng một đơn trực tiếp cho hai phiên; số này sẽ tự cập nhật khi đơn hủy/hoàn thay đổi.";
+        ? "LIVE nội bộ chồng giờ đã được xử lý: SellerKBB dùng GMV TikTok Analytics riêng của phiên (đã gồm hàng nhà + Affiliate) và áp dụng tỷ lệ hủy/hoàn từ các đơn trong đúng khung giờ. Hoa hồng Affiliate không tính vào GMV/KPI. Toàn bộ đơn đối soát đã kết thúc nên số này đã chốt."
+        : "LIVE nội bộ chồng giờ đã được xử lý: SellerKBB dùng GMV TikTok Analytics riêng của phiên (đã gồm hàng nhà + Affiliate) và áp dụng tỷ lệ hủy/hoàn từ các đơn trong đúng khung giờ. Hoa hồng Affiliate không tính vào GMV/KPI. Không gán cùng một đơn trực tiếp cho hai phiên; số này sẽ tự cập nhật khi đơn hủy/hoàn thay đổi.";
     }
   } else if (!hasSingleLiveData) {
     status = "waiting";
     reason = "Chưa tìm thấy đơn trong khung thời gian phiên LIVE để tính KPI.";
   } else {
-    gmvAmount = singleLiveKpiGmvAmount;
+    gmvAmount = singleLiveTotalKpiGmvAmount;
+    const affiliateNote = affiliateDataAvailable && affiliateGmvAmount > 0
+      ? " GMV Affiliate được cộng vào cơ sở KPI; hoa hồng Affiliate không được cộng vào GMV/KPI."
+      : " GMV TikTok của phiên vẫn là cơ sở KPI; hoa hồng Affiliate không được cộng vào GMV/KPI.";
     if (allFinal) {
       status = "final";
-      reason = provisionalTimeWindowOrders > 0
-        ? "Đã chốt theo quy tắc một kênh nội bộ LIVE trong khung giờ; toàn bộ đơn dùng cho KPI đã kết thúc và không còn hậu mãi đang xử lý."
-        : "Toàn bộ đơn có tín hiệu LIVE dùng cho KPI đã kết thúc và không còn hậu mãi đang xử lý.";
+      reason = (provisionalTimeWindowOrders > 0
+        ? "Đã chốt theo quy tắc một kênh nội bộ LIVE trong khung giờ; toàn bộ đơn hàng nhà dùng cho KPI đã kết thúc và không còn hậu mãi đang xử lý."
+        : "Toàn bộ đơn hàng nhà có tín hiệu LIVE dùng cho KPI đã kết thúc và không còn hậu mãi đang xử lý.") + affiliateNote;
     } else if (provisionalTimeWindowOrders > 0) {
-      reason = "Chỉ có một kênh nội bộ LIVE trong khung giờ, nên " + provisionalTimeWindowOrders + " đơn khớp thời gian được tính KPI tạm tính. GMV sẽ tự giảm khi đơn hủy/hoàn và chỉ chốt khi các đơn đủ điều kiện kết thúc.";
+      reason = "Chỉ có một kênh nội bộ LIVE trong khung giờ, nên " + provisionalTimeWindowOrders + " đơn khớp thời gian được tính KPI tạm tính. Phần Affiliate được cộng theo GMV TikTok Analytics của phiên và điều chỉnh theo tỷ lệ hủy/hoàn hiện có của hàng nhà." + affiliateNote;
     } else {
-      reason = "GMV chờ đối soát gồm các đơn có tín hiệu LIVE và sẽ tự cập nhật khi trạng thái giao, hủy hoặc hoàn tiền thay đổi.";
+      reason = "GMV chờ đối soát gồm đơn hàng nhà có tín hiệu LIVE và phần Affiliate của phiên; số hàng nhà tự cập nhật khi trạng thái giao, hủy hoặc hoàn tiền thay đổi." + affiliateNote;
     }
   }
 
@@ -870,6 +1038,17 @@ function summarizeLiveReconciliation(result) {
     overlapOrderNet,
     overlapAdjustmentRatio,
     overlapAdjustedGmvAmount,
+    affiliateDataAvailable,
+    shopProductGmvAmount,
+    affiliateGmvAmount,
+    affiliateItemsSold,
+    affiliateSkuOrders,
+    affiliateCommissionAvailable,
+    affiliateCommissionAmount,
+    singleLiveAdjustmentRatio,
+    affiliateAdjustedGmvAmount,
+    singleLiveTotalKpiGmvAmount,
+    affiliateSource: String(result?.live?.affiliateSource || ""),
     liveSignalOrders,
     provisionalTimeWindowOrders,
     timeWindowOrders,
@@ -897,6 +1076,19 @@ async function persistReconciliationSummary(env, liveId, summary) {
   const target = sessions.find(x => String(x?.liveId || "") === String(liveId));
   if (!target) return false;
   target.reconciliation = summary;
+  if (summary?.affiliateDataAvailable === true) {
+    target.affiliateDataAvailable = true;
+    target.affiliateDataConsistent = true;
+    target.shopProductGmvAmount = moneyNumber(summary.shopProductGmvAmount);
+    target.affiliateGmvAmount = moneyNumber(summary.affiliateGmvAmount);
+    target.affiliateItemsSold = Number(summary.affiliateItemsSold || 0);
+    target.affiliateSkuOrders = Number(summary.affiliateSkuOrders || 0);
+    target.affiliateCommissionAvailable = summary.affiliateCommissionAvailable === true;
+    target.affiliateCommissionAmount = summary.affiliateCommissionAvailable === true
+      ? moneyNumber(summary.affiliateCommissionAmount)
+      : 0;
+    target.affiliateSource = String(summary.affiliateSource || target.affiliateSource || "");
+  }
   await env.TIKTOK_KV.put(AUTO_SYNC_DATA_KEY, JSON.stringify(sessions));
   return true;
 }
@@ -918,7 +1110,7 @@ async function refreshKpiReconciliations(env, accessToken, sessions, reason = "h
       const end = Number(session?.endTimeSeconds || 0);
       if (!session?.liveId || !session?.shopCipher || !end || end > nowSeconds) return false;
       if (nowSeconds - end > lookback) return false;
-      if (session?.reconciliation?.status === "final" && findOverlappingLiveSessions(session, sessions).length === 0) return false;
+      if (session?.reconciliation?.status === "final" && session?.reconciliation?.affiliateDataAvailable === true && findOverlappingLiveSessions(session, sessions).length === 0) return false;
       const last = reconciliationGeneratedMs(session?.reconciliation);
       return !last || Date.now() - last >= minRefreshMs;
     })
@@ -947,6 +1139,11 @@ async function refreshKpiReconciliations(env, accessToken, sessions, reason = "h
         usableForKpi: false,
         gmvAmount: 0,
         analyticsGmvAmount: moneyNumber(session?.gmvAmount),
+        affiliateDataAvailable: session?.affiliateDataAvailable === true,
+        shopProductGmvAmount: session?.affiliateDataAvailable === true ? moneyNumber(session?.shopProductGmvAmount) : 0,
+        affiliateGmvAmount: session?.affiliateDataAvailable === true ? moneyNumber(session?.affiliateGmvAmount) : 0,
+        affiliateCommissionAvailable: false,
+        affiliateCommissionAmount: 0,
         generatedAt: new Date().toISOString(),
         reason: String(error?.message || error)
       };
@@ -1058,6 +1255,12 @@ async function runAutoSync(env, lookbackDays = 2, reason = "hourly") {
     const startDate = shiftDateKey(-(days - 1));
     const endDate = shiftDateKey(1);
     const data = await syncLivePerformance(env, token.access_token, startDate, endDate);
+    const affiliateEnrichment = await enrichLiveAffiliateBreakdowns(
+      env,
+      token.access_token,
+      data.sessions || [],
+      reason === "hourly" ? 12 : reason === "manual" ? 24 : 18
+    );
     const settings = await getMaintenanceSettings(env);
     const retentionMs = Math.min(180, Number(settings.retentionDays || 180)) * 86400000;
     const cutoffSeconds = Math.floor((Date.now() - retentionMs) / 1000);
@@ -1106,6 +1309,7 @@ async function runAutoSync(env, lookbackDays = 2, reason = "hourly") {
       invalidTimeSessions: merged.filter(item => item?.syncState === "invalid_start_time").length,
       allowedChannels: data.allowedChannels || [...SELLERKBB_ALLOWED_LIVE_CHANNELS],
       tokenRefreshed: Boolean(tokenResult.refreshed),
+      affiliateEnrichment,
       reconciliation
     };
     await writeAutoSyncStatus(env, status);

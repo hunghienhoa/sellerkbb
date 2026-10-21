@@ -651,6 +651,14 @@ tbody tr:hover td{background:#fffafd}
 }
 .approved-user-row:last-child{border-bottom:0;padding-bottom:0}
 
+.affiliate-live-summary{margin:12px 0}
+.affiliate-live-summary .card{position:relative;overflow:hidden}
+.affiliate-live-summary .card::after{content:"";position:absolute;right:-26px;bottom:-34px;width:88px;height:88px;border-radius:50%;background:rgba(239,142,187,.08);pointer-events:none}
+.affiliate-live-summary .stat-value.unavailable{font-size:14px;color:#8b7280;letter-spacing:0}
+.affiliate-live-summary-note{margin-top:7px;color:var(--muted);font-size:10.5px;line-height:1.4}
+.reconcile-overview-card.affiliate{background:#f9f4ff;border-color:#e8dcf6}
+.reconcile-overview-card.commission{background:#fff9e9;border-color:#f3e4b2}
+
 .mobile-live-list{display:none}
 .mobile-live-card{
   padding:13px;
@@ -3019,7 +3027,7 @@ body.account-modal-open{overflow:hidden}
       <header class="topbar">
         <div class="topbar-title-wrap"><button id="menuToggle" class="menu-toggle" type="button" aria-label="Mở menu" aria-expanded="false">☰</button><div><h1 id="pageTitle" class="page-title">Tổng quan</h1><div id="pageSub" class="tiny"></div></div></div>
         <div class="topbar-right">
-          <span id="syncBadge" class="pill">v1.47.7</span>
+          <span id="syncBadge" class="pill">v1.48.0</span>
           <div id="dataRefreshWrap" class="data-refresh-wrap">
             <button id="dataRefreshBtn" class="data-refresh-btn" type="button" title="Tải lại dữ liệu SellerKBB hiện có · không chạy đồng bộ TikTok">
               <span id="dataRefreshIcon" class="data-refresh-icon">↻</span>
@@ -3501,7 +3509,7 @@ body.account-modal-open{overflow:hidden}
 
     function previewTs(iso){ return {toDate:()=>new Date(iso)}; }
     function enterPreview(){
-      state.config={version:'1.47.7-preview',tiktokConfigured:true};
+      state.config={version:'1.48.0-preview',tiktokConfigured:true};
       state.user={uid:'preview-admin',email:'admin@sellerkbb.demo',displayName:'Quản trị viên Demo',photoURL:avatarFallbackData('Quản trị viên Demo')};
       state.profile={role:'admin',status:'approved',displayName:'Quản trị viên Demo',photoURL:state.user.photoURL,permissions:['live.read','kpi.read']};
       state.maintenance={settings:{retentionDays:180,autoCleanup:true,emergencyPercent:85,firestoreSoftLimitMb:600,firestoreMaxSessions:FIRESTORE_TOTAL_SESSION_CAP,kvSoftKeyLimit:5000},github:{usedBytes:124000,limitBytes:10000000000,available:true},cloudflare:{keyCount:5,lastRun:{ranAt:new Date().toISOString(),deleted:0},usedBytes:428000,storageLimitBytes:1000000000,storageComplete:true},firebase:{freePlanMode:true,ttlEnabled:false,ttlRecommended:false,storageLimitBytes:1073741824}};
@@ -3903,6 +3911,15 @@ body.account-modal-open{overflow:hidden}
             currentGmvAmount:amount,
             finalGmvAmount:amount,
             currentItemsSold:Number(src.itemsSold||0),
+            affiliateDataAvailable:src.affiliateDataAvailable===true||(src.affiliateDataAvailable!==false&&old.affiliateDataAvailable===true),
+            affiliateDataConsistent:src.affiliateDataConsistent!==false,
+            shopProductGmvAmount:src.affiliateDataAvailable===true?Number(src.shopProductGmvAmount||0):Number(old.shopProductGmvAmount||0),
+            affiliateGmvAmount:src.affiliateDataAvailable===true?Number(src.affiliateGmvAmount||0):Number(old.affiliateGmvAmount||0),
+            affiliateItemsSold:src.affiliateDataAvailable===true?Number(src.affiliateItemsSold||0):Number(old.affiliateItemsSold||0),
+            affiliateSkuOrders:src.affiliateDataAvailable===true?Number(src.affiliateSkuOrders||0):Number(old.affiliateSkuOrders||0),
+            affiliateCommissionAvailable:src.affiliateCommissionAvailable===true||old.affiliateCommissionAvailable===true,
+            affiliateCommissionAmount:src.affiliateCommissionAvailable===true?Number(src.affiliateCommissionAmount||0):Number(old.affiliateCommissionAmount||0),
+            affiliateSource:src.affiliateSource||old.affiliateSource||'',
             reconciliation:pending?null:(src.reconciliation||old.reconciliation||null),
             syncPending:pending,
             syncState:pending?'pending_end_time':'complete',
@@ -4147,6 +4164,12 @@ body.account-modal-open{overflow:hidden}
       const analytics=Number(result?.live?.analyticsGmvAmount||0);
       const orderWindow=Number(result?.totals?.orderWindowAmount||0);
       const confirmedLiveSignalAmount=Number(result?.totals?.confirmedLiveSignalAmount||0);
+      const affiliateDataAvailable=result?.live?.affiliateDataAvailable===true;
+      const shopProductGmvAmount=affiliateDataAvailable?Number(result?.live?.shopProductGmvAmount||0):0;
+      const affiliateGmvAmount=affiliateDataAvailable?Number(result?.live?.affiliateGmvAmount||0):0;
+      const affiliateItemsSold=affiliateDataAvailable?Number(result?.live?.affiliateItemsSold||0):0;
+      const affiliateCommissionAvailable=result?.live?.affiliateCommissionAvailable===true;
+      const affiliateCommissionAmount=affiliateCommissionAvailable?Number(result?.live?.affiliateCommissionAmount||0):0;
       const aftersalesAvailable=result?.scope?.aftersalesAvailable!==false;
       const aftersalesError=String(result?.scope?.aftersalesError||'');
       const overlapAmbiguous=result?.scope?.overlapAmbiguous===true;
@@ -4164,6 +4187,10 @@ body.account-modal-open{overflow:hidden}
       const excludedTimeWindowAmount=excludedTimeRows.reduce((sum,order)=>sum+Number(order?.netAmount||0),0);
       const timeWindowNetAmount=provisionalTimeWindowAmount+excludedTimeWindowAmount;
       const singleLiveGmv=singleLiveRows.reduce((sum,order)=>sum+Number(order?.netAmount||0),0);
+      const singleLiveOrderGross=singleLiveRows.reduce((sum,order)=>sum+Number(order?.amount||0),0);
+      const singleLiveAdjustmentRatio=singleLiveOrderGross>0?Math.max(0,Math.min(1,singleLiveGmv/singleLiveOrderGross)):1;
+      const affiliateAdjustedGmvAmount=affiliateDataAvailable?Math.round(affiliateGmvAmount*singleLiveAdjustmentRatio):0;
+      const singleLiveTotalKpiGmvAmount=Math.round(analytics*singleLiveAdjustmentRatio);
 
       const overlapOrderGross=orders.reduce((sum,order)=>sum+Number(order?.amount||0),0);
       const overlapOrderNet=orders.reduce((sum,order)=>sum+Number(order?.netAmount||0),0);
@@ -4194,14 +4221,14 @@ body.account-modal-open{overflow:hidden}
         status='waiting';
         reason='Chưa tìm thấy đơn trong khung thời gian phiên LIVE để tính KPI.';
       }else{
-        gmvAmount=singleLiveGmv;
+        gmvAmount=singleLiveTotalKpiGmvAmount;
         if(allFinal){
           status='final';
-          reason=provisionalTimeWindowOrders>0?'Đã chốt theo quy tắc một kênh nội bộ LIVE trong khung giờ.':'Toàn bộ đơn có tín hiệu LIVE dùng cho KPI đã kết thúc hậu mãi.';
+          reason=(provisionalTimeWindowOrders>0?'Đã chốt theo quy tắc một kênh nội bộ LIVE trong khung giờ.':'Toàn bộ đơn có tín hiệu LIVE dùng cho KPI đã kết thúc hậu mãi.')+' GMV Affiliate vẫn nằm trong cơ sở KPI; hoa hồng Affiliate không tính KPI.';
         }else if(provisionalTimeWindowOrders>0){
-          reason='Chỉ có một kênh nội bộ LIVE trong khung giờ, nên '+provisionalTimeWindowOrders+' đơn khớp thời gian được tính KPI tạm tính. GMV sẽ tự giảm khi đơn hủy/hoàn.';
+          reason='Chỉ có một kênh nội bộ LIVE trong khung giờ, nên '+provisionalTimeWindowOrders+' đơn khớp thời gian được dùng làm tỷ lệ hủy/hoàn cho toàn GMV LIVE (đã gồm Affiliate). Hoa hồng Affiliate không tính KPI.';
         }else{
-          reason='GMV chờ đối soát gồm các đơn có tín hiệu LIVE và sẽ tự cập nhật khi trạng thái đơn thay đổi.';
+          reason='GMV chờ đối soát dùng toàn GMV LIVE của phiên (đã gồm Affiliate) và điều chỉnh theo trạng thái đơn hàng nhà. Hoa hồng Affiliate không tính KPI.';
         }
       }
 
@@ -4231,6 +4258,15 @@ body.account-modal-open{overflow:hidden}
         overlapOrderNet,
         overlapAdjustmentRatio,
         overlapAdjustedGmvAmount,
+        affiliateDataAvailable,
+        shopProductGmvAmount,
+        affiliateGmvAmount,
+        affiliateItemsSold,
+        affiliateCommissionAvailable,
+        affiliateCommissionAmount,
+        singleLiveAdjustmentRatio,
+        affiliateAdjustedGmvAmount,
+        singleLiveTotalKpiGmvAmount,
         liveSignalOrders,
         provisionalTimeWindowOrders,
         timeWindowOrders,
@@ -4388,7 +4424,7 @@ body.account-modal-open{overflow:hidden}
         if(btn.dataset.reconcileOpen===sessionId)btn.classList.add('hidden');
       });
       $('#reconcileModalTitle').textContent=session.title||'Phiên LIVE';
-      $('#reconcileModalMeta').innerHTML=`<span>@${esc(session.channelUsername||'—')}</span><span>${esc(fmtLiveTimeRange(session))}</span><span>GMV đã ghi nhận: <b>${fmtMoney(finalGmv(session),session.currency)}</b></span>`;
+      $('#reconcileModalMeta').innerHTML=`<span>@${esc(session.channelUsername||'—')}</span><span>${esc(fmtLiveTimeRange(session))}</span><span>GMV LIVE tổng: <b>${fmtMoney(finalGmv(session),session.currency)}</b></span>`;
       setReconcileModalOpen(true);
       $('#reconcileModalClose')?.focus({preventScroll:true});
       loadReconciliation(sessionId,false);
@@ -4398,17 +4434,26 @@ body.account-modal-open{overflow:hidden}
       const root=$('#reconcileModalBody'); if(!root)return;
       const totals=result?.totals||{}, orders=Array.isArray(result?.orders)?result.orders:[], aftersalesAvailable=result?.scope?.aftersalesAvailable!==false;
       const cancelledAmount=Number(totals?.cancelledAmount ?? orders.filter(order=>String(order?.status||'')==='CANCELLED').reduce((sum,order)=>sum+Number(order?.amount||0),0));
+      const liveAffiliateAvailable=result?.live?.affiliateDataAvailable===true||session?.affiliateDataAvailable===true;
+      const liveShopGmv=liveAffiliateAvailable?Number(result?.live?.shopProductGmvAmount??session?.shopProductGmvAmount??0):null;
+      const liveAffiliateGmv=liveAffiliateAvailable?Number(result?.live?.affiliateGmvAmount??session?.affiliateGmvAmount??0):null;
+      const commissionAvailable=result?.live?.affiliateCommissionAvailable===true||session?.affiliateCommissionAvailable===true;
+      const commissionAmount=commissionAvailable?Number(result?.live?.affiliateCommissionAmount??session?.affiliateCommissionAmount??0):null;
       const filters=reconcileFilterDefinitions(orders);
       root.classList.add('has-data');
       root.innerHTML=`
         <div class="reconcile-retention-note">${icon('shield',15)}<span><b>Bảo vệ đối soát 60 ngày:</b> tự dọn không được xóa phiên LIVE trong 60 ngày gần nhất, kể cả khi hệ thống chạm ngưỡng khẩn cấp.</span></div>
         <div class="reconcile-overview">
           <div class="reconcile-overview-card"><span>Đơn trong phiên</span><b>${new Intl.NumberFormat('vi-VN').format(orders.length)}</b></div>
-          <div class="reconcile-overview-card"><span>GMV đã ghi nhận</span><b>${fmtMoney(result?.live?.analyticsGmvAmount,session.currency)}</b></div>
+          <div class="reconcile-overview-card"><span>GMV LIVE tổng</span><b>${fmtMoney(result?.live?.analyticsGmvAmount,session.currency)}</b></div>
+          <div class="reconcile-overview-card"><span>GMV hàng nhà</span><b>${liveAffiliateAvailable?fmtMoney(liveShopGmv,session.currency):'Chưa có dữ liệu'}</b></div>
+          <div class="reconcile-overview-card affiliate"><span>GMV Affiliate</span><b>${liveAffiliateAvailable?fmtMoney(liveAffiliateGmv,session.currency):'Chưa có dữ liệu'}</b></div>
+          <div class="reconcile-overview-card commission"><span>Hoa hồng Affiliate</span><b>${commissionAvailable?fmtMoney(commissionAmount,session.currency):'Chưa có dữ liệu'}</b></div>
           <div class="reconcile-overview-card"><span>GMV chờ đối soát</span><b>${result?.kpiSummary?.usableForKpi&&result?.kpiSummary?.status!=='final'?fmtMoney(result.kpiSummary.gmvAmount,session.currency):result?.kpiSummary?.status==='final'?'Đã chốt':'Chờ dữ liệu'}</b></div>
           <div class="reconcile-overview-card cancelled"><span>Đơn hủy từ Livestream</span><b>${fmtMoney(cancelledAmount,session.currency)}</b></div>
           <div class="reconcile-overview-card primary"><span>GMV sau khi hoàn hủy</span><b>${result?.kpiSummary?.status==='final'?fmtMoney(result.kpiSummary.gmvAmount,session.currency):'Chưa chốt'}</b></div>
         </div>
+        <div class="notice ok"><strong>Quy tắc Affiliate:</strong> GMV sản phẩm Affiliate vẫn được cộng vào GMV phiên và cơ sở tính KPI. Hoa hồng Affiliate không cộng vào GMV/KPI. ${commissionAvailable?'Hoa hồng đang được hiển thị riêng.':'Chưa có Creator Authorization nên hoa hồng để “Chưa có dữ liệu”.'}</div>
         <div class="notice ${result?.kpiSummary?.status==='final'?'ok':result?.kpiSummary?.usableForKpi?'warn':'bad'} kpi-summary-note"><strong>KPI tự động: ${esc(kpiStatusLabel(result?.kpiSummary?.status||'waiting',result?.kpiSummary||null))}.</strong> ${esc(result?.kpiSummary?.reason||'')} ${result?.kpiSummary?.overlapProrated===true?'Tỷ lệ hủy/hoàn hiện tại: '+new Intl.NumberFormat('vi-VN',{style:'percent',maximumFractionDigits:2}).format(Math.max(0,1-Number(result.kpiSummary.overlapAdjustmentRatio||0)))+' trên '+new Intl.NumberFormat('vi-VN').format(orders.length)+' đơn trong khung giờ.':Number(result?.kpiSummary?.provisionalTimeWindowOrders||0)>0?'Có '+new Intl.NumberFormat('vi-VN').format(Number(result.kpiSummary.provisionalTimeWindowOrders||0))+' đơn khớp thời gian đang được tính KPI tạm tính ('+fmtMoney(Number(result.kpiSummary.provisionalTimeWindowAmount||0),session.currency)+').':''}</div>
         <div class="reconcile-filter-wrap">
           <div class="reconcile-filter-label">Lọc nhanh theo trạng thái đơn</div>
@@ -4443,6 +4488,17 @@ body.account-modal-open{overflow:hidden}
         const result=PREVIEW?previewReconciliation(session):await api('/api/tiktok/reconcile/live?live_id='+encodeURIComponent(session.liveId||session.id)+(force?'&refresh=1':''));
         result.kpiSummary=deriveKpiSummaryFromReconciliation(result);
         session.reconciliation=result.kpiSummary;
+        if(result?.live?.affiliateDataAvailable===true){
+          session.affiliateDataAvailable=true;
+          session.affiliateDataConsistent=result.live.affiliateDataConsistent!==false;
+          session.shopProductGmvAmount=Number(result.live.shopProductGmvAmount||0);
+          session.affiliateGmvAmount=Number(result.live.affiliateGmvAmount||0);
+          session.affiliateItemsSold=Number(result.live.affiliateItemsSold||0);
+          session.affiliateSkuOrders=Number(result.live.affiliateSkuOrders||0);
+          session.affiliateCommissionAvailable=result.live.affiliateCommissionAvailable===true;
+          session.affiliateCommissionAmount=session.affiliateCommissionAvailable?Number(result.live.affiliateCommissionAmount||0):0;
+          session.affiliateSource=result.live.affiliateSource||session.affiliateSource||'';
+        }
         if(state.reconcileModalSessionId===sessionId)renderReconcileResult(session,result);
         renderKpi();
         renderDashboard();
@@ -4489,8 +4545,17 @@ body.account-modal-open{overflow:hidden}
         };
       });
       const counts={total:orders.length,awaitingPacking:1,awaitingCarrier:1,transporting:1,outForDelivery:2,delivered:2,completed:1,cancelled:1,returning:1,refunded:1};
+      const previewAffiliate=affiliateFigures(session);
       const result={
-        live:{analyticsGmvAmount:finalGmv(session)},
+        live:{
+          analyticsGmvAmount:finalGmv(session),
+          affiliateDataAvailable:previewAffiliate.available,
+          shopProductGmvAmount:previewAffiliate.shop,
+          affiliateGmvAmount:previewAffiliate.affiliate,
+          affiliateItemsSold:previewAffiliate.affiliateItems,
+          affiliateCommissionAvailable:false,
+          affiliateCommissionAmount:null
+        },
         scope:{aftersalesAvailable:true,overlapAmbiguous:false,overlapCount:0},
         policy:{reconciliationProtectionDays:60},
         counts,
@@ -4631,7 +4696,7 @@ body.account-modal-open{overflow:hidden}
           <span class="pill ok">Đã chốt ${finalizedSessions.length} phiên</span>
         </div>
         ${monthlyHint}
-        <div class="card dashboard-live-card"><div class="row space dashboard-live-head"><div><h3>${listTitle}</h3>${monthly?`<div class="tiny">Đang hiển thị ${visibleSessions.length} phiên thuộc 7 ngày gần nhất trên tổng ${ss.length} phiên của 30 ngày.</div>`:''}</div><div class="row"><span class="pill ok">KPI tự động dùng GMV đối soát đơn</span>${moreAction}</div></div>${renderLiveTable(visibleSessions,false)}</div>`;
+        <div class="card dashboard-live-card"><div class="row space dashboard-live-head"><div><h3>${listTitle}</h3>${monthly?`<div class="tiny">Đang hiển thị ${visibleSessions.length} phiên thuộc 7 ngày gần nhất trên tổng ${ss.length} phiên của 30 ngày.</div>`:''}</div><div class="row"><span class="pill ok">KPI tự động dùng GMV LIVE sau đối soát · gồm Affiliate</span>${moreAction}</div></div>${renderLiveTable(visibleSessions,false)}</div>`;
       bindTimeFilter('dashboard');
       const more=$('#dashboardViewMore');
       if(more)more.onclick=()=>{
@@ -4641,19 +4706,59 @@ body.account-modal-open{overflow:hidden}
       };
     }
 
+    function affiliateFigures(session){
+      const total=Math.max(0,Number(finalGmv(session)||0));
+      const previewAvailable=PREVIEW&&session?.affiliateDataAvailable!==false;
+      const available=session?.affiliateDataAvailable===true||previewAvailable;
+      const previewAffiliate=previewAvailable&&session?.affiliateDataAvailable!==true?Math.round(total*((String(session?.id||'').charCodeAt(0)%5+17)/100)):0;
+      const affiliate=available?Math.max(0,Number(session?.affiliateDataAvailable===true?session.affiliateGmvAmount:previewAffiliate)||0):null;
+      const shop=available?Math.max(0,Number(session?.affiliateDataAvailable===true?session.shopProductGmvAmount:Math.max(0,total-(affiliate||0)))||0):null;
+      const itemsTotal=Math.max(0,Number(session?.currentItemsSold??session?.recordedItemsSold??0));
+      const affiliateItems=available?Math.max(0,Number(session?.affiliateDataAvailable===true?session.affiliateItemsSold:Math.round(itemsTotal*((affiliate||0)/Math.max(1,total))))||0):null;
+      const commissionAvailable=session?.affiliateCommissionAvailable===true;
+      const commission=commissionAvailable?Math.max(0,Number(session?.affiliateCommissionAmount||0)):null;
+      return {total,available,shop,affiliate,affiliateItems,commissionAvailable,commission};
+    }
+
+    function affiliateLiveSummary(sessions){
+      const rows=(sessions||[]).map(session=>({session,fig:affiliateFigures(session)}));
+      const known=rows.filter(x=>x.fig.available);
+      const total=rows.reduce((sum,x)=>sum+x.fig.total,0);
+      const shop=known.reduce((sum,x)=>sum+Number(x.fig.shop||0),0);
+      const affiliate=known.reduce((sum,x)=>sum+Number(x.fig.affiliate||0),0);
+      const commissionRows=known.filter(x=>x.fig.commissionAvailable);
+      const commission=commissionRows.reduce((sum,x)=>sum+Number(x.fig.commission||0),0);
+      return {total,shop,affiliate,knownCount:known.length,totalCount:rows.length,commission,commissionCount:commissionRows.length};
+    }
+
+    function affiliateSummaryHtml(sessions){
+      const summary=affiliateLiveSummary(sessions);
+      const allKnown=summary.totalCount>0&&summary.knownCount===summary.totalCount;
+      const splitHint=summary.knownCount?('Đã tách '+summary.knownCount+'/'+summary.totalCount+' phiên'):'Đang chờ dữ liệu tách sản phẩm';
+      return `<div class="grid stats affiliate-live-summary">
+        <div class="card"><div class="stat-label">GMV LIVE tổng</div><div class="stat-value">${fmtMoney(summary.total)}</div><div class="affiliate-live-summary-note">Hàng nhà + sản phẩm Affiliate</div></div>
+        <div class="card"><div class="stat-label">GMV hàng nhà</div><div class="stat-value ${summary.knownCount?'':'unavailable'}">${summary.knownCount?fmtMoney(summary.shop):'Chưa có dữ liệu'}</div><div class="affiliate-live-summary-note">${splitHint}</div></div>
+        <div class="card"><div class="stat-label">GMV Affiliate</div><div class="stat-value ${summary.knownCount?'':'unavailable'}">${summary.knownCount?fmtMoney(summary.affiliate):'Chưa có dữ liệu'}</div><div class="affiliate-live-summary-note">${allKnown?'Đã tách toàn bộ phiên':'Chỉ cộng các phiên đã tách được'}</div></div>
+        <div class="card"><div class="stat-label">Hoa hồng Affiliate</div><div class="stat-value ${summary.commissionCount?'':'unavailable'}">${summary.commissionCount?fmtMoney(summary.commission):'Chưa có dữ liệu'}</div><div class="affiliate-live-summary-note">Không cộng vào GMV · không tính KPI</div></div>
+      </div>`;
+    }
+
     function renderLiveTable(rows, editable){
       if(!rows.length)return `<div class="empty">Chưa có dữ liệu LIVE trong khoảng này.</div>`;
       const approvedHosts=staffForRole('host'); const operators=staffForRole('operator');
-      const desktop=`<div class="table-wrap desktop-live-table"><table><thead><tr><th>Phiên / Kênh</th><th>Thời gian phiên LIVE</th><th>Thời lượng phiên LIVE</th><th>GMV đã ghi nhận</th><th>GMV chờ đối soát</th><th>GMV sau khi hoàn hủy</th><th>Số món bán đã ghi nhận</th><th>Host</th><th>Vận hành</th>${editable?'<th></th>':''}</tr></thead><tbody>${rows.map(s=>{
-        const figures=sessionGmvFigures(s), reconciled=figures.final!==null;
+      const desktop=`<div class="table-wrap desktop-live-table"><table><thead><tr><th>Phiên / Kênh</th><th>Thời gian phiên LIVE</th><th>Thời lượng phiên LIVE</th><th>GMV LIVE tổng</th><th>GMV hàng nhà</th><th>GMV Affiliate</th><th>Hoa hồng Affiliate</th><th>GMV chờ đối soát</th><th>GMV sau khi hoàn hủy</th><th>Số món bán đã ghi nhận</th><th>Host</th><th>Vận hành</th>${editable?'<th></th>':''}</tr></thead><tbody>${rows.map(s=>{
+        const figures=sessionGmvFigures(s), affiliate=affiliateFigures(s), reconciled=figures.final!==null;
         const savedAssignment=hasSavedAutoAssignment(s);
         return `<tr class="${reconciled?'live-row-reconciled':''}" data-live-session="${s.id}">
         <td><b>${esc(s.title||'Phiên LIVE')}</b><div class="kpi-state-line">${reconciled?'<span class="live-reconciled-badge">✓ Đã đối soát</span>':''}${isManualKpi(s)?'<span class="pill warn manual-live-type-pill">'+esc(manualKpiTypeLabel(s))+' · tính thủ công</span>':kpiStatusPill(s)}</div><div class="tiny">@${esc(s.channelUsername||'—')} ${s.channelId?`· ID kênh ${esc(s.channelId)}`:''}</div></td>
         <td class="live-time-cell"><b>${fmtLiveTimeRange(s)}</b></td>
         <td>${fmtLiveDuration(s)}</td>
-        <td class="money"><b>${fmtMoney(figures.recorded,s.currency)}</b><div class="tiny">${s.syncPending===true?'TikTok đang cập nhật · số tạm tính':'TikTok cập nhật mới nhất'}</div></td>
-        <td class="money">${gmvPendingDisplay(s)}<div class="tiny">${figures.pending!==null?'Tạm tính · chỉ đơn có tín hiệu LIVE':reconciled?'Đã chuyển sang số chốt':'Chưa đủ dữ liệu đối soát'}</div></td>
-        <td class="money"><b>${gmvFinalDisplay(s)}</b><div class="tiny">${reconciled?'Số cuối cùng dùng chốt KPI':'Chưa đủ điều kiện chốt'}</div></td>
+        <td class="money"><b>${fmtMoney(figures.recorded,s.currency)}</b><div class="tiny">${s.syncPending===true?'TikTok đang cập nhật · số tạm tính':'Đã gồm hàng nhà + Affiliate'}</div></td>
+        <td class="money"><b>${affiliate.available?fmtMoney(affiliate.shop,s.currency):'Chưa có dữ liệu'}</b><div class="tiny">${affiliate.available?'Sản phẩm thuộc shop':'Chờ TikTok tách sản phẩm'}</div></td>
+        <td class="money"><b>${affiliate.available?fmtMoney(affiliate.affiliate,s.currency):'Chưa có dữ liệu'}</b><div class="tiny">${affiliate.available?new Intl.NumberFormat('vi-VN').format(Number(affiliate.affiliateItems||0))+' món Affiliate':'Không tự suy đoán'}</div></td>
+        <td class="money"><b>${affiliate.commissionAvailable?fmtMoney(affiliate.commission,s.currency):'Chưa có dữ liệu'}</b><div class="tiny">Không cộng GMV/KPI</div></td>
+        <td class="money">${gmvPendingDisplay(s)}<div class="tiny">${figures.pending!==null?'Tạm tính · đã gồm Affiliate':reconciled?'Đã chuyển sang số chốt':'Chưa đủ dữ liệu đối soát'}</div></td>
+        <td class="money"><b>${gmvFinalDisplay(s)}</b><div class="tiny">${reconciled?'Số chốt KPI · đã gồm Affiliate':'Chưa đủ điều kiện chốt'}</div></td>
         <td>${new Intl.NumberFormat('vi-VN').format(Number(s.currentItemsSold??s.recordedItemsSold??0))}</td>
         <td>${editable?`${savedAssignment?`<span data-assignment-summary>Host: <b>${esc(s.hostName||'—')}</b></span>`:''}<div class="auto-person-wrap ${savedAssignment?'hidden':''}" data-auto-person-wrap data-assignment-editor>${personSelect('host',s.id,s.hostUid,approvedHosts,s.hostName)}</div>`:esc(s.hostName||'—')}</td>
         <td>${editable?`${savedAssignment?`<span data-assignment-summary>Vận hành: <b>${esc(s.operatorName||'—')}</b></span>`:''}<div class="auto-person-wrap ${savedAssignment?'hidden':''}" data-auto-person-wrap data-assignment-editor>${personSelect('operator',s.id,s.operatorUid,operators,s.operatorName)}</div>`:esc(s.operatorName||'—')}</td>
@@ -4661,14 +4766,17 @@ body.account-modal-open{overflow:hidden}
       </tr>`;
       }).join('')}</tbody></table></div>`;
       const mobile=`<div class="mobile-live-list">${rows.map(s=>{
-        const figures=sessionGmvFigures(s), reconciled=figures.final!==null;
+        const figures=sessionGmvFigures(s), affiliate=affiliateFigures(s), reconciled=figures.final!==null;
         const savedAssignment=hasSavedAutoAssignment(s);
         return `<article class="mobile-live-card ${reconciled?'reconciled':''}" data-live-session="${s.id}">
         <div class="mobile-live-head"><div><div class="mobile-live-title">${esc(s.title||'Phiên LIVE')}</div><div class="kpi-state-line">${reconciled?'<span class="live-reconciled-badge">✓ Đã đối soát</span>':''}${isManualKpi(s)?'<span class="pill warn manual-live-type-pill">'+esc(manualKpiTypeLabel(s))+' · tính thủ công</span>':kpiStatusPill(s)}</div><div class="tiny">@${esc(s.channelUsername||'—')}</div><div class="mobile-live-time">${icon('clock',13)} <b>${fmtLiveTimeRange(s)}</b></div></div><span class="pill">${fmtLiveDuration(s)}</span></div>
         <div class="mobile-grid">
-          <div class="mobile-field"><span class="tiny">GMV đã ghi nhận</span><strong>${fmtMoney(figures.recorded,s.currency)}</strong><small>${s.syncPending===true?'TikTok đang cập nhật · chưa dùng chốt KPI':'TikTok cập nhật mới nhất'}</small></div>
-          <div class="mobile-field"><span class="tiny">GMV chờ đối soát</span><strong>${gmvPendingDisplay(s)}</strong><small>${reconciled?'Đã chuyển sang số chốt':'Tạm tính · chỉ đơn có tín hiệu LIVE'}</small></div>
-          <div class="mobile-field"><span class="tiny">GMV sau khi hoàn hủy</span><strong>${gmvFinalDisplay(s)}</strong><small>${reconciled?'✓ Đã đối soát · số chốt để tính KPI':'Chưa đủ điều kiện chốt'}</small></div>
+          <div class="mobile-field"><span class="tiny">GMV LIVE tổng</span><strong>${fmtMoney(figures.recorded,s.currency)}</strong><small>Hàng nhà + Affiliate</small></div>
+          <div class="mobile-field"><span class="tiny">GMV hàng nhà</span><strong>${affiliate.available?fmtMoney(affiliate.shop,s.currency):'Chưa có dữ liệu'}</strong><small>${affiliate.available?'Sản phẩm thuộc shop':'Chờ dữ liệu tách'}</small></div>
+          <div class="mobile-field"><span class="tiny">GMV Affiliate</span><strong>${affiliate.available?fmtMoney(affiliate.affiliate,s.currency):'Chưa có dữ liệu'}</strong><small>${affiliate.available?new Intl.NumberFormat('vi-VN').format(Number(affiliate.affiliateItems||0))+' món Affiliate':'Không tự suy đoán'}</small></div>
+          <div class="mobile-field"><span class="tiny">Hoa hồng Affiliate</span><strong>${affiliate.commissionAvailable?fmtMoney(affiliate.commission,s.currency):'Chưa có dữ liệu'}</strong><small>Không cộng GMV/KPI</small></div>
+          <div class="mobile-field"><span class="tiny">GMV chờ đối soát</span><strong>${gmvPendingDisplay(s)}</strong><small>${reconciled?'Đã chuyển sang số chốt':'Tạm tính · đã gồm Affiliate'}</small></div>
+          <div class="mobile-field"><span class="tiny">GMV sau khi hoàn hủy</span><strong>${gmvFinalDisplay(s)}</strong><small>${reconciled?'✓ Số chốt KPI · đã gồm Affiliate':'Chưa đủ điều kiện chốt'}</small></div>
           <div class="mobile-field"><span class="tiny">Số món bán đã ghi nhận</span><strong>${new Intl.NumberFormat('vi-VN').format(Number(s.currentItemsSold??s.recordedItemsSold??0))}</strong></div>
         </div>
         ${editable?`<div class="mobile-assign"><label class="manual-kpi-check"><input type="checkbox" data-manual-kpi="${s.id}" ${isManualKpi(s)?'checked':''}> <span>Ngày Campaign/Mega Live · tính KPI thủ công</span></label>${manualKpiTypeSelect(s)}${savedAssignment?`<div class="mobile-person-assignment-summary" data-assignment-summary><div class="mobile-person-assignment-copy"><div class="mobile-person-assignment-item"><span>Host Livestream</span><b>${esc(s.hostName||'—')}</b></div><div class="mobile-person-assignment-item"><span>Nhân viên vận hành</span><b>${esc(s.operatorName||'—')}</b></div></div><button class="btn small mobile-assignment-edit" type="button" data-edit-assignment="${s.id}">${icon('edit',14)} Sửa</button></div>`:''}<div class="mobile-assignment-editor ${savedAssignment?'hidden':''}" data-assignment-editor><div class="mobile-auto-person-fields auto-person-wrap" data-auto-person-wrap><label><span class="tiny">Host Livestream</span>${personSelect('host',s.id,s.hostUid,approvedHosts,s.hostName)}</label><label><span class="tiny">Nhân viên vận hành</span>${personSelect('operator',s.id,s.operatorUid,operators,s.operatorName)}</label></div><button class="btn primary ${hasSavedManualKpiType(s)?'hidden':''}" data-save-session="${s.id}">${icon('check',15)} Lưu thiết lập</button></div></div>`:`<div class="mobile-assign">${isManualKpi(s)?'<div class="notice warn">'+esc(manualKpiTypeLabel(s))+' · phiên này không cộng vào KPI tự động.</div>':''}<div class="row space"><span class="tiny">Host</span><b>${esc(s.hostName||'—')}</b></div><div class="row space"><span class="tiny">Vận hành</span><b>${esc(s.operatorName||'—')}</b></div></div>`}
@@ -4693,7 +4801,8 @@ body.account-modal-open{overflow:hidden}
         .map(p=>p==='…'?'<span class="page-ellipsis">…</span>':`<button class="page-btn ${p===state.livePage?'active':''}" data-page="${p}">${p}</button>`).join('');
       $('#section-live').innerHTML=`
         ${timeFilterHtml('live')}
-        <div class="notice ok"><b>GMV đã ghi nhận</b> là số TikTok cập nhật mới nhất của đúng phiên. <b>GMV chờ đối soát</b> chỉ gồm đơn có tín hiệu LIVE và là số tạm tính. <b>GMV sau khi hoàn hủy</b> chỉ xuất hiện khi đã chốt và là số cuối cùng dùng tính KPI.</div><div class="card live-list-card">${renderLiveTable(pageRows,isAdmin())}</div>
+        ${affiliateSummaryHtml(ss)}
+        <div class="notice ok"><b>GMV LIVE tổng</b> = hàng nhà + sản phẩm Affiliate và vẫn là cơ sở tính KPI Host/Vận hành. <b>Hoa hồng Affiliate</b> là khoản riêng của kênh, không cộng vào GMV và không tính KPI. Khi chưa có Creator Authorization, hoa hồng hiển thị “Chưa có dữ liệu” thay vì tự ước tính.</div><div class="card live-list-card">${renderLiveTable(pageRows,isAdmin())}</div>
         <div class="pagination-wrap">
           <div class="pagination-info">Đang hiển thị từ phiên <b>${from}</b> đến phiên <b>${to}</b> trên tổng số <b>${ss.length}</b> phiên · Mỗi trang hiển thị 20 phiên</div>
           <div class="pagination">
@@ -4805,8 +4914,8 @@ body.account-modal-open{overflow:hidden}
     }
 
     function exportCsv(rows){
-      const header=['title','channel_username','channel_id','start_time','duration_seconds','gmv_recorded_latest','gmv_pending_reconciliation','gmv_after_cancel_refund_final','gmv_time_window_excluded','items_sold','kpi_status','currency','kpi_mode','manual_live_type','host','operator'];
-      const lines=[header,...rows.map(s=>{const figures=sessionGmvFigures(s);const basis=automaticKpiBasis(s);return [s.title||'',s.channelUsername||'',s.channelId||'',s.startTime?.toDate?.().toISOString?.()||'',s.durationSeconds||0,figures.recorded,figures.pending??'',figures.final??'',figures.excludedTimeWindow,s.currentItemsSold??s.recordedItemsSold??0,isManualKpi(s)?'manual':kpiStatusLabel(basis.status),s.currency||'',isManualKpi(s)?'manual':'auto',manualKpiType(s),isManualKpi(s)?'':(s.hostName||''),isManualKpi(s)?'':(s.operatorName||'')]} )];
+      const header=['title','channel_username','channel_id','start_time','duration_seconds','gmv_live_total','gmv_shop_products','gmv_affiliate','affiliate_items_sold','affiliate_commission','gmv_pending_reconciliation','gmv_after_cancel_refund_final','gmv_time_window_excluded','items_sold','kpi_status','currency','kpi_mode','manual_live_type','host','operator'];
+      const lines=[header,...rows.map(s=>{const figures=sessionGmvFigures(s);const aff=affiliateFigures(s);const basis=automaticKpiBasis(s);return [s.title||'',s.channelUsername||'',s.channelId||'',s.startTime?.toDate?.().toISOString?.()||'',s.durationSeconds||0,figures.recorded,aff.available?aff.shop:'',aff.available?aff.affiliate:'',aff.available?aff.affiliateItems:'',aff.commissionAvailable?aff.commission:'',figures.pending??'',figures.final??'',figures.excludedTimeWindow,s.currentItemsSold??s.recordedItemsSold??0,isManualKpi(s)?'manual':kpiStatusLabel(basis.status),s.currency||'',isManualKpi(s)?'manual':'auto',manualKpiType(s),isManualKpi(s)?'':(s.hostName||''),isManualKpi(s)?'':(s.operatorName||'')]} )];
       const csv=lines.map(r=>r.map(v=>`"${String(v??'').replaceAll('"','""')}"`).join(',')).join('\n'); const blob=new Blob(['\ufeff'+csv],{type:'text/csv;charset=utf-8'}); const a=document.createElement('a');a.href=URL.createObjectURL(blob);const range=selectedRange();a.download=`tiktok-live-${range.startKey}_${range.endKey}.csv`;a.click();URL.revokeObjectURL(a.href);
     }
 
