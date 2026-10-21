@@ -404,7 +404,10 @@ assert(html.includes("Tỷ lệ hủy/hoàn hiện tại"), "Overlap aftersales 
 assert(worker.includes("SELLERKBB_ALLOWED_LIVE_CHANNELS"), "SellerKBB LIVE channel whitelist missing");
 assert(worker.includes("/analytics/202512/shop/")&&worker.includes("/products_performance"), "TikTok LIVE products performance integration missing");
 assert(worker.includes("async function fetchLiveShopProductBreakdown")&&worker.includes("async function enrichLiveAffiliateBreakdowns"), "Affiliate LIVE enrichment helpers missing");
-assert(worker.includes("affiliateDataAvailable: consistent"), "Affiliate split must fail closed when product GMV is inconsistent");
+assert(worker.includes("affiliateDataAvailable: consistent") && worker.includes("sellerMatchesProducts"), "Affiliate split requires seller product reconciliation");
+assert(worker.includes("/analytics/202502/live_rooms/") && worker.includes("/core_stats"), "Creator room-level GMV verification missing");
+assert(worker.includes("const usableForKpi = creatorVerified && aftersalesAvailable"), "Unverified seller GMV must never finalize KPI");
+assert(html.includes("src.affiliateDataAvailable===true&&src.creatorGmvAvailable===true"), "UI must reject legacy unverified Affiliate splits");
 assert(worker.includes("affiliateGmvAmount")&&worker.includes("shopProductGmvAmount"), "Affiliate/shop GMV data fields missing");
 assert(worker.includes("singleLiveTotalKpiGmvAmount = Math.round(analyticsGmvAmount * singleLiveAdjustmentRatio)"), "Single-LIVE KPI must use total LIVE GMV, including Affiliate, after cancellation/refund ratio");
 assert(worker.includes("affiliateCommissionAvailable")&&worker.includes("affiliateCommissionAmount"), "Dormant Affiliate commission backend fields missing");
