@@ -4,7 +4,7 @@
 
 ### Báo cáo TikTok LIVE · KPI nhân sự · Tự đồng bộ 24/24
 
-**Phiên bản hiện tại: v1.49.4**
+**Phiên bản hiện tại: v1.49.5**
 
 [![GitHub Release](https://img.shields.io/github/v/release/hunghienhoa/sellerkbb?label=Release)](https://github.com/hunghienhoa/sellerkbb/releases)
 [![GitHub Actions](https://img.shields.io/github/actions/workflow/status/hunghienhoa/sellerkbb/deploy.yml?branch=main&label=Ki%E1%BB%83m%20tra%20%26%20Backup)](https://github.com/hunghienhoa/sellerkbb/actions)
@@ -17,7 +17,14 @@
 
 ---
 
-## 🆕 Cập nhật mới nhất — v1.49.4
+## 🆕 Cập nhật mới nhất — v1.49.5
+
+- Tích hợp source Taste Skill `design-taste-frontend` cho dashboard (app-screen mode) vào `.agents/skills/` và giữ bản quyền upstream.
+- Thiết lập quy tắc ưu tiên Taste + Emil Kowalski + Impeccable trong `AGENTS.md`, `DESIGN.md`, `PRODUCT.md` và hướng dẫn Copilot/VS Code.
+- Bổ sung hướng dẫn kiểm tra bố cục, animation, accessibility, PC/mobile và an toàn KPI/TikTok vào `docs/DESIGN-SKILLS.md`.
+- Đây là cấu hình cho các lần sửa UI về sau; bản này **không thay đổi giao diện hiện tại, GMV hoặc công thức KPI**.
+
+### v1.49.4 — Kiểm soát GMV Creator và Affiliate
 
 - Đọc Creator LIVE Core Stats theo đúng Room ID của `shopkhangbaby` / `mekhangsua` để lấy GMV toàn phiên; phân biệt GMV shop riêng với GMV Creator.
 - Chỉ hiển thị tách GMV Affiliate khi số hàng nhà API khớp với doanh thu Seller; không biến chênh lệch thiếu dữ liệu thành Affiliate.
@@ -58,6 +65,10 @@ Bạn không cần hiểu hết code. Chỉ cần nhớ 4 nơi chính:
 > **SRC là gì?** SRC = source code = toàn bộ mã nguồn để tạo ra website SellerKBB. Nếu website bị sửa lỗi, GitHub Release giúp quay lại SRC của bản trước.
 
 ---
+
+### Thiết kế UI có 3 bộ skills
+
+Khi yêu cầu AI làm giao diện SellerKBB, agent cần đọc `AGENTS.md`, `PRODUCT.md` và `DESIGN.md`; dùng **Taste Skill (dashboard app mode)** để đánh giá bố cục, **Impeccable** để rà soát chất lượng/a11y và **Emil Kowalski** để hoàn thiện tương tác, animation. File skills ở GitHub không tự chạy trên mọi công cụ: agent phải hỗ trợ đọc skill và hooks cần được cho phép. Có hướng dẫn tại [docs/DESIGN-SKILLS.md](docs/DESIGN-SKILLS.md).
 
 ## ✨ SellerKBB đang làm gì?
 
@@ -285,6 +296,7 @@ README giữ lại phần này để nhân sự có thể biết **vì sao giao 
 
 | Phiên bản | Thay đổi chính |
 |---|---|
+| **v1.49.5** | Cài đặt Taste Skill và định tuyến 3 skills cho UI/UX, tạo PRODUCT.md và quy tắc QA, không đổi dữ liệu LIVE/KPI. |
 | **v1.49.4** | Đối chiếu GMV Creator theo Room ID, kiểm soát chia Affiliate và chặn KPI từ nguồn Seller thiếu. |
 | **v1.49.3** | Bỏ dòng mốc đồng bộ TikTok dư thừa khỏi Tổng quan PC/mobile; giữ nguyên timestamp nội bộ, tab TikTok/API và công thức KPI. |
 | **v1.49.2** | Sửa lỗi timeout 12 giây khi đồng bộ 30 ngày; xử lý nền, theo dõi tiến trình và cảnh báo mốc Refresh Token bất thường. |
