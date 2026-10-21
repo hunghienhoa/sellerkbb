@@ -4,7 +4,7 @@
 
 ### Báo cáo TikTok LIVE · KPI nhân sự · Tự đồng bộ 24/24
 
-**Phiên bản hiện tại: v1.49.3**
+**Phiên bản hiện tại: v1.49.4**
 
 [![GitHub Release](https://img.shields.io/github/v/release/hunghienhoa/sellerkbb?label=Release)](https://github.com/hunghienhoa/sellerkbb/releases)
 [![GitHub Actions](https://img.shields.io/github/actions/workflow/status/hunghienhoa/sellerkbb/deploy.yml?branch=main&label=Ki%E1%BB%83m%20tra%20%26%20Backup)](https://github.com/hunghienhoa/sellerkbb/actions)
@@ -17,11 +17,20 @@
 
 ---
 
-## 🆕 Cập nhật mới nhất — v1.49.3
+## 🆕 Cập nhật mới nhất — v1.49.4
+
+- Đọc Creator LIVE Core Stats theo đúng Room ID của `shopkhangbaby` / `mekhangsua` để lấy GMV toàn phiên; phân biệt GMV shop riêng với GMV Creator.
+- Chỉ hiển thị tách GMV Affiliate khi số hàng nhà API khớp với doanh thu Seller; không biến chênh lệch thiếu dữ liệu thành Affiliate.
+- Chặn chốt KPI khi chưa xác minh GMV Creator và giữ lại bản LIVE Creator đã xác minh khi đồng bộ Seller trả dữ liệu thấp.
+- Thêm kiểm thử hồi quy chống hiển thị Affiliate thiếu xác minh.
 
 - Ẩn hoàn toàn dòng **“Dữ liệu Tiktok được đồng bộ lúc…”** dưới bộ lọc thời gian trong tab **Tổng quan**, trên cả PC và điện thoại; không để khoảng trống.
 - Thời điểm đồng bộ và trạng thái đồng bộ vẫn được lưu ở backend và tiếp tục xem trong tab **TikTok / API**. Không thay đổi cron, quy trình đồng bộ 30 ngày, số liệu LIVE hoặc công thức KPI.
 - Thêm regression test xác nhận không còn dòng thông báo này ở giao diện Tổng quan desktop/mobile.
+
+### v1.49.3 — Ẩn mốc đồng bộ Tổng quan
+
+- Ẩn thời điểm đồng bộ thừa ở Tổng quan và giữ trạng thái ở tab TikTok / API.
 
 ### v1.49.2 — Đồng bộ TikTok chạy nền
 
@@ -106,6 +115,8 @@ SellerKBB chỉ dùng `shopkhangbaby` và `mekhangsua`.
 - Khi toàn bộ đơn dùng KPI đã kết thúc và không còn hậu mãi đang xử lý → phiên chuyển **Đã chốt**.
 
 ### Quy tắc Affiliate trong phiên LIVE
+
+**Từ v1.49.4:** GMV Creator LIVE được kiểm tra qua Core Stats của chính Room ID; GMV Seller chỉ là dữ liệu shop liên quan. Khi chưa xác minh được GMV Creator hoặc phần hàng nhà không khớp Seller, hệ thống hiện “Chưa có dữ liệu” cho GMV Affiliate và không tự chốt KPI bằng doanh số shop thiếu.
 
 - **GMV LIVE tổng = doanh số hàng nhà + doanh số sản phẩm Affiliate** mà TikTok ghi nhận cho phiên.
 - **GMV Affiliate vẫn được tính KPI** Host/Vận hành giống phần doanh số còn lại của phiên.
@@ -274,6 +285,7 @@ README giữ lại phần này để nhân sự có thể biết **vì sao giao 
 
 | Phiên bản | Thay đổi chính |
 |---|---|
+| **v1.49.4** | Đối chiếu GMV Creator theo Room ID, kiểm soát chia Affiliate và chặn KPI từ nguồn Seller thiếu. |
 | **v1.49.3** | Bỏ dòng mốc đồng bộ TikTok dư thừa khỏi Tổng quan PC/mobile; giữ nguyên timestamp nội bộ, tab TikTok/API và công thức KPI. |
 | **v1.49.2** | Sửa lỗi timeout 12 giây khi đồng bộ 30 ngày; xử lý nền, theo dõi tiến trình và cảnh báo mốc Refresh Token bất thường. |
 | **v1.49.1** | Bổ sung Refresh Token riêng cho 2 Creator: tự refresh theo giờ, nút làm mới thủ công, hiển thị hạn token/lần refresh và validate user_type/open_id/scopes. |
