@@ -4,7 +4,7 @@
 
 ### Báo cáo TikTok LIVE · KPI nhân sự · Tự đồng bộ 24/24
 
-**Phiên bản hiện tại: v1.49.5**
+**Phiên bản hiện tại: v1.49.6**
 
 [![GitHub Release](https://img.shields.io/github/v/release/hunghienhoa/sellerkbb?label=Release)](https://github.com/hunghienhoa/sellerkbb/releases)
 [![GitHub Actions](https://img.shields.io/github/actions/workflow/status/hunghienhoa/sellerkbb/deploy.yml?branch=main&label=Ki%E1%BB%83m%20tra%20%26%20Backup)](https://github.com/hunghienhoa/sellerkbb/actions)
@@ -17,7 +17,13 @@
 
 ---
 
-## 🆕 Cập nhật mới nhất — v1.49.5
+## 🆕 Cập nhật mới nhất — v1.49.6
+
+- Đổi nhãn hiển thị **“GMV hàng nhà”** thành **“GMV từ shopkhangbaby”** ở phần tổng hợp phiên LIVE, bảng desktop, card mobile và popup Đối soát đơn LIVE.
+- Giữ nguyên dữ liệu GMV Affiliate, doanh thu LIVE, phân loại đơn và công thức KPI; đây chỉ là thay đổi cách gọi trên giao diện.
+- Bổ sung regression test xác nhận đủ bốn vị trí dùng nhãn mới và không còn nhãn cũ.
+
+### v1.49.5 — Tích hợp bộ skills thiết kế
 
 - Tích hợp source Taste Skill `design-taste-frontend` cho dashboard (app-screen mode) vào `.agents/skills/` và giữ bản quyền upstream.
 - Thiết lập quy tắc ưu tiên Taste + Emil Kowalski + Impeccable trong `AGENTS.md`, `DESIGN.md`, `PRODUCT.md` và hướng dẫn Copilot/VS Code.
@@ -83,7 +89,7 @@ Khi yêu cầu AI làm giao diện SellerKBB, agent cần đọc `AGENTS.md`, `P
 - KPI mặc định:
   - Host Livestream: **0,3% GMV dùng KPI**.
   - Livestream operator: **0,1% GMV dùng KPI**.
-- Giao diện theo dõi **GMV LIVE tổng / GMV hàng nhà / GMV Affiliate** cùng các trạng thái **GMV chờ đối soát / GMV sau khi hoàn hủy**.
+- Giao diện theo dõi **GMV LIVE tổng / GMV từ shopkhangbaby / GMV Affiliate** cùng các trạng thái **GMV chờ đối soát / GMV sau khi hoàn hủy**.
 - KPI tự động dùng GMV LIVE sau đối soát. **GMV Affiliate vẫn tính KPI**. Khi chỉ có một kênh nội bộ LIVE, các đơn khớp thời gian có thể được dùng để ước tính tỷ lệ hủy/hoàn; khi hai kênh chồng giờ vẫn dùng cơ chế chống cộng trùng.
 - **Ngày Campaign/Mega Live** có thể bật chế độ KPI thủ công; sau khi tích phải chọn rõ **Ngày Campaign** hoặc **Mega Live**. Hai ô Host/Operator tự động được ẩn hẳn và phiên đó không cộng KPI tự động.
 - Bộ lọc: **Hôm nay / 7 ngày / 30 Ngày / Chọn ngày**.
@@ -127,11 +133,13 @@ SellerKBB chỉ dùng `shopkhangbaby` và `mekhangsua`.
 
 ### Quy tắc Affiliate trong phiên LIVE
 
+**Từ v1.49.6:** Giao diện hiển thị nhãn **GMV từ shopkhangbaby** (trước đây là “GMV hàng nhà”) để phân biệt với **GMV Affiliate**. Đây là đổi tên hiển thị, không phải đổi nguồn API hay phương pháp tính.
+
 **Từ v1.49.4:** GMV Creator LIVE được kiểm tra qua Core Stats của chính Room ID; GMV Seller chỉ là dữ liệu shop liên quan. Khi chưa xác minh được GMV Creator hoặc phần hàng nhà không khớp Seller, hệ thống hiện “Chưa có dữ liệu” cho GMV Affiliate và không tự chốt KPI bằng doanh số shop thiếu.
 
 - **GMV LIVE tổng = doanh số hàng nhà + doanh số sản phẩm Affiliate** mà TikTok ghi nhận cho phiên.
 - **GMV Affiliate vẫn được tính KPI** Host/Vận hành giống phần doanh số còn lại của phiên.
-- SellerKBB thử tách **GMV hàng nhà / GMV Affiliate** bằng dữ liệu sản phẩm của TikTok trong đúng LIVE. Nếu dữ liệu sản phẩm không khớp GMV phiên, hệ thống để **Chưa có dữ liệu** thay vì suy diễn.
+- SellerKBB thử tách **GMV từ shopkhangbaby / GMV Affiliate** bằng dữ liệu sản phẩm của TikTok trong đúng LIVE. Nếu dữ liệu sản phẩm không khớp GMV phiên, hệ thống để **Chưa có dữ liệu** thay vì suy diễn.
 - Đối với KPI tạm tính, SellerKBB lấy **toàn GMV LIVE (đã gồm Affiliate)** và áp dụng tỷ lệ hủy/hoàn đã biết từ đối soát. Phần Affiliate có thể được đối soát chi tiết hơn về sau mà không đổi quy tắc KPI.
 
 ### 2. Kiểm tra Tổng quan
@@ -148,7 +156,7 @@ Trong danh sách phiên bên dưới, phiên đã chốt được đánh dấu b
 
 ### 3. Gắn người cho phiên LIVE
 
-Trong **Phiên LIVE**, phía trên bảng có 4 ô tổng hợp Affiliate. Mỗi dòng phiên cũng tách **GMV LIVE tổng / GMV hàng nhà / GMV Affiliate**. Nếu chưa có Creator token thì cột hoa hồng sẽ ghi **Chưa có dữ liệu**; không ảnh hưởng GMV/KPI hiện tại.
+Trong **Phiên LIVE**, phía trên bảng có 4 ô tổng hợp Affiliate. Mỗi dòng phiên cũng tách **GMV LIVE tổng / GMV từ shopkhangbaby / GMV Affiliate**. Nếu chưa có Creator token thì cột hoa hồng sẽ ghi **Chưa có dữ liệu**; không ảnh hưởng GMV/KPI hiện tại.
 
 1. Chọn Host.
 2. Chọn Livestream operator.
@@ -296,6 +304,7 @@ README giữ lại phần này để nhân sự có thể biết **vì sao giao 
 
 | Phiên bản | Thay đổi chính |
 |---|---|
+| **v1.49.6** | Đổi nhãn GMV hàng nhà thành GMV từ shopkhangbaby ở PC, mobile và popup đối soát; không đổi số liệu hoặc KPI. |
 | **v1.49.5** | Cài đặt Taste Skill và định tuyến 3 skills cho UI/UX, tạo PRODUCT.md và quy tắc QA, không đổi dữ liệu LIVE/KPI. |
 | **v1.49.4** | Đối chiếu GMV Creator theo Room ID, kiểm soát chia Affiliate và chặn KPI từ nguồn Seller thiếu. |
 | **v1.49.3** | Bỏ dòng mốc đồng bộ TikTok dư thừa khỏi Tổng quan PC/mobile; giữ nguyên timestamp nội bộ, tab TikTok/API và công thức KPI. |

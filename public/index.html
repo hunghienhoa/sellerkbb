@@ -3054,7 +3054,7 @@ body.account-modal-open{overflow:hidden}
       <header class="topbar">
         <div class="topbar-title-wrap"><button id="menuToggle" class="menu-toggle" type="button" aria-label="Mở menu" aria-expanded="false">☰</button><div><h1 id="pageTitle" class="page-title">Tổng quan</h1><div id="pageSub" class="tiny"></div></div></div>
         <div class="topbar-right">
-          <span id="syncBadge" class="pill">v1.49.5</span>
+          <span id="syncBadge" class="pill">v1.49.6</span>
           <div id="dataRefreshWrap" class="data-refresh-wrap">
             <button id="dataRefreshBtn" class="data-refresh-btn" type="button" title="Tải lại dữ liệu SellerKBB hiện có · không chạy đồng bộ TikTok">
               <span id="dataRefreshIcon" class="data-refresh-icon">↻</span>
@@ -3536,7 +3536,7 @@ body.account-modal-open{overflow:hidden}
 
     function previewTs(iso){ return {toDate:()=>new Date(iso)}; }
     function enterPreview(){
-      state.config={version:'1.49.5-preview',tiktokConfigured:true};
+      state.config={version:'1.49.6-preview',tiktokConfigured:true};
       state.user={uid:'preview-admin',email:'admin@sellerkbb.demo',displayName:'Quản trị viên Demo',photoURL:avatarFallbackData('Quản trị viên Demo')};
       state.profile={role:'admin',status:'approved',displayName:'Quản trị viên Demo',photoURL:state.user.photoURL,permissions:['live.read','kpi.read']};
       state.maintenance={settings:{retentionDays:180,autoCleanup:true,emergencyPercent:85,firestoreSoftLimitMb:600,firestoreMaxSessions:FIRESTORE_TOTAL_SESSION_CAP,kvSoftKeyLimit:5000},github:{usedBytes:124000,limitBytes:10000000000,available:true},cloudflare:{keyCount:5,lastRun:{ranAt:new Date().toISOString(),deleted:0},usedBytes:428000,storageLimitBytes:1000000000,storageComplete:true},firebase:{freePlanMode:true,ttlEnabled:false,ttlRecommended:false,storageLimitBytes:1073741824}};
@@ -4465,7 +4465,7 @@ body.account-modal-open{overflow:hidden}
         <div class="reconcile-overview">
           <div class="reconcile-overview-card"><span>Đơn trong phiên</span><b>${new Intl.NumberFormat('vi-VN').format(orders.length)}</b></div>
           <div class="reconcile-overview-card"><span>GMV LIVE tổng</span><b>${fmtMoney(result?.live?.analyticsGmvAmount,session.currency)}</b></div>
-          <div class="reconcile-overview-card"><span>GMV hàng nhà</span><b>${liveAffiliateAvailable?fmtMoney(liveShopGmv,session.currency):'Chưa có dữ liệu'}</b></div>
+          <div class="reconcile-overview-card"><span>GMV từ shopkhangbaby</span><b>${liveAffiliateAvailable?fmtMoney(liveShopGmv,session.currency):'Chưa có dữ liệu'}</b></div>
           <div class="reconcile-overview-card affiliate"><span>GMV Affiliate</span><b>${liveAffiliateAvailable?fmtMoney(liveAffiliateGmv,session.currency):'Chưa có dữ liệu'}</b></div>
           <div class="reconcile-overview-card"><span>GMV chờ đối soát</span><b>${result?.kpiSummary?.usableForKpi&&result?.kpiSummary?.status!=='final'?fmtMoney(result.kpiSummary.gmvAmount,session.currency):result?.kpiSummary?.status==='final'?'Đã chốt':'Chờ dữ liệu'}</b></div>
           <div class="reconcile-overview-card cancelled"><span>Đơn hủy từ Livestream</span><b>${fmtMoney(cancelledAmount,session.currency)}</b></div>
@@ -4750,7 +4750,7 @@ body.account-modal-open{overflow:hidden}
       const splitHint=summary.knownCount?('Đã tách '+summary.knownCount+'/'+summary.totalCount+' phiên'):'Đang chờ dữ liệu tách sản phẩm';
       return `<div class="grid stats affiliate-live-summary">
         <div class="card"><div class="stat-label">GMV LIVE tổng</div><div class="stat-value">${fmtMoney(summary.total)}</div><div class="affiliate-live-summary-note">Hàng nhà + sản phẩm Affiliate</div></div>
-        <div class="card"><div class="stat-label">GMV hàng nhà</div><div class="stat-value ${summary.knownCount?'':'unavailable'}">${summary.knownCount?fmtMoney(summary.shop):'Chưa có dữ liệu'}</div><div class="affiliate-live-summary-note">${splitHint}</div></div>
+        <div class="card"><div class="stat-label">GMV từ shopkhangbaby</div><div class="stat-value ${summary.knownCount?'':'unavailable'}">${summary.knownCount?fmtMoney(summary.shop):'Chưa có dữ liệu'}</div><div class="affiliate-live-summary-note">${splitHint}</div></div>
         <div class="card"><div class="stat-label">GMV Affiliate</div><div class="stat-value ${summary.knownCount?'':'unavailable'}">${summary.knownCount?fmtMoney(summary.affiliate):'Chưa có dữ liệu'}</div><div class="affiliate-live-summary-note">${allKnown?'Đã tách toàn bộ phiên':'Chỉ cộng các phiên đã tách được'}</div></div>
       </div>`;
     }
@@ -4758,7 +4758,7 @@ body.account-modal-open{overflow:hidden}
     function renderLiveTable(rows, editable){
       if(!rows.length)return `<div class="empty">Chưa có dữ liệu LIVE trong khoảng này.</div>`;
       const approvedHosts=staffForRole('host'); const operators=staffForRole('operator');
-      const desktop=`<div class="table-wrap desktop-live-table" tabindex="0" aria-label="Bảng phiên LIVE có thể cuộn ngang"><table><thead><tr><th>Phiên / Kênh</th><th>Thời gian phiên LIVE</th><th>Thời lượng phiên LIVE</th><th>GMV LIVE tổng</th><th>GMV hàng nhà</th><th>GMV Affiliate</th><th>GMV chờ đối soát</th><th>GMV sau khi hoàn hủy</th><th>Số món bán đã ghi nhận</th><th>Host</th><th>Vận hành</th>${editable?'<th></th>':''}</tr></thead><tbody>${rows.map(s=>{
+      const desktop=`<div class="table-wrap desktop-live-table" tabindex="0" aria-label="Bảng phiên LIVE có thể cuộn ngang"><table><thead><tr><th>Phiên / Kênh</th><th>Thời gian phiên LIVE</th><th>Thời lượng phiên LIVE</th><th>GMV LIVE tổng</th><th>GMV từ shopkhangbaby</th><th>GMV Affiliate</th><th>GMV chờ đối soát</th><th>GMV sau khi hoàn hủy</th><th>Số món bán đã ghi nhận</th><th>Host</th><th>Vận hành</th>${editable?'<th></th>':''}</tr></thead><tbody>${rows.map(s=>{
         const figures=sessionGmvFigures(s), affiliate=affiliateFigures(s), reconciled=figures.final!==null;
         const savedAssignment=hasSavedAutoAssignment(s);
         return `<tr class="${reconciled?'live-row-reconciled':''}" data-live-session="${s.id}">
@@ -4783,7 +4783,7 @@ body.account-modal-open{overflow:hidden}
         <div class="mobile-live-head"><div><div class="mobile-live-title">${esc(s.title||'Phiên LIVE')}</div><div class="kpi-state-line">${reconciled?'<span class="live-reconciled-badge">✓ Đã đối soát</span>':''}${isManualKpi(s)?'<span class="pill warn manual-live-type-pill">'+esc(manualKpiTypeLabel(s))+' · tính thủ công</span>':kpiStatusPill(s)}</div><div class="tiny">@${esc(s.channelUsername||'—')}</div><div class="mobile-live-time">${icon('clock',13)} <b>${fmtLiveTimeRange(s)}</b></div></div><span class="pill">${fmtLiveDuration(s)}</span></div>
         <div class="mobile-grid">
           <div class="mobile-field"><span class="tiny">GMV LIVE tổng</span><strong>${fmtMoney(figures.recorded,s.currency)}</strong><small>Hàng nhà + Affiliate</small></div>
-          <div class="mobile-field"><span class="tiny">GMV hàng nhà</span><strong>${affiliate.available?fmtMoney(affiliate.shop,s.currency):'Chưa có dữ liệu'}</strong><small>${affiliate.available?'Sản phẩm thuộc shop':'Chờ dữ liệu tách'}</small></div>
+          <div class="mobile-field"><span class="tiny">GMV từ shopkhangbaby</span><strong>${affiliate.available?fmtMoney(affiliate.shop,s.currency):'Chưa có dữ liệu'}</strong><small>${affiliate.available?'Sản phẩm thuộc shop':'Chờ dữ liệu tách'}</small></div>
           <div class="mobile-field"><span class="tiny">GMV Affiliate</span><strong>${affiliate.available?fmtMoney(affiliate.affiliate,s.currency):'Chưa có dữ liệu'}</strong><small>${affiliate.available?new Intl.NumberFormat('vi-VN').format(Number(affiliate.affiliateItems||0))+' món Affiliate':'Không tự suy đoán'}</small></div>
           <div class="mobile-field"><span class="tiny">GMV chờ đối soát</span><strong>${gmvPendingDisplay(s)}</strong><small>${reconciled?'Đã chuyển sang số chốt':'Tạm tính · đã gồm Affiliate'}</small></div>
           <div class="mobile-field"><span class="tiny">GMV sau khi hoàn hủy</span><strong>${gmvFinalDisplay(s)}</strong><small>${reconciled?'✓ Số chốt KPI · đã gồm Affiliate':'Chưa đủ điều kiện chốt'}</small></div>

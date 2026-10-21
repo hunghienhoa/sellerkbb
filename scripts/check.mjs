@@ -413,7 +413,8 @@ assert(worker.includes("singleLiveTotalKpiGmvAmount = Math.round(analyticsGmvAmo
 assert(worker.includes("affiliateCommissionAvailable")&&worker.includes("affiliateCommissionAmount"), "Dormant Affiliate commission backend fields missing");
 assert(worker.includes("target.affiliateGmvAmount = moneyNumber(summary.affiliateGmvAmount)"), "Affiliate reconciliation data must persist to LIVE cache");
 assert(html.includes("function affiliateFigures(session)")&&html.includes("function affiliateSummaryHtml(sessions)"), "Affiliate LIVE UI helpers missing");
-assert(html.includes("GMV LIVE tổng")&&html.includes("GMV hàng nhà")&&html.includes("GMV Affiliate"), "Affiliate LIVE labels missing");
+assert(html.includes("GMV LIVE tổng")&&html.includes("GMV từ shopkhangbaby")&&html.includes("GMV Affiliate"), "Affiliate LIVE labels missing");
+assert((html.match(/GMV từ shopkhangbaby/g)||[]).length===4&&!html.includes("GMV hàng nhà"), "Shop GMV display label must be consistent across desktop, mobile and reconciliation");
 assert(!html.includes("Hoa hồng Affiliate")&&!html.includes("Không cộng vào GMV · không tính KPI")&&!html.includes("Chưa có Creator Authorization"), "Affiliate commission UI must stay hidden");
 assert(html.includes("singleLiveTotalKpiGmvAmount=Math.round(analytics*singleLiveAdjustmentRatio)"), "Frontend KPI fallback must include Affiliate GMV in total LIVE basis");
 assert(html.includes("affiliateDataAvailable:src.affiliateDataAvailable===true"), "Auto-sync frontend merge must carry Affiliate split fields");
