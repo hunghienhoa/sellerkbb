@@ -386,5 +386,12 @@ assert(html.includes("explicit.getTime()>start.getTime()"), "LIVE end time must 
 assert(html.includes("fmtLiveDuration(s)")&&html.includes("Chờ TikTok"), "Incomplete LIVE duration state missing");
 assert(html.includes("TikTok đang cập nhật · số tạm tính")&&html.includes("chưa dùng chốt KPI"), "Incomplete LIVE GMV warning missing");
 assert(html.includes("Chờ TikTok trả giờ kết thúc để đối soát"), "Reconciliation must block sessions without valid end time");
+assert(html.includes("kpiMonthKey:''"), "KPI month state missing");
+assert(html.includes("function kpiMonthRange(")&&html.includes("function kpiSessionsForMonth()"), "Monthly KPI range helpers missing");
+assert(html.includes("data-kpi-month-select")&&html.includes("Chọn tháng xem KPI nhân sự"), "KPI monthly selector missing");
+assert(html.includes("function buildKpiRows(sessions=kpiSessionsForMonth())"), "KPI rows must default to selected month");
+assert(html.includes("const rangeSessions=kpiSessionsForMonth();")&&html.includes("const rows=buildKpiRows(rangeSessions);"), "KPI page must aggregate selected month");
+assert(!html.includes("timeFilterHtml('kpi')")&&!html.includes("bindTimeFilter('kpi')"), "KPI page must not use day/7-day/30-day filter");
+assert(html.includes("KPI nhân sự được tổng hợp theo tháng."), "Monthly KPI explanation missing");
 assert(html.includes("LIVE chồng thời gian")&&html.includes("Thiếu dữ liệu hậu mãi"), "Blocked KPI reasons must be labeled separately");
 console.log("Project structure, syntax, persistence, calendar, storage/backup, Google profiles, pink pastel UI, overlap-safe reconciliation, full pagination, readiness, descriptive Releases, README, and auto-sync checks OK");

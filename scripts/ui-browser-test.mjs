@@ -242,7 +242,11 @@ try {
   assert(autoKpiBasis.status.includes('Đã chốt')&&autoKpiBasis.gmv>0,"Preview auto session must expose a finalized reconciled KPI basis");
   assert(autoKpiBasis.gmv!==autoKpiBasis.gross,"Automatic KPI basis must differ from gross LIVE GMV in Preview");
   await page.click('#nav [data-section="kpi"]');
-  await page.click('#section-kpi [data-range-mode="30d"]');
+  assert(await page.$('#section-kpi [data-kpi-month-select]')!==null,"KPI month selector missing");
+  assert((await page.$$('#section-kpi [data-range-mode]')).length===0,"KPI page must not show Today/7-day/30-day filters");
+  const kpiMonthValue=await page.$eval('#section-kpi [data-kpi-month-select]',e=>e.value);
+  assert(/^\d{4}-\d{2}$/.test(kpiMonthValue),"KPI month selector value invalid");
+  assert(await page.$eval('#section-kpi .data-note',e=>e.textContent.includes('KPI nhân sự được tổng hợp theo tháng')&&/01\/\d{2}\/\d{4}/.test(e.textContent)),"KPI monthly full-range explanation missing");
   assert(await page.$eval('#section-kpi .kpi-rate-guide',e=>e.textContent.includes('KPI tự động dùng đối soát theo từng phiên')&&e.textContent.includes('2 kênh chồng giờ')&&e.textContent.includes('tránh cộng trùng')),"KPI guide must explain overlap-safe reconciliation");
   assert(await page.$eval('#section-kpi',e=>e.textContent.includes('KPI đã chốt')&&e.textContent.includes('KPI tạm tính')&&e.textContent.includes('KPI dự kiến')&&e.textContent.includes('Chờ đối soát')),"KPI final/provisional/waiting summary labels missing");
   assert(await page.$('[data-kpi-table="pending"]')!==null&&await page.$('[data-kpi-table="final"]')!==null,"KPI page must split pending and finalized data into two tables");

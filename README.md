@@ -4,7 +4,7 @@
 
 ### Báo cáo TikTok LIVE · KPI nhân sự · Tự đồng bộ 24/24
 
-**Phiên bản hiện tại: v1.47.2**
+**Phiên bản hiện tại: v1.47.3**
 
 [![GitHub Release](https://img.shields.io/github/v/release/hunghienhoa/sellerkbb?label=Release)](https://github.com/hunghienhoa/sellerkbb/releases)
 [![GitHub Actions](https://img.shields.io/github/actions/workflow/status/hunghienhoa/sellerkbb/deploy.yml?branch=main&label=Ki%E1%BB%83m%20tra%20%26%20Backup)](https://github.com/hunghienhoa/sellerkbb/actions)
@@ -17,14 +17,13 @@
 
 ---
 
-## 🆕 Cập nhật mới nhất — v1.47.2
+## 🆕 Cập nhật mới nhất — v1.47.3
 
-- Fix triệt để lỗi phiên LIVE có `end_time = 0` bị hiển thị thành **01/01/1970**, thời lượng **0 phút** và không thể đối soát đúng. Timestamp không hợp lệ giờ được loại bỏ trước khi lên giao diện.
-- Phiên TikTok chưa trả giờ kết thúc được đánh dấu **⏳ Chờ TikTok hoàn tất phiên**; GMV lúc này là **số tạm tính**, không được dùng chốt KPI và nút đối soát đơn bị khóa cho tới khi thời gian phiên hợp lệ.
-- Backend tự sanitize cả cache cũ trong Cloudflare KV. Snapshot mới chưa hoàn chỉnh không còn được phép ghi đè giờ kết thúc, thời lượng, GMV và số món của một snapshot đã hoàn chỉnh.
-- Mỗi lần đồng bộ giờ/hằng ngày vẫn quét lại các phiên chưa hoàn tất. Khi TikTok trả đủ `start_time + end_time`, SellerKBB tự cập nhật thời lượng, GMV mới nhất và mở lại đối soát.
-- Giữ API LIVE Analytics 202509 đang chạy ổn định thay vì đổi mù sang 202609: TikTok xác nhận bản 202609 có thay đổi cấu trúc/field, nên chỉ nâng sau khi mapping schema mới được kiểm thử với dữ liệu thật. Không đổi công thức KPI, đơn hủy/hoàn hay whitelist `shopkhangbaby` / `mekhangsua`.
-- Bổ sung regression checks chặn `Date(0)`, chặn snapshot chưa hoàn chỉnh ghi đè snapshot tốt và browser smoke test bảo đảm giao diện không bao giờ hiện **01/01/1970**.
+- Đổi riêng tab **KPI nhân sự** sang chế độ **theo tháng**. Bỏ bộ lọc Hôm nay / 7 ngày / 30 ngày / Chọn ngày trong tab này.
+- Mặc định KPI nhân sự mở **tháng hiện tại** và tự tổng hợp toàn bộ phiên từ ngày 01 đến ngày cuối tháng.
+- Bổ sung bộ chọn **Tháng N/YYYY** để xem lại KPI các tháng khác; danh sách luôn có 12 tháng gần nhất và tự bổ sung các tháng đang có dữ liệu phiên LIVE.
+- Cả KPI tự động và KPI thủ công hợp lệ trong trang KPI nhân sự đều được cộng theo đúng tháng đã chọn. Xuất KPI cũng dùng tháng KPI đang chọn.
+- Các tab **Tổng quan, Phiên LIVE, Đối soát đơn LIVE, KPI thủ công** giữ nguyên bộ lọc thời gian hiện tại; thay đổi này không ảnh hưởng cách lọc của các tab khác.
 
 
 ---
@@ -80,6 +79,8 @@ Giao diện v1.47.1 giữ hồng pastel, dùng chữ rõ cho nhãn số liệu v
 **Khi mở web:** SellerKBB sẽ giữ màn hình **Đang tải dữ liệu** cho tới khi dữ liệu cần thiết sẵn sàng. Nếu mạng/Firebase/API phản hồi quá lâu, trang sẽ hiện thông báo và nút **Thử tải lại**, không để màn hình trắng. Phần thống kê dung lượng chỉ tải khi Admin mở **Lưu trữ**, nên không còn chặn màn hình Tổng quan.
 
 **Phiên LIVE chưa hoàn tất dữ liệu TikTok:** nếu TikTok chưa trả `end_time`, SellerKBB chỉ hiện giờ bắt đầu và nhãn **Chờ TikTok hoàn tất phiên**; không hiện năm 1970, không đối soát và không dùng GMV đó để chốt KPI. Hệ thống sẽ tự quét lại ở các lần đồng bộ tiếp theo và tự mở đối soát khi giờ kết thúc hợp lệ.
+
+**KPI nhân sự theo tháng:** tab KPI nhân sự mặc định cộng toàn bộ KPI của tháng hiện tại, từ ngày 01 đến ngày cuối tháng. Dùng ô **Theo tháng** để chọn lại tháng cần xem; tab này không dùng bộ lọc Hôm nay / 7 ngày / 30 ngày nữa. Các tab báo cáo khác vẫn giữ bộ lọc thời gian riêng như trước.
 
 **Dùng bàn phím:** Tab để di chuyển, Enter/Space để kích hoạt. Khi mở popup tài khoản/đối soát, Tab chỉ đi trong popup; Escape đóng và đưa focus về nút mở. Nếu thiết bị bật **Giảm chuyển động**, popup không chạy animation. Nút làm mới vẫn thể hiện trạng thái **Đang tải** bằng chữ.
 
@@ -255,6 +256,7 @@ README giữ lại phần này để nhân sự có thể biết **vì sao giao 
 
 | Phiên bản | Thay đổi chính |
 |---|---|
+| **v1.47.3** | KPI nhân sự chuyển sang tổng hợp theo tháng; mặc định tháng hiện tại, chọn được các tháng khác, bỏ lọc Hôm nay/7 ngày/30 ngày riêng trong tab KPI nhân sự. |
 | **v1.47.2** | Fix end_time=0 → 01/01/1970/0 phút; sanitize cache cũ, giữ snapshot hoàn chỉnh trước dữ liệu TikTok tạm thời, đánh dấu GMV tạm tính và khóa KPI/đối soát cho tới khi phiên có giờ kết thúc hợp lệ. |
 | **v1.47.1** | Fix startup chậm/trắng trang: chỉ hiện app sau khi dữ liệu sẵn sàng; timeout + retry cho Firebase/API; lazy-load thống kê Lưu trữ; dọn dữ liệu chạy nền; song song hóa các nhánh tải chính. Không đổi logic TikTok/KPI. |
 | **v1.47.0** | Audit UI/UX 10 mục, typography dễ đọc, giảm viền/nền trang trí, tăng tương phản và vùng chạm, sửa tràn ngang 320px; popup hỗ trợ bàn phím/giảm chuyển động; xác minh thu gọn Host/Vận hành PC/mobile. Không đổi logic TikTok/KPI. |

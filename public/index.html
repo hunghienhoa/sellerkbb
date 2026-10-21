@@ -2899,7 +2899,7 @@ body.account-modal-open{overflow:hidden}
       <header class="topbar">
         <div class="topbar-title-wrap"><button id="menuToggle" class="menu-toggle" type="button" aria-label="Mở menu" aria-expanded="false">☰</button><div><h1 id="pageTitle" class="page-title">Tổng quan</h1><div id="pageSub" class="tiny"></div></div></div>
         <div class="topbar-right">
-          <span id="syncBadge" class="pill">v1.47.2</span>
+          <span id="syncBadge" class="pill">v1.47.3</span>
           <div class="account-menu-wrap">
             <button id="topbarAccountBtn" class="topbar-account-btn" type="button" aria-expanded="false" aria-controls="accountPopover" aria-label="Mở thông tin tài khoản">
               <img id="userAvatar" class="avatar topbar-account-avatar" alt="Ảnh đại diện Google">
@@ -3070,6 +3070,81 @@ body.account-modal-open{overflow:hidden}
       });
     }
 
+    function localMonthKey(date=new Date()){
+      const y=date.getFullYear(),m=String(date.getMonth()+1).padStart(2,'0');
+      return `${y}-${m}`;
+    }
+    function displayMonthKey(key){
+      const match=String(key||'').match(/^(\d{4})-(\d{2})$/);
+      if(!match)return 'Tháng hiện tại';
+      return `Tháng ${Number(match[2])}/${match[1]}`;
+    }
+    function shiftMonthKey(key,delta){
+      const match=String(key||'').match(/^(\d{4})-(\d{2})$/);
+      const base=match?new Date(Number(match[1]),Number(match[2])-1,1):new Date();
+      base.setDate(1); base.setMonth(base.getMonth()+Number(delta||0));
+      return localMonthKey(base);
+    }
+    function selectedKpiMonthKey(){
+      return /^\d{4}-\d{2}$/.test(String(state.kpiMonthKey||''))?state.kpiMonthKey:localMonthKey(new Date());
+    }
+    function kpiMonthRange(key=selectedKpiMonthKey()){
+      const [year,month]=key.split('-').map(Number);
+      const start=new Date(year,month-1,1);
+      const endExclusive=new Date(year,month,1);
+      const endInclusive=new Date(year,month,0);
+      return {
+        key,
+        start,
+        endInclusive,
+        endExclusive,
+        startKey:localDateKey(start),
+        endKey:localDateKey(endInclusive),
+        label:`${displayDateKey(localDateKey(start))} – ${displayDateKey(localDateKey(endInclusive))}`,
+        monthLabel:displayMonthKey(key)
+      };
+    }
+    function kpiSessionsForMonth(){
+      const {start,endExclusive}=kpiMonthRange();
+      return state.sessions.filter(s=>{
+        const d=s.startTime?.toDate?.()||new Date(0);
+        return d>=start&&d<endExclusive;
+      });
+    }
+    function kpiMonthOptionKeys(){
+      const keys=new Set();
+      const current=localMonthKey(new Date());
+      for(let i=0;i<12;i++)keys.add(shiftMonthKey(current,-i));
+      for(const session of state.sessions){
+        const d=session.startTime?.toDate?.();
+        if(d instanceof Date&&!Number.isNaN(d.getTime())&&d.getFullYear()>=2020)keys.add(localMonthKey(d));
+      }
+      keys.add(selectedKpiMonthKey());
+      return [...keys].sort((a,b)=>b.localeCompare(a));
+    }
+    function kpiMonthFilterHtml(){
+      const selected=selectedKpiMonthKey();
+      const range=kpiMonthRange(selected);
+      const options=kpiMonthOptionKeys().map(key=>`<option value="${key}" ${key===selected?'selected':''}>${displayMonthKey(key)}</option>`).join('');
+      return `<div class="time-filter kpi-month-filter">
+        <div class="range-row">
+          <div class="range-tabs">
+            <span class="range-btn active">Theo tháng</span>
+            <select class="input" data-kpi-month-select aria-label="Chọn tháng xem KPI nhân sự" style="min-width:160px">${options}</select>
+          </div>
+          <div class="range-summary">${icon('calendar',15)}<span>${range.label}</span></div>
+        </div>
+      </div>`;
+    }
+    function bindKpiMonthFilter(){
+      const select=$('#section-kpi [data-kpi-month-select]');
+      if(!select)return;
+      select.onchange=()=>{
+        state.kpiMonthKey=select.value;
+        renderKpi();
+      };
+    }
+
     function dashboardSessionsForRange(){
       const all=sessionsForRange();
       if(state.rangeMode!=='30d')return all;
@@ -3217,7 +3292,7 @@ body.account-modal-open{overflow:hidden}
       const requested=Math.max(1,Math.floor(Number(value)||1));
       return Math.min(FIRESTORE_STRUCTURED_QUERY_HARD_LIMIT,requested);
     }
-    const state = { config:null, auth:null, db:null, user:null, profile:null, sessions:[], users:[], staff:[], section:'dashboard', livePage:1, rangeMode:'today', customStart:'', customEnd:'', customPickerScope:null, maintenance:{settings:{retentionDays:180,autoCleanup:true,emergencyPercent:85,firestoreSoftLimitMb:600,firestoreMaxSessions:FIRESTORE_TOTAL_SESSION_CAP,kvSoftKeyLimit:5000},github:{usedBytes:0,limitBytes:10000000000,available:false},cloudflare:{keyCount:0,lastRun:null,usedBytes:0,storageLimitBytes:1000000000,storageComplete:true},firebase:{freePlanMode:true,ttlEnabled:false,ttlRecommended:false,storageLimitBytes:1073741824}}, maintenanceLoaded:false, maintenanceLoading:false, maintenanceError:'', maintenancePromise:null, autoSyncStatus:null, autoSyncRefreshing:false, autoSyncWatcher:null, autoSyncVisibilityBound:false, reconcileModalSessionId:'' };
+    const state = { config:null, auth:null, db:null, user:null, profile:null, sessions:[], users:[], staff:[], section:'dashboard', livePage:1, rangeMode:'today', customStart:'', customEnd:'', customPickerScope:null, kpiMonthKey:'', maintenance:{settings:{retentionDays:180,autoCleanup:true,emergencyPercent:85,firestoreSoftLimitMb:600,firestoreMaxSessions:FIRESTORE_TOTAL_SESSION_CAP,kvSoftKeyLimit:5000},github:{usedBytes:0,limitBytes:10000000000,available:false},cloudflare:{keyCount:0,lastRun:null,usedBytes:0,storageLimitBytes:1000000000,storageComplete:true},firebase:{freePlanMode:true,ttlEnabled:false,ttlRecommended:false,storageLimitBytes:1073741824}}, maintenanceLoaded:false, maintenanceLoading:false, maintenanceError:'', maintenancePromise:null, autoSyncStatus:null, autoSyncRefreshing:false, autoSyncWatcher:null, autoSyncVisibilityBound:false, reconcileModalSessionId:'' };
 
     const DEFAULT_STAFF_MEMBERS=[
       {id:'staff-thao-my',displayName:'Thảo My',role:'host'},
@@ -3298,7 +3373,7 @@ body.account-modal-open{overflow:hidden}
 
     function previewTs(iso){ return {toDate:()=>new Date(iso)}; }
     function enterPreview(){
-      state.config={version:'1.47.2-preview',tiktokConfigured:true};
+      state.config={version:'1.47.3-preview',tiktokConfigured:true};
       state.user={uid:'preview-admin',email:'admin@sellerkbb.demo',displayName:'Quản trị viên Demo',photoURL:avatarFallbackData('Quản trị viên Demo')};
       state.profile={role:'admin',status:'approved',displayName:'Quản trị viên Demo',photoURL:state.user.photoURL,permissions:['live.read','kpi.read']};
       state.maintenance={settings:{retentionDays:180,autoCleanup:true,emergencyPercent:85,firestoreSoftLimitMb:600,firestoreMaxSessions:FIRESTORE_TOTAL_SESSION_CAP,kvSoftKeyLimit:5000},github:{usedBytes:124000,limitBytes:10000000000,available:true},cloudflare:{keyCount:5,lastRun:{ranAt:new Date().toISOString(),deleted:0},usedBytes:428000,storageLimitBytes:1000000000,storageComplete:true},firebase:{freePlanMode:true,ttlEnabled:false,ttlRecommended:false,storageLimitBytes:1073741824}};
@@ -4631,7 +4706,7 @@ body.account-modal-open{overflow:hidden}
       card.querySelectorAll('[data-manual-entry]').forEach(row=>row.classList.toggle('input-error',balance.status==='excess'));
     }
 
-    function buildKpiRows(){
+    function buildKpiRows(sessions=kpiSessionsForMonth()){
       const map=new Map();
       const ensure=(uid,name,currency)=>{
         const key=uid||name;
@@ -4683,7 +4758,7 @@ body.account-modal-open{overflow:hidden}
         }
       };
 
-      for(const session of sessionsForRange()){
+      for(const session of sessions){
         if(isManualKpi(session)){
           const manualEntries=normalizedManualKpiEntries(session);
           const validation=manualKpiValidation(session,manualEntries);
@@ -5087,8 +5162,9 @@ body.account-modal-open{overflow:hidden}
 
     function renderKpi(){
       if(!can('kpi.read')){ $('#section-kpi').innerHTML='<div class="notice bad">Bạn không có quyền xem KPI.</div>';return; }
-      const rangeSessions=sessionsForRange();
-      const rows=buildKpiRows();
+      const monthRange=kpiMonthRange();
+      const rangeSessions=kpiSessionsForMonth();
+      const rows=buildKpiRows(rangeSessions);
       const manualSessions=rangeSessions.filter(isManualKpi);
       const autoSessions=rangeSessions.filter(s=>!isManualKpi(s));
       const currency=rows[0]?.currency||manualSessions[0]?.currency||autoSessions[0]?.currency||'VND';
@@ -5109,7 +5185,8 @@ body.account-modal-open{overflow:hidden}
         .sort((a,b)=>b.finalKpi-a.finalKpi);
 
       $('#section-kpi').innerHTML=`
-        ${timeFilterHtml('kpi')}
+        ${kpiMonthFilterHtml()}
+        <div class="data-note">${icon('calendar',16)}<span><b>KPI nhân sự được tổng hợp theo tháng.</b> ${monthRange.monthLabel}: tính toàn bộ phiên từ ${displayDateKey(monthRange.startKey)} đến ${displayDateKey(monthRange.endKey)}. Chọn tháng khác ở phía trên để xem lại KPI.</span></div>
         <div class="kpi-rate-guide">
           <div class="kpi-rate-guide-icon">${icon('shield',16)}</div>
           <div class="kpi-rate-guide-copy">
@@ -5131,7 +5208,7 @@ body.account-modal-open{overflow:hidden}
             <div><h3>KPI chưa chốt</h3><div class="sub">Chỉ hiển thị phần còn thay đổi: GMV chờ đối soát, KPI tạm tính và số phiên chưa đủ dữ liệu. Không dùng bảng này để thanh toán KPI cuối cùng.</div></div>
             <div class="kpi-split-summary"><span class="pill warn">Tạm tính ${fmtMoney(totalProvisionalKpi,currency)}</span><span class="pill warn">${waitingSessions} phiên chờ đối soát</span></div>
           </div>
-          ${pendingRows.length?`<div class="table-wrap kpi-pending-table"><table style="min-width:760px"><thead><tr><th>Nhân sự</th><th>Vai trò</th><th>GMV chờ đối soát</th><th>KPI tạm tính</th><th>Chờ đối soát</th></tr></thead><tbody>${pendingRows.map(r=>`<tr><td>${userIdentityHtml(staffDisplayRecord(r.uid,r.name),false)}</td><td><span class="tag ${r.roles[0]||''}">${esc(kpiRoleSummary(r))}</span></td><td class="money">${fmtMoney(r.provisionalAutoGmv,r.currency)}</td><td class="money"><b>${fmtMoney(r.provisionalKpi,r.currency)}</b></td><td>${r.waitingSessions?'<span class="pill warn">'+r.waitingSessions+' phiên</span>':'<span class="pill ok">0</span>'}</td></tr>`).join('')}</tbody></table></div>`:'<div class="empty">Không có KPI chưa chốt trong khoảng thời gian này.</div>'}
+          ${pendingRows.length?`<div class="table-wrap kpi-pending-table"><table style="min-width:760px"><thead><tr><th>Nhân sự</th><th>Vai trò</th><th>GMV chờ đối soát</th><th>KPI tạm tính</th><th>Chờ đối soát</th></tr></thead><tbody>${pendingRows.map(r=>`<tr><td>${userIdentityHtml(staffDisplayRecord(r.uid,r.name),false)}</td><td><span class="tag ${r.roles[0]||''}">${esc(kpiRoleSummary(r))}</span></td><td class="money">${fmtMoney(r.provisionalAutoGmv,r.currency)}</td><td class="money"><b>${fmtMoney(r.provisionalKpi,r.currency)}</b></td><td>${r.waitingSessions?'<span class="pill warn">'+r.waitingSessions+' phiên</span>':'<span class="pill ok">0</span>'}</td></tr>`).join('')}</tbody></table></div>`:'<div class="empty">Không có KPI chưa chốt trong tháng này.</div>'}
         </div>
 
         <div class="card kpi-split-card" data-kpi-table="final">
@@ -5139,12 +5216,12 @@ body.account-modal-open{overflow:hidden}
             <div><h3>KPI đã chốt</h3><div class="sub">Chỉ hiển thị phần đã đủ điều kiện dùng để thanh toán: KPI tự động đã chốt và KPI thủ công hợp lệ.</div></div>
             <div class="kpi-split-summary"><span class="pill ok">Đã chốt ${fmtMoney(totalFinalKpi,currency)}</span></div>
           </div>
-          ${finalRows.length?`<div class="table-wrap kpi-final-table"><table style="min-width:980px"><thead><tr><th>Nhân sự</th><th>Vai trò</th><th>GMV tự động đã chốt</th><th>GMV thủ công</th><th>KPI tự động đã chốt</th><th>KPI thủ công</th><th>Tổng KPI đã chốt</th></tr></thead><tbody>${finalRows.map(r=>`<tr><td>${userIdentityHtml(staffDisplayRecord(r.uid,r.name),false)}</td><td><span class="tag ${r.roles[0]||''}">${esc(kpiRoleSummary(r))}</span></td><td class="money">${fmtMoney(r.finalAutoGmv,r.currency)}</td><td class="money manual-kpi-value">${fmtMoney(r.manualGmv,r.currency)}</td><td class="money">${fmtMoney(r.finalAutoKpi,r.currency)}</td><td class="money manual-kpi-value">${fmtMoney(r.manualKpi,r.currency)}</td><td class="money"><b>${fmtMoney(r.finalKpi,r.currency)}</b></td></tr>`).join('')}</tbody></table></div>`:'<div class="empty">Chưa có KPI đã chốt trong khoảng thời gian này.</div>'}
+          ${finalRows.length?`<div class="table-wrap kpi-final-table"><table style="min-width:980px"><thead><tr><th>Nhân sự</th><th>Vai trò</th><th>GMV tự động đã chốt</th><th>GMV thủ công</th><th>KPI tự động đã chốt</th><th>KPI thủ công</th><th>Tổng KPI đã chốt</th></tr></thead><tbody>${finalRows.map(r=>`<tr><td>${userIdentityHtml(staffDisplayRecord(r.uid,r.name),false)}</td><td><span class="tag ${r.roles[0]||''}">${esc(kpiRoleSummary(r))}</span></td><td class="money">${fmtMoney(r.finalAutoGmv,r.currency)}</td><td class="money manual-kpi-value">${fmtMoney(r.manualGmv,r.currency)}</td><td class="money">${fmtMoney(r.finalAutoKpi,r.currency)}</td><td class="money manual-kpi-value">${fmtMoney(r.manualKpi,r.currency)}</td><td class="money"><b>${fmtMoney(r.finalKpi,r.currency)}</b></td></tr>`).join('')}</tbody></table></div>`:'<div class="empty">Chưa có KPI đã chốt trong tháng này.</div>'}
           ${totalManualKpi?'<div class="tiny" style="margin-top:2px">Trong tổng KPI đã chốt có KPI thủ công hợp lệ: <b>'+fmtMoney(totalManualKpi,currency)+'</b>.</div>':''}
         </div>
 
         <div class="data-note">${icon('history',16)}<span>Cùng một nhân sự có thể xuất hiện ở cả hai bảng nếu họ có phiên đã chốt và đồng thời còn phiên khác đang đối soát.</span></div>`;
-      bindTimeFilter('kpi');
+      bindKpiMonthFilter();
     }
 
     function staffRoleLabel(role){ return role==='operator'?'Nhân viên vận hành Livestream':'Host Livestream'; }
