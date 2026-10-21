@@ -520,6 +520,9 @@ function normalizeLiveSession(s, shop, requestedAccountType = "") {
     dataComplete: Boolean(start && end),
     syncState: !start ? "invalid_start_time" : (end ? "complete" : "pending_end_time"),
     gmvAmount: String(gmv.amount || "0"),
+    sellerGmvAmount: String(gmv.amount || "0"),
+    gmvSource: "seller_shop_lives_202509",
+    creatorGmvAvailable: false,
     currency: gmv.currency || "VND",
     itemsSold: Number(sales.items_sold || 0),
     skuOrders: Number(sales.sku_orders || 0),
@@ -573,6 +576,21 @@ function mergeLiveSessionSnapshots(previous = {}, incoming = {}) {
     dataComplete,
     syncState: !startTimeSeconds ? "invalid_start_time" : (dataComplete ? "complete" : "pending_end_time")
   };
+  // Do not replace a previously verified creator LIVE GMV with a seller-only snapshot.
+  if (prev.creatorGmvAvailable === true && next.creatorGmvAvailable !== true) {
+    merged.gmvAmount = prev.gmvAmount;
+    merged.creatorGmvAmount = prev.creatorGmvAmount;
+    merged.creatorGmvAvailable = true;
+    merged.gmvSource = prev.gmvSource;
+    merged.creatorGmvUpdatedAt = prev.creatorGmvUpdatedAt;
+    merged.sellerGmvAmount = next.sellerGmvAmount ?? prev.sellerGmvAmount;
+    merged.affiliateDataAvailable = prev.affiliateDataAvailable === true;
+    if (prev.affiliateDataAvailable === true) {
+      merged.shopProductGmvAmount = prev.shopProductGmvAmount;
+      merged.affiliateGmvAmount = prev.affiliateGmvAmount;
+      merged.affiliateSource = prev.affiliateSource;
+    }
+  }
   if (preserveCompletedSnapshot) {
     merged.gmvAmount = prev.gmvAmount;
     merged.currency = prev.currency || next.currency || "VND";
@@ -581,6 +599,10 @@ function mergeLiveSessionSnapshots(previous = {}, incoming = {}) {
     merged.customers = prev.customers;
   }
   merged.reconciliation = previous?.reconciliation || incoming?.reconciliation || null;
+  // A changed LIVE GMV makes the previously finalized KPI basis stale.
+  if (prevComplete && dataComplete && moneyNumber(prev.gmvAmount) !== moneyNumber(merged.gmvAmount)) {
+    merged.reconciliation = null;
+  }
   return merged;
 }
 
@@ -595,7 +617,9 @@ function moneyObjectNumber(value) {
 }
 
 function liveProductSalesGmv(sales = {}) {
+  // The v202512 shop product endpoint documents direct_gmv; do not mix attributed GMV.
   const totals = [
+    sales.direct_gmv,
     sales.gmv,
     sales.total_gmv,
     sales.live_attributed_gmv,
@@ -611,10 +635,52 @@ function liveProductSalesGmv(sales = {}) {
   return 0;
 }
 
+async function fetchCreatorLiveCoreStats(env, session) {
+  const channel = sellerKbbChannelKey(session);
+  if (!SELLERKBB_ALLOWED_LIVE_CHANNELS.has(channel) || !session?.liveId) {
+    return { creatorGmvAvailable: false, creatorGmvError: "invalid_creator_channel_or_room" };
+  }
+  const token = await getCreatorToken(env, channel);
+  if (!token?.access_token) return { creatorGmvAvailable: false, creatorGmvError: "creator_token_missing" };
+  const path = `/analytics/202502/live_rooms/${encodeURIComponent(String(session.liveId))}/core_stats`;
+  const result = await tiktokCall(env, token.access_token, path);
+  const stats = result.payload?.data?.stats;
+  const localGmv = stats?.local_gmv;
+  const rawAmount = localGmv?.amount;
+  if (result.payload?.code !== 0 || rawAmount === undefined || rawAmount === null || rawAmount === "" ||
+      !Number.isFinite(Number(rawAmount)) || Number(rawAmount) < 0) {
+    return {
+      creatorGmvAvailable: false,
+      creatorGmvError: String(result.payload?.message || "Creator LIVE Core Stats không có GMV hợp lệ"),
+      creatorGmvErrorCode: Number(result.payload?.code || 0)
+    };
+  }
+  const currency = String(localGmv?.currency || session.currency || "VND");
+  if (session.currency && currency !== session.currency) {
+    return { creatorGmvAvailable: false, creatorGmvError: "creator_currency_mismatch" };
+  }
+  const amount = moneyNumber(rawAmount);
+  return {
+    creatorGmvAvailable: true,
+    creatorGmvAmount: amount,
+    creatorGmvError: "",
+    creatorGmvUpdatedAt: new Date().toISOString(),
+    gmvSource: "creator_live_core_stats_202502",
+    gmvAmount: String(rawAmount),
+    sellerGmvAmount: session.sellerGmvAmount ?? session.gmvAmount,
+    creatorItemsSold: Number(stats?.sales || 0),
+    creatorCreatedOrders: Number(stats?.created_order_count || 0),
+    creatorPaidOrders: Number(stats?.paid_order_count || 0)
+  };
+}
+
 async function fetchLiveShopProductBreakdown(env, accessToken, session) {
   const liveId = String(session?.liveId || "");
   const shopCipher = String(session?.shopCipher || "");
   const totalGmv = moneyNumber(session?.gmvAmount);
+  if (session?.creatorGmvAvailable !== true) {
+    return { affiliateDataAvailable: false, affiliateError: "creator_live_gmv_not_verified" };
+  }
   if (!liveId || !shopCipher) {
     return { affiliateDataAvailable: false, affiliateError: "missing_live_or_shop" };
   }
@@ -664,18 +730,23 @@ async function fetchLiveShopProductBreakdown(env, accessToken, session) {
     };
   });
 
-  const totalItems = Math.max(0, Number(session?.itemsSold || 0));
-  const totalSkuOrders = Math.max(0, Number(session?.skuOrders || 0));
+  const totalItems = Math.max(0, Number(session?.creatorItemsSold || 0));
+  const totalSkuOrders = Math.max(0, Number(session?.creatorPaidOrders || 0));
   const affiliateGmvAmount = Math.max(0, totalGmv - Math.max(0, shopProductGmvAmount));
   const affiliateItemsSold = Math.max(0, totalItems - Math.max(0, shopProductItemsSold));
   const affiliateSkuOrders = Math.max(0, totalSkuOrders - Math.max(0, shopProductSkuOrders));
-  const consistent = shopProductGmvAmount <= totalGmv + Math.max(1000, totalGmv * 0.02);
+  const sellerGmv = moneyNumber(session?.sellerGmvAmount);
+  // These two TikTok endpoints have different attribution scopes. Only report a
+  // shop/affiliate estimate if the seller product list reconciles to seller LIVE GMV.
+  const sellerMatchesProducts = sellerGmv > 0 && shopProductGmvAmount > 0
+    && Math.abs(sellerGmv - shopProductGmvAmount) <= Math.max(1000, sellerGmv * 0.05);
+  const consistent = sellerMatchesProducts && shopProductGmvAmount <= totalGmv + Math.max(1000, totalGmv * 0.02);
 
   return {
     affiliateDataAvailable: consistent,
     affiliateDataConsistent: consistent,
-    affiliateError: consistent ? "" : "LIVE product GMV is inconsistent with LIVE total GMV",
-    affiliateSource: "tiktok_live_products_202512_difference",
+    affiliateError: consistent ? "" : "seller_product_gmv_not_reconciled_or_exceeds_creator_gmv",
+    affiliateSource: "creator_live_core_stats_202502_minus_seller_products_202512",
     affiliateUpdatedAt: new Date().toISOString(),
     shopProductGmvAmount: Math.max(0, shopProductGmvAmount),
     affiliateGmvAmount,
@@ -703,6 +774,9 @@ async function enrichLiveAffiliateBreakdowns(env, accessToken, sessions, limit =
     const batch = candidates.slice(i, i + concurrency);
     const values = await Promise.all(batch.map(async session => {
       try {
+        const core = await fetchCreatorLiveCoreStats(env, session);
+        if (core.creatorGmvAvailable) Object.assign(session, core);
+        else session.creatorGmvError = core.creatorGmvError || "creator_live_gmv_not_verified";
         const breakdown = await fetchLiveShopProductBreakdown(env, accessToken, session);
         return { session, breakdown };
       } catch (error) {
@@ -714,6 +788,8 @@ async function enrichLiveAffiliateBreakdowns(env, accessToken, sessions, limit =
         Object.assign(session, breakdown);
         enriched++;
       } else if (breakdown?.affiliateError) {
+        session.affiliateDataAvailable = false;
+        session.affiliateError = breakdown.affiliateError;
         errors.push({ liveId: String(session?.liveId || ""), message: String(breakdown.affiliateError) });
       }
     }
@@ -909,6 +985,12 @@ async function buildLiveReconciliationForSession(env, accessToken, session, opti
   if (!session) throw new Error("Không tìm thấy phiên LIVE trong dữ liệu TikTok đang lưu.");
   const hydrateDetails = options.hydrateDetails !== false;
   const overlappingSessions = findOverlappingLiveSessions(session, options.allSessions || []);
+  if (session?.creatorGmvAvailable !== true) {
+    try {
+      const core = await fetchCreatorLiveCoreStats(env, session);
+      if (core.creatorGmvAvailable) Object.assign(session, core);
+    } catch {}
+  }
   if (session?.affiliateDataAvailable !== true) {
     try {
       const affiliateBreakdown = await fetchLiveShopProductBreakdown(env, accessToken, session);
@@ -1008,6 +1090,10 @@ async function buildLiveReconciliationForSession(env, accessToken, session, opti
       startTimeSeconds: Number(session.startTimeSeconds || 0),
       endTimeSeconds: Number(session.endTimeSeconds || 0),
       analyticsGmvAmount: moneyNumber(session.gmvAmount),
+      creatorGmvAvailable: session?.creatorGmvAvailable === true,
+      creatorGmvAmount: session?.creatorGmvAvailable === true ? moneyNumber(session?.creatorGmvAmount) : null,
+      sellerGmvAmount: moneyNumber(session?.sellerGmvAmount),
+      gmvSource: String(session?.gmvSource || "seller_shop_lives_202509"),
       shopProductGmvAmount: session?.affiliateDataAvailable === true ? moneyNumber(session.shopProductGmvAmount) : null,
       affiliateGmvAmount: session?.affiliateDataAvailable === true ? moneyNumber(session.affiliateGmvAmount) : null,
       affiliateItemsSold: session?.affiliateDataAvailable === true ? Number(session.affiliateItemsSold || 0) : null,
@@ -1060,6 +1146,7 @@ function summarizeLiveReconciliation(result) {
   const affiliateSkuOrders = affiliateDataAvailable ? Number(result?.live?.affiliateSkuOrders || 0) : 0;
   const affiliateCommissionAvailable = result?.live?.affiliateCommissionAvailable === true;
   const affiliateCommissionAmount = affiliateCommissionAvailable ? moneyNumber(result?.live?.affiliateCommissionAmount) : 0;
+  const creatorVerified = result?.live?.creatorGmvAvailable === true;
   const aftersalesAvailable = result?.scope?.aftersalesAvailable !== false;
   const aftersalesError = String(result?.scope?.aftersalesError || "");
   const overlapAmbiguous = result?.scope?.overlapAmbiguous === true;
@@ -1099,7 +1186,7 @@ function summarizeLiveReconciliation(result) {
 
   const hasSingleLiveData = singleLiveKpiRows.length > 0 || analyticsGmvAmount === 0;
   const hasOverlapData = overlapProrated && orders.length > 0;
-  const usableForKpi = aftersalesAvailable && (overlapAmbiguous ? hasOverlapData : hasSingleLiveData);
+  const usableForKpi = creatorVerified && aftersalesAvailable && (overlapAmbiguous ? hasOverlapData : hasSingleLiveData);
   const finalRows = overlapAmbiguous ? orders : singleLiveKpiRows;
   const allFinal = usableForKpi && finalRows.every(order => order?.finalized === true);
 
@@ -1107,7 +1194,10 @@ function summarizeLiveReconciliation(result) {
   let reason = "";
   let gmvAmount = 0;
 
-  if (!aftersalesAvailable) {
+  if (!creatorVerified) {
+    status = "waiting";
+    reason = "Chưa xác minh GMV toàn phiên bằng Creator LIVE Core Stats cho đúng Room ID; GMV Seller không đủ để chốt KPI Affiliate. Hãy kiểm tra Creator Authorization rồi đồng bộ lại.";
+  } else if (!aftersalesAvailable) {
     status = "blocked";
     reason = "TikTok Return/Refund chưa đọc được" + (aftersalesError ? ": " + aftersalesError : ".") + " SellerKBB chưa dùng số này để tính KPI.";
   } else if (overlapAmbiguous) {
@@ -1146,6 +1236,9 @@ function summarizeLiveReconciliation(result) {
     usableForKpi,
     gmvAmount: usableForKpi ? gmvAmount : 0,
     analyticsGmvAmount,
+    creatorGmvAvailable: creatorVerified,
+    sellerGmvAmount: moneyNumber(result?.live?.sellerGmvAmount),
+    gmvSource: String(result?.live?.gmvSource || ""),
     orderWindowAmount,
     confirmedLiveSignalAmount,
     provisionalTimeWindowAmount,
@@ -1205,6 +1298,13 @@ async function persistReconciliationSummary(env, liveId, summary) {
   const target = sessions.find(x => String(x?.liveId || "") === String(liveId));
   if (!target) return false;
   target.reconciliation = summary;
+  if (summary?.creatorGmvAvailable === true && moneyNumber(summary.analyticsGmvAmount) >= 0) {
+    target.sellerGmvAmount = moneyNumber(summary.sellerGmvAmount);
+    target.creatorGmvAvailable = true;
+    target.creatorGmvAmount = moneyNumber(summary.analyticsGmvAmount);
+    target.gmvAmount = String(summary.analyticsGmvAmount);
+    target.gmvSource = "creator_live_core_stats_202502";
+  }
   if (summary?.affiliateDataAvailable === true) {
     target.affiliateDataAvailable = true;
     target.affiliateDataConsistent = true;
@@ -1239,7 +1339,7 @@ async function refreshKpiReconciliations(env, accessToken, sessions, reason = "h
       const end = Number(session?.endTimeSeconds || 0);
       if (!session?.liveId || !session?.shopCipher || !end || end > nowSeconds) return false;
       if (nowSeconds - end > lookback) return false;
-      if (session?.reconciliation?.status === "final" && session?.reconciliation?.affiliateDataAvailable === true && findOverlappingLiveSessions(session, sessions).length === 0) return false;
+      if (session?.reconciliation?.status === "final" && session?.reconciliation?.affiliateDataAvailable === true && findOverlappingLiveSessions(session, sessions).length === 0 && session?.creatorGmvAvailable === true) return false;
       const last = reconciliationGeneratedMs(session?.reconciliation);
       return !last || Date.now() - last >= minRefreshMs;
     })
