@@ -3054,7 +3054,7 @@ body.account-modal-open{overflow:hidden}
       <header class="topbar">
         <div class="topbar-title-wrap"><button id="menuToggle" class="menu-toggle" type="button" aria-label="Mở menu" aria-expanded="false">☰</button><div><h1 id="pageTitle" class="page-title">Tổng quan</h1><div id="pageSub" class="tiny"></div></div></div>
         <div class="topbar-right">
-          <span id="syncBadge" class="pill">v1.49.3</span>
+          <span id="syncBadge" class="pill">v1.49.4</span>
           <div id="dataRefreshWrap" class="data-refresh-wrap">
             <button id="dataRefreshBtn" class="data-refresh-btn" type="button" title="Tải lại dữ liệu SellerKBB hiện có · không chạy đồng bộ TikTok">
               <span id="dataRefreshIcon" class="data-refresh-icon">↻</span>
@@ -3536,7 +3536,7 @@ body.account-modal-open{overflow:hidden}
 
     function previewTs(iso){ return {toDate:()=>new Date(iso)}; }
     function enterPreview(){
-      state.config={version:'1.49.3-preview',tiktokConfigured:true};
+      state.config={version:'1.49.4-preview',tiktokConfigured:true};
       state.user={uid:'preview-admin',email:'admin@sellerkbb.demo',displayName:'Quản trị viên Demo',photoURL:avatarFallbackData('Quản trị viên Demo')};
       state.profile={role:'admin',status:'approved',displayName:'Quản trị viên Demo',photoURL:state.user.photoURL,permissions:['live.read','kpi.read']};
       state.maintenance={settings:{retentionDays:180,autoCleanup:true,emergencyPercent:85,firestoreSoftLimitMb:600,firestoreMaxSessions:FIRESTORE_TOTAL_SESSION_CAP,kvSoftKeyLimit:5000},github:{usedBytes:124000,limitBytes:10000000000,available:true},cloudflare:{keyCount:5,lastRun:{ranAt:new Date().toISOString(),deleted:0},usedBytes:428000,storageLimitBytes:1000000000,storageComplete:true},firebase:{freePlanMode:true,ttlEnabled:false,ttlRecommended:false,storageLimitBytes:1073741824}};
@@ -3929,12 +3929,15 @@ body.account-modal-open{overflow:hidden}
             currentGmvAmount:amount,
             finalGmvAmount:amount,
             currentItemsSold:Number(src.itemsSold||0),
-            affiliateDataAvailable:src.affiliateDataAvailable===true||(src.affiliateDataAvailable!==false&&old.affiliateDataAvailable===true),
-            affiliateDataConsistent:src.affiliateDataConsistent!==false,
-            shopProductGmvAmount:src.affiliateDataAvailable===true?Number(src.shopProductGmvAmount||0):Number(old.shopProductGmvAmount||0),
-            affiliateGmvAmount:src.affiliateDataAvailable===true?Number(src.affiliateGmvAmount||0):Number(old.affiliateGmvAmount||0),
-            affiliateItemsSold:src.affiliateDataAvailable===true?Number(src.affiliateItemsSold||0):Number(old.affiliateItemsSold||0),
-            affiliateSkuOrders:src.affiliateDataAvailable===true?Number(src.affiliateSkuOrders||0):Number(old.affiliateSkuOrders||0),
+            affiliateDataAvailable:src.affiliateDataAvailable===true&&src.creatorGmvAvailable===true,
+            creatorGmvAvailable:src.creatorGmvAvailable===true,
+            sellerGmvAmount:Number(src.sellerGmvAmount??src.gmvAmount??0),
+            gmvSource:src.gmvSource||'seller_shop_lives_202509',
+            affiliateDataConsistent:src.affiliateDataConsistent!==false&&src.creatorGmvAvailable===true,
+            shopProductGmvAmount:src.affiliateDataAvailable===true&&src.creatorGmvAvailable===true?Number(src.shopProductGmvAmount||0):0,
+            affiliateGmvAmount:src.affiliateDataAvailable===true&&src.creatorGmvAvailable===true?Number(src.affiliateGmvAmount||0):0,
+            affiliateItemsSold:src.affiliateDataAvailable===true&&src.creatorGmvAvailable===true?Number(src.affiliateItemsSold||0):0,
+            affiliateSkuOrders:src.affiliateDataAvailable===true&&src.creatorGmvAvailable===true?Number(src.affiliateSkuOrders||0):0,
             affiliateCommissionAvailable:src.affiliateCommissionAvailable===true||old.affiliateCommissionAvailable===true,
             affiliateCommissionAmount:src.affiliateCommissionAvailable===true?Number(src.affiliateCommissionAmount||0):Number(old.affiliateCommissionAmount||0),
             affiliateSource:src.affiliateSource||old.affiliateSource||'',
@@ -4452,7 +4455,7 @@ body.account-modal-open{overflow:hidden}
       const root=$('#reconcileModalBody'); if(!root)return;
       const totals=result?.totals||{}, orders=Array.isArray(result?.orders)?result.orders:[], aftersalesAvailable=result?.scope?.aftersalesAvailable!==false;
       const cancelledAmount=Number(totals?.cancelledAmount ?? orders.filter(order=>String(order?.status||'')==='CANCELLED').reduce((sum,order)=>sum+Number(order?.amount||0),0));
-      const liveAffiliateAvailable=result?.live?.affiliateDataAvailable===true||session?.affiliateDataAvailable===true;
+      const liveAffiliateAvailable=(result?.live?.affiliateDataAvailable===true&&result?.live?.creatorGmvAvailable===true)||(session?.affiliateDataAvailable===true&&session?.creatorGmvAvailable===true);
       const liveShopGmv=liveAffiliateAvailable?Number(result?.live?.shopProductGmvAmount??session?.shopProductGmvAmount??0):null;
       const liveAffiliateGmv=liveAffiliateAvailable?Number(result?.live?.affiliateGmvAmount??session?.affiliateGmvAmount??0):null;
       const filters=reconcileFilterDefinitions(orders);
@@ -4723,7 +4726,7 @@ body.account-modal-open{overflow:hidden}
     function affiliateFigures(session){
       const total=Math.max(0,Number(finalGmv(session)||0));
       const previewAvailable=PREVIEW&&session?.affiliateDataAvailable!==false;
-      const available=session?.affiliateDataAvailable===true||previewAvailable;
+      const available=(session?.affiliateDataAvailable===true&&session?.creatorGmvAvailable===true)||previewAvailable;
       const previewAffiliate=previewAvailable&&session?.affiliateDataAvailable!==true?Math.round(total*((String(session?.id||'').charCodeAt(0)%5+17)/100)):0;
       const affiliate=available?Math.max(0,Number(session?.affiliateDataAvailable===true?session.affiliateGmvAmount:previewAffiliate)||0):null;
       const shop=available?Math.max(0,Number(session?.affiliateDataAvailable===true?session.shopProductGmvAmount:Math.max(0,total-(affiliate||0)))||0):null;
