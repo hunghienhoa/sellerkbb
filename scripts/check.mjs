@@ -1,7 +1,7 @@
 import fs from "node:fs";
 
 const root = new URL("../", import.meta.url);
-const read = file => fs.readFileSync(new URL(file, root), "utf8");
+const read = file => fs.readFileSync(new URL(file, root), "utf8").replace(/\r\n/g, "\n");
 const version = read("VERSION").trim();
 const required = ["public/index.html","worker/api-template.js","firebase/firestore.rules","firebase/firestore.indexes.json","wrangler.toml"];
 for (const file of required) {
@@ -36,7 +36,7 @@ assert(html.includes('data-assignment-summary'), "Saved mobile Host/Operator sum
 assert(html.includes('data-assignment-editor'), "Mobile Host/Operator editor wrapper missing");
 assert(html.includes('data-edit-assignment="${s.id}"'), "Mobile Host/Operator edit control missing");
 assert(html.includes("querySelectorAll('[data-edit-assignment]')"), "Mobile Host/Operator edit binding missing");
-assert(html.includes("card.querySelector('[data-assignment-editor]')?.classList.remove('hidden')"), "Mobile Sửa action must reopen Host/Operator selectors");
+assert(html.includes("card.querySelectorAll('[data-assignment-editor]').forEach(el=>el.classList.remove('hidden'))"), "Sửa action must reopen both desktop/mobile Host/Operator selectors");
 assert(html.includes("function hasSavedManualKpiType(session)"), "Saved Campaign/Mega compact-state helper missing");
 assert(html.includes("data-manual-type-summary"), "Saved Campaign/Mega summary missing");
 assert(html.includes("data-edit-manual-type"), "Campaign/Mega edit control missing");

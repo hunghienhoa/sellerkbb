@@ -182,15 +182,48 @@ try {
 
   const desktopRow='#section-live .desktop-live-table tbody tr:nth-child(1)';
   const desktopId=await page.$eval(desktopRow+' [data-save-session]',e=>e.dataset.saveSession);
+  if(await page.$(desktopRow+' [data-edit-assignment]')) await page.click(desktopRow+' [data-edit-assignment]');
   await page.select(desktopRow+' select[data-person="host"]','staff-thao-my');
   await page.select(desktopRow+' select[data-person="operator"]','staff-hung-bg');
   await page.click(desktopRow+' [data-save-session]');
   await sleep(150);
+  const assertAssignmentCollapsed=async(scope,host,operator)=>{
+    assert(await page.$$eval(scope+' [data-person]',els=>els.length===2&&els.every(e=>!e.checkVisibility())),"Saved Host/Operator dropdowns must both be hidden");
+    assert(await page.$$eval(scope+' [data-assignment-summary]',els=>els.length>0&&els.every(e=>e.checkVisibility())),"Saved assignment summary must be visible");
+    const names=await page.$$eval(scope+' [data-assignment-summary]',els=>els.map(e=>e.textContent).join(' '));
+    assert(names.includes(host)&&names.includes(operator),"Saved assignment summary must show both selected names");
+    assert(await page.$eval(scope+' [data-edit-assignment]',e=>e.checkVisibility()),"Saved assignment must expose Sửa");
+    assert(await page.$eval(scope+' [data-save-session]',e=>!e.checkVisibility()),"Saved assignment must hide Lưu until Sửa is clicked");
+  };
+  await assertAssignmentCollapsed(desktopRow,'Thảo My','Hùng Bắc Giang');
+  await page.click(desktopRow+' [data-edit-assignment]');
+  assert(await page.$$eval(desktopRow+' [data-person]',els=>els.every(e=>e.checkVisibility())),"Desktop Sửa must open both dropdowns");
+  assert(await page.$$eval(desktopRow+' [data-assignment-summary]',els=>els.every(e=>!e.checkVisibility())),"Desktop Sửa must hide all summary parts");
+  assert(await page.$eval(desktopRow+' [data-save-session]',e=>e.checkVisibility()),"Desktop Sửa must show Lưu");
+  const untouchedMobile='#section-live .mobile-live-card[data-live-session="'+desktopId+'"]';
+  assert(await page.$eval(untouchedMobile+' [data-assignment-editor]',e=>e.classList.contains('hidden')),"Desktop edit must not open the hidden mobile form");
+  await page.select(desktopRow+' select[data-person="host"]','staff-dung');
+  await page.select(desktopRow+' select[data-person="operator"]','staff-hung-hh');
+  await page.click(desktopRow+' [data-save-session]');
+  await assertAssignmentCollapsed(desktopRow,'Dung','Hùng Hiền Hoà');
+  // A partially assigned session stays editable, as on mobile.
+  await page.click(desktopRow+' [data-edit-assignment]');
+  await page.select(desktopRow+' select[data-person="operator"]','');
+  await page.click(desktopRow+' [data-save-session]');
+  assert(await page.$$eval(desktopRow+' [data-person]',els=>els.every(e=>e.checkVisibility())),"Incomplete assignments must stay editable");
+  await page.select(desktopRow+' select[data-person="host"]','staff-thao-my');
+  await page.select(desktopRow+' select[data-person="operator"]','staff-hung-bg');
+  await page.click(desktopRow+' [data-save-session]');
+  for(const width of [1024,1440]){
+    await page.setViewport({width,height:1000,deviceScaleFactor:1});
+    await assertAssignmentCollapsed(desktopRow,'Thảo My','Hùng Bắc Giang');
+  }
   await page.reload({waitUntil:"domcontentloaded"});
   await page.waitForSelector("#app:not(.hidden)",{timeout:30000});
   await page.click('[data-section="live"]');
   await page.click('#section-live [data-range-mode="30d"]');
   const desktopSavedRow='#section-live .desktop-live-table tbody tr:has([data-save-session="'+desktopId+'"])';
+  await assertAssignmentCollapsed(desktopSavedRow,'Thảo My','Hùng Bắc Giang');
   assert(await page.$eval(desktopSavedRow+' select[data-person="host"]',e=>e.value)==='staff-thao-my',"Desktop Host did not persist after reload");
   assert(await page.$eval(desktopSavedRow+' select[data-person="operator"]',e=>e.value)==='staff-hung-bg',"Desktop Operator did not persist after reload");
   const autoKpiBasis=await page.$eval(desktopSavedRow,e=>{
@@ -620,6 +653,7 @@ try {
   await page.select(mobileCard+' select[data-person="operator"]','staff-hung-hh');
   await page.click(mobileCard+' [data-save-session]');
   await sleep(150);
+  await assertAssignmentCollapsed(mobileCard,'Dung','Hùng Hiền Hoà');
   const mobileSavedState=await page.evaluate(id=>{try{return JSON.parse(localStorage.getItem('sellerkbb:preview-state:v1')||'{}')?.sessionEdits?.[id]||null}catch{return null}},mobileId);
   assert(mobileSavedState?.hostUid==='staff-dung'&&mobileSavedState?.operatorUid==='staff-hung-hh',"Mobile Host/Operator save did not persist in Preview state");
   assert(await page.$('#actionToast')!==null,"Toast live region must remain mounted for mobile actions");
@@ -640,6 +674,10 @@ try {
   assert(await page.$eval(mobileSavedCard+' [data-assignment-editor]',e=>!e.classList.contains('hidden')&&getComputedStyle(e).display!=='none'),"Sửa must reopen the mobile Host/Operator selectors");
   assert(await page.$eval(mobileSavedCard+' select[data-person="host"]',e=>e.value)==='staff-dung',"Mobile Host save read the wrong hidden desktop selector");
   assert(await page.$eval(mobileSavedCard+' select[data-person="operator"]',e=>e.value)==='staff-hung-hh',"Mobile Operator save read the wrong hidden desktop selector");
+  await page.select(mobileSavedCard+' select[data-person="host"]','staff-thao-my');
+  await page.click(mobileSavedCard+' [data-save-session]');
+  await assertAssignmentCollapsed(mobileSavedCard,'Thảo My','Hùng Hiền Hoà');
+  // Toggle manual mode directly from the collapsed state on both layouts.
 
   await page.click(mobileSavedCard+' [data-manual-kpi]');
   assert(await page.$eval(mobileSavedCard+' [data-auto-person-wrap]',e=>getComputedStyle(e).display==='none'),"Mobile Host/Operator block must hide in manual KPI mode");

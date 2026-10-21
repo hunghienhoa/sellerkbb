@@ -4,7 +4,7 @@
 
 ### Báo cáo TikTok LIVE · KPI nhân sự · Tự đồng bộ 24/24
 
-**Phiên bản hiện tại: v1.46.6**
+**Phiên bản hiện tại: v1.46.7**
 
 [![GitHub Release](https://img.shields.io/github/v/release/hunghienhoa/sellerkbb?label=Release)](https://github.com/hunghienhoa/sellerkbb/releases)
 [![GitHub Actions](https://img.shields.io/github/actions/workflow/status/hunghienhoa/sellerkbb/deploy.yml?branch=main&label=Ki%E1%BB%83m%20tra%20%26%20Backup)](https://github.com/hunghienhoa/sellerkbb/actions)
@@ -17,13 +17,13 @@
 
 ---
 
-## 🆕 Cập nhật mới nhất — v1.46.6
+## 🆕 Cập nhật mới nhất — v1.46.7
 
-- Bổ sung thẻ **Đơn hủy từ Livestream** trong popup **Đối soát đơn LIVE**.
-- Thẻ này hiển thị **tổng giá trị gốc của các đơn có trạng thái `CANCELLED` được tạo trong đúng khung thời gian phiên LIVE**.
-- Giá trị tự cập nhật mỗi lần bấm **Làm mới** hoặc khi hệ thống tự đối soát lại phiên.
-- Trên mobile, thẻ mới nằm cùng nhóm số liệu đối soát và giữ bố cục 2 cột cân đối.
-- Không thay đổi công thức KPI hoặc logic xử lý hai LIVE nội bộ chồng giờ của v1.46.5.
+- Sửa **Phiên LIVE trên PC**: sau khi lưu đủ Host và Vận hành, cả hai dropdown tự ẩn, thay bằng tên nhân sự đã lưu và nút **Sửa**, đồng nhất với mobile.
+- Bấm **Sửa** để mở lại đúng hai ô chọn của phiên đó; **Lưu** lại sẽ tự thu gọn. Tải lại trang vẫn giữ người đã chọn và trạng thái thu gọn.
+- Phiên chưa gán đủ hai người vẫn mở form để tiếp tục chọn. Nút **Lưu** chỉ hiện khi đang chỉnh sửa.
+- Giữ nguyên Campaign/Mega Live, KPI thủ công, công thức KPI và đối soát đơn LIVE.
+- Bổ sung kiểm thử PC/mobile cho lưu, sửa, lưu lại, tải lại trang và chuyển chế độ Campaign/Mega; chuẩn hóa xuống dòng trong bộ kiểm tra để chạy được trên Windows và Linux.
 
 
 ---
@@ -103,8 +103,8 @@ Trong **Phiên LIVE**:
 1. Chọn Host.
 2. Chọn Livestream operator.
 3. Bấm **Lưu** / **Lưu thiết lập**.
-4. Khi đã lưu đủ cả hai người trên điện thoại, phần chọn tự thu gọn và chỉ hiện tên Host/Vận hành cùng nút **Sửa**.
-5. Khi cần đổi người, bấm **Sửa** để mở lại hai ô chọn rồi lưu lại.
+4. Khi đã lưu đủ cả hai người trên **PC và điện thoại**, hai ô chọn và nút **Lưu** tự ẩn; chỉ hiện tóm tắt tên Host/Vận hành cùng nút **Sửa**.
+5. Khi cần đổi người, bấm **Sửa** để mở lại hai ô chọn và nút **Lưu** của đúng phiên đó. Lưu thành công thì form tự thu gọn lại.
 6. Reload lại trang vẫn phải giữ đúng người đã lưu và tiếp tục ở trạng thái thu gọn nếu đã đủ Host/Vận hành.
 
 Phiên LIVE tự đồng bộ mới luôn để Host/Operator **trống** để tránh tính nhầm KPI; nếu mới gán thiếu một người thì SellerKBB chưa thu gọn phần chọn.
@@ -246,6 +246,7 @@ README giữ lại phần này để nhân sự có thể biết **vì sao giao 
 
 | Phiên bản | Thay đổi chính |
 |---|---|
+| **v1.46.7** | PC tự ẩn dropdown Host/Vận hành sau khi lưu, hiện tóm tắt và nút **Sửa** giống mobile; lưu lại tiếp tục thu gọn. Giữ nguyên Campaign/Mega Live/KPI thủ công; bổ sung kiểm thử và hỗ trợ kiểm tra trên Windows. |
 | **v1.46.3** | Xóa lỗi TikTok cũ khỏi trạng thái sau khi đồng bộ thành công; tránh báo `tiktok_not_connected` dù Seller Token đã có. |
 | **v1.46.2** | Fix triệt để Firestore 10.000: tách query limit/total cap, dùng pagination 5.000/trang và regression test chặn tái phát. |
 | **v1.46.1** | Sửa màn hình trắng khi bật Firebase thật: phân trang Firestore dưới giới hạn 10.000/truy vấn và thêm xử lý lỗi startup. |
