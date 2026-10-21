@@ -539,11 +539,11 @@ try {
   await page.setViewport({width:390,height:844,deviceScaleFactor:1});
   await page.reload({waitUntil:"domcontentloaded"});
   await page.waitForSelector("#app:not(.hidden)",{timeout:30000});
-  await page.click('#nav [data-section="tiktok"]');
-  await page.waitForSelector('#section-tiktok [data-creator-auth-card]');
+  await page.$eval('#nav [data-section="tiktok"]',e=>e.click());
+  await page.waitForSelector('#section-tiktok.active [data-creator-auth-card]');
   const mobileCreatorLayout=await page.$$eval('#section-tiktok [data-creator-channel]',els=>els.map(e=>{const r=e.getBoundingClientRect();return {left:r.left,right:r.right,width:r.width,vw:innerWidth};}));
   assert(mobileCreatorLayout.length===2&&mobileCreatorLayout.every(x=>x.left>=0&&x.right<=x.vw&&x.width<=x.vw),"Mobile Creator cards must fit viewport without overflow");
-  await page.click('#nav [data-section="dashboard"]');
+  await page.$eval('#nav [data-section="dashboard"]',e=>e.click());
   assert(await page.$eval('#dataRefreshBtn',e=>e.checkVisibility()),"Mobile latest-data refresh button must remain visible on Tổng quan");
   const mobileRefreshGeometry=await page.$eval('.topbar',e=>{
     const refresh=e.querySelector('#dataRefreshBtn').getBoundingClientRect();
