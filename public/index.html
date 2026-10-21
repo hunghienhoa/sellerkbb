@@ -777,6 +777,11 @@ tbody tr:hover td{background:#fffafd}
   background:#fff1f7;
   border-color:#efc9db;
 }
+.reconcile-overview-card.cancelled{
+  background:#fff6f8;
+  border-color:#efcfd7;
+}
+.reconcile-overview-card.cancelled b{color:#984b60}
 .reconcile-overview-card span{
   display:block;
   margin-bottom:3px;
@@ -2823,7 +2828,7 @@ tbody tr:hover td{background:#fffafb}
       <header class="topbar">
         <div class="topbar-title-wrap"><button id="menuToggle" class="menu-toggle" type="button" aria-label="Mở menu" aria-expanded="false">☰</button><div><h1 id="pageTitle" class="page-title">Tổng quan</h1><div id="pageSub" class="tiny"></div></div></div>
         <div class="topbar-right">
-          <span id="syncBadge" class="pill">v1.46.5</span>
+          <span id="syncBadge" class="pill">v1.46.6</span>
           <div class="account-menu-wrap">
             <button id="topbarAccountBtn" class="topbar-account-btn" type="button" aria-expanded="false" aria-controls="accountPopover" aria-label="Mở thông tin tài khoản">
               <img id="userAvatar" class="avatar topbar-account-avatar" alt="Ảnh đại diện Google">
@@ -3200,7 +3205,7 @@ tbody tr:hover td{background:#fffafb}
 
     function previewTs(iso){ return {toDate:()=>new Date(iso)}; }
     function enterPreview(){
-      state.config={version:'1.46.5-preview',tiktokConfigured:true};
+      state.config={version:'1.46.6-preview',tiktokConfigured:true};
       state.user={uid:'preview-admin',email:'admin@sellerkbb.demo',displayName:'Quản trị viên Demo',photoURL:avatarFallbackData('Quản trị viên Demo')};
       state.profile={role:'admin',status:'approved',displayName:'Quản trị viên Demo',photoURL:state.user.photoURL,permissions:['live.read','kpi.read']};
       state.maintenance={settings:{retentionDays:180,autoCleanup:true,emergencyPercent:85,firestoreSoftLimitMb:600,firestoreMaxSessions:FIRESTORE_TOTAL_SESSION_CAP,kvSoftKeyLimit:5000},github:{usedBytes:124000,limitBytes:10000000000,available:true},cloudflare:{keyCount:5,lastRun:{ranAt:new Date().toISOString(),deleted:0},usedBytes:428000,storageLimitBytes:1000000000,storageComplete:true},firebase:{freePlanMode:true,ttlEnabled:false,ttlRecommended:false,storageLimitBytes:1073741824}};
@@ -3778,6 +3783,7 @@ tbody tr:hover td{background:#fffafb}
         kpiOrderCount:overlapAmbiguous?orders.length:singleLiveRows.length,
         pendingOrderCount:finalRows.filter(order=>order?.finalized!==true&&order?.status!=='CANCELLED'&&order?.status!=='COMPLETED').length,
         cancelledCount:Number(result?.counts?.cancelled||0),
+        cancelledAmount:Number(result?.totals?.cancelledAmount ?? orders.filter(order=>String(order?.status||'')==='CANCELLED').reduce((sum,order)=>sum+Number(order?.amount||0),0)),
         returningCount:Number(result?.counts?.returning||0),
         refundedCount:Number(result?.counts?.refunded||0),
         aftersalesAvailable,
@@ -3952,6 +3958,7 @@ tbody tr:hover td{background:#fffafb}
       if(state.reconcileModalSessionId!==session.id)return;
       const root=$('#reconcileModalBody'); if(!root)return;
       const totals=result?.totals||{}, orders=Array.isArray(result?.orders)?result.orders:[], aftersalesAvailable=result?.scope?.aftersalesAvailable!==false;
+      const cancelledAmount=Number(totals?.cancelledAmount ?? orders.filter(order=>String(order?.status||'')==='CANCELLED').reduce((sum,order)=>sum+Number(order?.amount||0),0));
       const filters=reconcileFilterDefinitions(orders);
       root.classList.add('has-data');
       root.innerHTML=`
@@ -3960,6 +3967,7 @@ tbody tr:hover td{background:#fffafb}
           <div class="reconcile-overview-card"><span>Đơn trong phiên</span><b>${new Intl.NumberFormat('vi-VN').format(orders.length)}</b></div>
           <div class="reconcile-overview-card"><span>GMV đã ghi nhận</span><b>${fmtMoney(result?.live?.analyticsGmvAmount,session.currency)}</b></div>
           <div class="reconcile-overview-card"><span>GMV chờ đối soát</span><b>${result?.kpiSummary?.usableForKpi&&result?.kpiSummary?.status!=='final'?fmtMoney(result.kpiSummary.gmvAmount,session.currency):result?.kpiSummary?.status==='final'?'Đã chốt':'Chờ dữ liệu'}</b></div>
+          <div class="reconcile-overview-card cancelled"><span>Đơn hủy từ Livestream</span><b>${fmtMoney(cancelledAmount,session.currency)}</b></div>
           <div class="reconcile-overview-card primary"><span>GMV sau khi hoàn hủy</span><b>${result?.kpiSummary?.status==='final'?fmtMoney(result.kpiSummary.gmvAmount,session.currency):'Chưa chốt'}</b></div>
         </div>
         <div class="notice ${result?.kpiSummary?.status==='final'?'ok':result?.kpiSummary?.usableForKpi?'warn':'bad'} kpi-summary-note"><strong>KPI tự động: ${esc(kpiStatusLabel(result?.kpiSummary?.status||'waiting',result?.kpiSummary||null))}.</strong> ${esc(result?.kpiSummary?.reason||'')} ${result?.kpiSummary?.overlapProrated===true?'Tỷ lệ hủy/hoàn hiện tại: '+new Intl.NumberFormat('vi-VN',{style:'percent',maximumFractionDigits:2}).format(Math.max(0,1-Number(result.kpiSummary.overlapAdjustmentRatio||0)))+' trên '+new Intl.NumberFormat('vi-VN').format(orders.length)+' đơn trong khung giờ.':Number(result?.kpiSummary?.provisionalTimeWindowOrders||0)>0?'Có '+new Intl.NumberFormat('vi-VN').format(Number(result.kpiSummary.provisionalTimeWindowOrders||0))+' đơn khớp thời gian đang được tính KPI tạm tính ('+fmtMoney(Number(result.kpiSummary.provisionalTimeWindowAmount||0),session.currency)+').':''}</div>
