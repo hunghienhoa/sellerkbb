@@ -144,7 +144,7 @@ try {
   assert(await page.$eval('#reconcileModalBody',e=>e.textContent.includes('Đang hoàn / trả')&&e.textContent.includes('Đã hoàn tiền')&&e.textContent.includes('Đã hủy')&&e.textContent.includes('Hoàn tất')),"Aftersale/final-state chips missing");
   assert(await page.$eval('#reconcileModalBody',e=>e.textContent.includes('Có tín hiệu LIVE')&&e.textContent.includes('1 kênh nội bộ LIVE')),"LIVE attribution confidence labels missing");
   assert(await page.$eval('#reconcileModalBody',e=>e.textContent.includes('Bảo vệ đối soát 60 ngày')&&e.textContent.includes('15 ngày')&&e.textContent.includes('6 ngày')),"Reconciliation retention/return-window explanation missing");
-  assert(await page.$eval('#reconcileModalBody',e=>e.textContent.includes('GMV đã ghi nhận')&&e.textContent.includes('GMV chờ đối soát')&&e.textContent.includes('GMV sau khi hoàn hủy')&&e.textContent.includes('KPI tự động:')),"Reconciliation popup three-stage GMV/status missing");
+  assert(await page.$eval('#reconcileModalBody',e=>e.textContent.includes('GMV đã ghi nhận')&&e.textContent.includes('GMV chờ đối soát')&&e.textContent.includes('Đơn hủy từ Livestream')&&e.textContent.includes('GMV sau khi hoàn hủy')&&e.textContent.includes('KPI tự động:')),"Reconciliation popup GMV overview/status missing");
   assert(await page.$eval('#reconcileModalBody',e=>e.textContent.includes('KPI tạm tính')&&e.textContent.includes('Có tín hiệu LIVE · tính KPI')),"Reconciliation attribution must show confirmed/provisional KPI inclusion");
   const returnFilter=[...await page.$$('#reconcileModalBody [data-reconcile-filter]')];
   assert(returnFilter.length>=8,"Reconciliation filter chips missing");
