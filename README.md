@@ -4,7 +4,7 @@
 
 ### Báo cáo TikTok LIVE · KPI nhân sự · Tự đồng bộ 24/24
 
-**Phiên bản hiện tại: v1.46.5**
+**Phiên bản hiện tại: v1.46.6**
 
 [![GitHub Release](https://img.shields.io/github/v/release/hunghienhoa/sellerkbb?label=Release)](https://github.com/hunghienhoa/sellerkbb/releases)
 [![GitHub Actions](https://img.shields.io/github/actions/workflow/status/hunghienhoa/sellerkbb/deploy.yml?branch=main&label=Ki%E1%BB%83m%20tra%20%26%20Backup)](https://github.com/hunghienhoa/sellerkbb/actions)
@@ -17,15 +17,13 @@
 
 ---
 
-## 🆕 Cập nhật mới nhất — v1.46.5
+## 🆕 Cập nhật mới nhất — v1.46.6
 
-- Fix triệt để tình huống hai kênh nội bộ `shopkhangbaby` và `mekhangsua` LIVE chồng giờ: không còn khóa toàn bộ KPI chỉ vì phát hiện chồng thời gian.
-- Khi hai kênh chồng giờ, SellerKBB lấy **GMV TikTok Analytics riêng của từng phiên** làm nền và dùng các đơn trong đúng khung giờ chỉ để tính **tỷ lệ hủy/hoàn**. Cách này tránh cộng cùng một đơn trực tiếp vào hai phiên.
-- Công thức đối soát khi chồng LIVE: `GMV chờ đối soát = GMV Analytics của phiên × (GMV đơn sau hủy/hoàn ÷ GMV đơn trước hủy/hoàn)`.
-- Khi đơn còn đang giao/chờ xử lý, kết quả là **KPI tạm tính**; khi toàn bộ đơn trong khung giờ đã kết thúc và không còn hậu mãi xử lý thì phiên mới chuyển **Đã chốt**.
-- Trên popup đối soát, đơn ở phiên chồng giờ hiển thị rõ **Khớp giờ · đối soát chồng LIVE · dùng tính tỷ lệ hủy/hoàn** thay vì báo “không tính KPI”.
-- Giữ nguyên cơ chế 1 kênh nội bộ LIVE: đơn khớp thời gian vẫn được tính KPI tạm tính trực tiếp theo đơn sau hủy/hoàn.
-- Return/Refund tiếp tục dùng `page_size=50`, `order_ids` dạng danh sách; chỉ đồng bộ đúng hai kênh nội bộ.
+- Bổ sung thẻ **Đơn hủy từ Livestream** trong popup **Đối soát đơn LIVE**.
+- Thẻ này hiển thị **tổng giá trị gốc của các đơn có trạng thái `CANCELLED` được tạo trong đúng khung thời gian phiên LIVE**.
+- Giá trị tự cập nhật mỗi lần bấm **Làm mới** hoặc khi hệ thống tự đối soát lại phiên.
+- Trên mobile, thẻ mới nằm cùng nhóm số liệu đối soát và giữ bố cục 2 cột cân đối.
+- Không thay đổi công thức KPI hoặc logic xử lý hai LIVE nội bộ chồng giờ của v1.46.5.
 
 
 ---
