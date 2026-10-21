@@ -375,7 +375,7 @@ assert(html.includes("KPI tạm tính"), "Single-LIVE provisional KPI badge miss
 assert(html.includes("đối soát chồng LIVE")&&html.includes("dùng tính tỷ lệ hủy/hoàn"), "Overlap reconciliation UI labels missing");
 assert(html.includes("Tỷ lệ hủy/hoàn hiện tại"), "Overlap aftersales ratio explanation missing");
 assert(worker.includes("SELLERKBB_ALLOWED_LIVE_CHANNELS"), "SellerKBB LIVE channel whitelist missing");
-assert(worker.includes("parsed.filter(isAllowedSellerKbbLiveChannel)"), "Cached LIVE data must be whitelist-filtered");
+assert(worker.includes("filter(Boolean).filter(isAllowedSellerKbbLiveChannel)"), "Cached LIVE data must be sanitized then whitelist-filtered");
 assert(worker.includes("insideRefreshedWindow")&&worker.includes("freshIds.has(id)"), "Refreshed sync window must prune stale affiliate sessions");
 assert(worker.includes("function validLiveStartSeconds")&&worker.includes("function validLiveEndSeconds"), "LIVE timestamp validation missing");
 assert(worker.includes("function sanitizeStoredLiveSession")&&worker.includes("function mergeLiveSessionSnapshots"), "LIVE cache sanitation/safe merge missing");
