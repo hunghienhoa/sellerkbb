@@ -138,8 +138,8 @@ try {
   assert(affiliateDesktopRow.includes('món Affiliate')&&affiliateDesktopRow.includes('Không cộng GMV/KPI'),"Desktop Affiliate row breakdown missing");
   assert(await page.$eval('#section-live .desktop-live-table tbody tr:first-child .live-time-cell',e=>/^\d{2}\/\d{2}\/\d{4} Vào lúc \d{2}:\d{2}-/.test(e.textContent.trim())),"Desktop compact LIVE time range not rendered");
   assert(!(await page.$eval('#section-live',e=>e.textContent.includes('01/01/1970'))),"LIVE UI must never render Unix epoch as a session end time");
-  await page.click('#section-live [data-range-mode="custom"]');
-  await page.waitForSelector('#section-live [data-date-calendar="live"] [data-calendar-day]');
+  await page.$eval('#section-live [data-range-mode="custom"]',e=>e.click());
+  await page.waitForFunction(()=>document.querySelector('#section-live [data-range-mode="custom"]')?.classList.contains('active')&&document.querySelector('#section-live [data-date-calendar="live"] [data-calendar-day]'));
   assert(await page.$('#section-live input[placeholder="DD/MM/YYYY"]') === null,"Manual date field still exists on desktop");
   const dayCount=await page.$$eval('#section-live [data-calendar-day]',els=>els.length);
   assert(dayCount>=28,"Calendar grid did not render enough days");
@@ -150,8 +150,8 @@ try {
   await page.click('#section-live [data-apply-range="live"]');
   assert(await page.$('#section-live [data-date-calendar="live"]')===null,"Desktop calendar did not collapse after Apply");
   assert(await page.$eval('#section-live [data-range-mode="custom"]',e=>e.classList.contains('active')),"Custom range should remain active after Apply");
-  await page.click('#section-live [data-range-mode="custom"]');
-  await page.waitForSelector('#section-live [data-date-calendar="live"] [data-calendar-day]');
+  await page.$eval('#section-live [data-range-mode="custom"]',e=>e.click());
+  await page.waitForFunction(()=>document.querySelector('#section-live [data-range-mode="custom"]')?.classList.contains('active')&&document.querySelector('#section-live [data-date-calendar="live"] [data-calendar-day]'));
   await page.click('#section-live [data-apply-range="live"]');
   assert(await page.$('#section-live [data-date-calendar="live"]')===null,"Desktop calendar did not collapse after reopening and applying");
   await page.click('#section-live [data-range-mode="30d"]');
@@ -763,8 +763,8 @@ try {
   assert(!mobileTypeLayout.overflow&&mobileTypeLayout.buttonInside,"Mobile Campaign/Mega saved summary must not overflow its card");
   assert(mobileTypeLayout.buttonWidth<mobileTypeLayout.width*.4&&mobileTypeLayout.copyWidth>mobileTypeLayout.buttonWidth,"Mobile Sửa button must stay compact beside the saved type");
 
-  await page.click('#section-live [data-range-mode="custom"]');
-  await page.waitForSelector('#section-live [data-date-calendar="live"] [data-calendar-day]');
+  await page.$eval('#section-live [data-range-mode="custom"]',e=>e.click());
+  await page.waitForFunction(()=>document.querySelector('#section-live [data-range-mode="custom"]')?.classList.contains('active')&&document.querySelector('#section-live [data-date-calendar="live"] [data-calendar-day]'));
   assert((await page.$$eval('#section-live [data-calendar-day]',els=>els.length))>=28,"Mobile calendar grid missing");
   await page.click('#section-live [data-apply-range="live"]');
   assert(await page.$('#section-live [data-date-calendar="live"]')===null,"Mobile calendar did not collapse after Apply");
