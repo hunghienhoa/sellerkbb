@@ -2899,7 +2899,7 @@ body.account-modal-open{overflow:hidden}
       <header class="topbar">
         <div class="topbar-title-wrap"><button id="menuToggle" class="menu-toggle" type="button" aria-label="Mở menu" aria-expanded="false">☰</button><div><h1 id="pageTitle" class="page-title">Tổng quan</h1><div id="pageSub" class="tiny"></div></div></div>
         <div class="topbar-right">
-          <span id="syncBadge" class="pill">v1.47.0</span>
+          <span id="syncBadge" class="pill">v1.47.1</span>
           <div class="account-menu-wrap">
             <button id="topbarAccountBtn" class="topbar-account-btn" type="button" aria-expanded="false" aria-controls="accountPopover" aria-label="Mở thông tin tài khoản">
               <img id="userAvatar" class="avatar topbar-account-avatar" alt="Ảnh đại diện Google">
@@ -2944,9 +2944,31 @@ body.account-modal-open{overflow:hidden}
 
   <script type="module">
     const FIREBASE_VERSION = "12.19.0";
-    const { initializeApp } = await import(`https://www.gstatic.com/firebasejs/${FIREBASE_VERSION}/firebase-app.js`);
-    const { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } = await import(`https://www.gstatic.com/firebasejs/${FIREBASE_VERSION}/firebase-auth.js`);
-    const { getFirestore, doc, getDoc, setDoc, updateDoc, deleteDoc, getDocs, collection, query, orderBy, where, limit, startAfter, writeBatch, serverTimestamp, Timestamp } = await import(`https://www.gstatic.com/firebasejs/${FIREBASE_VERSION}/firebase-firestore.js`);
+    const STARTUP_TIMEOUT_MS = 18000;
+    const API_TIMEOUT_MS = 12000;
+    let initializeApp, getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged;
+    let getFirestore, doc, getDoc, setDoc, updateDoc, deleteDoc, getDocs, collection, query, orderBy, where, limit, startAfter, writeBatch, serverTimestamp, Timestamp;
+
+    async function withTimeout(promise,ms,label='Tác vụ'){
+      let timer;
+      try{
+        return await Promise.race([
+          promise,
+          new Promise((_,reject)=>{timer=setTimeout(()=>reject(new Error(`${label} quá thời gian chờ ${Math.ceil(ms/1000)} giây.`)),ms);})
+        ]);
+      }finally{clearTimeout(timer)}
+    }
+
+    async function loadFirebaseSdk(){
+      const [appModule,authModule,firestoreModule]=await withTimeout(Promise.all([
+        import(`https://www.gstatic.com/firebasejs/${FIREBASE_VERSION}/firebase-app.js`),
+        import(`https://www.gstatic.com/firebasejs/${FIREBASE_VERSION}/firebase-auth.js`),
+        import(`https://www.gstatic.com/firebasejs/${FIREBASE_VERSION}/firebase-firestore.js`)
+      ]),12000,'Tải Firebase');
+      ({initializeApp}=appModule);
+      ({getAuth,GoogleAuthProvider,signInWithPopup,signOut,onAuthStateChanged}=authModule);
+      ({getFirestore,doc,getDoc,setDoc,updateDoc,deleteDoc,getDocs,collection,query,orderBy,where,limit,startAfter,writeBatch,serverTimestamp,Timestamp}=firestoreModule);
+    }
 
     const $ = (s) => document.querySelector(s);
     const esc = (v="") => String(v).replace(/[&<>'"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;","'":"&#39;",'"':"&quot;"}[c]));
@@ -3195,7 +3217,7 @@ body.account-modal-open{overflow:hidden}
       const requested=Math.max(1,Math.floor(Number(value)||1));
       return Math.min(FIRESTORE_STRUCTURED_QUERY_HARD_LIMIT,requested);
     }
-    const state = { config:null, auth:null, db:null, user:null, profile:null, sessions:[], users:[], staff:[], section:'dashboard', livePage:1, rangeMode:'today', customStart:'', customEnd:'', customPickerScope:null, maintenance:{settings:{retentionDays:180,autoCleanup:true,emergencyPercent:85,firestoreSoftLimitMb:600,firestoreMaxSessions:FIRESTORE_TOTAL_SESSION_CAP,kvSoftKeyLimit:5000},github:{usedBytes:0,limitBytes:10000000000,available:false},cloudflare:{keyCount:0,lastRun:null,usedBytes:0,storageLimitBytes:1000000000,storageComplete:true},firebase:{freePlanMode:true,ttlEnabled:false,ttlRecommended:false,storageLimitBytes:1073741824}}, autoSyncStatus:null, autoSyncRefreshing:false, autoSyncWatcher:null, autoSyncVisibilityBound:false, reconcileModalSessionId:'' };
+    const state = { config:null, auth:null, db:null, user:null, profile:null, sessions:[], users:[], staff:[], section:'dashboard', livePage:1, rangeMode:'today', customStart:'', customEnd:'', customPickerScope:null, maintenance:{settings:{retentionDays:180,autoCleanup:true,emergencyPercent:85,firestoreSoftLimitMb:600,firestoreMaxSessions:FIRESTORE_TOTAL_SESSION_CAP,kvSoftKeyLimit:5000},github:{usedBytes:0,limitBytes:10000000000,available:false},cloudflare:{keyCount:0,lastRun:null,usedBytes:0,storageLimitBytes:1000000000,storageComplete:true},firebase:{freePlanMode:true,ttlEnabled:false,ttlRecommended:false,storageLimitBytes:1073741824}}, maintenanceLoaded:false, maintenanceLoading:false, maintenanceError:'', maintenancePromise:null, autoSyncStatus:null, autoSyncRefreshing:false, autoSyncWatcher:null, autoSyncVisibilityBound:false, reconcileModalSessionId:'' };
 
     const DEFAULT_STAFF_MEMBERS=[
       {id:'staff-thao-my',displayName:'Thảo My',role:'host'},
@@ -3276,10 +3298,11 @@ body.account-modal-open{overflow:hidden}
 
     function previewTs(iso){ return {toDate:()=>new Date(iso)}; }
     function enterPreview(){
-      state.config={version:'1.47.0-preview',tiktokConfigured:true};
+      state.config={version:'1.47.1-preview',tiktokConfigured:true};
       state.user={uid:'preview-admin',email:'admin@sellerkbb.demo',displayName:'Quản trị viên Demo',photoURL:avatarFallbackData('Quản trị viên Demo')};
       state.profile={role:'admin',status:'approved',displayName:'Quản trị viên Demo',photoURL:state.user.photoURL,permissions:['live.read','kpi.read']};
       state.maintenance={settings:{retentionDays:180,autoCleanup:true,emergencyPercent:85,firestoreSoftLimitMb:600,firestoreMaxSessions:FIRESTORE_TOTAL_SESSION_CAP,kvSoftKeyLimit:5000},github:{usedBytes:124000,limitBytes:10000000000,available:true},cloudflare:{keyCount:5,lastRun:{ranAt:new Date().toISOString(),deleted:0},usedBytes:428000,storageLimitBytes:1000000000,storageComplete:true},firebase:{freePlanMode:true,ttlEnabled:false,ttlRecommended:false,storageLimitBytes:1073741824}};
+      state.maintenanceLoaded=true;
       state.autoSyncStatus={ok:true,reason:'preview',finishedAt:new Date().toISOString(),cached:34};
       state.users=[
         {id:'thao-my',displayName:'Thảo My',email:'thaomy@sellerkbb.demo',role:'host',status:'approved',permissions:['live.read','kpi.read']},
@@ -3317,7 +3340,7 @@ body.account-modal-open{overflow:hidden}
         session.reconciliation={status,usableForKpi:true,gmvAmount:gmv,analyticsGmvAmount:gross,orderWindowAmount:Math.round(gross*.94),orderCount:9+(index%5),pendingOrderCount:status==='final'?0:3+(index%4),cancelledCount:index%3,returningCount:status==='final'?0:1,refundedCount:index%2,aftersalesAvailable:true,liveSignalOrders:status==='final'?(9+(index%5)):5,timeWindowOrders:status==='final'?0:4,timeWindowNetAmount:status==='final'?0:Math.round(gross*.08),attribution:status==='final'?'live_signal':'mixed',generatedAt:new Date().toISOString(),finalizedAt:status==='final'?new Date().toISOString():'',reason:status==='final'?'GMV sau khi hoàn hủy đã chốt từ các đơn có tín hiệu LIVE.':'GMV chờ đối soát chỉ gồm đơn có tín hiệu LIVE; đơn chỉ khớp thời gian không tính KPI.'};
       });
       restorePreviewState();
-      showApp(); bindShell(); renderAll(); startAutoSyncWatcher();
+      renderAll(); bindShell(); showApp(); startAutoSyncWatcher();
       const bar=document.createElement('div');
       bar.style.cssText='position:fixed;left:50%;transform:translateX(-50%);bottom:18px;z-index:15;background:#f7c5dc;color:#653a50;padding:8px 12px;border:1px solid #edb4cf;border-radius:999px;font-weight:800;font-size:10px;box-shadow:0 8px 24px rgba(156,91,124,.16);white-space:nowrap;pointer-events:none';
       bar.textContent='PREVIEW MODE · Dữ liệu mẫu · Không ảnh hưởng hệ thống thật';
@@ -3330,29 +3353,40 @@ body.account-modal-open{overflow:hidden}
     function isAdmin(){ return state.profile?.role==='admin' && state.profile?.status==='approved'; }
 
     async function api(path, options={}){
-      const token = state.user ? await state.user.getIdToken() : null;
-      const headers = { ...(options.headers||{}) };
-      if(token) headers.authorization=`Bearer ${token}`;
-      if(options.body && !headers['content-type']) headers['content-type']='application/json';
-      const res=await fetch(path,{...options,headers});
-      const data=await res.json().catch(()=>({}));
-      if(!res.ok) throw new Error(data.message||data.error||`HTTP ${res.status}`);
-      return data;
+      const {timeoutMs=API_TIMEOUT_MS,...fetchOptions}=options;
+      const controller=new AbortController();
+      const timer=setTimeout(()=>controller.abort(),timeoutMs);
+      try{
+        const token = state.user ? await withTimeout(state.user.getIdToken(),8000,'Xác thực đăng nhập') : null;
+        const headers = { ...(fetchOptions.headers||{}) };
+        if(token) headers.authorization=`Bearer ${token}`;
+        if(fetchOptions.body && !headers['content-type']) headers['content-type']='application/json';
+        const res=await fetch(path,{...fetchOptions,headers,signal:controller.signal});
+        const data=await res.json().catch(()=>({}));
+        if(!res.ok) throw new Error(data.message||data.error||`HTTP ${res.status}`);
+        return data;
+      }catch(error){
+        if(error?.name==='AbortError')throw new Error(`Máy chủ phản hồi quá ${Math.ceil(timeoutMs/1000)} giây. Hãy thử lại.`);
+        throw error;
+      }finally{clearTimeout(timer)}
     }
 
     async function init(){
       if(PREVIEW){ enterPreview(); return; }
-      const config=await fetch('/api/config',{cache:'no-store'}).then(r=>r.json()).catch(()=>null);
+      showBoot('<b>Đang kết nối SellerKBB…</b><br><br><span class="tiny">Đang kiểm tra máy chủ và cấu hình đăng nhập.</span>');
+      const config=await api('/api/config',{cache:'no-store',timeoutMs:8000});
       state.config=config;
       if(!config?.firebase?.apiKey || !config.firebase.projectId){
         showBoot(`<b>Website đã chạy trên Cloudflare nhưng Firebase chưa được cấu hình.</b><br><br>Không có dữ liệu mẫu. Hãy thêm Firebase Web Config vào Worker để bật đăng nhập Google và Firestore.`, `<span class="pill warn">Production setup pending</span>`);
         return;
       }
+      showBoot('<b>Đang tải thành phần đăng nhập…</b><br><br><span class="tiny">Nếu mạng chậm, hệ thống sẽ tự báo lỗi thay vì để trắng trang.</span>');
+      await loadFirebaseSdk();
       const app=initializeApp(config.firebase);
       state.auth=getAuth(app); state.db=getFirestore(app);
       onAuthStateChanged(state.auth,user=>handleAuth(user).catch(error=>{
         console.error('auth startup',error);
-        showBoot('<b>Không tải được dữ liệu hệ thống.</b><br><br>'+esc(error?.message||'Lỗi không xác định')+'<br><br><span class="tiny">Firebase đã đăng nhập nhưng một bước đọc dữ liệu đang gặp lỗi.</span>', '<button id="retryBoot" class="btn primary">Thử tải lại</button>');
+        showBoot('<b>Không tải được dữ liệu hệ thống.</b><br><br>'+esc(error?.message||'Lỗi không xác định')+'<br><br><span class="tiny">Không có dữ liệu nào bị thay đổi. Bạn có thể thử tải lại.</span>', '<button id="retryBoot" class="btn primary">Thử tải lại</button>');
         const retry=$('#retryBoot'); if(retry)retry.onclick=()=>location.reload();
       }));
     }
@@ -3364,8 +3398,8 @@ body.account-modal-open{overflow:hidden}
         $('#loginBtn').onclick=async()=>{ try{ await signInWithPopup(state.auth,new GoogleAuthProvider()); }catch(e){ alert(e.message); } };
         return;
       }
-      await ensureProfile(user);
-      state.profile=(await getDoc(doc(state.db,'users',user.uid))).data();
+      await withTimeout(ensureProfile(user),10000,'Kiểm tra tài khoản');
+      state.profile=(await withTimeout(getDoc(doc(state.db,'users',user.uid)),10000,'Đọc hồ sơ tài khoản')).data();
       if(state.profile?.status==='pending'){
         showBoot(`<b>Tài khoản đang chờ duyệt.</b><br><br>${esc(user.email||'')} đã đăng ký thành công. Quản trị viên cần chọn vai trò và quyền truy cập trước khi bạn dùng dashboard.`, `<button id="logoutPending" class="btn ghost">Đăng xuất</button>`);
         $('#logoutPending').onclick=()=>signOut(state.auth);
@@ -3374,17 +3408,13 @@ body.account-modal-open{overflow:hidden}
       if(state.profile?.status!=='approved'){
         showBoot(`<b>Tài khoản chưa được phép truy cập.</b>`, `<button id="logoutBlocked" class="btn ghost">Đăng xuất</button>`); $('#logoutBlocked').onclick=()=>signOut(state.auth); return;
       }
-      showApp(); bindShell(); await loadData();
-      if(isAdmin()){
-        const key='sellerkbb:last-free-cleanup';
-        const last=Number(localStorage.getItem(key)||0);
-        if(Date.now()-last>86400000){
-          const cleaned=await cleanupFirestoreData(true);
-          localStorage.setItem(key,String(Date.now()));
-          if(cleaned>0) await loadData();
-        }
-      }
-      renderAll(); startAutoSyncWatcher();
+      showBoot('<b>Đang tải dữ liệu SellerKBB…</b><br><br><span class="tiny">Đang lấy phiên LIVE và thông tin cần thiết. Giao diện chỉ mở khi dữ liệu đã sẵn sàng.</span>');
+      await withTimeout(loadData(),STARTUP_TIMEOUT_MS,'Tải dữ liệu ban đầu');
+      renderAll();
+      bindShell();
+      showApp();
+      startAutoSyncWatcher();
+      scheduleDailyCleanup();
     }
 
     async function ensureProfile(user){
@@ -3442,7 +3472,7 @@ body.account-modal-open{overflow:hidden}
     async function fetchAutoSyncStatus(){
       if(PREVIEW)return state.autoSyncStatus;
       try{
-        const result=await api('/api/tiktok/autosync/status');
+        const result=await api('/api/tiktok/autosync/status',{timeoutMs:6000});
         return result.autoSync||null;
       }catch(e){
         console.warn('auto sync status',e);
@@ -3566,7 +3596,7 @@ body.account-modal-open{overflow:hidden}
     async function mergeAutoSyncedSessions(){
       if(PREVIEW || !(can('live.read')||can('kpi.read'))) return;
       try{
-        const auto=await api('/api/tiktok/autosync/sessions');
+        const auto=await api('/api/tiktok/autosync/sessions',{timeoutMs:8000});
         const byId=new Map(state.sessions.map(x=>[String(x.liveId||x.id),x]));
         for(const src of auto.sessions||[]){
           const id=String(src.liveId||'');
@@ -3650,29 +3680,76 @@ body.account-modal-open{overflow:hidden}
     }
     async function loadData(){
       state.sessions=[]; state.users=[]; state.staff=[];
-      await loadStaffDirectory();
-      if(isAdmin()&&!PREVIEW){
-        try{
-          const m=await api('/api/maintenance/settings');
-          state.maintenance={...state.maintenance,...m,settings:{...state.maintenance.settings,...(m.settings||{})}};
-        }catch(e){ console.warn('maintenance settings',e); }
-      }
+      const tasks=[loadStaffDirectory()];
       if(can('live.read')||can('kpi.read')){
-        if(!PREVIEW){ const syncStatus=await fetchAutoSyncStatus(); if(syncStatus)state.autoSyncStatus=syncStatus; }
-        const days=Math.min(180,Number(state.maintenance.settings.retentionDays||180));
-        const cutoff=Timestamp.fromMillis(Date.now()-days*86400000);
-        const maxDocs=Math.min(FIRESTORE_TOTAL_SESSION_CAP,Number(state.maintenance.settings.firestoreMaxSessions||FIRESTORE_TOTAL_SESSION_CAP));
-        const liveDocs=await loadRecentLiveSessions(cutoff,maxDocs);
-        state.sessions=liveDocs.map(d=>({id:d.id,...d.data()}))
-          .filter(isAllowedSellerKbbLiveChannel)
-          .map(x=>isManualKpi(x)?{...x,hostUid:'',hostName:'',operatorUid:'',operatorName:''}:x);
-        await mergeAutoSyncedSessions();
-        state.sessions=state.sessions.filter(isAllowedSellerKbbLiveChannel);
+        tasks.push((async()=>{
+          const days=Math.min(180,Number(state.maintenance.settings.retentionDays||180));
+          const cutoff=Timestamp.fromMillis(Date.now()-days*86400000);
+          const maxDocs=Math.min(FIRESTORE_TOTAL_SESSION_CAP,Number(state.maintenance.settings.firestoreMaxSessions||FIRESTORE_TOTAL_SESSION_CAP));
+          const [liveDocs,syncStatus]=await Promise.all([
+            loadRecentLiveSessions(cutoff,maxDocs),
+            PREVIEW?Promise.resolve(null):fetchAutoSyncStatus()
+          ]);
+          if(syncStatus)state.autoSyncStatus=syncStatus;
+          state.sessions=liveDocs.map(d=>({id:d.id,...d.data()}))
+            .filter(isAllowedSellerKbbLiveChannel)
+            .map(x=>isManualKpi(x)?{...x,hostUid:'',hostName:'',operatorUid:'',operatorName:''}:x);
+          await mergeAutoSyncedSessions();
+          state.sessions=state.sessions.filter(isAllowedSellerKbbLiveChannel);
+        })());
       }
       if(isAdmin()){
-        const us=await getDocs(collection(state.db,'users'));
-        state.users=us.docs.map(d=>({id:d.id,...d.data()}));
+        tasks.push((async()=>{
+          const us=await getDocs(collection(state.db,'users'));
+          state.users=us.docs.map(d=>({id:d.id,...d.data()}));
+        })());
       }
+      await Promise.all(tasks);
+    }
+
+    async function ensureMaintenanceDetails(force=false){
+      if(PREVIEW||!isAdmin())return state.maintenance;
+      if(state.maintenanceLoaded&&!force)return state.maintenance;
+      if(state.maintenancePromise)return state.maintenancePromise;
+      state.maintenanceError='';
+      state.maintenanceLoading=true;
+      if(state.section==='storage')renderStorage();
+      state.maintenancePromise=(async()=>{
+        try{
+          const m=await api('/api/maintenance/settings',{timeoutMs:18000});
+          state.maintenance={...state.maintenance,...m,settings:{...state.maintenance.settings,...(m.settings||{})}};
+          state.maintenanceLoaded=true;
+          return state.maintenance;
+        }catch(error){
+          state.maintenanceError=String(error?.message||error);
+          throw error;
+        }finally{
+          state.maintenanceLoading=false;
+          state.maintenancePromise=null;
+          if(state.section==='storage')renderStorage();
+        }
+      })();
+      return state.maintenancePromise;
+    }
+
+    function scheduleDailyCleanup(){
+      if(PREVIEW||!isAdmin())return;
+      const key='sellerkbb:last-free-cleanup';
+      const last=Number(localStorage.getItem(key)||0);
+      if(Date.now()-last<=86400000)return;
+      setTimeout(async()=>{
+        try{
+          await ensureMaintenanceDetails();
+          if(!state.maintenanceLoaded)return;
+          const cleaned=await cleanupFirestoreData(true);
+          localStorage.setItem(key,String(Date.now()));
+          if(cleaned>0){
+            await withTimeout(loadData(),STARTUP_TIMEOUT_MS,'Làm mới dữ liệu sau dọn');
+            renderAll();
+            bindShell();
+          }
+        }catch(error){console.warn('background cleanup',error)}
+      },3000);
     }
 
     function renderNav(){
@@ -3702,7 +3779,7 @@ body.account-modal-open{overflow:hidden}
       $('#nav').querySelectorAll('button').forEach(b=>b.onclick=()=>switchSection(b.dataset.section));
     }
 
-    function switchSection(id){ if(state.reconcileModalSessionId&&id!==state.section)closeReconciliationModal(); state.section=id; setAccountMenu(false); setMobileMenu(false); document.querySelectorAll('.section').forEach(s=>s.classList.remove('active')); $(`#section-${id}`).classList.add('active'); renderNav(); const meta={dashboard:['Tổng quan','Báo cáo LIVE & KPI'],live:['Phiên LIVE','Gắn Host/Operator cho từng phiên'],reconcile:['Đối soát đơn LIVE','Xem trạng thái đơn và hậu mãi theo từng phiên LIVE'],kpi:['KPI nhân sự','Tổng hợp KPI tự động + KPI thủ công đã lưu'], 'manual-kpi':['KPI thủ công','Nhập KPI theo từng người cho các phiên tính thủ công'],users:['Quản lý tài khoản','Duyệt, chỉnh quyền hoặc xóa user'],staff:['Quản lý nhân sự','Danh sách Host/Vận hành dùng chung cho toàn hệ thống'],export:['Xuất file','Xuất báo cáo theo khoảng thời gian đã chọn'],tiktok:['TikTok / API','Tự động đồng bộ LIVE và gia hạn token 24/24'],storage:['Lưu trữ & tự dọn','Giữ dữ liệu tối đa 6 tháng và bảo vệ dung lượng']}[id]; $('#pageTitle').textContent=meta[0]; $('#pageSub').textContent=meta[1]; }
+    function switchSection(id){ if(state.reconcileModalSessionId&&id!==state.section)closeReconciliationModal(); state.section=id; setAccountMenu(false); setMobileMenu(false); document.querySelectorAll('.section').forEach(s=>s.classList.remove('active')); $(`#section-${id}`).classList.add('active'); renderNav(); if(id==='storage'&&isAdmin()&&!PREVIEW&&!state.maintenanceLoaded)ensureMaintenanceDetails().catch(()=>{}); const meta={dashboard:['Tổng quan','Báo cáo LIVE & KPI'],live:['Phiên LIVE','Gắn Host/Operator cho từng phiên'],reconcile:['Đối soát đơn LIVE','Xem trạng thái đơn và hậu mãi theo từng phiên LIVE'],kpi:['KPI nhân sự','Tổng hợp KPI tự động + KPI thủ công đã lưu'], 'manual-kpi':['KPI thủ công','Nhập KPI theo từng người cho các phiên tính thủ công'],users:['Quản lý tài khoản','Duyệt, chỉnh quyền hoặc xóa user'],staff:['Quản lý nhân sự','Danh sách Host/Vận hành dùng chung cho toàn hệ thống'],export:['Xuất file','Xuất báo cáo theo khoảng thời gian đã chọn'],tiktok:['TikTok / API','Tự động đồng bộ LIVE và gia hạn token 24/24'],storage:['Lưu trữ & tự dọn','Giữ dữ liệu tối đa 6 tháng và bảo vệ dung lượng']}[id]; $('#pageTitle').textContent=meta[0]; $('#pageSub').textContent=meta[1]; }
 
     function finalGmv(s){ return Number(s.finalGmvAmount ?? s.currentGmvAmount ?? s.recordedGmvAmount ?? 0); }
 
@@ -5375,6 +5452,12 @@ body.account-modal-open{overflow:hidden}
     }
     function renderStorage(){
       if(!isAdmin()){ $('#section-storage').innerHTML=''; return; }
+      if(!PREVIEW&&!state.maintenanceLoaded){
+        const failed=state.maintenanceError;
+        $('#section-storage').innerHTML=`<div class="card"><h3 class="heading-with-icon">${icon('database',18)} ${failed?'Không tải được thông tin lưu trữ':'Đang tải thông tin lưu trữ'}</h3><div class="${failed?'notice bad':'sub'}" style="margin-top:10px">${failed?esc(failed):'Phần dung lượng GitHub / Firebase / Cloudflare chỉ được tải khi bạn mở mục này để không làm chậm lúc vào dashboard.'}</div>${failed?'<button id="retryStorageLoad" class="btn primary" style="margin-top:12px">Thử lại</button>':''}</div>`;
+        const retry=$('#retryStorageLoad'); if(retry)retry.onclick=()=>ensureMaintenanceDetails(true).catch(()=>{});
+        return;
+      }
       const m=state.maintenance.settings, st=maintenanceStats();
       const cf=state.maintenance.cloudflare||{};
       const last=cf.lastRun?.ranAt?fmtDate({toDate:()=>new Date(cf.lastRun.ranAt)}):'Chưa chạy';
@@ -5450,7 +5533,7 @@ body.account-modal-open{overflow:hidden}
       $('#emergencyPercent').value=String(m.emergencyPercent);
       $('#saveMaintenance').onclick=saveMaintenanceSettings;
       $('#cleanupNow').onclick=async()=>{ const n=await cleanupFirestoreData(false); if(!PREVIEW&&n) await loadData(); showToast(n?`Đã xóa ${n} phiên cũ`:'Không có dữ liệu cần xóa'); renderAll(); };
-      $('#runKvCleanup').onclick=async()=>{ if(PREVIEW){ showToast('Preview: Cloudflare KV đang trong vùng an toàn'); return; } const result=await api('/api/maintenance/run',{method:'POST'}); showToast(`Cloudflare: đã kiểm tra ${result.keyCount||0} khóa, xóa ${result.deleted||0}`); await loadData(); renderAll(); };
+      $('#runKvCleanup').onclick=async()=>{ if(PREVIEW){ showToast('Preview: Cloudflare KV đang trong vùng an toàn'); return; } const result=await api('/api/maintenance/run',{method:'POST',timeoutMs:18000}); showToast(`Cloudflare: đã kiểm tra ${result.keyCount||0} khóa, xóa ${result.deleted||0}`); await ensureMaintenanceDetails(true); renderAll(); };
       $('#downloadBusinessBackup').onclick=downloadBusinessBackup;
     }
 
@@ -5589,7 +5672,11 @@ body.account-modal-open{overflow:hidden}
 
     function renderAll(){ renderNav(); renderDashboard(); renderLive(); renderReconcile(); renderKpi(); renderManualKpi(); renderExport(); renderUsers(); renderStaff(); renderTikTok(); renderStorage(); switchSection(state.section); }
 
-    init().catch(e=>showBoot(`<b>Không khởi động được ứng dụng.</b><br><br>${esc(e.message)}`));
+    init().catch(e=>{
+      console.error('app init',e);
+      showBoot(`<b>Không khởi động được ứng dụng.</b><br><br>${esc(e?.message||'Lỗi không xác định')}<br><br><span class="tiny">Hệ thống đã dừng an toàn thay vì hiển thị trang trắng.</span>`, '<button id="retryBoot" class="btn primary">Thử tải lại</button>');
+      const retry=$('#retryBoot'); if(retry)retry.onclick=()=>location.reload();
+    });
   </script>
 </body>
 </html>

@@ -4,7 +4,7 @@
 
 ### Báo cáo TikTok LIVE · KPI nhân sự · Tự đồng bộ 24/24
 
-**Phiên bản hiện tại: v1.47.0**
+**Phiên bản hiện tại: v1.47.1**
 
 [![GitHub Release](https://img.shields.io/github/v/release/hunghienhoa/sellerkbb?label=Release)](https://github.com/hunghienhoa/sellerkbb/releases)
 [![GitHub Actions](https://img.shields.io/github/actions/workflow/status/hunghienhoa/sellerkbb/deploy.yml?branch=main&label=Ki%E1%BB%83m%20tra%20%26%20Backup)](https://github.com/hunghienhoa/sellerkbb/actions)
@@ -17,15 +17,13 @@
 
 ---
 
-## 🆕 Cập nhật mới nhất — v1.47.0
+## 🆕 Cập nhật mới nhất — v1.47.1
 
-- Audit 10 mục SellerKBB trên PC, tablet và mobile; giữ nhận diện **hồng pastel + Be Vietnam Pro**, áp dụng có chọn lọc nguyên tắc typography của Impeccable và motion có mục đích của Emil Kowalski.
-- Tăng độ rõ của nhãn/chú thích số liệu, căn số theo độ rộng cố định, giảm chữ đậm lặp lại trong bảng và làm nhẹ nền/viền card. Nút chính, bộ lọc và trạng thái có tương phản rõ hơn.
-- Sửa tràn ngang ở **Xuất file / Quản lý tài khoản / Quản lý nhân sự** trên màn hình 320px; nút thao tác mobile cao tối thiểu 44px, input vẫn từ 16px.
-- Popup mở nhẹ trong 180ms, giữ Tab bên trong, khóa tương tác nền và trả focus khi đóng; hỗ trợ Escape và giảm chuyển động. Bỏ ripple và animation lặp lại khi chuyển mục.
-- Bổ sung tên truy cập cho dropdown Host/Vận hành và thanh dung lượng; giữ trạng thái thành công, tạm tính, lỗi bằng chữ kèm màu.
-- Xác minh lại **Lưu Host/Vận hành → ẩn hai dropdown → tóm tắt + Sửa**, sửa/lưu lại/tải lại trên PC/mobile. Giữ nguyên logic TikTok, đối soát, Campaign/Mega Live và KPI.
-- Bổ sung audit responsive, lỗi JavaScript, bàn phím và giảm chuyển động; quy trình tự test → deploy Cloudflare/Firebase → Release tiếp tục giữ tối đa **5 Release**.
+- Fix tình trạng **vào web lâu / đôi lúc trắng trang**: SellerKBB giữ màn hình tải cho đến khi dữ liệu ban đầu đã sẵn sàng, không còn mở khung app rỗng trước khi Firestore/API hoàn tất.
+- Firebase SDK và các API khởi động có **giới hạn thời gian chờ**; nếu mạng/CDN/API chậm, hệ thống hiện lỗi rõ ràng cùng nút **Thử tải lại** thay vì treo vô thời hạn.
+- Tách phần kiểm tra dung lượng **GitHub / Firebase / Cloudflare** khỏi lúc mở dashboard. Thống kê nặng chỉ tải khi Admin mở tab **Lưu trữ**; tác vụ dọn dữ liệu hằng ngày chạy nền sau khi giao diện đã dùng được.
+- Tải danh sách nhân sự, phiên LIVE/trạng thái đồng bộ và danh sách tài khoản theo các nhánh song song để giảm thời gian chờ khởi động.
+- Giữ nguyên dữ liệu TikTok, công thức KPI, đối soát đơn, Campaign/Mega Live và phân quyền; bổ sung regression check để ngăn việc hiện app trước khi dữ liệu sẵn sàng quay trở lại.
 
 
 ---
@@ -76,7 +74,9 @@ Bạn không cần hiểu hết code. Chỉ cần nhớ 4 nơi chính:
 
 Vào website SellerKBB. Mặc định hệ thống luôn chọn **Hôm nay**.
 
-Giao diện v1.47.0 giữ hồng pastel, dùng chữ lớn hơn cho nhãn số liệu và phân biệt nút chính bằng hồng đậm. Trên điện thoại, nút thao tác có vùng chạm lớn hơn; màn hình rất hẹp chuyển cụm số liệu sang một cột để tránh cắt số.
+Giao diện v1.47.1 giữ hồng pastel, dùng chữ rõ cho nhãn số liệu và phân biệt nút chính bằng hồng đậm. Trên điện thoại, nút thao tác có vùng chạm lớn; màn hình rất hẹp chuyển cụm số liệu sang một cột để tránh cắt số.
+
+**Khi mở web:** SellerKBB sẽ giữ màn hình **Đang tải dữ liệu** cho tới khi dữ liệu cần thiết sẵn sàng. Nếu mạng/Firebase/API phản hồi quá lâu, trang sẽ hiện thông báo và nút **Thử tải lại**, không để màn hình trắng. Phần thống kê dung lượng chỉ tải khi Admin mở **Lưu trữ**, nên không còn chặn màn hình Tổng quan.
 
 **Dùng bàn phím:** Tab để di chuyển, Enter/Space để kích hoạt. Khi mở popup tài khoản/đối soát, Tab chỉ đi trong popup; Escape đóng và đưa focus về nút mở. Nếu thiết bị bật **Giảm chuyển động**, popup không chạy animation. Nút làm mới vẫn thể hiện trạng thái **Đang tải** bằng chữ.
 
@@ -252,6 +252,7 @@ README giữ lại phần này để nhân sự có thể biết **vì sao giao 
 
 | Phiên bản | Thay đổi chính |
 |---|---|
+| **v1.47.1** | Fix startup chậm/trắng trang: chỉ hiện app sau khi dữ liệu sẵn sàng; timeout + retry cho Firebase/API; lazy-load thống kê Lưu trữ; dọn dữ liệu chạy nền; song song hóa các nhánh tải chính. Không đổi logic TikTok/KPI. |
 | **v1.47.0** | Audit UI/UX 10 mục, typography dễ đọc, giảm viền/nền trang trí, tăng tương phản và vùng chạm, sửa tràn ngang 320px; popup hỗ trợ bàn phím/giảm chuyển động; xác minh thu gọn Host/Vận hành PC/mobile. Không đổi logic TikTok/KPI. |
 | **v1.46.7** | PC tự ẩn dropdown Host/Vận hành sau khi lưu, hiện tóm tắt và nút **Sửa** giống mobile; lưu lại tiếp tục thu gọn. Giữ nguyên Campaign/Mega Live/KPI thủ công; bổ sung kiểm thử và hỗ trợ kiểm tra trên Windows. |
 | **v1.46.3** | Xóa lỗi TikTok cũ khỏi trạng thái sau khi đồng bộ thành công; tránh báo `tiktok_not_connected` dù Seller Token đã có. |

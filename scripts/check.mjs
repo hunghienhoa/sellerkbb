@@ -359,6 +359,14 @@ assert(numericFirestoreLimits.every(n=>n<=10000), "A Firestore numeric limit exc
 assert(!html.includes("limit(maxDocs)"), "Firestore must not send a total session cap directly as one query limit");
 assert(!html.includes("Math.min(12000,Number(state.maintenance.settings.firestoreMaxSessions"), "Firestore total-session cap must use the centralized safe constant");
 assert(html.includes("auth startup")&&html.includes("retryBoot"), "Startup error boundary missing");
+assert(html.includes("async function loadFirebaseSdk()"), "Firebase SDK must load inside the startup error boundary");
+assert(!html.includes("const { initializeApp } = await import"), "Firebase must not block the whole module with top-level await imports");
+assert(html.includes("withTimeout(loadData(),STARTUP_TIMEOUT_MS"), "Initial data load timeout guard missing");
+assert(!html.includes("showApp(); bindShell(); await loadData();"), "App must not become visible before initial data is ready");
+assert(html.includes("maintenanceLoaded:false")&&html.includes("ensureMaintenanceDetails"), "Storage details must be lazy-loaded");
+const loadDataBlock=html.slice(html.indexOf("async function loadData()"),html.indexOf("async function ensureMaintenanceDetails"));
+assert(!loadDataBlock.includes("/api/maintenance/settings"), "Heavy maintenance/storage API must not block dashboard startup");
+assert(html.includes("Máy chủ phản hồi quá")&&html.includes("AbortController"), "API timeout handling missing");
 assert(worker.includes("error: null")&&worker.includes("const status = {\n      ok: true"), "Successful TikTok auto-sync must clear stale error state");
 assert(worker.includes("order_ids: ids")&&!worker.includes('order_ids: ids.join(",")'), "Return/Refund order_ids must be sent as a JSON list");
 assert(worker.includes("const query = { shop_cipher: shopCipher, page_size: 50 };"), "Return/Refund page_size must stay within TikTok maximum 50");
