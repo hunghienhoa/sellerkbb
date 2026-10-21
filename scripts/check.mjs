@@ -346,6 +346,15 @@ assert(worker.includes("function findOverlappingLiveSessions")&&worker.includes(
 assert(worker.includes("{ hydrateDetails: true, allSessions: sessions }"), "Scheduled reconciliation must hydrate Order Details");
 assert(html.includes("Kiểm tra sẵn sàng chạy thật")&&html.includes("data-readiness-grid"), "Go-live readiness UI missing");
 assert(html.includes('id="syncTikTokNow"')&&html.includes('id="previewSyncNow"'), "Sync-now controls missing");
+assert(worker.includes('MANUAL_SYNC_JOB_KEY = "autosync:manual_job"'), "Manual TikTok sync job persistence missing");
+assert(worker.includes("ctx.waitUntil(executeManualSyncJob(env, job))"), "Manual TikTok sync must execute in background");
+assert(worker.includes("existing?.state === \"running\"")&&worker.includes("alreadyRunning: true"), "Duplicate manual sync guard missing");
+assert(worker.includes("manualJob: await getManualSyncJob(env)"), "Manual sync status must include job state");
+assert(worker.includes("async fetch(request, env, ctx)")&&worker.includes("handleApi(request, env, ctx)"), "Worker execution context is required for background sync");
+assert(!worker.includes('const result = await runAutoSync(env, days, "manual");'), "Manual sync endpoint must not block response");
+assert(html.includes("function startManualSyncPolling(jobId)")&&html.includes("data-manual-sync-state"), "Manual sync status polling UI missing");
+assert(html.includes("timeoutMs:15000")&&html.includes("result.accepted"), "Manual sync start must acknowledge an accepted job instead of awaiting full result");
+assert(html.includes("TikTok trả mốc bất thường"), "Refresh token anomalous expiry UI guard missing");
 assert(worker.includes('CREATOR_OAUTH_STATE_PREFIX = "creator_oauth_state:"')&&worker.includes('CREATOR_TOKEN_PREFIX = "creator_token:"'), "Creator OAuth/token namespaces missing");
 assert(worker.includes('CREATOR_AUTH_URL = "https://shop.tiktok.com/alliance/creator/auth"'), "Creator authorization URL missing");
 assert(worker.includes("async function handleCreatorOAuthStart")&&worker.includes('/api/tiktok/creator/oauth/start')&&worker.includes('/api/tiktok/creator/status'), "Creator OAuth API routes missing");

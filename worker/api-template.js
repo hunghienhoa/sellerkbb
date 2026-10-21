@@ -7,6 +7,8 @@ const MAINTENANCE_SETTINGS_KEY = "maintenance:settings";
 const MAINTENANCE_LAST_RUN_KEY = "maintenance:last_run";
 const AUTO_SYNC_DATA_KEY = "autosync:rolling";
 const AUTO_SYNC_STATUS_KEY = "autosync:status";
+const MANUAL_SYNC_JOB_KEY = "autosync:manual_job";
+const MANUAL_SYNC_MAX_RUNNING_MS = 20 * 60 * 1000;
 const GITHUB_REPO_CACHE_KEY = "maintenance:github_repo";
 const LIVE_RECONCILE_CACHE_PREFIX = "reconcile:live:";
 const LIVE_RECONCILE_CACHE_TTL_SECONDS = 600;
@@ -66,6 +68,7 @@ function isProtectedKvKey(name) {
     || name === MAINTENANCE_SETTINGS_KEY
     || name === AUTO_SYNC_DATA_KEY
     || name === AUTO_SYNC_STATUS_KEY
+    || name === MANUAL_SYNC_JOB_KEY
     || name === GITHUB_REPO_CACHE_KEY;
 }
 
@@ -1373,6 +1376,42 @@ async function writeAutoSyncStatus(env, patch) {
   await env.TIKTOK_KV.put(AUTO_SYNC_STATUS_KEY, JSON.stringify({ ...current, ...patch }));
 }
 
+async function getManualSyncJob(env) {
+  if (!env.TIKTOK_KV) return null;
+  const raw = await env.TIKTOK_KV.get(MANUAL_SYNC_JOB_KEY);
+  if (!raw) return null;
+  try {
+    const job = JSON.parse(raw);
+    if (job?.state === "running" && Date.now() - Date.parse(job.startedAt || "") > MANUAL_SYNC_MAX_RUNNING_MS) {
+      return { ...job, state: "stale", error: "Tác vụ chưa có kết quả sau 20 phút. Hãy kiểm tra trạng thái đồng bộ trước khi chạy lại." };
+    }
+    return job;
+  } catch { return null; }
+}
+
+async function saveManualSyncJob(env, job) {
+  await env.TIKTOK_KV.put(MANUAL_SYNC_JOB_KEY, JSON.stringify(job), { expirationTtl: 86400 });
+}
+
+async function executeManualSyncJob(env, job) {
+  let result;
+  try {
+    result = await runAutoSync(env, job.days, "manual");
+  } catch (error) {
+    result = { ok: false, error: String(error?.message || error), finishedAt: new Date().toISOString() };
+  }
+  const completed = {
+    ...job,
+    state: result?.ok === true ? "success" : "error",
+    finishedAt: result?.finishedAt || new Date().toISOString(),
+    fetched: Number(result?.fetched || 0),
+    cached: Number(result?.cached || 0),
+    error: result?.ok === true ? null : (result?.error || "Đồng bộ TikTok không hoàn tất")
+  };
+  await saveManualSyncJob(env, completed);
+  return completed;
+}
+
 async function runAutoSync(env, lookbackDays = 2, reason = "hourly") {
   const startedAt = new Date().toISOString();
   if (!env.TIKTOK_KV) return { ok: false, reason, error: "kv_not_bound", startedAt };
@@ -1569,7 +1608,7 @@ function escapeHtml(s) {
   return String(s).replace(/[&<>'"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;","'":"&#39;",'"':"&quot;"}[c]));
 }
 
-async function handleApi(request, env) {
+async function handleApi(request, env, ctx) {
   const url = new URL(request.url);
   if (url.pathname === "/api/config") return json(publicConfig(env));
   if (url.pathname === "/api/health") return json({ ok: true, version: env.APP_VERSION || "1.0.0" });
@@ -1649,6 +1688,7 @@ async function handleApi(request, env) {
       autoRefresh: Boolean(token?.refresh_token),
       autoSyncEnabled: true,
       autoSync,
+      manualJob: await getManualSyncJob(env),
       accessTokenExpiresAt: accessExpiresAt || null,
       refreshTokenExpiresAt: refreshExpiresAt || null,
       lastRefreshedAt: token?.refreshed_at || null,
@@ -1725,10 +1765,25 @@ async function handleApi(request, env) {
 
   if (url.pathname === "/api/tiktok/autosync/run" && request.method === "POST") {
     await requireAdmin(request, env);
+    if (!env.TIKTOK_KV || !ctx?.waitUntil) return json({ error: "manual_sync_unavailable", message: "Chưa thể chạy đồng bộ nền trên máy chủ." }, 503);
+    const existing = await getManualSyncJob(env);
+    if (existing?.state === "running") {
+      return json({ ok: true, accepted: true, alreadyRunning: true, jobId: existing.jobId, startedAt: existing.startedAt }, 202);
+    }
     const body = await request.json().catch(() => ({}));
     const days = Math.max(1, Math.min(30, Number(body?.days || 30)));
-    const result = await runAutoSync(env, days, "manual");
-    return json(result, result.ok ? 200 : 502);
+    const job = {
+      jobId: crypto.randomUUID(),
+      state: "running",
+      reason: "manual",
+      days,
+      startedAt: new Date().toISOString(),
+      finishedAt: null,
+      error: null
+    };
+    await saveManualSyncJob(env, job);
+    ctx.waitUntil(executeManualSyncJob(env, job));
+    return json({ ok: true, accepted: true, jobId: job.jobId, startedAt: job.startedAt, days }, 202);
   }
 
   if (url.pathname === "/api/tiktok/autosync/status" && request.method === "GET") {
@@ -1738,7 +1793,7 @@ async function handleApi(request, env) {
       const raw = await env.TIKTOK_KV.get(AUTO_SYNC_STATUS_KEY);
       try { autoSync = raw ? JSON.parse(raw) : null; } catch {}
     }
-    return json({ ok: true, autoSync });
+    return json({ ok: true, autoSync, manualJob: await getManualSyncJob(env) });
   }
 
   if (url.pathname === "/api/tiktok/autosync/sessions" && request.method === "GET") {
@@ -1800,10 +1855,10 @@ export default {
       return;
     }
   },
-  async fetch(request, env) {
+  async fetch(request, env, ctx) {
     const url = new URL(request.url);
     try {
-      if (url.pathname.startsWith("/api/")) return await handleApi(request, env);
+      if (url.pathname.startsWith("/api/")) return await handleApi(request, env, ctx);
       if (url.pathname === "/favicon.ico") return new Response(null, { status: 204 });
       return html(APP_HTML);
     } catch (e) {

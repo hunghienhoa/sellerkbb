@@ -4,7 +4,7 @@
 
 ### Báo cáo TikTok LIVE · KPI nhân sự · Tự đồng bộ 24/24
 
-**Phiên bản hiện tại: v1.49.1**
+**Phiên bản hiện tại: v1.49.2**
 
 [![GitHub Release](https://img.shields.io/github/v/release/hunghienhoa/sellerkbb?label=Release)](https://github.com/hunghienhoa/sellerkbb/releases)
 [![GitHub Actions](https://img.shields.io/github/actions/workflow/status/hunghienhoa/sellerkbb/deploy.yml?branch=main&label=Ki%E1%BB%83m%20tra%20%26%20Backup)](https://github.com/hunghienhoa/sellerkbb/actions)
@@ -17,14 +17,12 @@
 
 ---
 
-## 🆕 Cập nhật mới nhất — v1.49.1
+## 🆕 Cập nhật mới nhất — v1.49.2
 
-- Bổ sung **Refresh Token riêng cho Creator Authorization** của cả `shopkhangbaby` và `mekhangsua`.
-- Mỗi Creator giờ có trạng thái riêng cho **Access Token / Refresh Token / thời điểm hết hạn / lần làm mới gần nhất** trong tab **TikTok / API**; SellerKBB không hiển thị giá trị token bí mật.
-- SellerKBB tự kiểm tra token Creator mỗi giờ và tự refresh Access Token khi còn gần hết hạn. Job đối soát hằng ngày cũng kiểm tra trước 24 giờ để giảm nguy cơ token hết hạn giữa phiên.
-- Thêm nút **Làm mới token** cho từng Creator để Admin chủ động refresh ngay; sau refresh hệ thống kiểm tra lại `user_type = 1`, `open_id` và `granted_scopes` trước khi lưu token mới.
-- Nếu TikTok xoay (rotate) `refresh_token` trong response, SellerKBB lưu token mới; nếu response không trả refresh token mới thì giữ token cũ hợp lệ.
-- Nếu thiếu Refresh Token, refresh lỗi, token bị thu hồi hoặc scope bị thiếu, SellerKBB báo rõ để **Ủy quyền lại** và không đụng tới `seller_token`.
+- Đồng bộ ngay 30 ngày nay chạy nền trên Cloudflare Worker; web gửi tác vụ và nhận phản hồi nhanh thay vì chờ toàn bộ API TikTok trong 12 giây.
+- Trạng thái tác vụ được lưu riêng và kiểm tra định kỳ, hiển thị Đang đồng bộ / Thành công / Lỗi thật; ngăn người dùng gửi lặp khi một tác vụ đang chạy.
+- Giữ nguyên lịch đồng bộ tự động và công thức KPI cho hai kênh.
+- Hạn Refresh Token Seller quá xa trong tương lai sẽ hiện nhãn Chưa xác minh để tránh hiểu nhầm.
 
 
 ---
@@ -270,6 +268,7 @@ README giữ lại phần này để nhân sự có thể biết **vì sao giao 
 
 | Phiên bản | Thay đổi chính |
 |---|---|
+| **v1.49.2** | Sửa lỗi timeout 12 giây khi đồng bộ 30 ngày; xử lý nền, theo dõi tiến trình và cảnh báo mốc Refresh Token bất thường. |
 | **v1.49.1** | Bổ sung Refresh Token riêng cho 2 Creator: tự refresh theo giờ, nút làm mới thủ công, hiển thị hạn token/lần refresh và validate user_type/open_id/scopes. |
 | **v1.49.0** | Thêm Creator OAuth riêng cho shopkhangbaby/mekhangsua: auto-state, callback dùng chung nhưng token tách riêng, kiểm tra user_type/scopes/profile và UI kết nối từng kênh. |
 | **v1.48.1** | Ẩn commission Affiliate khỏi UI/Đối soát/CSV; chỉ giữ GMV Affiliate, không đổi công thức KPI. |
