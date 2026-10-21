@@ -4,7 +4,7 @@
 
 ### Báo cáo TikTok LIVE · KPI nhân sự · Tự đồng bộ 24/24
 
-**Phiên bản hiện tại: v1.47.4**
+**Phiên bản hiện tại: v1.47.5**
 
 [![GitHub Release](https://img.shields.io/github/v/release/hunghienhoa/sellerkbb?label=Release)](https://github.com/hunghienhoa/sellerkbb/releases)
 [![GitHub Actions](https://img.shields.io/github/actions/workflow/status/hunghienhoa/sellerkbb/deploy.yml?branch=main&label=Ki%E1%BB%83m%20tra%20%26%20Backup)](https://github.com/hunghienhoa/sellerkbb/actions)
@@ -17,13 +17,13 @@
 
 ---
 
-## 🆕 Cập nhật mới nhất — v1.47.4
+## 🆕 Cập nhật mới nhất — v1.47.5
 
-- Thêm nút **Cập nhật dữ liệu** ngay cạnh avatar người dùng trên trang **Tổng quan**, theo phong cách Impeccable Design: hierarchy rõ, kích thước ổn định, trạng thái loading/success/error mượt và responsive trên mobile.
-- Nút này **không chạy TikTok Sync**. Khi bấm, SellerKBB chỉ đọc lại dữ liệu mới nhất hệ thống đang có từ Firestore và cache hiện tại rồi render lại màn hình.
-- Hiển thị mốc **Lúc HH:mm** của lần SellerKBB đọc lại dữ liệu gần nhất. Sau khi cập nhật xong, trạng thái nút chuyển xanh ngắn rồi trở về trạng thái mặc định.
-- Popup chi tiết chỉ hiển thị các mốc thời gian hệ thống thực sự biết: thời điểm SellerKBB tải lại, mốc TikTok LIVE cache nếu có, trạng thái Firestore và ghi chú đối soát đơn theo từng phiên. Không bịa timestamp Đơn hàng/Hoàn hủy khi nguồn không cung cấp.
-- Nút chỉ xuất hiện ở **Tổng quan** để giữ header gọn ở các trang nghiệp vụ khác; trên màn hình rất hẹp nút tự thu về icon mà không đè avatar người dùng.
+- Nâng trải nghiệm **Cập nhật dữ liệu** ở trang Tổng quan theo hướng Impeccable Design + Emil Kowalski: popup chi tiết chuyển thành **modal giữa màn hình** với backdrop blur, fade + scale/translate motion và đóng mượt.
+- Bỏ toast **“Đã tải lại dữ liệu SellerKBB mới nhất”** sau khi cập nhật; trạng thái được phản hồi trực tiếp trên nút và modal để giảm thông báo trùng lặp.
+- Xóa dòng **Firestore — Đã đọc lại** khỏi modal chi tiết. Chỉ giữ các thông tin có ích trực tiếp: SellerKBB, TikTok LIVE cache và Đối soát đơn.
+- Modal hỗ trợ đầy đủ đóng bằng nút **×**, click backdrop hoặc phím **Esc**, đồng thời có focus trap và khôi phục focus về nút Cập nhật dữ liệu để thao tác bàn phím liền mạch.
+- Bổ sung regression test PC/mobile: modal phải nằm đúng giữa viewport, không tràn màn hình nhỏ, không hiện toast và không còn text Firestore.
 
 
 ---
@@ -82,7 +82,7 @@ Giao diện v1.47.1 giữ hồng pastel, dùng chữ rõ cho nhãn số liệu v
 
 **KPI nhân sự theo tháng:** tab KPI nhân sự mặc định cộng toàn bộ KPI của tháng hiện tại, từ ngày 01 đến ngày cuối tháng. Dùng ô **Theo tháng** để chọn lại tháng cần xem; tab này không dùng bộ lọc Hôm nay / 7 ngày / 30 ngày nữa. Các tab báo cáo khác vẫn giữ bộ lọc thời gian riêng như trước.
 
-**Cập nhật dữ liệu ở Tổng quan:** nút **Cập nhật dữ liệu** cạnh avatar chỉ tải lại dữ liệu SellerKBB đang có để màn hình hiển thị bản mới nhất; đây **không phải Đồng bộ TikTok** và không gọi tác vụ Sync-now. Popup sau khi cập nhật chỉ hiển thị timestamp có thật từ hệ thống.
+**Cập nhật dữ liệu ở Tổng quan:** nút **Cập nhật dữ liệu** cạnh avatar chỉ tải lại dữ liệu SellerKBB đang có để màn hình hiển thị bản mới nhất; đây **không phải Đồng bộ TikTok** và không gọi tác vụ Sync-now. Sau khi hoàn tất, modal chi tiết mở giữa màn hình với animation nhẹ, không hiện toast. Modal chỉ giữ SellerKBB, TikTok LIVE cache và Đối soát đơn; đóng bằng ×, click nền hoặc Esc.
 
 **Dùng bàn phím:** Tab để di chuyển, Enter/Space để kích hoạt. Khi mở popup tài khoản/đối soát, Tab chỉ đi trong popup; Escape đóng và đưa focus về nút mở. Nếu thiết bị bật **Giảm chuyển động**, popup không chạy animation. Nút làm mới vẫn thể hiện trạng thái **Đang tải** bằng chữ.
 
@@ -258,6 +258,7 @@ README giữ lại phần này để nhân sự có thể biết **vì sao giao 
 
 | Phiên bản | Thay đổi chính |
 |---|---|
+| **v1.47.5** | Cập nhật dữ liệu dùng modal giữa màn hình có animation mở/đóng; bỏ toast sau cập nhật, bỏ dòng Firestore, hỗ trợ ×/backdrop/Esc và test PC/mobile. |
 | **v1.47.4** | Thêm nút Cập nhật dữ liệu cạnh avatar ở Tổng quan; chỉ reload dữ liệu SellerKBB hiện có, không chạy TikTok Sync; có loading/success/error + popup timestamp thật + responsive theo Impeccable Design. |
 | **v1.47.3** | KPI nhân sự chuyển sang tổng hợp theo tháng; mặc định tháng hiện tại, chọn được các tháng khác, bỏ lọc Hôm nay/7 ngày/30 ngày riêng trong tab KPI nhân sự. |
 | **v1.47.2** | Fix end_time=0 → 01/01/1970/0 phút; sanitize cache cũ, giữ snapshot hoàn chỉnh trước dữ liệu TikTok tạm thời, đánh dấu GMV tạm tính và khóa KPI/đối soát cho tới khi phiên có giờ kết thúc hợp lệ. |

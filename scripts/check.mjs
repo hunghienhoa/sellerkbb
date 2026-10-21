@@ -400,5 +400,11 @@ assert(!refreshLatestBlock.includes("/api/tiktok/autosync/run")&&!refreshLatestB
 assert(html.includes("Không phải Đồng bộ TikTok.")&&html.includes("Tải lại dữ liệu SellerKBB hiện có · không chạy đồng bộ TikTok"), "Latest-data control must explicitly distinguish refresh from sync");
 assert(html.includes(".data-refresh-btn.is-loading")&&html.includes(".data-refresh-btn.is-success")&&html.includes("@keyframes data-refresh-spin"), "Refresh control loading/success motion states missing");
 assert(html.includes("state.section==='dashboard'"), "Latest-data control must stay scoped to Tổng quan");
+assert(html.includes('id="dataRefreshModalBackdrop"')&&html.includes('id="dataRefreshModal"'), "Latest-data detail must use a centered modal");
+assert(html.includes(".data-refresh-modal-backdrop.is-open")&&html.includes("cubic-bezier(.2,.8,.2,1)"), "Latest-data modal open/close motion missing");
+assert(html.includes("e.target===backdrop")&&html.includes("setDataRefreshModal(false)"), "Latest-data modal backdrop/close behavior missing");
+assert(!html.includes("Firestore</span><em>"), "Latest-data modal must not show Firestore read-back row");
+const refreshLatestNoToastBlock=html.slice(html.indexOf("async function refreshLatestData()"),html.indexOf("function bindShell()",html.indexOf("async function refreshLatestData()")));
+assert(!refreshLatestNoToastBlock.includes("showToast("), "Latest-data refresh flow must not emit toast notifications");
 assert(html.includes("LIVE chồng thời gian")&&html.includes("Thiếu dữ liệu hậu mãi"), "Blocked KPI reasons must be labeled separately");
 console.log("Project structure, syntax, persistence, calendar, storage/backup, Google profiles, pink pastel UI, overlap-safe reconciliation, full pagination, readiness, descriptive Releases, README, and auto-sync checks OK");
