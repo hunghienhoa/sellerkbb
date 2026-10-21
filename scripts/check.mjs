@@ -85,6 +85,8 @@ assert(worker.includes("function summarizeLiveReconciliation"), "Reconciliation 
 assert(worker.includes("async function refreshKpiReconciliations"), "Scheduled KPI reconciliation refresher missing");
 assert(worker.includes('status === "COMPLETED" && active.length === 0'), "Completed-order finalization rule missing");
 assert(worker.includes("const finalized = cancelled ||"), "Cancelled orders must finalize reconciliation");
+assert(worker.includes("let cancelledAmount = 0;")&&worker.includes("cancelledAmount += order.amount"), "Cancelled order value accumulator missing");
+assert(html.includes("Đơn hủy từ Livestream"), "Cancelled-order value card missing from reconciliation overview");
 assert(worker.includes('time_window_single_live'), "Single-LIVE time-window provisional attribution missing");
 assert(worker.includes("const singleLiveKpiRows = [...liveSignalOrderRows, ...provisionalTimeWindowRows]"), "KPI reconciliation must include provisional single-LIVE time-window orders");
 assert(worker.includes("gmvAmount: usableForKpi ? gmvAmount : 0"), "Automatic KPI GMV must use reconciled KPI result");
