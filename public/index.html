@@ -571,6 +571,10 @@ button{-webkit-tap-highlight-color:transparent}
   scrollbar-color:#edb3ce transparent;
   scrollbar-width:thin;
 }
+.table-wrap:focus-visible{
+  outline:3px solid rgba(216,112,161,.2);
+  outline-offset:2px;
+}
 table{
   width:100%;
   min-width:1050px;
@@ -2262,9 +2266,14 @@ tbody tr:hover td{background:#fcfafb}
 .dashboard-live-head h3{margin-bottom:2px}
 .dashboard-more{white-space:nowrap}
 @media(max-width:700px){
-  .dashboard-live-head{align-items:stretch;flex-direction:column;gap:10px}
-  .dashboard-live-head>.row{width:100%;justify-content:space-between}
+  .dashboard-live-head{align-items:stretch;flex-direction:column;gap:10px;min-width:0}
+  .dashboard-live-head>div{min-width:0;max-width:100%}
+  .dashboard-live-head>.row{width:100%;justify-content:space-between;min-width:0}
+  .dashboard-live-head>.row .pill{max-width:100%;white-space:normal;line-height:1.35;overflow-wrap:anywhere}
   .dashboard-more{margin-left:auto}
+  .mobile-live-card,.mobile-live-head>div,.mobile-grid,.mobile-field{min-width:0;max-width:100%}
+  .mobile-live-head>.pill{flex:0 0 auto;max-width:42%;white-space:normal;text-align:center;line-height:1.3}
+  .mobile-live-time,.mobile-field small{min-width:0;overflow-wrap:anywhere}
 }
 
 
@@ -4746,7 +4755,7 @@ body.account-modal-open{overflow:hidden}
     function renderLiveTable(rows, editable){
       if(!rows.length)return `<div class="empty">Chưa có dữ liệu LIVE trong khoảng này.</div>`;
       const approvedHosts=staffForRole('host'); const operators=staffForRole('operator');
-      const desktop=`<div class="table-wrap desktop-live-table"><table><thead><tr><th>Phiên / Kênh</th><th>Thời gian phiên LIVE</th><th>Thời lượng phiên LIVE</th><th>GMV LIVE tổng</th><th>GMV hàng nhà</th><th>GMV Affiliate</th><th>Hoa hồng Affiliate</th><th>GMV chờ đối soát</th><th>GMV sau khi hoàn hủy</th><th>Số món bán đã ghi nhận</th><th>Host</th><th>Vận hành</th>${editable?'<th></th>':''}</tr></thead><tbody>${rows.map(s=>{
+      const desktop=`<div class="table-wrap desktop-live-table" tabindex="0" aria-label="Bảng phiên LIVE có thể cuộn ngang"><table><thead><tr><th>Phiên / Kênh</th><th>Thời gian phiên LIVE</th><th>Thời lượng phiên LIVE</th><th>GMV LIVE tổng</th><th>GMV hàng nhà</th><th>GMV Affiliate</th><th>Hoa hồng Affiliate</th><th>GMV chờ đối soát</th><th>GMV sau khi hoàn hủy</th><th>Số món bán đã ghi nhận</th><th>Host</th><th>Vận hành</th>${editable?'<th></th>':''}</tr></thead><tbody>${rows.map(s=>{
         const figures=sessionGmvFigures(s), affiliate=affiliateFigures(s), reconciled=figures.final!==null;
         const savedAssignment=hasSavedAutoAssignment(s);
         return `<tr class="${reconciled?'live-row-reconciled':''}" data-live-session="${s.id}">
