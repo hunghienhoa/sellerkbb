@@ -397,11 +397,11 @@ assert(html.includes("kpi-month-select-shell")&&html.includes("kpi-month-chevron
 const kpiMonthMarkup=html.slice(html.indexOf("function kpiMonthFilterHtml()"),html.indexOf("function bindKpiMonthFilter()",html.indexOf("function kpiMonthFilterHtml()")));
 assert(!kpiMonthMarkup.includes("range-summary")&&!kpiMonthMarkup.includes("range.label"), "KPI month filter must not show explicit date range text");
 assert(!html.includes("tính toàn bộ phiên từ ${displayDateKey(monthRange.startKey)} đến ${displayDateKey(monthRange.endKey)}"), "KPI monthly note must not repeat start/end date text");
-assert(html.includes('id="dataRefreshBtn"')&&html.includes('id="dataRefreshPopover"'), "Dashboard latest-data refresh control missing");
+assert(html.includes('id="dataRefreshBtn"'), "Dashboard latest-data refresh control missing");
 assert(html.includes("async function refreshLatestData()")&&html.includes("await withTimeout(loadData(),STARTUP_TIMEOUT_MS,'Cập nhật dữ liệu')"), "Latest-data control must reload SellerKBB data");
 const refreshLatestBlock=html.slice(html.indexOf("async function refreshLatestData()"),html.indexOf("function bindShell()",html.indexOf("async function refreshLatestData()")));
 assert(!refreshLatestBlock.includes("/api/tiktok/autosync/run")&&!refreshLatestBlock.includes("runAutoSync"), "Latest-data control must not trigger TikTok sync");
-assert(html.includes("Không phải Đồng bộ TikTok.")&&html.includes("Tải lại dữ liệu SellerKBB hiện có · không chạy đồng bộ TikTok"), "Latest-data control must explicitly distinguish refresh from sync");
+assert(html.includes("Tải lại dữ liệu SellerKBB hiện có · không chạy đồng bộ TikTok"), "Latest-data control must explicitly distinguish refresh from sync");
 assert(html.includes(".data-refresh-btn.is-loading")&&html.includes(".data-refresh-btn.is-success")&&html.includes("@keyframes data-refresh-spin"), "Refresh control loading/success motion states missing");
 assert(html.includes("state.section==='dashboard'"), "Latest-data control must stay scoped to Tổng quan");
 assert(!html.includes('id="dataRefreshModalBackdrop"')&&!html.includes('id="dataRefreshModal"')&&!html.includes('id="dataRefreshPopover"'), "Latest-data detail popup/modal must stay hidden/removed");
