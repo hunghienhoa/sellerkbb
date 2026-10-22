@@ -4,7 +4,7 @@
 
 ### Báo cáo TikTok LIVE · KPI nhân sự · Tự đồng bộ 24/24
 
-**Phiên bản hiện tại: v1.49.23**
+**Phiên bản hiện tại: v1.49.24**
 
 [![GitHub Release](https://img.shields.io/github/v/release/hunghienhoa/sellerkbb?label=Release)](https://github.com/hunghienhoa/sellerkbb/releases)
 [![GitHub Actions](https://img.shields.io/github/actions/workflow/status/hunghienhoa/sellerkbb/deploy.yml?branch=main&label=Ki%E1%BB%83m%20tra%20%26%20Backup)](https://github.com/hunghienhoa/sellerkbb/actions)
@@ -17,7 +17,13 @@
 
 ---
 
-## 🆕 Cập nhật mới nhất — v1.49.23
+## 🆕 Cập nhật mới nhất — v1.49.24
+
+- **Đổi tên tab trình duyệt:** `SellerKBB · Doanh Số KPIs` thay cho `SellerKBB · TikTok LIVE Report`.
+- **Viết lại thông báo đăng nhập:** thay từ kỹ thuật “bootstrap” bằng “Tài khoản mới cần được quản trị viên phê duyệt trước khi sử dụng.”; tiêu đề hướng dẫn đổi thành “Đăng nhập bằng Google để truy cập hệ thống.”.
+- **Giữ nguyên nghiệp vụ:** không sửa phân quyền, bootstrap quản trị viên, quy trình đăng nhập Google, KPI hay đồng bộ dữ liệu.
+
+### v1.49.23 — Tinh chỉnh kích thước logo trên màn hình Retina
 
 - **Giảm phóng vỡ logo trên màn hình Retina:** Thu nhỏ ảnh trong đăng nhập và sidebar để file mascot 180 px không bị phóng quá mức, giữ lại nhận diện ảnh em bé người dùng đã chọn. Không thay đổi tính năng.
 - **Trạng thái ảnh HD:** Bản PNG 512 px đã chuẩn bị nhưng chưa thay được trong repository do công cụ tải ảnh bị chặn. Đây là sửa bố cục tạm thời, chưa phải thay ảnh HD.
@@ -212,6 +218,8 @@ Khi yêu cầu AI làm giao diện SellerKBB, agent cần đọc `AGENTS.md`, `P
 ### 1. Mở website
 
 Vào website SellerKBB. Mặc định hệ thống luôn chọn **Hôm nay**.
+
+**Đăng nhập:** chọn **Đăng nhập Google**. Tài khoản đăng ký mới cần quản trị viên phê duyệt trước khi sử dụng; tài khoản quản trị viên đã thiết lập trước đó tiếp tục sử dụng bình thường. Tab trình duyệt hiển thị **SellerKBB · Doanh Số KPIs**.
 
 Giao diện v1.47.1 giữ hồng pastel, dùng chữ rõ cho nhãn số liệu và phân biệt nút chính bằng hồng đậm. Trên điện thoại, nút thao tác có vùng chạm lớn; màn hình rất hẹp chuyển cụm số liệu sang một cột để tránh cắt số.
 
@@ -426,6 +434,7 @@ README giữ lại phần này để nhân sự có thể biết **vì sao giao 
 
 | Phiên bản | Thay đổi chính |
 |---|---|
+| **v1.49.24** | Đổi tên tab trình duyệt thành “SellerKBB · Doanh Số KPIs”; viết lại hướng dẫn đăng nhập Google và xét duyệt tài khoản mới, bỏ thuật ngữ “bootstrap” khỏi giao diện. |
 | **v1.49.12** | Đồng bộ lưu bền GMV Affiliate đã xác minh, kiểm tra backlog 30 ngày tự động và hiển thị rõ số phiên chưa xác minh. |
 | **v1.49.11** | Cho người dùng đổi tên/ảnh SellerKBB, upload ảnh nén và đặt lại ảnh Google; sửa popup không đóng khi đăng xuất. |
 | **v1.49.10** | Tách hai thông báo Affiliate/KPI đối soát ở PC/mobile; KPI nhân sự ưu tiên ảnh Google đã liên kết, bổ sung gắn Gmail trong Quản lý nhân sự. |
