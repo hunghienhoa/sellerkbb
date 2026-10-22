@@ -4,7 +4,7 @@
 
 ### Báo cáo TikTok LIVE · KPI nhân sự · Tự đồng bộ 24/24
 
-**Phiên bản hiện tại: v1.49.13**
+**Phiên bản hiện tại: v1.49.14**
 
 [![GitHub Release](https://img.shields.io/github/v/release/hunghienhoa/sellerkbb?label=Release)](https://github.com/hunghienhoa/sellerkbb/releases)
 [![GitHub Actions](https://img.shields.io/github/actions/workflow/status/hunghienhoa/sellerkbb/deploy.yml?branch=main&label=Ki%E1%BB%83m%20tra%20%26%20Backup)](https://github.com/hunghienhoa/sellerkbb/actions)
@@ -17,7 +17,12 @@
 
 ---
 
-## 🆕 Cập nhật mới nhất — v1.49.13
+## 🆕 Cập nhật mới nhất — v1.49.14
+
+- **Giới hạn đồng bộ GMV Affiliate đúng hai kênh** `shopkhangbaby` và `mekhangsua`. Bổ sung kiểm tra allowlist trước lệnh API chi tiết Affiliate và trước khi lưu snapshot LIVE vào Cloudflare KV; các phiên kênh khác không được đưa vào cache sau đồng bộ.
+- Bộ lọc hai kênh tại bước lấy LIVE, đọc cache và Creator Authorization vẫn giữ nguyên. Không thay đổi quyền người dùng, số GMV đã xác minh, cách tính KPI hoặc dữ liệu nguồn TikTok.
+
+### v1.49.13 — Nhân sự được đồng bộ TikTok 30 ngày
 
 - **Nhân sự được đồng bộ TikTok 30 ngày:** tài khoản Host/Vận hành đã duyệt và được cấp quyền xem LIVE hoặc KPI có thể bấm **Cập nhật dữ liệu** ở Tổng quan để chạy cùng tác vụ đồng bộ 30 ngày/GMV Affiliate như Admin. Các tài khoản chưa duyệt/không có quyền dữ liệu vẫn bị từ chối tại máy chủ.
 - **Chỉ mở quyền đồng bộ:** các chức năng kết nối TikTok, quản lý token, quản trị và cấp quyền vẫn chỉ dành cho Admin. Khi có đồng bộ đang chạy, nhân sự theo dõi chung job hiện tại thay vì khởi chạy thêm.
