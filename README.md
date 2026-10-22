@@ -4,7 +4,7 @@
 
 ### Báo cáo TikTok LIVE · KPI nhân sự · Tự đồng bộ 24/24
 
-**Phiên bản hiện tại: v1.49.12**
+**Phiên bản hiện tại: v1.49.13**
 
 [![GitHub Release](https://img.shields.io/github/v/release/hunghienhoa/sellerkbb?label=Release)](https://github.com/hunghienhoa/sellerkbb/releases)
 [![GitHub Actions](https://img.shields.io/github/actions/workflow/status/hunghienhoa/sellerkbb/deploy.yml?branch=main&label=Ki%E1%BB%83m%20tra%20%26%20Backup)](https://github.com/hunghienhoa/sellerkbb/actions)
@@ -17,7 +17,13 @@
 
 ---
 
-## 🆕 Cập nhật mới nhất — v1.49.12
+## 🆕 Cập nhật mới nhất — v1.49.13
+
+- **Nhân sự được đồng bộ TikTok 30 ngày:** tài khoản Host/Vận hành đã duyệt và được cấp quyền xem LIVE hoặc KPI có thể bấm **Cập nhật dữ liệu** ở Tổng quan để chạy cùng tác vụ đồng bộ 30 ngày/GMV Affiliate như Admin. Các tài khoản chưa duyệt/không có quyền dữ liệu vẫn bị từ chối tại máy chủ.
+- **Chỉ mở quyền đồng bộ:** các chức năng kết nối TikTok, quản lý token, quản trị và cấp quyền vẫn chỉ dành cho Admin. Khi có đồng bộ đang chạy, nhân sự theo dõi chung job hiện tại thay vì khởi chạy thêm.
+- **Kiểm tra:** xác thực phân quyền phía Worker và luồng nút trên desktop/mobile; giữ nguyên cách lưu dữ liệu Affiliate, công thức KPI và cơ chế chống chạy trùng.
+
+### v1.49.12 — Lưu bền GMV Affiliate và đồng bộ 30 ngày
 
 - **Sửa đồng bộ GMV Affiliate không bền:** Cả **Cập nhật dữ liệu** (Tổng quan, Admin) và **Đồng bộ ngay 30 ngày** (TikTok / API) tiếp tục sử dụng **cùng** tác vụ `POST /api/tiktok/autosync/run`; các phiên đã xác minh Creator/Affiliate được **lưu trong Cloudflare KV** và dữ liệu không bị xóa chỉ vì TikTok tạm trả thiếu, tài khoản mới không xuất hiện trong danh sách kỳ này hoặc lần API tiếp theo lỗi.
 - **Sửa đồng bộ tự động bị bỏ sót Affiliate:** đồng bộ nền sẽ lấy các phiên đang thiếu Affiliate trong kho 30 ngày làm danh sách cần đối chiếu, kể cả khi lần lấy shop LIVE mới trả **0 phiên**. Các phiên chưa xác minh được luân phiên thử lại theo thời điểm kiểm tra gần nhất; mỗi lần chỉ xử lý số yêu cầu API vừa phải (8 phiên mỗi giờ, 10 phiên khi bấm nút) để tránh lỗi vượt giới hạn Cloudflare Worker.
