@@ -3079,6 +3079,31 @@ body.account-modal-open{overflow:hidden}
 .sidebar-brand-logo{display:block;width:min(100%,68px);height:auto;margin:0 auto;object-fit:contain}
 .sidebar-brand-caption{display:block;text-align:center;margin:3px 0 0;font-size:11px;line-height:1.45;letter-spacing:.025em;color:var(--muted);font-weight:700}
 @media(max-width:480px){.boot-card{padding:24px}.login-brand-logo{width:min(100%,88px);margin-bottom:14px}}
+/* Impeccable / Taste / Emil: compact disclosure, generous hit targets, and hierarchy. */
+#section-tiktok details.api-disclosure{display:block}
+#section-tiktok summary.auth-summary{list-style:none;cursor:pointer;user-select:none}
+#section-tiktok summary.auth-summary::-webkit-details-marker{display:none}
+#section-tiktok .auth-summary:focus-visible{outline:2px solid #ae6085;outline-offset:3px;border-radius:8px}
+#section-tiktok .auth-chevron{font-size:20px;font-weight:700;line-height:1;flex-shrink:0;color:#a45178;transition:transform .18s ease}
+#section-tiktok details[open] > summary .auth-chevron{transform:rotate(180deg)}
+#section-tiktok .creator-channel-body{display:grid;gap:10px}
+#section-tiktok .creator-auth-head.auth-summary{align-items:center;margin:0}
+#section-tiktok .creator-auth-card[open] > .creator-auth-head{margin-bottom:12px}
+#section-tiktok .creator-channel{display:block}
+#section-tiktok .creator-channel > summary{align-items:center;min-height:38px}
+#section-tiktok .creator-channel[open] > summary{margin-bottom:10px}
+#section-tiktok .api-disclosure:not([open]){padding-bottom:12px}
+#section-tiktok .api-disclosure:not([open]) h3{margin-bottom:0}
+@media(max-width:700px){
+  #section-tiktok .creator-channel-grid{grid-template-columns:minmax(0,1fr)}
+  #section-tiktok .creator-auth-head.auth-summary{gap:6px}
+  #section-tiktok .creator-auth-head p{display:none}
+  #section-tiktok .creator-channel-name span{display:none}
+  #section-tiktok .creator-channel-top .pill{white-space:nowrap}
+  #section-tiktok .api-disclosure{padding:12px}
+  #section-tiktok .auth-chevron{font-size:18px}
+}
+
 </style>
   <script>if("serviceWorker" in navigator)window.addEventListener("load",()=>navigator.serviceWorker.register("/sw.js").catch(()=>{}));</script>
 </head>
@@ -6432,6 +6457,17 @@ body.account-modal-open{overflow:hidden}
       const mark=ok?'✓':warn?'!':'×';
       return `<div class="status-item" data-readiness-item="${esc(label)}"><span class="pill ${tone}">${mark}</span><div><span>${esc(label)}</span><b>${esc(detail)}</b></div></div>`;
     }
+    const tiktokDisclosurePreference=new Map();
+    function tiktokDisclosureIsOpen(key,defaultOpen=true){
+      return tiktokDisclosurePreference.has(key)?tiktokDisclosurePreference.get(key):defaultOpen;
+    }
+    function bindTikTokDisclosures(){
+      document.querySelectorAll('#section-tiktok [data-tiktok-disclosure]').forEach(panel=>{
+        const summary=panel.querySelector(':scope > summary');
+        if(!summary)return;
+        summary.addEventListener('click',()=>tiktokDisclosurePreference.set(panel.dataset.tiktokDisclosure,!panel.open));
+      });
+    }
     function creatorChannelCardHtml(item={}){
       const channel=String(item.channel||'');
       const connected=item.connected===true;
@@ -6450,11 +6486,14 @@ body.account-modal-open{overflow:hidden}
       const missingLine=missing.length?'<span>Thiếu scope: <b>'+esc(missing.join(', '))+'</b></span>':'';
       const refreshErrorLine=item.refreshError?'<span class="creator-refresh-bad">Lỗi Refresh Token: <b>'+esc(item.refreshError)+'</b></span>':'';
       const errorLine=item.error&&!item.refreshError?'<span>Lỗi: <b>'+esc(item.error)+'</b></span>':'';
-      return `<div class="creator-channel" data-creator-channel="${esc(channel)}">
-        <div class="creator-channel-top">
+      const healthy=connected&&scopeOk&&hasRefresh&&!item.refreshError&&!item.error;
+      return `<details class="creator-channel" data-creator-channel="${esc(channel)}" data-tiktok-disclosure="channel-${esc(channel)}" ${tiktokDisclosureIsOpen('channel-'+channel,!healthy)?'open':''}>
+        <summary class="creator-channel-top auth-summary">
           <div class="creator-channel-name"><b>@${esc(channel)}</b><span>Access Token + Refresh Token riêng · không dùng Seller token</span></div>
           <span class="pill ${connected&&scopeOk&&hasRefresh?'ok':connected?'warn':''}">${connected&&scopeOk&&hasRefresh?'✓ Đã kết nối':connected?'! Cần kiểm tra':'Chưa kết nối'}</span>
-        </div>
+          <span class="auth-chevron" aria-hidden="true">⌄</span>
+        </summary>
+        <div class="creator-channel-body">
         <div class="creator-channel-meta">
           <span>Tài khoản xác minh: <b>${esc(username)}</b></span>
           <span>Live Data: <b>${scopeOk?'Đã cấp':'Chưa đủ quyền'}</b></span>
@@ -6464,7 +6503,8 @@ body.account-modal-open{overflow:hidden}
           ${connected&&hasRefresh?`<button class="btn" type="button" data-refresh-creator="${esc(channel)}">${icon('refresh',14)} Làm mới token</button>`:''}
           <button class="btn ${connected?'':'primary'}" type="button" data-connect-creator="${esc(channel)}">${icon(connected?'refresh':'link',14)} ${connected?'Ủy quyền lại':'Kết nối Creator'}</button>
         </div>
-      </div>`;
+        </div>
+      </details>`;
     }
     async function requestThirtyDaySync(origin='tiktok'){
       if(!can('live.read')&&!can('kpi.read')){
@@ -6624,6 +6664,7 @@ body.account-modal-open{overflow:hidden}
             <div class="status-item">${icon('history')}<div><span>Đối soát số liệu</span><b>Mỗi ngày rà lại 30 ngày gần nhất</b></div></div>
           </div>
           <div class="api-foot"><div><b>LIVE Performance API</b><span>/analytics/202509/shop_lives/performance</span></div><div class="row"><button class="btn primary" id="previewSyncNow">${icon('sync')} Đồng bộ ngay</button><button class="btn" id="previewSync">${icon('check')} Kiểm tra kết nối</button></div></div>`;
+        bindTikTokDisclosures();
         $('#section-tiktok').querySelectorAll('[data-refresh-creator]').forEach(button=>button.onclick=()=>showToast('Preview: đã làm mới Refresh Token cho @'+button.dataset.refreshCreator));
         $('#section-tiktok').querySelectorAll('[data-connect-creator]').forEach(button=>button.onclick=()=>showToast('Preview: Creator '+button.dataset.connectCreator+' đã được mô phỏng kết nối'));
         $('#previewSync').onclick=()=>showToast('Kết nối TikTok mẫu hoạt động bình thường');
@@ -6677,8 +6718,8 @@ body.account-modal-open{overflow:hidden}
           <span class="status-dot ${status.connected&&sync.ok!==false?'ok':'warn'}">${syncState}</span>
         </div>
         ${!status.configured?'<div class="notice">Chưa cấu hình đủ TikTok App Key / Secret / Service ID / Seller Authorization URL / KV binding.</div>':''}
-        <div class="card" data-readiness-card>
-          <div class="row space"><div><h3 class="heading-with-icon">${icon('shield',18)} Kiểm tra sẵn sàng chạy thật</h3><div class="sub">Chỉ bắt đầu dùng KPI tiền thật khi các mục chính đã đạt và scopes đã được kiểm tra.</div></div><span class="pill ${readinessReady?'ok':readinessWarn?'warn':'bad'}">${readinessLabel}</span></div>
+        <details class="card api-disclosure" data-readiness-card data-tiktok-disclosure="readiness" ${tiktokDisclosureIsOpen('readiness',!readinessReady)?'open':''}>
+          <summary class="row space auth-summary"><div><h3 class="heading-with-icon">${icon('shield',18)} Kiểm tra sẵn sàng chạy thật</h3><div class="sub">Chỉ bắt đầu dùng KPI tiền thật khi các mục chính đã đạt và scopes đã được kiểm tra.</div></div><span class="pill ${readinessReady?'ok':readinessWarn?'warn':'bad'}">${readinessLabel}</span></div>
           <div class="status-grid" data-readiness-grid>
             ${readinessItem(checks.firebaseConfig===true,'Firebase',checks.firebaseConfig?'Web Config đã đủ':'Chưa đủ Firebase Web Config')}
             ${readinessItem(checks.tiktokConfig===true,'TikTok App',checks.tiktokConfig?'App/Secret/Service ID/KV đã đủ':'Thiếu cấu hình TikTok hoặc KV')}
@@ -6686,15 +6727,15 @@ body.account-modal-open{overflow:hidden}
             ${readinessItem(readiness.scopesReported&&!(readiness.missingScopes||[]).length,'Scopes',scopeDetail,!readiness.scopesReported)}
             ${readinessItem(checks.autoSync===true,'Đồng bộ',checks.autoSync?'Lần đồng bộ gần nhất thành công':'Chưa có lần đồng bộ thành công')}
           </div>
-        </div>
-        <div class="card creator-auth-card" data-creator-auth-card>
-          <div class="creator-auth-head">
-            <div><h3 class="heading-with-icon">${icon('live',18)} Creator Authorization</h3><p>Kết nối riêng hai tài khoản LIVE để dùng <b>creator.data.live.read.public</b>. Seller token hiện tại được giữ nguyên.</p></div>
-            <span class="pill ${creatorConnectedCount===2?'ok':creatorConnectedCount?'warn':''}">${creatorConnectedCount}/2 đã kết nối</span>
-          </div>
+        </details>
+        <details class="card creator-auth-card api-disclosure" data-creator-auth-card data-tiktok-disclosure="creators" ${tiktokDisclosureIsOpen('creators',creatorConnectedCount!==2)?'open':''}>
+          <summary class="creator-auth-head auth-summary">
+            <div><h3 class="heading-with-icon">${icon('live',18)} Creator Authorization</h3><p>Kết nối riêng hai tài khoản LIVE · Xem chi tiết khi cần làm mới hoặc ủy quyền lại.</p></div>
+            <span class="pill ${creatorConnectedCount===2?'ok':creatorConnectedCount?'warn':''}">${creatorConnectedCount}/2 đã kết nối</span><span class="auth-chevron" aria-hidden="true">⌄</span>
+          </summary>
           <div class="creator-channel-grid">${creatorChannels.map(creatorChannelCardHtml).join('')}</div>
           <div class="creator-safety-note">Mỗi Creator có <b>Access Token + Refresh Token riêng</b>. SellerKBB tự kiểm tra mỗi giờ và làm mới Access Token khi gần hết hạn; giá trị token bí mật không hiển thị. Callback vẫn kiểm tra <b>user_type = 1</b>, đủ scope và đúng username.</div>
-        </div>
+        </details>
         <div class="status-grid">
           <div class="status-item">${icon('refresh')}<div><span>Refresh Token</span><b>${status.autoRefresh?'Tự gia hạn · Access Token hết hạn '+accessExpiry:'Chưa có refresh token'}</b><small>Refresh Token hết hạn: ${refreshExpiry}</small></div></div>
           <div class="status-item">${icon('sync')}<div><span>Đồng bộ tự động</span><b>Mỗi 1 giờ · chạy 24/24</b><small>Lần gần nhất: ${lastSync}</small></div></div>
@@ -6712,6 +6753,7 @@ body.account-modal-open{overflow:hidden}
         ${sync.error?`<div class="notice bad">Đồng bộ gần nhất gặp lỗi: ${esc(sync.error)}</div>`:''}
         ${status.grantedScopes?.length?`<div class="scope-line tiny">Scopes: ${esc(status.grantedScopes.join(', '))}</div>`:''}`;
 
+      bindTikTokDisclosures();
       $('#section-tiktok').querySelectorAll('[data-refresh-creator]').forEach(button=>button.onclick=async()=>{
         const channel=button.dataset.refreshCreator;
         const old=button.innerHTML;
