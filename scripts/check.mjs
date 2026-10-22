@@ -449,7 +449,7 @@ assert(html.includes("GMV LIVE tổng")&&html.includes("GMV từ shopkhangbaby")
 assert((html.match(/GMV từ shopkhangbaby/g)||[]).length===4&&!html.includes("GMV hàng nhà"), "Shop GMV display label must be consistent across desktop, mobile and reconciliation");
 assert(!html.includes("Hoa hồng Affiliate")&&!html.includes("Không cộng vào GMV · không tính KPI")&&!html.includes("Chưa có Creator Authorization"), "Affiliate commission UI must stay hidden");
 assert(html.includes("singleLiveTotalKpiGmvAmount=Math.round(analytics*singleLiveAdjustmentRatio)"), "Frontend KPI fallback must include Affiliate GMV in total LIVE basis");
-assert(html.includes("affiliateDataAvailable:src.affiliateDataAvailable===true"), "Auto-sync frontend merge must carry Affiliate split fields");
+assert(html.includes("affiliateDataAvailable:confirmedAffiliate || keepPreviousAffiliate") && html.includes("const confirmedAffiliate=src.affiliateDataAvailable===true"), "Auto-sync must retain a verified Affiliate split when an API retry is incomplete");
 assert(worker.includes("filter(Boolean).filter(isAllowedSellerKbbLiveChannel)"), "Cached LIVE data must be sanitized then whitelist-filtered");
 assert(!worker.includes("insideRefreshedWindow && !freshIds.has(id)") &&
   worker.includes("byId.set(id, item);"), "Partial shop LIVE lists must not prune historically verified sessions");
@@ -548,6 +548,6 @@ assert(worker.includes("affiliatePending: affiliateEnrichment.pending") &&
   worker.includes("affiliatePending: Number(result?.affiliatePending"), "Job/status must include unresolved Affiliate counts");
 assert(html.includes('async function loadVerifiedSyncSnapshot(job)') &&
   html.includes("state.syncedSnapshotAt>=stamp"), "Dashboard must verify new KV snapshot before claiming success");
-assert(html.includes("status==='partial'?'Đã đồng bộ · còn thiếu'") &&
+assert(html.includes("status==='partial'?'Đã đồng bộ LIVE'") &&
   html.includes("finishDataRefresh(missing>0?'partial':'success')"), "UI must distinguish partial Affiliate results from successful complete sync");
 console.log("Project structure, durable Affiliate merge, rolling 30-day backfill, quota-safe sync and honest Dashboard status OK");
