@@ -4,7 +4,7 @@
 
 ### Báo cáo TikTok LIVE · KPI nhân sự · Tự đồng bộ 24/24
 
-**Phiên bản hiện tại: v1.49.19**
+**Phiên bản hiện tại: v1.49.20**
 
 [![GitHub Release](https://img.shields.io/github/v/release/hunghienhoa/sellerkbb?label=Release)](https://github.com/hunghienhoa/sellerkbb/releases)
 [![GitHub Actions](https://img.shields.io/github/actions/workflow/status/hunghienhoa/sellerkbb/deploy.yml?branch=main&label=Ki%E1%BB%83m%20tra%20%26%20Backup)](https://github.com/hunghienhoa/sellerkbb/actions)
@@ -17,7 +17,13 @@
 
 ---
 
-## 🆕 Cập nhật mới nhất — v1.49.19
+## 🆕 Cập nhật mới nhất — v1.49.20
+
+- **Sửa biểu tượng thêm vào Màn hình chính iPhone:** Apple Touch Icon không dùng logo chữ `K` SVG nữa mà trả ảnh em bé KHANG BABY do người dùng cung cấp, kích thước PNG 180×180, cùng tên app `SellerKBB`. Route `/apple-touch-icon.png` trả PNG thực với MIME `image/png`, không chuyển hướng sang nguồn ngoài.
+- **Đồng bộ PWA icon:** Manifest trỏ tới PNG em bé và SVG chứa ảnh em bé thay cho chữ `K` cũ; URL icon có phiên bản để hạn chế cache. Người dùng đã cài ứng dụng với biểu tượng cũ cần xóa biểu tượng khỏi màn hình chính và thêm lại bằng Safari để iOS đọc ảnh mới.
+- **Bảo toàn hệ thống:** Không đụng đến GMV Affiliate, LIVE, phân quyền, KPI, Firebase và token.
+
+### v1.49.19 — Favicon em bé đầu tiên
 
 - **Favicon KHANG BABY:** đưa nguyên bản biểu tượng em bé trong ảnh người dùng cung cấp lên GitHub và dùng làm favicon 16×16 của trình duyệt, không vẽ lại. Các kích thước PWA lớn và logo ngang đang chờ upload ảnh đầy đủ; tạm giữ icon PWA cũ tránh ảnh bị mờ khi phóng lớn.
 
