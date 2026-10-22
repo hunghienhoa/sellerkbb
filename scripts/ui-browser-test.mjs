@@ -82,7 +82,10 @@ try {
   const creatorPreview=await page.$$eval('#section-tiktok [data-creator-channel]',els=>els.map(e=>({channel:e.getAttribute('data-creator-channel'),text:e.textContent})));
   assert(creatorPreview.length===2&&creatorPreview.some(x=>x.channel==='shopkhangbaby')&&creatorPreview.some(x=>x.channel==='mekhangsua'),"Creator Authorization must show exactly the two SellerKBB channels");
   assert(creatorPreview.every(x=>x.text.includes('Đã kết nối')&&x.text.includes('Access Token + Refresh Token riêng')&&x.text.includes('Refresh Token:')&&x.text.includes('Có · tự gia hạn')),"Creator preview Refresh Token status/safety copy missing");
-  assert((await page.$$('[data-connect-creator]')).length===2,"Creator connect/re-authorize controls missing");
+  // Details panels are closed after successful authorization. Expand them
+  // before checking or clicking operational controls in the browser smoke test.
+  await page.$eval('#section-tiktok details[data-creator-channel]',nodes=>nodes.forEach(n=>{n.open=true;}));
+  assert((await page.$('[data-connect-creator]')).length===2,"Creator connect/re-authorize controls missing");
   assert((await page.$('[data-refresh-creator]')).length===2,"Creator manual Refresh Token controls missing");
   await page.click('[data-creator-channel="shopkhangbaby"] > summary');
   assert(await page.$eval('[data-creator-channel="shopkhangbaby"]',e=>e.open),"Creator authorization disclosure must expand");
