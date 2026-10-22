@@ -4015,18 +4015,20 @@ body.account-modal-open{overflow:hidden}
       const last=refreshMoment(state.dataRefresh?.lastAt);
       button.classList.toggle('is-loading',active);
       button.classList.toggle('is-success',status==='success');
+      button.classList.toggle('is-partial',status==='partial');
       button.classList.toggle('is-error',status==='error');
       button.disabled=active;
       button.setAttribute('aria-busy',String(active));
       label.textContent=status==='syncing'?'Đang đồng bộ…':status==='loading'?'Đang cập nhật…'
-        :status==='success'?'Đã cập nhật':status==='error'?'Thử lại':'Cập nhật dữ liệu';
+        :status==='success'?'Đã cập nhật':status==='partial'?'Đã đồng bộ · còn thiếu':status==='error'?'Thử lại':'Cập nhật dữ liệu';
       meta.textContent=status==='syncing'?'TikTok LIVE · 30 ngày'
         :status==='loading'?'Đang tải dữ liệu mới nhất'
         :status==='error'?(state.dataRefresh.error?'Đồng bộ chưa hoàn tất':'Cập nhật thất bại')
+        :status==='partial'?('Còn '+new Intl.NumberFormat('vi-VN').format(Number(state.dataRefresh.affiliatePending||0))+' phiên Affiliate')
         :last?('Lúc '+last):isAdmin()?'Bao gồm đồng bộ TikTok':'Dữ liệu mới nhất';
       const iconName=status==='success'?'check':status==='error'?'history':'refresh';
       $('#dataRefreshIcon').innerHTML=icon(iconName,16);
-      button.title=state.dataRefresh.error || (isAdmin()
+      button.title=(status==='partial'?'Đã lưu phiên LIVE nhưng còn '+Number(state.dataRefresh.affiliatePending||0)+' phiên chưa có GMV Affiliate xác minh. Hệ thống sẽ tiếp tục đối chiếu tự động.':state.dataRefresh.error) || (isAdmin()
         ? 'Đồng bộ TikTok 30 ngày, sau đó tải dữ liệu SellerKBB mới nhất'
         : 'Tải dữ liệu được phép xem; chỉ Admin được khởi chạy đồng bộ TikTok');
     }
@@ -4035,7 +4037,7 @@ body.account-modal-open{overflow:hidden}
       clearTimeout(refreshLatestData.resetTimer);
       state.dataRefresh.status=status;
       state.dataRefresh.error=String(error||'');
-      if(status==='success')state.dataRefresh.lastAt=new Date().toISOString();
+      if(status==='success'||status==='partial')state.dataRefresh.lastAt=new Date().toISOString();
       renderDataRefreshControl();
       if(status==='success'){
         refreshLatestData.resetTimer=setTimeout(()=>{
@@ -4113,6 +4115,7 @@ body.account-modal-open{overflow:hidden}
     }
 
     async function mergeAutoSyncedSessions(){
+      state.syncedSnapshotAt='';
       if(PREVIEW || !(can('live.read')||can('kpi.read'))) return;
       try{
         const auto=await api('/api/tiktok/autosync/sessions',{timeoutMs:8000});
@@ -4121,6 +4124,7 @@ body.account-modal-open{overflow:hidden}
           const id=String(src.liveId||'');
           if(!id)continue;
           const old=byId.get(id)||{};
+          if(src.cacheUpdatedAt && src.cacheUpdatedAt>state.syncedSnapshotAt)state.syncedSnapshotAt=String(src.cacheUpdatedAt);
           const srcStartSeconds=Number(src.startTimeSeconds||0);
           const srcEndSeconds=Number(src.endTimeSeconds||0);
           const startValid=validAutoSyncStartSeconds(srcStartSeconds);
@@ -6468,6 +6472,18 @@ body.account-modal-open{overflow:hidden}
       }
     }
 
+    async function loadVerifiedSyncSnapshot(job){
+      const stamp=String(job?.snapshotAt||'');
+      // Cloudflare KV reads can lag briefly between locations. Verify the
+      // persisted snapshot actually includes the completed job, not just that
+      // a job status was marked "success".
+      for(let attempt=0;attempt<7;attempt++){
+        await withTimeout(loadData(),STARTUP_TIMEOUT_MS,'Tải dữ liệu sau đồng bộ');
+        if(!stamp||state.syncedSnapshotAt>=stamp)return true;
+        if(attempt<6)await new Promise(resolve=>setTimeout(resolve,4500));
+      }
+      return false;
+    }
     function startManualSyncPolling(jobId){
       if(!jobId||state.manualSyncPolling===jobId||PREVIEW)return;
       state.manualSyncPolling=jobId;
@@ -6501,11 +6517,20 @@ body.account-modal-open{overflow:hidden}
             if(job.state==='success'){
               state.autoSyncStatus=status.autoSync||state.autoSyncStatus;
               try{
-                await withTimeout(loadData(),STARTUP_TIMEOUT_MS,'Tải dữ liệu sau đồng bộ');
+                const fresh=await loadVerifiedSyncSnapshot(job);
                 renderAll();
                 bindShell();
-                finishDataRefresh('success');
-                if(!fromDashboard)showToast('Đồng bộ xong '+new Intl.NumberFormat('vi-VN').format(Number(job.cached||0))+' phiên LIVE');
+                if(!fresh){
+                  finishDataRefresh('error','Tác vụ đã xong nhưng dữ liệu tại vùng truy cập này còn cũ. Hãy cập nhật lại sau.');
+                }else{
+                  const missing=Number(job.affiliatePending||0);
+                  state.dataRefresh.affiliatePending=missing;
+                  finishDataRefresh(missing>0?'partial':'success');
+                }
+                if(!fromDashboard)showToast(!fresh?'Dữ liệu vừa đồng bộ chưa xuất hiện đầy đủ trên máy chủ.'
+                  :Number(job.affiliatePending||0)>0
+                    ?'Đã lưu '+Number(job.cached||0)+' phiên LIVE · còn '+Number(job.affiliatePending||0)+' phiên cần đối chiếu Affiliate tự động.'
+                    :'Đã đồng bộ đầy đủ '+new Intl.NumberFormat('vi-VN').format(Number(job.cached||0))+' phiên LIVE');
               }catch(error){
                 finishDataRefresh('error','Đồng bộ đã xong nhưng không tải được dữ liệu: '+(error?.message||error));
                 if(!fromDashboard)showToast(state.dataRefresh.error);
