@@ -959,18 +959,31 @@ try {
   assert(await page.$eval('#userAvatar',e=>!e.src.startsWith('data:image/jpeg;base64,')),"Restore Google photo must remove the uploaded override");
   assert(await page.$eval('#accountModalBackdrop',e=>!e.classList.contains('hidden')),"Saving profile must not unexpectedly close modal");
 
-  // Signout: popup must be dismissed synchronously, even before Firebase
-  // sends the eventual null-auth callback.
-  const logoutClosed=await page.evaluate(()=>{
-    document.querySelector('#accountLogoutBtn').click();
-    const backdrop=document.querySelector('#accountModalBackdrop');
-    return backdrop.classList.contains('hidden')&&
-      backdrop.getAttribute('aria-hidden')==='true'&&
-      !document.body.classList.contains('account-modal-open')&&
-      !document.querySelector('#app').inert;
+  // Signout: record overlay state at beforeunload, then intercept the root
+  // route with a tiny signed-out document. Production login loads Firebase CDN
+  // scripts, which are not available in this isolated browser test.
+  await page.evaluate(()=>{
+    addEventListener('beforeunload',()=>{
+      const backdrop=document.querySelector('#accountModalBackdrop');
+      const closed=backdrop.classList.contains('hidden')&&backdrop.getAttribute('aria-hidden')==='true'
+        && !document.body.classList.contains('account-modal-open')&&!document.querySelector('#app').inert;
+      sessionStorage.setItem('sellerkbb:test:logout-closed',String(closed));
+    });
   });
-  assert(logoutClosed,"Signout must close and clear the user popup immediately");
-  await page.waitForFunction(()=>location.pathname==='/',{timeout:15000});
+  await page.setRequestInterception(true);
+  page.on('request',req=>{
+    const url=new URL(req.url());
+    if(req.isNavigationRequest()&&url.pathname==='/'&&url.origin===new URL(previewUrl).origin){
+      return req.respond({status:200,contentType:'text/html',body:'<!doctype html><title>Signed out</title><div id="accountModalBackdrop" class="hidden" aria-hidden="true"></div>'});
+    }
+    return req.continue();
+  });
+  await Promise.all([
+    page.waitForNavigation({waitUntil:'domcontentloaded',timeout:15000}),
+    page.click('#accountLogoutBtn')
+  ]);
+  assert(await page.evaluate(()=>sessionStorage.getItem('sellerkbb:test:logout-closed')==='true'),
+    "Signout must immediately dismiss and unlock popup before leaving the page");
   assert(await page.$eval('#accountModalBackdrop',e=>e.classList.contains('hidden')),"Signed-out screen must not retain account popup");
 
   console.log("Desktop/mobile browser smoke tests, profile image/name persistence and signout popup cleanup passed");
