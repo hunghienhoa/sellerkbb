@@ -3093,7 +3093,7 @@ body.account-modal-open{overflow:hidden}
       <header class="topbar">
         <div class="topbar-title-wrap"><button id="menuToggle" class="menu-toggle" type="button" aria-label="Mở menu" aria-expanded="false">☰</button><div><h1 id="pageTitle" class="page-title">Tổng quan</h1><div id="pageSub" class="tiny"></div></div></div>
         <div class="topbar-right">
-          <span id="syncBadge" class="pill">v1.49.16</span>
+          <span id="syncBadge" class="pill">v1.49.17</span>
           <div id="dataRefreshWrap" class="data-refresh-wrap">
             <button id="dataRefreshBtn" class="data-refresh-btn" type="button" title="Tài khoản có quyền LIVE/KPI: đồng bộ TikTok 30 ngày và cập nhật GMV Affiliate">
               <span id="dataRefreshIcon" class="data-refresh-icon">↻</span>
@@ -3604,7 +3604,7 @@ body.account-modal-open{overflow:hidden}
 
     function previewTs(iso){ return {toDate:()=>new Date(iso)}; }
     function enterPreview(){
-      state.config={version:'1.49.16-preview',tiktokConfigured:true};
+      state.config={version:'1.49.17-preview',tiktokConfigured:true};
       state.user={uid:'preview-admin',email:'admin@sellerkbb.demo',displayName:'Quản trị viên Demo',photoURL:avatarFallbackData('Quản trị viên Demo')};
       state.profile={role:'admin',status:'approved',displayName:'Quản trị viên Demo',photoURL:state.user.photoURL,permissions:['live.read','kpi.read']};
       state.maintenance={settings:{retentionDays:180,autoCleanup:true,emergencyPercent:85,firestoreSoftLimitMb:600,firestoreMaxSessions:FIRESTORE_TOTAL_SESSION_CAP,kvSoftKeyLimit:5000},github:{usedBytes:124000,limitBytes:10000000000,available:true},cloudflare:{keyCount:5,lastRun:{ranAt:new Date().toISOString(),deleted:0},usedBytes:428000,storageLimitBytes:1000000000,storageComplete:true},firebase:{freePlanMode:true,ttlEnabled:false,ttlRecommended:false,storageLimitBytes:1073741824}};
@@ -3922,7 +3922,7 @@ body.account-modal-open{overflow:hidden}
         <section class="account-install" aria-label="Cài SellerKBB trên iPhone">
           <b>Thêm SellerKBB vào màn hình chính</b>
           <p>Mở nhanh dashboard như ứng dụng trên iPhone.</p>
-          <div class="account-install-actions"><button id="accountInstallGuide" class="btn primary" type="button">Thêm vào màn hình chính</button><button id="accountInstallShortcut" class="btn" type="button">Mở Phím tắt</button></div>
+          <div class="account-install-actions"><button id="accountInstallGuide" class="btn primary" type="button" aria-expanded="false" aria-controls="accountInstallInstructions">Xem cách cài trên iPhone</button></div>
           <div id="accountInstallInstructions" class="account-install-instructions hidden" role="status" aria-live="polite"></div>
         </section>
         <button id="accountLogoutBtn" class="btn danger topbar-account-logout" type="button">${icon('logout',16)} ${PREVIEW?'Thoát Preview':'Đăng xuất'}</button>`;
@@ -3932,12 +3932,7 @@ body.account-modal-open{overflow:hidden}
       $('#accountInstallGuide').onclick=()=>{
         const expanded=installInstructions.classList.toggle('hidden')===false;
         $('#accountInstallGuide').setAttribute('aria-expanded',String(expanded));
-        if(expanded)installInstructions.textContent='Trên iPhone: mở SellerKBB bằng Safari → Chia sẻ → Thêm vào MH chính → bật Mở dưới dạng ứng dụng → Thêm. Cách này mở dạng ứng dụng toàn màn hình.';
-      };
-      $('#accountInstallShortcut').onclick=()=>{
-        installInstructions.classList.remove('hidden');
-        installInstructions.textContent='Phím tắt sẽ mở trình tạo mới. Thêm tác vụ Mở URL, nhập https://sellerkbb.doanhsokpis.workers.dev/ và chọn Thêm vào MH chính. iOS không cho website tự cài sẵn phím tắt.';
-        window.location.href='shortcuts://create-shortcut';
+        if(expanded)installInstructions.textContent='Trên iPhone: mở SellerKBB trong Safari → Chia sẻ → Thêm vào MH chính → bật Mở dưới dạng ứng dụng → Thêm. Apple yêu cầu bạn xác nhận thao tác; website không thể tự ghim biểu tượng.';
       };
       const editor=$('#accountProfileEditor'), photo=$('#accountPhotoPreview');
       let nextAvatar=null; // null = keep current; empty string = restore Google photo
