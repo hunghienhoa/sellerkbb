@@ -1913,7 +1913,9 @@ async function handleApi(request, env, ctx) {
   }
 
   if (url.pathname === "/api/tiktok/autosync/run" && request.method === "POST") {
-    await requireAdmin(request, env);
+    // Approved staff with LIVE/KPI report access may refresh shared TikTok data.
+    // OAuth, token management and all other administrative endpoints remain Admin-only.
+    await requireReportAccess(request, env);
     if (!env.TIKTOK_KV || !ctx?.waitUntil) return json({ error: "manual_sync_unavailable", message: "Chưa thể chạy đồng bộ nền trên máy chủ." }, 503);
     const existing = await getManualSyncJob(env);
     if (existing?.state === "running") {
