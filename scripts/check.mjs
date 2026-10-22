@@ -18,6 +18,16 @@ const safeWorker = worker
 new Function(safeWorker);
 
 const assert = (ok, message) => { if (!ok) throw new Error(message); };
+assert(worker.includes("function liveAffiliateComparison(session)"),"Unverified Seller/Creator GMV comparison helper missing");
+assert(worker.includes('affiliateEstimates: merged.filter('),"30-day sync summary must track unverified GMV comparisons");
+assert(html.includes("Chênh lệch Creator/Seller tham khảo:"),"Mobile LIVE should show unverified comparison label");
+assert(html.includes("Chênh lệch Creator/Seller: "),"Desktop LIVE should show unverified comparison label");
+assert(html.includes("keepPreviousAffiliate"),"Verified Affiliate snapshots must not be erased by partial API updates");
+assert(html.includes("Đã đồng bộ LIVE"),"Successful LIVE sync must not be mislabeled as a failed Affiliate sync");
+assert(html.includes('data-tiktok-disclosure="creators"') && html.includes('data-tiktok-disclosure="readiness"'),"TikTok authorization/readiness disclosure missing");
+assert(html.includes('data-tiktok-disclosure="channel-'),"Creator cards need individual disclosures");
+assert(html.includes("approved-user-role-compact"),"Compact account roles missing on phone");
+
 assert(html.includes('<title>SellerKBB · Doanh Số KPIs</title>'), "Browser tab title must show Doanh Số KPIs");
 assert(html.includes('Tài khoản mới cần được quản trị viên phê duyệt trước khi sử dụng.'), "Login approval helper text missing");
 assert(!html.includes('Tài khoản đầu tiên sẽ bootstrap thành quản trị viên'), "Old login bootstrap wording must not appear");
