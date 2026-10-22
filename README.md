@@ -4,7 +4,7 @@
 
 ### Báo cáo TikTok LIVE · KPI nhân sự · Tự đồng bộ 24/24
 
-**Phiên bản hiện tại: v1.49.22**
+**Phiên bản hiện tại: v1.49.23**
 
 [![GitHub Release](https://img.shields.io/github/v/release/hunghienhoa/sellerkbb?label=Release)](https://github.com/hunghienhoa/sellerkbb/releases)
 [![GitHub Actions](https://img.shields.io/github/actions/workflow/status/hunghienhoa/sellerkbb/deploy.yml?branch=main&label=Ki%E1%BB%83m%20tra%20%26%20Backup)](https://github.com/hunghienhoa/sellerkbb/actions)
@@ -17,7 +17,12 @@
 
 ---
 
-## 🆕 Cập nhật mới nhất — v1.49.22
+## 🆕 Cập nhật mới nhất — v1.49.23
+
+- **Giảm phóng vỡ logo trên màn hình Retina:** Thu nhỏ ảnh trong đăng nhập và sidebar để file mascot 180 px không bị phóng quá mức, giữ lại nhận diện ảnh em bé người dùng đã chọn. Không thay đổi tính năng.
+- **Trạng thái ảnh HD:** Bản PNG 512 px đã chuẩn bị nhưng chưa thay được trong repository do công cụ tải ảnh bị chặn. Đây là sửa bố cục tạm thời, chưa phải thay ảnh HD.
+
+### v1.49.22 — Đồng bộ logo KHANGBABY trên web
 
 - **Đồng bộ toàn bộ nhận diện bằng đúng ảnh em bé KHANGBABY người dùng chọn:** màn hình đăng nhập và menu sidebar thay logo chữ KHANGBABY bằng ảnh em bé (PNG trong suốt), căn giữa 152px trên đăng nhập và 88px trong sidebar, thu còn 136px trên điện thoại. Giữ tiêu đề SellerKBB và nút Google rõ ràng.
 - **Favicon và PWA/iPhone:** `/khangbaby-mascot.png`, `/favicon.ico`, `/apple-touch-icon.png` và `/pwa-icon.svg` đều sử dụng cùng ảnh em bé đã chuẩn hóa từ ảnh gốc; URL phiên bản mới giúp hạn chế bộ nhớ đệm icon cũ. Bỏ tải favicon qua GitHub Raw; dùng Worker trả ảnh cùng nguồn.
