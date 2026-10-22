@@ -19,12 +19,13 @@ new Function(safeWorker);
 
 const assert = (ok, message) => { if (!ok) throw new Error(message); };
 assert(html.includes('class="login-brand-logo"') && html.includes('class="sidebar-brand-logo"'), "KHANG BABY login and sidebar logos missing");
-assert(html.includes('src="/khangbaby-wordmark.png?v=1.49.21"'), "Logo versioned image URL missing");
-assert(worker.includes('url.pathname === "/khangbaby-wordmark.png"'), "KHANG BABY worker logo endpoint missing");
-assert(read("scripts/build-worker.mjs").includes('khangbaby-wordmark.png') && read("scripts/build-worker.mjs").includes('__BRAND_WORDMARK_B64__'), "Logo must be packaged in built Worker");
+assert(html.includes('src="/khangbaby-mascot.png?v='+version+'"'), "Versioned baby mascot logo missing");
+assert(worker.includes('url.pathname === "/khangbaby-mascot.png"'), "Mascot Worker image endpoint missing");
+assert(read("scripts/build-worker.mjs").includes('khangbaby-mascot.png') && read("scripts/build-worker.mjs").includes('__BRAND_MASCOT_B64__'), "Mascot image must be packaged in Worker");
 
+assert(!html.includes('src="/khangbaby-wordmark.png') && !worker.includes('url.pathname === "/khangbaby-wordmark.png"'), "Old wordmark logo must not be active");
 assert(html.includes('href="/apple-touch-icon.png?v='+version+'"'),"iPhone Home Screen icon must use versioned PNG instead of placeholder SVG");
-assert(worker.includes('url.pathname === "/apple-touch-icon.png"') && worker.includes('APPLE_TOUCH_ICON_B64'),"iPhone icon must be served by Worker with PNG bytes");
+assert(worker.includes('url.pathname === "/apple-touch-icon.png"') && worker.includes('BRAND_MASCOT_B64'),"iPhone icon must be served by Worker with PNG bytes");
 assert(!worker.includes('<text x="256" y="304"'),"Old K placeholder must not remain in PWA icon endpoint");
 
 assert(!html.includes("account-install") && !html.includes("accountInstallGuide") && !html.includes("accountInstallShortcut"), "Users popup must not show iPhone shortcut or install UI");
