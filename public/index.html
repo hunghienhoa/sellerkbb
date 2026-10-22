@@ -3847,26 +3847,132 @@ body.account-modal-open{overflow:hidden}
       }
     }
 
+    // Profile overrides live only in SellerKBB; Google account data is unchanged.
+    function accountDisplayRecord(){
+      const user=state.user||{},profile=state.profile||{};
+      return {
+        displayName:profile.customDisplayName||profile.displayName||user.displayName||user.email||'Tài khoản',
+        email:user.email||profile.email||'',
+        photoURL:profile.customPhotoURL||profile.photoURL||user.photoURL||''
+      };
+    }
     function renderAccountPopover(){
-      const user=state.user||{}, profile=state.profile||{};
-      const displayName=profile.displayName||user.displayName||user.email||'Tài khoản';
-      const email=user.email||profile.email||'';
-      const photoRecord={displayName,email,photoURL:user.photoURL||profile.photoURL||''};
+      const record=accountDisplayRecord(),profile=state.profile||{};
       $('#accountPopover').innerHTML=`
         <div class="topbar-account-popover-head">
-          ${avatarHtml(photoRecord,'topbar-account-popover-avatar')}
-          <div class="topbar-account-popover-copy"><b>${esc(displayName)}</b><span>${esc(email)}</span></div>
+          ${avatarHtml(record,'topbar-account-popover-avatar')}
+          <div class="topbar-account-popover-copy"><b>${esc(record.displayName)}</b><span>${esc(record.email)}</span></div>
         </div>
         <div class="topbar-account-details">
           <div><span>Vai trò</span><b>${esc(roleLabel(profile.role))}</b></div>
           <div><span>Trạng thái</span><b>${esc(accountStatusLabel(profile.status))}</b></div>
         </div>
+        <div class="account-profile-actions"><button id="accountProfileEdit" class="btn" type="button">${icon('edit',15)} Đổi tên / ảnh đại diện</button></div>
+        <form id="accountProfileEditor" class="account-profile-editor hidden" aria-label="Chỉnh sửa hồ sơ SellerKBB">
+          <div class="account-profile-photo-row">
+            <img id="accountPhotoPreview" class="account-profile-photo-preview" src="${esc(avatarSrc(record))}" alt="Ảnh đại diện đang chọn">
+            <div class="account-profile-photo-help">
+              <button id="accountPickAvatar" class="btn small" type="button">${icon('upload',14)} Tải ảnh mới</button>
+              <input id="accountAvatarUpload" type="file" accept="image/jpeg,image/png,image/webp" hidden>
+              <small>JPG, PNG, WebP · tối đa 5 MB · ảnh được thu gọn trước khi lưu.</small>
+              <button id="accountGoogleAvatar" class="btn small ghost" type="button">Dùng lại ảnh Google</button>
+            </div>
+          </div>
+          <label class="account-profile-field" for="accountProfileName">Tên hiển thị<input id="accountProfileName" class="input" type="text" maxlength="60" autocomplete="nickname" required value="${esc(record.displayName)}"></label>
+          <div class="tiny">Tên và ảnh chỉ dùng trên SellerKBB, không đổi thông tin Gmail gốc.</div>
+          <div id="accountProfileError" class="account-profile-feedback" role="status" aria-live="polite"></div>
+          <div class="account-profile-editor-footer"><button id="accountProfileCancel" class="btn" type="button">Hủy</button><button id="accountProfileSave" class="btn primary" type="submit">${icon('check',15)} Lưu thay đổi</button></div>
+        </form>
         <button id="accountModalClose" class="account-modal-close" type="button" aria-label="Đóng">×</button>
         <button id="accountLogoutBtn" class="btn danger topbar-account-logout" type="button">${icon('logout',16)} ${PREVIEW?'Thoát Preview':'Đăng xuất'}</button>`;
-      const close=$('#accountModalClose');
-      if(close)close.onclick=()=>setAccountMenu(false);
-      const logout=$('#accountLogoutBtn');
-      if(logout)logout.onclick=()=>{ if(PREVIEW) location.href='/'; else signOut(state.auth); };
+      $('#accountModalClose').onclick=()=>setAccountMenu(false);
+      $('#accountLogoutBtn').onclick=handleAccountLogout;
+      const editor=$('#accountProfileEditor'), photo=$('#accountPhotoPreview');
+      let nextAvatar=null; // null = keep current; empty string = restore Google photo
+      const error=$('#accountProfileError');
+      $('#accountProfileEdit').onclick=()=>{
+        editor.classList.toggle('hidden');
+        $('#accountProfileEdit').setAttribute('aria-expanded',String(!editor.classList.contains('hidden')));
+        if(!editor.classList.contains('hidden'))$('#accountProfileName').focus({preventScroll:true});
+      };
+      $('#accountProfileCancel').onclick=()=>{
+        editor.classList.add('hidden');error.textContent='';nextAvatar=null;
+        $('#accountProfileEdit').focus({preventScroll:true});
+      };
+      $('#accountPickAvatar').onclick=()=>$('#accountAvatarUpload').click();
+      $('#accountGoogleAvatar').onclick=()=>{
+        nextAvatar='';
+        const fallback={displayName:record.displayName,photoURL:state.user?.photoURL||''};
+        photo.src=avatarSrc(fallback);error.textContent='';
+      };
+      $('#accountAvatarUpload').onchange=async event=>{
+        const file=event.target.files?.[0];
+        if(!file)return;
+        try{
+          const url=await prepareAccountAvatar(file);
+          nextAvatar=url;
+          photo.src=url;
+          error.textContent='';
+        }catch(ex){error.textContent=String(ex?.message||ex);}
+        event.target.value='';
+      };
+      editor.onsubmit=async event=>{
+        event.preventDefault();
+        const input=$('#accountProfileName');
+        const name=String(input.value||'').trim().replace(/\s+/g,' ');
+        if(name.length<2||name.length>60){error.textContent='Tên hiển thị cần từ 2 đến 60 ký tự.';input.focus();return;}
+        const save=$('#accountProfileSave');save.disabled=true;save.setAttribute('aria-busy','true');
+        error.textContent='Đang lưu hồ sơ…';
+        try{
+          const existing=state.profile||{};
+          const uploaded=nextAvatar===null?String(existing.customPhotoURL||''):nextAvatar;
+          const photoURL=uploaded||state.user?.photoURL||'';
+          if(!PREVIEW){
+            if(!state.user?.uid)throw new Error('Phiên đăng nhập đã hết. Hãy đăng nhập lại.');
+            await updateDoc(doc(state.db,'users',state.user.uid),{
+              customDisplayName:name,customPhotoURL:uploaded,
+              displayName:name,photoURL,
+              updatedAt:serverTimestamp()
+            });
+          }
+          state.profile={...existing,customDisplayName:name,customPhotoURL:uploaded,displayName:name,photoURL};
+          if(PREVIEW)persistPreviewState();
+          if(state.users.length){
+            const index=state.users.findIndex(u=>u.id===state.user?.uid);
+            if(index>=0)Object.assign(state.users[index],{displayName:name,photoURL});
+          }
+          editor.classList.add('hidden');
+          bindShell();
+          $('#accountProfileEdit').focus({preventScroll:true});
+          showToast('Đã lưu tên và ảnh đại diện SellerKBB');
+        }catch(ex){
+          error.textContent='Không lưu được hồ sơ: '+String(ex?.message||ex);
+          save.disabled=false;
+          save.removeAttribute('aria-busy');
+        }
+      };
+    }
+
+    async function prepareAccountAvatar(file){
+      if(!['image/jpeg','image/png','image/webp'].includes(file.type))throw new Error('Chỉ nhận ảnh JPG, PNG hoặc WebP.');
+      if(file.size>5*1024*1024)throw new Error('Ảnh vượt 5 MB. Vui lòng chọn ảnh nhỏ hơn.');
+      const url=URL.createObjectURL(file),image=new Image();
+      try{
+        await new Promise((resolve,reject)=>{
+          image.onload=resolve;image.onerror=()=>reject(new Error('Không đọc được ảnh đã chọn.'));
+          image.src=url;
+        });
+        if(!image.naturalWidth||!image.naturalHeight||image.naturalWidth>8000||image.naturalHeight>8000)throw new Error('Kích thước ảnh không hợp lệ hoặc quá lớn.');
+        const canvas=document.createElement('canvas'),ctx=canvas.getContext('2d');
+        if(!ctx)throw new Error('Trình duyệt không thể xử lý ảnh.');
+        canvas.width=256;canvas.height=256;
+        const size=Math.min(image.naturalWidth,image.naturalHeight);
+        ctx.fillStyle='#fff';ctx.fillRect(0,0,256,256);
+        ctx.drawImage(image,(image.naturalWidth-size)/2,(image.naturalHeight-size)/2,size,size,0,0,256,256);
+        const data=canvas.toDataURL('image/jpeg',0.78);
+        if(!data.startsWith('data:image/jpeg;base64,')||data.length>160000)throw new Error('Không thể nén ảnh đủ nhỏ. Vui lòng thử ảnh khác.');
+        return data;
+      }finally{URL.revokeObjectURL(url);}
     }
 
     function refreshMoment(iso,withSeconds=false){
@@ -3966,7 +4072,7 @@ body.account-modal-open{overflow:hidden}
           else if(!e.shiftKey&&(document.activeElement===last||!dialog.contains(document.activeElement))){e.preventDefault();first.focus();}
         });
       }
-      const currentRecord={displayName:state.profile.displayName||state.user.displayName||state.user.email||'',email:state.user.email||'',photoURL:state.user.photoURL||state.profile.photoURL||''};
+      const currentRecord=accountDisplayRecord();
       $('#userAvatar').src=avatarSrc(currentRecord);
       $('#topbarAccountBtn').setAttribute('aria-label',`Mở thông tin tài khoản ${currentRecord.displayName}`);
       renderAccountPopover();
