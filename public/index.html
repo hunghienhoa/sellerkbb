@@ -4078,6 +4078,37 @@ body.account-modal-open{overflow:hidden}
       }
       return docs;
     }
+    async function refreshStaffGoogleLinks(){
+      if(PREVIEW||!isAdmin())return;
+      let changed=false;
+      const assigned=new Set(state.staff.map(x=>x.googleUid).filter(Boolean));
+      for(const member of state.staff){
+        let user=googleAccountForStaff(member);
+        if(user&&!member.googleUid&&!assigned.has(user.id)){
+          member.googleUid=user.id;
+          assigned.add(user.id);
+          changed=true;
+        }
+        if(member.googleUid){
+          user=state.users.find(u=>u.id===member.googleUid&&u.status==='approved'&&u.role===member.role);
+          if(user){
+            const photo=safePhotoURL(user.photoURL);
+            if(member.googlePhotoURL!==photo||member.googleDisplayName!==String(user.displayName||'')){
+              member.googlePhotoURL=photo;
+              member.googleDisplayName=String(user.displayName||'');
+              changed=true;
+            }
+          }
+        }
+      }
+      if(changed){
+        try{
+          await setDoc(doc(state.db,'settings','staffMembers'),{
+            items:state.staff,updatedAt:serverTimestamp(),updatedBy:state.user.uid
+          },{merge:true});
+        }catch(error){console.warn('KPI avatar cache update failed',error);}
+      }
+    }
     async function loadData(){
       state.sessions=[]; state.users=[]; state.staff=[];
       const tasks=[loadStaffDirectory()];
@@ -4106,6 +4137,7 @@ body.account-modal-open{overflow:hidden}
         })());
       }
       await Promise.all(tasks);
+      await refreshStaffGoogleLinks();
     }
 
     async function ensureMaintenanceDetails(force=false){
@@ -5706,7 +5738,7 @@ body.account-modal-open{overflow:hidden}
       const rows=[...state.staff].sort((a,b)=>(a.role===b.role?0:a.role==='host'?-1:1)||(a.sortOrder||0)-(b.sortOrder||0)||String(a.displayName).localeCompare(String(b.displayName),'vi'));
       $('#section-staff').innerHTML=`
         <div class="card">
-          <div class="row space"><div><h3 class="heading-with-icon">${icon('users',18)} Quản lý nhân sự</h3><div class="sub">Nhân sự ở đây độc lập hoàn toàn với tài khoản đăng nhập. Thêm nhân sự không tạo tài khoản và không cấp quyền xem SellerKBB.</div></div><span class="pill">${rows.length} nhân sự</span></div>
+          <div class="row space"><div><h3 class="heading-with-icon">${icon('users',18)} Quản lý nhân sự</h3><div class="sub">Nhân sự độc lập với tài khoản đăng nhập. Liên kết một Gmail đã duyệt để KPI hiển thị đúng ảnh đại diện; chỉ Admin chọn liên kết, không tự cấp thêm quyền truy cập.</div></div><span class="pill">${rows.length} nhân sự</span></div>
           <div class="staff-toolbar">
             <label><div class="tiny">Tên nhân sự</div><input id="newStaffName" class="input" placeholder="Nhập tên nhân sự"></label>
             <label><div class="tiny">Vai trò</div><select id="newStaffRole" class="input"><option value="host">Host Livestream</option><option value="operator">Nhân viên vận hành Livestream</option></select></label>
@@ -5720,10 +5752,18 @@ body.account-modal-open{overflow:hidden}
       document.querySelectorAll('[data-staff-delete]').forEach(b=>b.onclick=()=>deleteStaffMember(b.dataset.staffDelete));
     }
 
+    function staffGoogleAccountOptions(member){
+      const accounts=state.users.filter(u=>u.status==='approved'&&u.role===member.role)
+        .sort((a,b)=>String(a.displayName||'').localeCompare(String(b.displayName||''),'vi'));
+      return '<option value="">— Chưa liên kết Gmail —</option>'+accounts.map(u=>{
+        const occupied=state.staff.some(x=>x.id!==member.id&&x.googleUid===u.id);
+        return `<option value="${esc(u.id)}" ${member.googleUid===u.id?'selected':''} ${occupied?'disabled':''}>${esc(u.displayName||u.email||'Tài khoản')}${u.email?' · '+esc(u.email):''}</option>`;
+      }).join('');
+    }
     function staffRowHtml(member){
       return `<div class="staff-row" data-staff-row="${member.id}">
         <div class="staff-row-summary">
-          <div class="staff-row-copy"><b>${esc(member.displayName)}</b><span class="tag ${member.role==='operator'?'staff-role-operator':'staff-role-host'}">${esc(staffRoleLabel(member.role))}</span></div>
+          <div class="staff-row-copy"><b>${esc(member.displayName)}</b><span class="tag ${member.role==='operator'?'staff-role-operator':'staff-role-host'}">${esc(staffRoleLabel(member.role))}</span>${member.googleUid?'<span class="tiny">Đã liên kết ảnh Gmail</span>':''}</div>
           <div class="staff-row-actions">
             <button class="user-icon-btn" type="button" data-staff-edit="${member.id}" aria-label="Sửa ${esc(member.displayName)}" title="Sửa nhân sự">${icon('edit',16)}</button>
             <button class="user-icon-btn danger" type="button" data-staff-delete="${member.id}" aria-label="Xóa ${esc(member.displayName)}" title="Xóa nhân sự">${icon('close',16)}</button>
@@ -5732,6 +5772,7 @@ body.account-modal-open{overflow:hidden}
         <div class="staff-edit-grid hidden" data-staff-editor="${member.id}">
           <label><div class="tiny">Tên nhân sự</div><input class="input" data-staff-name="${member.id}" value="${esc(member.displayName)}"></label>
           <label><div class="tiny">Vai trò</div><select class="input" data-staff-role="${member.id}"><option value="host" ${member.role==='host'?'selected':''}>Host Livestream</option><option value="operator" ${member.role==='operator'?'selected':''}>Nhân viên vận hành Livestream</option></select></label>
+          <label><div class="tiny">Ảnh Gmail trên KPI</div><select class="input" data-staff-google="${member.id}" aria-label="Tài khoản Gmail của ${esc(member.displayName)}">${staffGoogleAccountOptions(member)}</select></label>
           <button class="btn primary small" type="button" data-staff-save="${member.id}">${icon('check',14)} Lưu</button>
         </div>
       </div>`;
@@ -5770,7 +5811,14 @@ body.account-modal-open{overflow:hidden}
       const role=document.querySelector(`[data-staff-role="${CSS.escape(id)}"]`)?.value==='operator'?'operator':'host';
       if(!name){showToast('Tên nhân sự không được để trống');return;}
       if(state.staff.some(x=>x.id!==id&&x.role===role&&x.displayName.localeCompare(name,'vi',{sensitivity:'base'})===0)){showToast('Tên nhân sự này đã có trong cùng vai trò');return;}
-      member.displayName=name; member.role=role;
+      const googleUid=document.querySelector(`[data-staff-google="${CSS.escape(id)}"]`)?.value||'';
+      const account=googleUid?state.users.find(u=>u.id===googleUid&&u.status==='approved'&&u.role===role):null;
+      if(googleUid&&!account){showToast('Gmail đã chọn không thuộc đúng vai trò hoặc chưa được duyệt');return;}
+      if(account&&state.staff.some(x=>x.id!==id&&x.googleUid===account.id)){showToast('Tài khoản Gmail đã liên kết với nhân sự khác');return;}
+      member.displayName=name;member.role=role;
+      member.googleUid=account?.id||'';
+      member.googlePhotoURL=safePhotoURL(account?.photoURL);
+      member.googleDisplayName=String(account?.displayName||'');
       await persistStaffDirectory();
       showToast('Đã cập nhật nhân sự');
     }
