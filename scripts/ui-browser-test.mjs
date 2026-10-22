@@ -804,7 +804,7 @@ try {
   assert(await page.$('#nav [data-section="manual-kpi"]')!==null,"Delegated operator needs KPI draft workspace");
   await page.click('#nav [data-section="live"]');
   await page.click('#section-live [data-range-mode="30d"]');
-  const delegatedRow='#section-live .desktop-live-table tbody tr:has(.live-reconciled-badge)';
+  const delegatedRow='#section-live .desktop-live-table tbody tr:has(.live-reconciled-badge):not(:has([data-manual-type-summary]))';
   const delegatedId=await page.$eval(delegatedRow,e=>e.dataset.liveSession);
   assert(Boolean(delegatedId),"Need a finalized sample LIVE for delegated role test");
   await page.$eval(delegatedRow+' [data-manual-kpi]',e=>{e.checked=true;e.dispatchEvent(new Event('change',{bubbles:true}));});
