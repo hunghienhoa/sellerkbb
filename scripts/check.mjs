@@ -446,10 +446,11 @@ assert(html.includes("async function refreshLatestData()")&&html.includes("await
 assert(html.includes("async function requestThirtyDaySync(origin='tiktok')"), "TikTok/Dashboard 30-day sync must share one launcher");
 assert(html.includes("await requestThirtyDaySync('dashboard')")&&html.includes("$('#syncTikTokNow').onclick=()=>requestThirtyDaySync('tiktok')"), "Dashboard and TikTok sync buttons must use the same server-side job");
 assert(html.includes("method:'POST',body:JSON.stringify({days:30})"), "30-day sync payload missing");
-assert(html.includes("if(!isAdmin())")&&html.includes("requestThirtyDaySync('dashboard')"), "TikTok sync must remain Admin-only");
+assert(html.includes("if(!can('live.read')&&!can('kpi.read'))")&&html.includes("requestThirtyDaySync('dashboard')"), "Staff report access must permit 30-day TikTok sync");
+assert(worker.includes('if (url.pathname === "/api/tiktok/autosync/run" && request.method === "POST") {\n    // Approved staff with LIVE/KPI report access may refresh shared TikTok data.'), "Staff TikTok sync route missing");
 const refreshLatestBlock=html.slice(html.indexOf("async function refreshLatestData()"),html.indexOf("function bindShell()",html.indexOf("async function refreshLatestData()")));
 assert(refreshLatestBlock.includes("await requestThirtyDaySync('dashboard')"), "Dashboard update must start the 30-day server-side TikTok sync");
-assert(html.includes("Admin: đồng bộ TikTok 30 ngày và cập nhật SellerKBB"), "Dashboard button tooltip must describe full 30-day sync");
+assert(html.includes("Tài khoản có quyền LIVE/KPI: đồng bộ TikTok 30 ngày"), "Dashboard tooltip must describe staff sync");
 assert(html.includes(".data-refresh-btn.is-loading")&&html.includes(".data-refresh-btn.is-success")&&html.includes("@keyframes data-refresh-spin"), "Refresh control loading/success motion states missing");
 assert(html.includes("state.section==='dashboard'"), "Latest-data control must stay scoped to Tổng quan");
 assert(!html.includes('id="dataRefreshModalBackdrop"')&&!html.includes('id="dataRefreshModal"')&&!html.includes('id="dataRefreshPopover"'), "Latest-data detail popup/modal must stay hidden/removed");
