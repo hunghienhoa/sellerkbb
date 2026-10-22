@@ -23,7 +23,7 @@ assert(html.includes('src="/khangbaby-wordmark.png?v=1.49.21"'), "Logo versioned
 assert(worker.includes('url.pathname === "/khangbaby-wordmark.png"'), "KHANG BABY worker logo endpoint missing");
 assert(read("scripts/build-worker.mjs").includes('khangbaby-wordmark.png') && read("scripts/build-worker.mjs").includes('__BRAND_WORDMARK_B64__'), "Logo must be packaged in built Worker");
 
-assert(html.includes('href="/apple-touch-icon.png?v=1.49.20"'),"iPhone Home Screen icon must use PNG instead of placeholder SVG");
+assert(html.includes('href="/apple-touch-icon.png?v='+version+'"'),"iPhone Home Screen icon must use versioned PNG instead of placeholder SVG");
 assert(worker.includes('url.pathname === "/apple-touch-icon.png"') && worker.includes('APPLE_TOUCH_ICON_B64'),"iPhone icon must be served by Worker with PNG bytes");
 assert(!worker.includes('<text x="256" y="304"'),"Old K placeholder must not remain in PWA icon endpoint");
 
