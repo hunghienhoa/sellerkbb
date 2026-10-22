@@ -152,7 +152,7 @@ assert(!html.includes('<span class="account-chevron"'), "Account arrow must rema
 assert(html.includes("function avatarSrc(user={})"), "Google avatar helper missing");
 assert(html.includes("state.user.photoURL||state.profile.photoURL"), "Current Google photoURL wiring missing");
 assert(html.includes("userIdentityHtml(u,true)"), "User-list avatar identity missing");
-assert(html.includes("userIdentityHtml(staffDisplayRecord(r.uid,r.name),false)"), "KPI staff avatar identity missing");
+assert(html.includes("kpiStaffIdentityHtml(r.uid,r.name)"), "KPI staff Google avatar identity missing");
 assert(readme.includes("Hồ sơ Google trên top bar"), "README topbar Google profile guide missing");
 assert(html.includes("v1.16 pink pastel theme + grouped navigation"), "Pink pastel theme override missing");
 assert(html.includes(".topbar-account-btn{")&&html.includes(".account-modal-backdrop{")&&html.includes(".topbar-account-popover{"), "Centered avatar modal styling missing");
