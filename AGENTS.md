@@ -22,6 +22,10 @@ Demo: https://sellerkbb.doanhsokpis.workers.dev/preview
 
 ## Mandatory UI/design skills (all coding agents)
 
+**Persistent requirement from the SellerKBB owner:** on every **new UI feature, newly created interface, or UI fix**, all three skill families must be reviewed and their relevant guidance applied: **Taste Skill (app-screen)**, **Emil Kowalski**, and **Impeccable (Operate)**. Do not omit a skill due to the task being “small”; keep visual changes focused and do not execute unrelated CLIs. All UI releases must include a relevant browser regression test for the changed interaction.
+
+
+
 These are repository-local skills; read the actual files before UI work, not just their names. The user requests consistent **Taste Skill + Emil Kowalski + Impeccable** guidance on future UI changes. For backend-only TikTok/API/KPI/data tasks, skip design-tool execution unless the user also requests UI changes.
 
 1. **Project truth first:** read `PRODUCT.md` and `DESIGN.md`. Treat SellerKBB as an existing Vietnamese **Operate-mode dashboard**, not a greenfield landing page. Its current pastel-pink/Be Vietnam Pro identity, navigation, copy, data definitions and mobile workflows are pinned. A skill's generic palette, random design direction or layout recipe MUST NOT override these without an explicit redesign request.
