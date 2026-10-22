@@ -88,6 +88,8 @@ try {
   assert((await page.$('[data-connect-creator]')).length===2,"Creator connect/re-authorize controls missing");
   assert((await page.$('[data-refresh-creator]')).length===2,"Creator manual Refresh Token controls missing");
   await page.click('[data-creator-channel="shopkhangbaby"] > summary');
+  assert(await page.$eval('[data-creator-channel="shopkhangbaby"]',e=>!e.open),"Creator authorization disclosure must collapse");
+  await page.click('[data-creator-channel="shopkhangbaby"] > summary');
   assert(await page.$eval('[data-creator-channel="shopkhangbaby"]',e=>e.open),"Creator authorization disclosure must expand");
   await page.click('[data-refresh-creator="shopkhangbaby"]');
   assert(await page.$eval('#actionToast',e=>e.textContent.includes('Refresh Token')&&e.textContent.includes('shopkhangbaby')),"Creator preview manual Refresh Token flow missing");
