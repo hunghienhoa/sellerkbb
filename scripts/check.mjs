@@ -150,7 +150,7 @@ assert(html.includes('id="accountLogoutBtn"'), "Account popup logout button miss
 assert(!html.includes('id="userName"')&&!html.includes('id="userRole"'), "Topbar must not render persistent account name/role");
 assert(!html.includes('<span class="account-chevron"'), "Account arrow must remain removed");
 assert(html.includes("function avatarSrc(user={})"), "Google avatar helper missing");
-assert(html.includes("state.user.photoURL||state.profile.photoURL"), "Current Google photoURL wiring missing");
+assert(html.includes("function accountDisplayRecord()")&&html.includes("profile.customPhotoURL||profile.photoURL||user.photoURL"), "Current custom/Google avatar priority wiring missing");
 assert(html.includes("userIdentityHtml(u,true)"), "User-list avatar identity missing");
 assert(html.includes("kpiStaffIdentityHtml(r.uid,r.name)"), "KPI staff Google avatar identity missing");
 assert(readme.includes("Hồ sơ Google trên top bar"), "README topbar Google profile guide missing");
@@ -490,4 +490,14 @@ assert(html.includes('data-staff-google=')&&html.includes('staffGoogleAccountOpt
 assert(html.includes("safePhotoURL(user.photoURL)")&&html.includes("async function refreshStaffGoogleLinks()"), "Admin must refresh safely cached staff Gmail avatar");
 assert(html.includes("googlePhotoURL:safePhotoURL(x?.googlePhotoURL)")&&html.includes("photoURL:safePhotoURL(google?.photoURL)||safePhotoURL(member.googlePhotoURL)"), "KPI avatars must work for non-admin through sanitized staff profile cache");
 assert(html.includes("await refreshStaffGoogleLinks()"), "Staff Gmail photo cache should be refreshed after loading approved accounts");
-console.log("Project structure, separate notice layout, Gmail KPI avatars, staff linking, user privacy, KPI business safety and browser checks OK");
+const rules=read("firebase/firestore.rules");
+assert(html.includes('id="accountProfileEdit"')&&html.includes('id="accountProfileName"')&&html.includes('id="accountAvatarUpload"'), "Account popup edit name and photo controls missing");
+assert(html.includes('async function prepareAccountAvatar(file)')&&html.includes("canvas.toDataURL('image/jpeg',0.78)"), "Avatar uploads must be locally cropped and compressed to JPEG");
+assert(html.includes('await updateDoc(doc(state.db,\'users\',state.user.uid)')&&html.includes('customDisplayName:name,customPhotoURL:uploaded'), "Account changes must persist to own Firestore profile");
+assert(html.includes('customDisplayName=String(old.customDisplayName')&&html.includes('const photoURL=customPhotoURL||'), "Google login must not override a custom SellerKBB name or avatar");
+assert(rules.includes(".affectedKeys().hasOnly([")&&rules.includes("'customDisplayName', 'customPhotoURL'"), "Self-profile permission changes must be restricted to own editable fields");
+assert(rules.includes("customPhotoURL.matches('^data:image/jpeg;base64,"), "Uploaded avatar must be limited to compressed JPEG data");
+assert(html.includes('function dismissAccountOnSignOut()')&&html.includes("if(!user){\n        dismissAccountOnSignOut();"), "Null auth state must close stale account popup");
+assert(html.includes("$('#accountLogoutBtn').onclick=handleAccountLogout")&&html.includes("setAccountMenu(false,false)"), "Logout must immediately close account overlay");
+assert(html.includes('account:{customDisplayName:')&&html.includes('if(saved.account&&state.profile)'), "Preview should persist account profile edits for browser tests");
+console.log("Project structure, secure editable profile, avatar compression, signout cleanup and desktop/mobile UI checks OK");
