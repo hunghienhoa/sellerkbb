@@ -3104,6 +3104,38 @@ body.account-modal-open{overflow:hidden}
   #section-tiktok .auth-chevron{font-size:18px}
 }
 
+/* Approved users: one compact identity/action row on phones, full permissions in editor. */
+.approved-user-role-compact{display:none}
+#section-users .users-pending-card.is-empty{padding:10px 14px}
+#section-users .users-pending-card.is-empty>h3{margin:0}
+#section-users .users-pending-card.is-empty>.empty{display:none}
+#section-users .user-identity{min-width:0;flex:1}
+#section-users .user-identity-copy{min-width:0}
+@media(max-width:700px){
+ #section-users .users-approved-card{padding:10px 12px}
+ #section-users .users-approved-card>.row.space:first-child{margin:0 0 4px}
+ #section-users .users-approved-card .sub{font-size:11px;line-height:1.45}
+ #section-users .approved-user-card{padding:9px 0}
+ #section-users .approved-user-summary{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:7px;flex-wrap:nowrap}
+ #section-users .approved-user-summary>.user-identity{width:100%;gap:8px}
+ #section-users .approved-user-summary .user-list-avatar{width:36px;height:36px}
+ #section-users .approved-user-summary .user-identity-copy b{font-size:12px}
+ #section-users .approved-user-summary .user-identity-copy span{font-size:10px}
+ #section-users .approved-user-side{width:auto;min-width:84px;max-width:112px;display:flex;flex-direction:column;align-items:flex-end;gap:3px}
+ #section-users .approved-user-meta{width:auto;padding:0;justify-items:end}
+ #section-users .approved-user-meta .tiny,#section-users .approved-user-role-full{display:none}
+ #section-users .approved-user-role-compact{display:inline-flex;white-space:nowrap;font-size:10px;padding:3px 7px;max-width:100%}
+ #section-users .approved-user-actions{display:flex;align-self:flex-end;gap:5px}
+ #section-users .user-icon-btn{width:40px;height:40px;min-height:40px;min-width:40px;border-radius:10px}
+ #section-users .user-access-grid{padding:10px;margin-top:8px;gap:10px}
+ #section-users .user-access-grid .checkline{line-height:1.45}
+}
+@media(max-width:360px){
+ #section-users .approved-user-summary{gap:4px}
+ #section-users .approved-user-side{min-width:76px;max-width:93px}
+ #section-users .user-icon-btn{width:38px;height:38px;min-width:38px;min-height:38px}
+}
+
 </style>
   <script>if("serviceWorker" in navigator)window.addEventListener("load",()=>navigator.serviceWorker.register("/sw.js").catch(()=>{}));</script>
 </head>
@@ -6066,7 +6098,7 @@ body.account-modal-open{overflow:hidden}
       const pending=state.users.filter(u=>u.status==='pending');
       const roleOrder={admin:0,operator:1,host:2};
       const approved=state.users.filter(u=>u.status==='approved').sort((a,b)=>(roleOrder[a.role]??9)-(roleOrder[b.role]??9)||String(a.displayName||a.email||'').localeCompare(String(b.displayName||b.email||''),'vi'));
-      $('#section-users').innerHTML=`<div class="card"><h3 class="heading-with-icon">${icon('users',18)} Tài khoản chờ duyệt <span class="pill warn">${pending.length}</span></h3>${pending.length?pending.map(userApprovalCard).join(''):'<div class="empty">Không có tài khoản đang chờ.</div>'}</div><div class="card"><div class="row space"><div><h3 class="heading-with-icon">${icon('shield',18)} Tài khoản đã duyệt</h3><div class="sub">Có thể thay đổi vai trò, quyền truy cập hoặc xóa user khỏi SellerKBB.</div></div><span class="pill">${approved.length} user</span></div>${approved.length?approved.map(userApprovedRow).join(''):'<div class="empty">Chưa có tài khoản đã duyệt.</div>'}</div>`;
+      $('#section-users').innerHTML=`<div class="card users-pending-card ${pending.length?'':'is-empty'}"><h3 class="heading-with-icon">${icon('users',18)} Tài khoản chờ duyệt <span class="pill warn">${pending.length}</span></h3>${pending.length?pending.map(userApprovalCard).join(''):'<div class="empty">Không có tài khoản đang chờ.</div>'}</div><div class="card users-approved-card"><div class="row space"><div><h3 class="heading-with-icon">${icon('shield',18)} Tài khoản đã duyệt</h3><div class="sub">Có thể thay đổi vai trò, quyền truy cập hoặc xóa user khỏi SellerKBB.</div></div><span class="pill">${approved.length} user</span></div>${approved.length?approved.map(userApprovedRow).join(''):'<div class="empty">Chưa có tài khoản đã duyệt.</div>'}</div>`;
       document.querySelectorAll('[data-approve]').forEach(b=>b.onclick=()=>approveUser(b.dataset.approve));
       document.querySelectorAll('[data-user-edit]').forEach(b=>b.onclick=()=>toggleApprovedUserEditor(b.dataset.userEdit));
       document.querySelectorAll('[data-user-save]').forEach(b=>b.onclick=()=>saveUserAccess(b.dataset.userSave));
@@ -6111,7 +6143,7 @@ body.account-modal-open{overflow:hidden}
         <div class="approved-user-summary">
           ${userIdentityHtml(u,true)}
           <div class="approved-user-side">
-            <div class="approved-user-meta"><span class="tag ${u.role}">${roleLabel(u.role)}</span><span class="tiny">${esc(permissionSummary(u))}</span></div>
+            <div class="approved-user-meta"><span class="tag ${u.role} approved-user-role-full">${roleLabel(u.role)}</span><span class="tag ${u.role} approved-user-role-compact" aria-hidden="true">${u.role==='admin'?'Quản trị':u.role==='operator'?'Vận hành':'Host'}</span><span class="tiny">${esc(permissionSummary(u))}</span></div>
             <div class="approved-user-actions">
               <button class="user-icon-btn" type="button" data-user-edit="${u.id}" aria-label="Chỉnh sửa ${esc(u.displayName||u.email||'tài khoản')}" title="${self?'Tài khoản đang đăng nhập không thể tự đổi quyền':'Chỉnh sửa quyền'}" ${self?'disabled':''}>${icon('edit',16)}</button>
               <button class="user-icon-btn danger" type="button" data-user-delete="${u.id}" aria-label="Xóa ${esc(u.displayName||u.email||'tài khoản')}" title="${self?'Tài khoản đang đăng nhập không thể tự xóa':'Xóa tài khoản'}" ${self?'disabled':''}>${icon('close',16)}</button>
