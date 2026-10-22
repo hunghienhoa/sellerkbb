@@ -18,6 +18,10 @@ const safeWorker = worker
 new Function(safeWorker);
 
 const assert = (ok, message) => { if (!ok) throw new Error(message); };
+assert(worker.includes('const SELLERKBB_ALLOWED_LIVE_CHANNELS = new Set(["shopkhangbaby", "mekhangsua"])'), "TikTok channel allowlist must contain exactly the two approved creators");
+assert(worker.includes('const merged = [...byId.values()]\n      .filter(isAllowedSellerKbbLiveChannel)'), "Sync must filter unapproved channels before persisting KV");
+assert(worker.includes('if (!isAllowedSellerKbbLiveChannel(session)) return { affiliateDataAvailable: false, affiliateError: "channel_not_allowed" }'), "Affiliate product calls must reject unapproved channels");
+
 assert((html.match(/<style>/g) || []).length === 1, "Expected exactly one stylesheet");
 assert(html.includes("data-date-calendar"), "Calendar picker missing");
 assert(html.includes("data-calendar-day"), "Calendar day grid missing");
