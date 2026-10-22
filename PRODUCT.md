@@ -36,3 +36,7 @@ Host delegation (v1.49.8): identical opt-in `live.assign` workflow and constrain
 ## One-click 30-day sync from Tổng quan (v1.49.9)
 
 The Topbar `Cập nhật dữ liệu` button on the Tổng quan dashboard has dual behavior: for Admin, it requests the same background TikTok 30-day autosync job as the TikTok / API `Đồng bộ ngay 30 ngày` control, waits for the server job result, then reloads SellerKBB reporting data. Show pending status and never claim completion before server confirmation and successful data reload. For Host/Operator accounts, reload only allowed report data and do not broaden permissions to the admin-only TikTok sync endpoint. Debounce concurrent sync and handle failures visibly. Never change GMV/KPI logic for this UI convenience.
+
+## Staff photo identity (v1.49.10)
+
+Staff KPI rows use the Google avatar of a matching approved Host/Operator login when a unique, role-correct identity match exists, or a deliberately admin-linked Gmail account. Store only the selected account UID and sanitized Google photo URL/display name in settings/staffMembers so KPI viewers without admin access can view an avatar; never grant wider access to private user profiles. Keep staff name and numeric KPI attribution linked to staff IDs (not Gmail email), and fall back to generated initials when no verified photo is available. On Admin refresh, update cached avatars only when an eligible account has a safe unique role/name match or explicit UID link. Reconcile popup Affiliate rule and KPI status must be visually separated by 12px on desktop/mobile.

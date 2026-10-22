@@ -4,7 +4,7 @@
 
 ### Báo cáo TikTok LIVE · KPI nhân sự · Tự đồng bộ 24/24
 
-**Phiên bản hiện tại: v1.49.9**
+**Phiên bản hiện tại: v1.49.10**
 
 [![GitHub Release](https://img.shields.io/github/v/release/hunghienhoa/sellerkbb?label=Release)](https://github.com/hunghienhoa/sellerkbb/releases)
 [![GitHub Actions](https://img.shields.io/github/actions/workflow/status/hunghienhoa/sellerkbb/deploy.yml?branch=main&label=Ki%E1%BB%83m%20tra%20%26%20Backup)](https://github.com/hunghienhoa/sellerkbb/actions)
@@ -17,7 +17,15 @@
 
 ---
 
-## 🆕 Cập nhật mới nhất — v1.49.9
+## 🆕 Cập nhật mới nhất — v1.49.10
+
+- **Popup Đối soát đơn LIVE:** tách **“Quy tắc Affiliate”** và **“KPI tự động”** thành hai thông báo riêng với khoảng cách **12px**, không còn sát/dính nhau trên PC hoặc điện thoại; không đổi nội dung và logic KPI.
+- **KPI nhân sự:** hiển thị **ảnh đại diện Gmail/Google** từ tài khoản SellerKBB đã được duyệt khi có thể liên kết chính xác với nhân sự; tiếp tục hiển thị tên nhân sự hiện tại. Nếu chưa có Gmail hoặc ảnh lỗi, dùng vòng tròn chữ cái làm dự phòng.
+- **Quản trị → Quản lý nhân sự → Sửa:** có thêm mục **Ảnh Gmail trên KPI** để Admin chọn tài khoản Google đã duyệt đúng vai trò. Một tài khoản Google không được liên kết đồng thời với hai nhân sự. Liên kết chỉ phục vụ nhận diện ảnh, **không cấp quyền truy cập**.
+- Với tên Google trùng chính xác và duy nhất với tên nhân sự cùng vai trò, SellerKBB tự liên kết khi Admin đồng bộ dữ liệu; ảnh được lưu dưới dạng thông tin công khai giới hạn (UID + URL ảnh + tên hiển thị) trong `settings/staffMembers`, để cả Host/Vận hành có quyền xem KPI cũng thấy ảnh mà không được đọc tài khoản riêng tư của người khác.
+- Thêm kiểm thử UI đo khoảng cách hai khung thông báo ở desktop/mobile và kiểm tra ảnh KPI theo Gmail được liên kết; giữ nguyên GMV, đối soát, công thức và trạng thái duyệt KPI.
+
+### v1.49.9 — Đồng bộ ngay 30 ngày từ Tổng quan
 
 - Nút **Cập nhật dữ liệu** cạnh avatar, ở **Tổng quan**, nay thực hiện cả **Đồng bộ ngay 30 ngày**: Admin nhấn một lần để gọi đúng tác vụ nền TikTok đang dùng ở **TikTok / API**, theo dõi kết quả rồi tự tải lại dữ liệu SellerKBB mới.
 - Hai nút dùng **cùng endpoint** `POST /api/tiktok/autosync/run` với `days:30`; máy chủ trả về job đang chạy nếu đã có và nút được khóa khi đang đồng bộ để tránh bấm lặp.
@@ -271,6 +279,10 @@ Operator KPI   = GMV đối soát có tín hiệu LIVE × 0,1%
 - **Chờ đối soát:** chưa đủ dữ liệu Orders/Return & Refund hoặc chưa có đơn đủ tín hiệu LIVE; hệ thống không dùng GMV đã ghi nhận để tính thay.
 - **KPI dự kiến = KPI đã chốt + KPI tạm tính.**
 
+#### Ảnh Gmail trong bảng KPI nhân sự
+
+Danh sách KPI chưa chốt và KPI đã chốt ưu tiên ảnh Google của nhân sự đã liên kết. Nếu tài khoản Google đã được duyệt và tên trùng duy nhất với danh sách nhân sự cùng vai trò, Admin tải/cập nhật dữ liệu sẽ tự ghép và lưu lại ảnh. Nếu tên Google khác tên thường dùng, Admin vào **Quản trị → Quản lý nhân sự → Sửa → Ảnh Gmail trên KPI**, chọn đúng tài khoản đã duyệt cùng vai trò và bấm **Lưu**. Ảnh được chia sẻ dưới dạng liên kết công khai hạn chế chỉ có tên/URL ảnh; không đưa email đăng nhập hoặc quyền người dùng vào bảng KPI. Không có ảnh hợp lệ thì tiếp tục hiện ký tự đầu của tên.
+
 #### Cách đọc 2 bảng KPI nhân sự
 
 - **KPI chưa chốt:** dùng để theo dõi số còn biến động. Bảng này chỉ có **GMV chờ đối soát / KPI tạm tính / số phiên chờ đối soát**.
@@ -335,6 +347,7 @@ README giữ lại phần này để nhân sự có thể biết **vì sao giao 
 
 | Phiên bản | Thay đổi chính |
 |---|---|
+| **v1.49.10** | Tách hai thông báo Affiliate/KPI đối soát ở PC/mobile; KPI nhân sự ưu tiên ảnh Google đã liên kết, bổ sung gắn Gmail trong Quản lý nhân sự. |
 | **v1.49.9** | Nút Cập nhật dữ liệu Tổng quan của Admin gọi đồng bộ TikTok 30 ngày, chờ hoàn tất rồi tải lại dữ liệu; chung tác vụ và chống trùng với TikTok / API. |
 | **v1.49.8** | Host cũng có quyền gắn Host/Vận hành, Campaign/Mega và nhập KPI nháp khi Admin bật checkbox; Firestore chặn mặc định và vẫn chỉ Admin duyệt. |
 | **v1.49.7** | Cấp quyền gắn Host/Vận hành và Campaign/Mega cho Operator; cho lưu KPI nháp, Admin duyệt mới tính KPI; Firestore giới hạn quyền. |
