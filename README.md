@@ -4,7 +4,7 @@
 
 ### Báo cáo TikTok LIVE · KPI nhân sự · Tự đồng bộ 24/24
 
-**Phiên bản hiện tại: v1.49.27**
+**Phiên bản hiện tại: v1.49.28**
 
 [![GitHub Release](https://img.shields.io/github/v/release/hunghienhoa/sellerkbb?label=Release)](https://github.com/hunghienhoa/sellerkbb/releases)
 [![GitHub Actions](https://img.shields.io/github/actions/workflow/status/hunghienhoa/sellerkbb/deploy.yml?branch=main&label=Ki%E1%BB%83m%20tra%20%26%20Backup)](https://github.com/hunghienhoa/sellerkbb/actions)
@@ -17,7 +17,12 @@
 
 ---
 
-## 🆕 Cập nhật mới nhất — v1.49.27
+## 🆕 Cập nhật mới nhất — v1.49.28
+
+- **Nhận biết tác vụ cũ còn thiếu Affiliate:** những lần đồng bộ v1.49.26 từng ghi `success` mặc dù `affiliatePending > 0` sẽ được hiển thị như trạng thái *chưa đối soát xong*, cho phép bấm **Kiểm tra lại Affiliate còn thiếu**. Máy chủ tạo danh sách LIVE ID chưa có dữ liệu xác minh và chỉ gọi API cho các ID đó.
+- **Không thay đổi công thức GMV tự động:** các số GMV Creator và Seller từ API có định nghĩa khác nhau; không gán phần chênh lệch thành GMV Affiliate chính thức khi thiếu nguồn đơn Affiliate và quyền API thích hợp.
+
+### v1.49.27 — Sửa hàng đợi Affiliate, trạng thái partial và thử lại riêng
 
 - **Khắc phục bỏ sót phiên Affiliate trong đồng bộ 120 ngày:** sau khi quét đủ bốn chặng 30 ngày, hệ thống chốt danh sách các LIVE ID chưa xác minh, sau đó đối soát tuần tự theo 8 ID mỗi lượt. Trước đây lọc/sắp xếp danh sách lại ở từng vòng có thể khiến vị trí offset dịch chuyển và bỏ qua các phiên chưa được kiểm tra.
 - **Tránh hết hạn tác vụ khi trang đã đóng:** tăng giới hạn không có tiến độ từ 1 giờ lên 4 giờ, do fallback cron thực thi mỗi giờ; giữ checkpoint KV đến 7 ngày.
@@ -461,6 +466,7 @@ README giữ lại phần này để nhân sự có thể biết **vì sao giao 
 
 | Phiên bản | Thay đổi chính |
 |---|---|
+| **v1.49.28** | Cho phép thử lại GMV Affiliate còn thiếu từ cả các job cũ đã được ghi nhận thành công chưa đầy đủ. |
 | **v1.49.27** | Sửa hàng đợi Affiliate ổn định theo LIVE ID, tăng độ bền checkpoint, báo trạng thái thiếu và cho phép chỉ thử lại các phiên chưa xác minh. |
 | **v1.49.26** | Đồng bộ LIVE lùi 120 ngày theo bốn chặng 30 ngày, tự tiếp tục qua checkpoint/cron, kiểm tra Affiliate từng phiên theo batch 8 và bảo vệ dữ liệu đã xác minh. |
 | **v1.49.25** | Sửa ý nghĩa trạng thái đồng bộ LIVE và bảo vệ dữ liệu Affiliate đã xác minh; bổ sung chênh lệch Creator/Seller chỉ để tham khảo; giao diện mobile tài khoản gọn và thu gọn các khối ủy quyền TikTok. |
