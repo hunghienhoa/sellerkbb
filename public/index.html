@@ -6727,6 +6727,7 @@ body.account-modal-open{overflow:hidden}
       const sync=status.autoSync||{};
       const manualJob=status.manualJob||null;
       const manualRunning=manualJob?.state==='running';
+      const manualIncomplete=manualJob?.state==='partial'||(manualJob?.state==='success'&&Number(manualJob.affiliatePending||0)>0);
       const manualProgress=manualJob?.phase==='affiliate'
         ?('Đang đối soát GMV Affiliate: '+Number(manualJob.affiliateProcessed||0)+'/'+Number(manualJob.total||0)+' phiên')
         :('Đã quét '+Number(manualJob?.completedDays||0)+'/'+Number(manualJob?.days||120)+' ngày');
@@ -6739,7 +6740,7 @@ body.account-modal-open{overflow:hidden}
       ].filter(Boolean).join(' · ');
       const manualJobNotice=manualJob?(manualRunning
         ?'<div class="notice warn" role="status" data-manual-sync-state="running"><b>Đồng bộ LIVE 120 ngày:</b> '+manualProgress+'. Chỉ lấy @shopkhangbaby và @mekhangsua. Các phiên đã lưu vẫn được giữ nguyên.</div>'
-        :manualJob.state==='partial'
+        :manualIncomplete
           ?'<div class="notice warn" role="status" data-manual-sync-state="partial"><b>Đã quét đủ 120 ngày nhưng GMV Affiliate chưa đầy đủ:</b> '+Number(manualJob.affiliatePending||0)+'/'+Number(manualJob.affiliateTotal||0)+' phiên còn cần xác minh. '+esc(missingReasonText)+'<div class="tiny">Đã thử tất cả ID trong danh sách; không tự lấy chênh lệch Seller/Creator làm Affiliate GMV thật.</div></div>'
           :manualJob.state==='success'
           ?'<div class="notice ok" role="status" data-manual-sync-state="success">Đồng bộ LIVE 120 ngày đã hoàn tất · '+new Intl.NumberFormat('vi-VN').format(Number(manualJob.cached||0))+' phiên trong cache · Affiliate đã xác minh '+Number(manualJob.affiliateVerified||0)+' phiên.</div>'
@@ -6796,7 +6797,7 @@ body.account-modal-open{overflow:hidden}
           <div><b>LIVE Performance API</b><span>/analytics/202509/shop_lives/performance</span></div>
           <div class="row">
             ${status.configured&&!status.connected?'<button id="connectTikTok" class="btn primary">'+icon('link')+' Kết nối TikTok Seller</button>':''}
-            ${status.connected?'<button id="syncTikTokNow" class="btn primary" '+(manualRunning?'disabled aria-busy="true"':'')+'>'+icon(manualRunning?'refresh':'sync')+(manualRunning?' Đang đồng bộ trên máy chủ…':manualJob?.state==='partial'?' Kiểm tra lại Affiliate còn thiếu':' Đồng bộ ngay 120 ngày')+'</button>':''}
+            ${status.connected?'<button id="syncTikTokNow" class="btn primary" '+(manualRunning?'disabled aria-busy="true"':'')+'>'+icon(manualRunning?'refresh':'sync')+(manualRunning?' Đang đồng bộ trên máy chủ…':manualIncomplete?' Kiểm tra lại Affiliate còn thiếu':' Đồng bộ ngay 120 ngày')+'</button>':''}
             ${status.connected?'<button id="checkTikTok" class="btn">'+icon('check')+' Kiểm tra trạng thái</button>':''}
           </div>
         </div>
@@ -6845,7 +6846,7 @@ body.account-modal-open{overflow:hidden}
           api('/api/tiktok/autosync/continue',{method:'POST',body:'{}',timeoutMs:8000}).catch(()=>null);
         }
       }
-      if($('#syncTikTokNow'))$('#syncTikTokNow').onclick=()=>request120DaySync('tiktok',manualJob?.state==='partial');
+      if($('#syncTikTokNow'))$('#syncTikTokNow').onclick=()=>request120DaySync('tiktok',manualIncomplete);
     }
 
     function renderAll(){ renderNav(); renderDashboard(); renderLive(); renderReconcile(); renderKpi(); renderManualKpi(); renderExport(); renderUsers(); renderStaff(); renderTikTok(); renderStorage(); switchSection(state.section); }
