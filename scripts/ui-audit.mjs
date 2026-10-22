@@ -6,7 +6,7 @@ const chrome = [process.env.CHROME_BIN, 'C:/Program Files/Google/Chrome/Applicat
 const out = process.env.AUDIT_OUTPUT || '../verification/audit';
 fs.mkdirSync(out, {recursive:true});
 const html = fs.readFileSync(new URL('../public/index.html', import.meta.url), 'utf8');
-const server = http.createServer((req,res) => {if(req.url?.startsWith('/khangbaby-wordmark.png')){res.setHeader('content-type','image/png');return res.end(fs.readFileSync(new URL('../public/khangbaby-wordmark.png',import.meta.url)));}res.setHeader('content-type','text/html; charset=utf-8');res.end(html);});
+const server = http.createServer((req,res) => {if(req.url?.startsWith('/khangbaby-mascot.png')){res.setHeader('content-type','image/png');return res.end(fs.readFileSync(new URL('../public/khangbaby-mascot.png',import.meta.url)));}res.setHeader('content-type','text/html; charset=utf-8');res.end(html);});
 await new Promise(resolve => server.listen(4174,'127.0.0.1',resolve));
 const browser = await puppeteer.launch({executablePath:chrome,headless:true,args:['--no-sandbox']});
 const findings = [];
