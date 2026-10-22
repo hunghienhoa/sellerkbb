@@ -4,7 +4,7 @@
 
 ### Báo cáo TikTok LIVE · KPI nhân sự · Tự đồng bộ 24/24
 
-**Phiên bản hiện tại: v1.49.18**
+**Phiên bản hiện tại: v1.49.19**
 
 [![GitHub Release](https://img.shields.io/github/v/release/hunghienhoa/sellerkbb?label=Release)](https://github.com/hunghienhoa/sellerkbb/releases)
 [![GitHub Actions](https://img.shields.io/github/actions/workflow/status/hunghienhoa/sellerkbb/deploy.yml?branch=main&label=Ki%E1%BB%83m%20tra%20%26%20Backup)](https://github.com/hunghienhoa/sellerkbb/actions)
@@ -17,7 +17,11 @@
 
 ---
 
-## 🆕 Cập nhật mới nhất — v1.49.18
+## 🆕 Cập nhật mới nhất — v1.49.19
+
+- **Favicon KHANG BABY:** đưa nguyên bản biểu tượng em bé trong ảnh người dùng cung cấp lên GitHub và dùng làm favicon 16×16 của trình duyệt, không vẽ lại. Các kích thước PWA lớn và logo ngang đang chờ upload ảnh đầy đủ; tạm giữ icon PWA cũ tránh ảnh bị mờ khi phóng lớn.
+
+### v1.49.18 — Bỏ mục Phím tắt khỏi Users
 
 - **Bỏ mục cài đặt/Phím tắt trên popup Users** theo yêu cầu: xóa nút, hướng dẫn, sự kiện và CSS liên quan; popup chỉ còn hồ sơ tài khoản và đăng xuất. Giữ nguyên cấu hình PWA nền và các chức năng GMV/KPI.
 
