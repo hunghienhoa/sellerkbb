@@ -1582,15 +1582,10 @@ async function runAutoSync(env, lookbackDays = 2, reason = "hourly") {
     const cutoffSeconds = Math.floor((Date.now() - retentionMs) / 1000);
     const existing = await getAutoSyncData(env);
     const byId = new Map();
-    const syncWindowStartSeconds = Math.floor(Date.parse(startDate + "T00:00:00+07:00") / 1000);
-    const syncWindowEndSeconds = Math.floor(Date.parse(endDate + "T00:00:00+07:00") / 1000);
-    const freshIds = new Set((data.sessions || []).map(item => String(item?.liveId || "")).filter(Boolean));
-
     for (const item of existing) {
       const id = String(item?.liveId || "");
       const started = Number(item?.startTimeSeconds || 0);
       if (!id || started < cutoffSeconds) continue;
-      const insideRefreshedWindow = started >= syncWindowStartSeconds && started < syncWindowEndSeconds;
       // A partially available seller API list must never erase earlier
       // synced LIVE/Affiliate results. Retention cleanup is handled above.
       byId.set(id, item);
