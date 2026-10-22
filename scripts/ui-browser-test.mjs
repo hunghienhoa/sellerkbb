@@ -96,7 +96,7 @@ try {
   await page.click('#nav [data-section="dashboard"]');
 
   assert(await page.$('#dataRefreshBtn')!==null,"Latest-data refresh button missing beside user avatar");
-  assert(await page.$eval('#dataRefreshBtn',e=>e.checkVisibility()&&e.textContent.includes('Cập nhật dữ liệu')&&!e.textContent.includes('Đồng bộ')),"Latest-data button must be visible and must not be labeled as sync");
+  assert(await page.$eval('#dataRefreshBtn',e=>e.checkVisibility()&&e.textContent.includes('Cập nhật dữ liệu')),"Dashboard update button must be visible");
   const refreshGeometry=await page.$eval('.topbar',e=>{
     const refresh=e.querySelector('#dataRefreshBtn').getBoundingClientRect();
     const account=e.querySelector('#topbarAccountBtn').getBoundingClientRect();
@@ -106,9 +106,9 @@ try {
   const toastBeforeRefresh=await page.$eval('#actionToast',e=>e.textContent);
   await page.click('#dataRefreshBtn');
   await sleep(70);
-  assert(await page.$eval('#dataRefreshBtn',e=>e.disabled&&e.getAttribute('aria-busy')==='true'&&e.textContent.includes('Đang cập nhật')),"Latest-data loading state missing");
-  await sleep(520);
-  assert(await page.$eval('#dataRefreshBtn',e=>e.classList.contains('is-success')&&e.textContent.includes('Đã cập nhật')),"Latest-data success state missing");
+  assert(await page.$eval('#dataRefreshBtn',e=>e.disabled&&e.getAttribute('aria-busy')==='true'&&e.textContent.includes('Đang đồng bộ')&&e.textContent.includes('30 ngày')),"Dashboard refresh must launch the same 30-day sync job and prevent double clicks");
+  await sleep(850);
+  assert(await page.$eval('#dataRefreshBtn',e=>e.classList.contains('is-success')&&e.textContent.includes('Đã cập nhật')),"Dashboard must report success after 30-day sync completes");
   assert((await page.$eval('#actionToast',e=>e.textContent))===toastBeforeRefresh,"Latest-data refresh must not show a toast notification");
   assert(await page.$('#dataRefreshModalBackdrop')===null&&await page.$('#dataRefreshPopover')===null,"Latest-data popup/modal must stay removed after refresh");
 
