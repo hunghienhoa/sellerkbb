@@ -6,7 +6,7 @@
   <title>SellerKBB · TikTok LIVE Report</title>
   <meta name="theme-color" content="#fff4f9" />
   <link rel="manifest" href="/manifest.webmanifest" />
-  <link rel="icon" type="image/svg+xml" href="/pwa-icon.svg" />
+  <link rel="icon" type="image/png" sizes="16x16" href="/khangbaby-favicon-16.png?v=1.49.19" />
   <link rel="apple-touch-icon" href="/pwa-icon.svg" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-title" content="SellerKBB" />
@@ -3086,7 +3086,7 @@ body.account-modal-open{overflow:hidden}
       <header class="topbar">
         <div class="topbar-title-wrap"><button id="menuToggle" class="menu-toggle" type="button" aria-label="Mở menu" aria-expanded="false">☰</button><div><h1 id="pageTitle" class="page-title">Tổng quan</h1><div id="pageSub" class="tiny"></div></div></div>
         <div class="topbar-right">
-          <span id="syncBadge" class="pill">v1.49.18</span>
+          <span id="syncBadge" class="pill">v1.49.19</span>
           <div id="dataRefreshWrap" class="data-refresh-wrap">
             <button id="dataRefreshBtn" class="data-refresh-btn" type="button" title="Tài khoản có quyền LIVE/KPI: đồng bộ TikTok 30 ngày và cập nhật GMV Affiliate">
               <span id="dataRefreshIcon" class="data-refresh-icon">↻</span>
@@ -3597,7 +3597,7 @@ body.account-modal-open{overflow:hidden}
 
     function previewTs(iso){ return {toDate:()=>new Date(iso)}; }
     function enterPreview(){
-      state.config={version:'1.49.18-preview',tiktokConfigured:true};
+      state.config={version:'1.49.19-preview',tiktokConfigured:true};
       state.user={uid:'preview-admin',email:'admin@sellerkbb.demo',displayName:'Quản trị viên Demo',photoURL:avatarFallbackData('Quản trị viên Demo')};
       state.profile={role:'admin',status:'approved',displayName:'Quản trị viên Demo',photoURL:state.user.photoURL,permissions:['live.read','kpi.read']};
       state.maintenance={settings:{retentionDays:180,autoCleanup:true,emergencyPercent:85,firestoreSoftLimitMb:600,firestoreMaxSessions:FIRESTORE_TOTAL_SESSION_CAP,kvSoftKeyLimit:5000},github:{usedBytes:124000,limitBytes:10000000000,available:true},cloudflare:{keyCount:5,lastRun:{ranAt:new Date().toISOString(),deleted:0},usedBytes:428000,storageLimitBytes:1000000000,storageComplete:true},firebase:{freePlanMode:true,ttlEnabled:false,ttlRecommended:false,storageLimitBytes:1073741824}};
