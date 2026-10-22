@@ -4,7 +4,7 @@
 
 ### Báo cáo TikTok LIVE · KPI nhân sự · Tự đồng bộ 24/24
 
-**Phiên bản hiện tại: v1.49.21**
+**Phiên bản hiện tại: v1.49.22**
 
 [![GitHub Release](https://img.shields.io/github/v/release/hunghienhoa/sellerkbb?label=Release)](https://github.com/hunghienhoa/sellerkbb/releases)
 [![GitHub Actions](https://img.shields.io/github/actions/workflow/status/hunghienhoa/sellerkbb/deploy.yml?branch=main&label=Ki%E1%BB%83m%20tra%20%26%20Backup)](https://github.com/hunghienhoa/sellerkbb/actions)
@@ -17,7 +17,13 @@
 
 ---
 
-## 🆕 Cập nhật mới nhất — v1.49.21
+## 🆕 Cập nhật mới nhất — v1.49.22
+
+- **Đồng bộ toàn bộ nhận diện bằng đúng ảnh em bé KHANGBABY người dùng chọn:** màn hình đăng nhập và menu sidebar thay logo chữ KHANGBABY bằng ảnh em bé (PNG trong suốt), căn giữa 152px trên đăng nhập và 88px trong sidebar, thu còn 136px trên điện thoại. Giữ tiêu đề SellerKBB và nút Google rõ ràng.
+- **Favicon và PWA/iPhone:** `/khangbaby-mascot.png`, `/favicon.ico`, `/apple-touch-icon.png` và `/pwa-icon.svg` đều sử dụng cùng ảnh em bé đã chuẩn hóa từ ảnh gốc; URL phiên bản mới giúp hạn chế bộ nhớ đệm icon cũ. Bỏ tải favicon qua GitHub Raw; dùng Worker trả ảnh cùng nguồn.
+- **Không thay đổi dữ liệu nghiệp vụ:** quyền nhân sự, KPI, GMV Affiliate, TikTok Creator Authorization và token giữ nguyên. Kiểm thử hồi quy hình ảnh trên mobile/PC được cập nhật theo logo mới.
+
+### v1.49.21 — Logo KHANGBABY ngang trên màn hình đăng nhập
 
 - **Bổ sung logo KHANG BABY có chữ:** sử dụng đúng ảnh do người dùng cung cấp, loại bỏ phần nền trống và tối ưu PNG trong suốt cho màn hình đăng nhập SellerKBB và thanh điều hướng PC/mobile. Logo căn giữa phía trên tên SellerKBB tại màn hình đăng nhập, giữ nguyên nút đăng nhập Google, vai trò và dữ liệu.
 - **Tối ưu phân phối hình ảnh:** thêm `public/khangbaby-wordmark.png` và endpoint same-origin `/khangbaby-wordmark.png` trên Cloudflare Worker; asset được nhúng vào Worker khi build, không phụ thuộc GitHub Raw hay dịch vụ ảnh khác. Cân chỉnh chiều rộng 252 px đăng nhập, 178 px thanh menu, thu nhỏ trên điện thoại.
