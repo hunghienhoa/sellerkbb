@@ -9,7 +9,7 @@ binding = "TIKTOK_KV"
 id = "b622d8a3949d4a1d95d4ad4b24b7b114"
 
 [vars]
-APP_VERSION = "1.49.19"
+APP_VERSION = "1.49.20"
 
 [triggers]
 crons = ["0 * * * *", "15 3 * * *"]
