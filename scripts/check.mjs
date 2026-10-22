@@ -18,6 +18,10 @@ const safeWorker = worker
 new Function(safeWorker);
 
 const assert = (ok, message) => { if (!ok) throw new Error(message); };
+assert(html.includes('href="/apple-touch-icon.png?v=1.49.20"'),"iPhone Home Screen icon must use PNG instead of placeholder SVG");
+assert(worker.includes('url.pathname === "/apple-touch-icon.png"') && worker.includes('APPLE_TOUCH_ICON_B64'),"iPhone icon must be served by Worker with PNG bytes");
+assert(!worker.includes('<text x="256" y="304"'),"Old K placeholder must not remain in PWA icon endpoint");
+
 assert(!html.includes("account-install") && !html.includes("accountInstallGuide") && !html.includes("accountInstallShortcut"), "Users popup must not show iPhone shortcut or install UI");
 assert(html.includes('rel="manifest" href="/manifest.webmanifest"') && html.includes('navigator.serviceWorker.register("/sw.js")'),"PWA metadata/registration missing");
 assert(worker.includes('url.pathname === "/manifest.webmanifest"') && worker.includes('url.pathname === "/sw.js"'),"PWA server endpoints missing");
