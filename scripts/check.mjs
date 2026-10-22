@@ -554,7 +554,7 @@ assert(html.includes("status==='partial'?'Đã đồng bộ LIVE'") &&
 assert(worker.includes("const MANUAL_SYNC_DAYS = 120;") &&
   worker.includes("MANUAL_SYNC_WINDOW_DAYS = 30") &&
   worker.includes('runAutoSync(env,days,"manual_scan",offset)') &&
-  worker.includes('phase:"affiliate"') && worker.includes('advanceManualSyncJob(env,job.jobId)') &&
+  worker.includes('phase:complete?"done":"affiliate"') && worker.includes("manualAffiliatePendingIds(all)") && worker.includes('advanceManualSyncJob(env,job.jobId)') &&
   worker.includes('MANUAL_SYNC_DAYS * 86400000'),
   "120-day scan/affiliate job must checkpoint all 4 windows and all LIVE rooms");
 assert(html.includes("Đồng bộ ngay 120 ngày") &&
