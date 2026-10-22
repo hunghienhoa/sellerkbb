@@ -4151,6 +4151,10 @@ body.account-modal-open{overflow:hidden}
           const endMs=endValid?srcEndSeconds*1000:(oldEndValid?oldEnd.getTime():0);
           const amount=Number(src.gmvAmount||0);
           const pending=!endValid&&!oldEndValid;
+          const confirmedAffiliate=src.affiliateDataAvailable===true&&src.creatorGmvAvailable===true;
+          const keepPreviousAffiliate=!confirmedAffiliate && old.affiliateDataAvailable===true &&
+            old.creatorGmvAvailable===true && (src.creatorGmvAvailable!==true ||
+            Number(old.currentGmvAmount??old.creatorGmvAmount)===amount);
           const next={
             ...old,
             id,
@@ -4168,18 +4172,24 @@ body.account-modal-open{overflow:hidden}
             currentGmvAmount:amount,
             finalGmvAmount:amount,
             currentItemsSold:Number(src.itemsSold||0),
-            affiliateDataAvailable:src.affiliateDataAvailable===true&&src.creatorGmvAvailable===true,
-            creatorGmvAvailable:src.creatorGmvAvailable===true,
+            // Preserve last valid Affiliate snapshot when a newer retry is incomplete.
+            // Never replace verified values with 0 just because a secondary API failed.
+            affiliateDataAvailable:confirmedAffiliate || keepPreviousAffiliate,
+            creatorGmvAvailable:src.creatorGmvAvailable===true || (keepPreviousAffiliate&&old.creatorGmvAvailable===true),
+            creatorGmvAmount:src.creatorGmvAvailable===true?Number(src.creatorGmvAmount??amount):Number(old.creatorGmvAmount??0),
             sellerGmvAmount:Number(src.sellerGmvAmount??src.gmvAmount??0),
             gmvSource:src.gmvSource||'seller_shop_lives_202509',
-            affiliateDataConsistent:src.affiliateDataConsistent!==false&&src.creatorGmvAvailable===true,
-            shopProductGmvAmount:src.affiliateDataAvailable===true&&src.creatorGmvAvailable===true?Number(src.shopProductGmvAmount||0):0,
-            affiliateGmvAmount:src.affiliateDataAvailable===true&&src.creatorGmvAvailable===true?Number(src.affiliateGmvAmount||0):0,
-            affiliateItemsSold:src.affiliateDataAvailable===true&&src.creatorGmvAvailable===true?Number(src.affiliateItemsSold||0):0,
-            affiliateSkuOrders:src.affiliateDataAvailable===true&&src.creatorGmvAvailable===true?Number(src.affiliateSkuOrders||0):0,
+            affiliateDataConsistent:(confirmedAffiliate?src.affiliateDataConsistent:old.affiliateDataConsistent)!==false,
+            shopProductGmvAmount:confirmedAffiliate?Number(src.shopProductGmvAmount||0):keepPreviousAffiliate?Number(old.shopProductGmvAmount||0):0,
+            affiliateGmvAmount:confirmedAffiliate?Number(src.affiliateGmvAmount||0):keepPreviousAffiliate?Number(old.affiliateGmvAmount||0):0,
+            affiliateItemsSold:confirmedAffiliate?Number(src.affiliateItemsSold||0):keepPreviousAffiliate?Number(old.affiliateItemsSold||0):0,
+            affiliateSkuOrders:confirmedAffiliate?Number(src.affiliateSkuOrders||0):keepPreviousAffiliate?Number(old.affiliateSkuOrders||0):0,
             affiliateCommissionAvailable:src.affiliateCommissionAvailable===true||old.affiliateCommissionAvailable===true,
             affiliateCommissionAmount:src.affiliateCommissionAvailable===true?Number(src.affiliateCommissionAmount||0):Number(old.affiliateCommissionAmount||0),
-            affiliateSource:src.affiliateSource||old.affiliateSource||'',
+            affiliateSource:confirmedAffiliate?(src.affiliateSource||''):keepPreviousAffiliate?(old.affiliateSource||''):'',
+            affiliateEstimateAvailable:src.affiliateEstimateAvailable===true,
+            affiliateEstimateAmount:src.affiliateEstimateAvailable===true?Number(src.affiliateEstimateAmount||0):null,
+            affiliateError:src.affiliateError||'',
             reconciliation:pending?null:(src.reconciliation||old.reconciliation||null),
             syncPending:pending,
             syncState:pending?'pending_end_time':'complete',
