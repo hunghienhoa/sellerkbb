@@ -4,7 +4,7 @@
 
 ### Báo cáo TikTok LIVE · KPI nhân sự · Tự đồng bộ 24/24
 
-**Phiên bản hiện tại: v1.49.24**
+**Phiên bản hiện tại: v1.49.25**
 
 [![GitHub Release](https://img.shields.io/github/v/release/hunghienhoa/sellerkbb?label=Release)](https://github.com/hunghienhoa/sellerkbb/releases)
 [![GitHub Actions](https://img.shields.io/github/actions/workflow/status/hunghienhoa/sellerkbb/deploy.yml?branch=main&label=Ki%E1%BB%83m%20tra%20%26%20Backup)](https://github.com/hunghienhoa/sellerkbb/actions)
@@ -17,7 +17,16 @@
 
 ---
 
-## 🆕 Cập nhật mới nhất — v1.49.24
+## 🆕 Cập nhật mới nhất — v1.49.25
+
+- **Đối soát GMV Affiliate nhiều phiên chưa xác minh:** kiểm tra trực tiếp snapshot Cloudflare lúc 17:00 22/10/2026 ghi nhận 70 phiên trong cửa sổ 30 ngày: 20 phiên Affiliate đã có dữ liệu, 50 phiên chưa đối soát được vì `seller_product_gmv_not_reconciled_or_exceeds_creator_gmv`. Lỗi do nguồn GMV Creator (commission attribution) và Seller (last-click attribution) có quy tắc khác nhau, không thể mặc nhiên coi chênh lệch là GMV Affiliate chính xác.
+- **Sửa trạng thái đồng bộ và giữ dữ liệu:** phiên LIVE đã đồng bộ thành công sẽ hiển thị "Đã đồng bộ LIVE" thay vì ngụ ý toàn bộ job lỗi khi Affiliate còn chờ. Bảo vệ Affiliate đã xác minh trong cache giao diện khi dữ liệu mới trả thiếu; giữ nguyên KPI, không tự ghi chênh lệch vào Affiliate xác minh.
+- **Số đối chiếu tham khảo:** nếu một phiên từ đúng `shopkhangbaby` hoặc `mekhangsua` có đủ Creator GMV và Seller GMV phù hợp, hiển thị chênh lệch hai nguồn rõ chữ **tham khảo, chưa xác minh**, không cộng số này vào tổng GMV Affiliate đã xác minh hay KPI. Máy chủ lưu số chênh lệch tách riêng để phục vụ chẩn đoán.
+- **Quản lý tài khoản trên mobile:** thu gọn mỗi hàng thành avatar/tên/email + vai trò rút gọn + hai nút sửa/xóa 44px, quyền đầy đủ nằm trong editor; khu vực không có tài khoản chờ duyệt bớt không gian trống.
+- **TikTok / API:** hỗ trợ thu gọn/mở rộng `Kiểm tra sẵn sàng chạy thật`, `Creator Authorization`, và chi tiết từng Creator. Khối đạt đầy đủ Token/Refresh Token tự thu gọn; khối thiếu cấu hình mở sẵn để xử lý. Đã bổ sung kiểm tra hồi quy PC/mobile.
+- **Giới hạn:** chưa xác nhận 50 phiên Affiliate còn thiếu là chính xác do không có một chỉ số Affiliate GMV per-LIVE tương đương trực tiếp từ 2 API trên. Không tự dùng số chênh lệch để thay kết quả chính thức.
+
+### v1.49.24 — Đổi tên tab và lời nhắn đăng nhập
 
 - **Đổi tên tab trình duyệt:** `SellerKBB · Doanh Số KPIs` thay cho `SellerKBB · TikTok LIVE Report`.
 - **Viết lại thông báo đăng nhập:** thay từ kỹ thuật “bootstrap” bằng “Tài khoản mới cần được quản trị viên phê duyệt trước khi sử dụng.”; tiêu đề hướng dẫn đổi thành “Đăng nhập bằng Google để truy cập hệ thống.”.
@@ -216,6 +225,8 @@ Khi yêu cầu AI làm giao diện SellerKBB, agent cần đọc `AGENTS.md`, `P
 ## 🧭 Cách sử dụng hằng ngày
 
 ### 1. Mở website
+
+**Giao diện quản lý:** trên mobile, Quản lý tài khoản dùng hàng gọn để xem được nhiều người hơn; chọn biểu tượng sửa để kiểm tra đầy đủ quyền. Trong TikTok / API, chạm tiêu đề các khối ủy quyền hoặc tên kênh để xem chi tiết. Dữ liệu GMV Affiliate chỉ là **đã xác minh** khi nguồn TikTok đối chiếu thành công; chênh lệch Creator/Seller được ghi rõ **tham khảo** và không tự cộng vào KPI.
 
 Vào website SellerKBB. Mặc định hệ thống luôn chọn **Hôm nay**.
 
@@ -434,6 +445,7 @@ README giữ lại phần này để nhân sự có thể biết **vì sao giao 
 
 | Phiên bản | Thay đổi chính |
 |---|---|
+| **v1.49.25** | Sửa ý nghĩa trạng thái đồng bộ LIVE và bảo vệ dữ liệu Affiliate đã xác minh; bổ sung chênh lệch Creator/Seller chỉ để tham khảo; giao diện mobile tài khoản gọn và thu gọn các khối ủy quyền TikTok. |
 | **v1.49.24** | Đổi tên tab trình duyệt thành “SellerKBB · Doanh Số KPIs”; viết lại hướng dẫn đăng nhập Google và xét duyệt tài khoản mới, bỏ thuật ngữ “bootstrap” khỏi giao diện. |
 | **v1.49.12** | Đồng bộ lưu bền GMV Affiliate đã xác minh, kiểm tra backlog 30 ngày tự động và hiển thị rõ số phiên chưa xác minh. |
 | **v1.49.11** | Cho người dùng đổi tên/ảnh SellerKBB, upload ảnh nén và đặt lại ảnh Google; sửa popup không đóng khi đăng xuất. |
