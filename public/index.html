@@ -1202,6 +1202,9 @@ body.reconcile-modal-open .reconcile-modal-body{touch-action:pan-y}
 .kpi-status-provisional{background:#fff5d9;border-color:#eedb9e;color:#745b16}
 .kpi-status-waiting{background:#fff0f3;border-color:#efc7d0;color:#995267}
 .kpi-summary-note{margin-top:10px}
+.reconcile-notice-stack{display:grid;grid-template-columns:minmax(0,1fr);gap:12px;margin:14px 0 16px}
+.reconcile-notice-stack>.notice{min-width:0;margin:0;overflow-wrap:anywhere}
+@media(max-width:700px){.reconcile-notice-stack{gap:12px;margin:12px 0 14px}}
 .kpi-summary-note strong{color:#5d3d4d}
 
 @media(max-width:700px){
@@ -2512,6 +2515,11 @@ tbody tr:hover td{background:#fffafb}
 .storage-progress{background:#f8e7ef}
 .storage-progress i{background:linear-gradient(90deg,#efb8cf,#da82a8)}
 .user-list-avatar{border-color:#efd5e0}
+.kpi-person-avatar{width:36px;height:36px}
+.kpi-person-identity{max-width:250px;min-width:0}
+.kpi-person-identity .user-identity-copy{min-width:0}
+.kpi-person-identity .user-identity-copy b{max-width:196px}
+@media(max-width:700px){.kpi-person-avatar{width:34px;height:34px}.kpi-person-identity .user-identity-copy b{max-width:128px}}
 .mobile-menu-overlay{background:rgba(78,49,63,.25)}
 .approved-user-card{
   padding:14px 0;
@@ -3168,7 +3176,8 @@ body.account-modal-open{overflow:hidden}
     }
     function avatarHtml(user={},className='user-list-avatar'){
       const name=user.displayName||user.email||'Tài khoản';
-      return `<img class="${className}" src="${esc(avatarSrc(user))}" data-user-avatar alt="Ảnh đại diện của ${esc(name)}">`;
+      const fallback=avatarFallbackData(name);
+      return `<img class="${className}" src="${esc(avatarSrc(user))}" data-user-avatar alt="Ảnh đại diện của ${esc(name)}" onerror="this.onerror=null;this.src='${esc(fallback)}'">`;
     }
     function userIdentityHtml(user={},showEmail=true){
       const name=user.displayName||user.email||'Chưa đặt tên';
@@ -4519,8 +4528,10 @@ body.account-modal-open{overflow:hidden}
           <div class="reconcile-overview-card cancelled"><span>Đơn hủy từ Livestream</span><b>${fmtMoney(cancelledAmount,session.currency)}</b></div>
           <div class="reconcile-overview-card primary"><span>GMV sau khi hoàn hủy</span><b>${result?.kpiSummary?.status==='final'?fmtMoney(result.kpiSummary.gmvAmount,session.currency):'Chưa chốt'}</b></div>
         </div>
-        <div class="notice ok"><strong>Quy tắc Affiliate:</strong> GMV sản phẩm Affiliate vẫn được cộng vào GMV phiên và cơ sở tính KPI.</div>
+        <div class="reconcile-notice-stack" data-reconcile-notices>
+          <div class="notice ok"><strong>Quy tắc Affiliate:</strong> GMV sản phẩm Affiliate vẫn được cộng vào GMV phiên và cơ sở tính KPI.</div>
         <div class="notice ${result?.kpiSummary?.status==='final'?'ok':result?.kpiSummary?.usableForKpi?'warn':'bad'} kpi-summary-note"><strong>KPI tự động: ${esc(kpiStatusLabel(result?.kpiSummary?.status||'waiting',result?.kpiSummary||null))}.</strong> ${esc(result?.kpiSummary?.reason||'')} ${result?.kpiSummary?.overlapProrated===true?'Tỷ lệ hủy/hoàn hiện tại: '+new Intl.NumberFormat('vi-VN',{style:'percent',maximumFractionDigits:2}).format(Math.max(0,1-Number(result.kpiSummary.overlapAdjustmentRatio||0)))+' trên '+new Intl.NumberFormat('vi-VN').format(orders.length)+' đơn trong khung giờ.':Number(result?.kpiSummary?.provisionalTimeWindowOrders||0)>0?'Có '+new Intl.NumberFormat('vi-VN').format(Number(result.kpiSummary.provisionalTimeWindowOrders||0))+' đơn khớp thời gian đang được tính KPI tạm tính ('+fmtMoney(Number(result.kpiSummary.provisionalTimeWindowAmount||0),session.currency)+').':''}</div>
+        </div>
         <div class="reconcile-filter-wrap">
           <div class="reconcile-filter-label">Lọc nhanh theo trạng thái đơn</div>
           <div class="reconcile-filterbar">${filters.map((x,i)=>`<button type="button" class="reconcile-filter-chip ${i===0?'active':''}" data-reconcile-filter="${x.key}"><span>${esc(x.label)}</span><b>${x.count}</b></button>`).join('')}</div>
