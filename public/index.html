@@ -3153,7 +3153,7 @@ body.account-modal-open{overflow:hidden}
         <div class="topbar-right">
           <span id="syncBadge" class="pill">v1.49.25</span>
           <div id="dataRefreshWrap" class="data-refresh-wrap">
-            <button id="dataRefreshBtn" class="data-refresh-btn" type="button" title="Tài khoản có quyền LIVE/KPI: đồng bộ TikTok 30 ngày và cập nhật GMV Affiliate">
+            <button id="dataRefreshBtn" class="data-refresh-btn" type="button" title="Tài khoản có quyền LIVE/KPI: đồng bộ LIVE 120 ngày và kiểm tra GMV Affiliate từng phiên">
               <span id="dataRefreshIcon" class="data-refresh-icon">↻</span>
               <span class="data-refresh-copy"><b id="dataRefreshLabel">Cập nhật dữ liệu</b><small id="dataRefreshMeta">Dữ liệu mới nhất</small></span>
             </button>
@@ -4094,7 +4094,7 @@ body.account-modal-open{overflow:hidden}
       button.setAttribute('aria-busy',String(active));
       label.textContent=status==='syncing'?'Đang đồng bộ…':status==='loading'?'Đang cập nhật…'
         :status==='success'?'Đã cập nhật':status==='partial'?'Đã đồng bộ LIVE':status==='error'?'Thử lại':'Cập nhật dữ liệu';
-      meta.textContent=status==='syncing'?'TikTok LIVE · 30 ngày'
+      meta.textContent=status==='syncing'?'TikTok LIVE + Affiliate · 120 ngày'
         :status==='loading'?'Đang tải dữ liệu mới nhất'
         :status==='error'?(state.dataRefresh.error?'Đồng bộ chưa hoàn tất':'Cập nhật thất bại')
         :status==='partial'?('Affiliate: '+new Intl.NumberFormat('vi-VN').format(Number(state.dataRefresh.affiliatePending||0))+' phiên đang đối soát')
@@ -4126,7 +4126,7 @@ body.account-modal-open{overflow:hidden}
       state.dataRefresh.error='';
       renderDataRefreshControl();
       if(can('live.read')||can('kpi.read')){
-        await requestThirtyDaySync('dashboard');
+        await request120DaySync('dashboard');
         return;
       }
       try{
@@ -6538,13 +6538,13 @@ body.account-modal-open{overflow:hidden}
         </div>
       </details>`;
     }
-    async function requestThirtyDaySync(origin='tiktok'){
+    async function request120DaySync(origin='tiktok'){
       if(!can('live.read')&&!can('kpi.read')){
         showToast('Tài khoản chưa có quyền xem dữ liệu LIVE/KPI để đồng bộ.');
         return;
       }
       if(['loading','syncing'].includes(state.dataRefresh.status)&&origin!=='dashboard'){
-        showToast('Đang đồng bộ TikTok 30 ngày. Vui lòng theo dõi tiến trình.');
+        showToast('Đang đồng bộ TikTok 120 ngày. Vui lòng theo dõi tiến trình.');
         return;
       }
       clearTimeout(refreshLatestData.resetTimer);
@@ -6560,16 +6560,16 @@ body.account-modal-open{overflow:hidden}
         state.autoSyncRefreshing=false;
         finishDataRefresh('success');
         renderAll();
-        if(origin==='tiktok')showToast('Preview: đã mô phỏng đồng bộ 30 ngày thành công');
+        if(origin==='tiktok')showToast('Preview: đã mô phỏng đồng bộ 120 ngày thành công');
         state.manualSyncOrigin='';
         return;
       }
       try{
         const result=await api('/api/tiktok/autosync/run',{
-          method:'POST',body:JSON.stringify({days:30}),timeoutMs:15000
+          method:'POST',body:JSON.stringify({days:120}),timeoutMs:15000
         });
         if(!result.accepted||!result.jobId)throw new Error('Máy chủ chưa xác nhận tác vụ đồng bộ.');
-        if(origin==='tiktok')showToast(result.alreadyRunning?'Tác vụ đồng bộ đang chạy, tiếp tục theo dõi.':'Đã bắt đầu đồng bộ nền 30 ngày.');
+        if(origin==='tiktok')showToast(result.alreadyRunning?'Tác vụ đồng bộ đang chạy, tiếp tục theo dõi.':'Đã bắt đầu đồng bộ 120 ngày và đối soát Affiliate theo từng chặng.');
         startManualSyncPolling(result.jobId);
         if(state.section==='tiktok')await renderTikTok();
       }catch(error){
@@ -6617,7 +6617,14 @@ body.account-modal-open{overflow:hidden}
             }
             const job=status?.manualJob;
             if(!job||job.jobId!==jobId)continue;
-            if(job.state==='running')continue;
+            if(job.state==='running'){
+              // Each request performs one safe backfill checkpoint. Cron resumes
+              // automatically as fallback even when the user closes the page.
+              api('/api/tiktok/autosync/continue',{method:'POST',body:'{}',timeoutMs:8000})
+                .catch(()=>null);
+              if(state.section==='tiktok'&&count%3===0)renderTikTok();
+              continue;
+            }
             state.manualSyncPolling='';
             const fromDashboard=state.manualSyncOrigin==='dashboard';
             state.manualSyncOrigin='';
@@ -6700,7 +6707,7 @@ body.account-modal-open{overflow:hidden}
         $('#section-tiktok').querySelectorAll('[data-refresh-creator]').forEach(button=>button.onclick=()=>showToast('Preview: đã làm mới Refresh Token cho @'+button.dataset.refreshCreator));
         $('#section-tiktok').querySelectorAll('[data-connect-creator]').forEach(button=>button.onclick=()=>showToast('Preview: Creator '+button.dataset.connectCreator+' đã được mô phỏng kết nối'));
         $('#previewSync').onclick=()=>showToast('Kết nối TikTok mẫu hoạt động bình thường');
-        $('#previewSyncNow').onclick=()=>requestThirtyDaySync('tiktok');
+        $('#previewSyncNow').onclick=()=>request120DaySync('tiktok');
         return;
       }
 
@@ -6720,12 +6727,15 @@ body.account-modal-open{overflow:hidden}
       const sync=status.autoSync||{};
       const manualJob=status.manualJob||null;
       const manualRunning=manualJob?.state==='running';
+      const manualProgress=manualJob?.phase==='affiliate'
+        ?('Đang đối soát GMV Affiliate: '+Number(manualJob.affiliateProcessed||0)+'/'+Number(manualJob.total||0)+' phiên')
+        :('Đã quét '+Number(manualJob?.completedDays||0)+'/'+Number(manualJob?.days||120)+' ngày');
       const manualJobNotice=manualJob?(manualRunning
-        ?'<div class="notice warn" role="status" data-manual-sync-state="running">Đang đồng bộ '+Number(manualJob.days||30)+' ngày trên máy chủ. Bạn có thể chuyển tab hoặc đóng trang; hệ thống tiếp tục xử lý và sẽ cập nhật trạng thái khi hoàn tất.</div>'
+        ?'<div class="notice warn" role="status" data-manual-sync-state="running"><b>Đồng bộ LIVE 120 ngày:</b> '+manualProgress+'. Chỉ lấy @shopkhangbaby và @mekhangsua. Có thể đóng trang; máy chủ tiếp tục theo lịch và sẽ cập nhật tiến độ.</div>'
         :manualJob.state==='success'
-          ?'<div class="notice ok" role="status" data-manual-sync-state="success">Đồng bộ 30 ngày thành công · '+new Intl.NumberFormat('vi-VN').format(Number(manualJob.cached||0))+' phiên LIVE trong cache.</div>'
+          ?'<div class="notice ok" role="status" data-manual-sync-state="success">Đã đồng bộ LIVE 120 ngày · '+new Intl.NumberFormat('vi-VN').format(Number(manualJob.cached||0))+' phiên lưu trữ · Affiliate đã xác minh '+Number(manualJob.affiliateVerified||0)+' phiên, chưa xác minh '+Number(manualJob.affiliatePending||0)+' phiên.</div>'
           :manualJob.state==='error'||manualJob.state==='stale'
-            ?'<div class="notice bad" role="status" data-manual-sync-state="error">Đồng bộ 30 ngày chưa hoàn tất: '+esc(manualJob.error||'Chưa rõ nguyên nhân')+'</div>'
+            ?'<div class="notice bad" role="status" data-manual-sync-state="error">Đồng bộ LIVE 120 ngày chưa hoàn tất ('+manualProgress+'): '+esc(manualJob.error||'Chưa rõ nguyên nhân')+'. Các phiên đã lưu vẫn được giữ nguyên.</div>'
             :'')
         :'';
       const lastSync=sync.finishedAt?fmtDate({toDate:()=>new Date(sync.finishedAt)}):'Chưa chạy';
@@ -6777,7 +6787,7 @@ body.account-modal-open{overflow:hidden}
           <div><b>LIVE Performance API</b><span>/analytics/202509/shop_lives/performance</span></div>
           <div class="row">
             ${status.configured&&!status.connected?'<button id="connectTikTok" class="btn primary">'+icon('link')+' Kết nối TikTok Seller</button>':''}
-            ${status.connected?'<button id="syncTikTokNow" class="btn primary" '+(manualRunning?'disabled aria-busy="true"':'')+'>'+icon(manualRunning?'refresh':'sync')+(manualRunning?' Đang đồng bộ trên máy chủ…':' Đồng bộ ngay 30 ngày')+'</button>':''}
+            ${status.connected?'<button id="syncTikTokNow" class="btn primary" '+(manualRunning?'disabled aria-busy="true"':'')+'>'+icon(manualRunning?'refresh':'sync')+(manualRunning?' Đang đồng bộ trên máy chủ…':' Đồng bộ ngay 120 ngày')+'</button>':''}
             ${status.connected?'<button id="checkTikTok" class="btn">'+icon('check')+' Kiểm tra trạng thái</button>':''}
           </div>
         </div>
@@ -6819,8 +6829,14 @@ body.account-modal-open{overflow:hidden}
         showToast('Đã kết nối Creator @'+connectedChannel);
         history.replaceState(null,'',location.pathname);
       }
-      if(manualRunning)startManualSyncPolling(manualJob.jobId);
-      if($('#syncTikTokNow'))$('#syncTikTokNow').onclick=()=>requestThirtyDaySync('tiktok');
+      if(manualRunning){
+        startManualSyncPolling(manualJob.jobId);
+        if(!state.manualSyncKickoff||state.manualSyncKickoff!==manualJob.jobId){
+          state.manualSyncKickoff=manualJob.jobId;
+          api('/api/tiktok/autosync/continue',{method:'POST',body:'{}',timeoutMs:8000}).catch(()=>null);
+        }
+      }
+      if($('#syncTikTokNow'))$('#syncTikTokNow').onclick=()=>request120DaySync('tiktok');
     }
 
     function renderAll(){ renderNav(); renderDashboard(); renderLive(); renderReconcile(); renderKpi(); renderManualKpi(); renderExport(); renderUsers(); renderStaff(); renderTikTok(); renderStorage(); switchSection(state.section); }
