@@ -4025,7 +4025,7 @@ body.account-modal-open{overflow:hidden}
         :status==='loading'?'Đang tải dữ liệu mới nhất'
         :status==='error'?(state.dataRefresh.error?'Đồng bộ chưa hoàn tất':'Cập nhật thất bại')
         :status==='partial'?('Còn '+new Intl.NumberFormat('vi-VN').format(Number(state.dataRefresh.affiliatePending||0))+' phiên Affiliate')
-        :last?('Lúc '+last):isAdmin()?'Bao gồm đồng bộ TikTok':'Dữ liệu mới nhất';
+        :last?('Lúc '+last):(can('live.read')||can('kpi.read'))?'Bao gồm đồng bộ TikTok':'Dữ liệu mới nhất';
       const iconName=status==='success'?'check':status==='error'?'history':'refresh';
       $('#dataRefreshIcon').innerHTML=icon(iconName,16);
       button.title=(status==='partial'?'Đã lưu phiên LIVE nhưng còn '+Number(state.dataRefresh.affiliatePending||0)+' phiên chưa có GMV Affiliate xác minh. Hệ thống sẽ tiếp tục đối chiếu tự động.':state.dataRefresh.error) || (isAdmin()
@@ -4052,7 +4052,7 @@ body.account-modal-open{overflow:hidden}
       state.dataRefresh.status='loading';
       state.dataRefresh.error='';
       renderDataRefreshControl();
-      if(isAdmin()){
+      if(can('live.read')||can('kpi.read')){
         await requestThirtyDaySync('dashboard');
         return;
       }
@@ -6431,9 +6431,8 @@ body.account-modal-open{overflow:hidden}
       </div>`;
     }
     async function requestThirtyDaySync(origin='tiktok'){
-      if(!isAdmin()){
-        if(origin==='dashboard')return refreshLatestData();
-        showToast('Chỉ Admin được đồng bộ TikTok 30 ngày.');
+      if(!can('live.read')&&!can('kpi.read')){
+        showToast('Tài khoản chưa có quyền xem dữ liệu LIVE/KPI để đồng bộ.');
         return;
       }
       if(['loading','syncing'].includes(state.dataRefresh.status)&&origin!=='dashboard'){
