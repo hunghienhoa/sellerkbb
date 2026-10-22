@@ -6751,7 +6751,7 @@ body.account-modal-open{overflow:hidden}
         </div>
         ${!status.configured?'<div class="notice">Chưa cấu hình đủ TikTok App Key / Secret / Service ID / Seller Authorization URL / KV binding.</div>':''}
         <details class="card api-disclosure" data-readiness-card data-tiktok-disclosure="readiness" ${tiktokDisclosureIsOpen('readiness',!readinessReady)?'open':''}>
-          <summary class="row space auth-summary"><div><h3 class="heading-with-icon">${icon('shield',18)} Kiểm tra sẵn sàng chạy thật</h3><div class="sub">Chỉ bắt đầu dùng KPI tiền thật khi các mục chính đã đạt và scopes đã được kiểm tra.</div></div><span class="pill ${readinessReady?'ok':readinessWarn?'warn':'bad'}">${readinessLabel}</span></div>
+          <summary class="row space auth-summary"><div><h3 class="heading-with-icon">${icon('shield',18)} Kiểm tra sẵn sàng chạy thật</h3><div class="sub">Chỉ bắt đầu dùng KPI tiền thật khi các mục chính đã đạt và scopes đã được kiểm tra.</div></div><span class="pill ${readinessReady?'ok':readinessWarn?'warn':'bad'}">${readinessLabel}</span><span class="auth-chevron" aria-hidden="true">⌄</span></summary>
           <div class="status-grid" data-readiness-grid>
             ${readinessItem(checks.firebaseConfig===true,'Firebase',checks.firebaseConfig?'Web Config đã đủ':'Chưa đủ Firebase Web Config')}
             ${readinessItem(checks.tiktokConfig===true,'TikTok App',checks.tiktokConfig?'App/Secret/Service ID/KV đã đủ':'Thiếu cấu hình TikTok hoặc KV')}
