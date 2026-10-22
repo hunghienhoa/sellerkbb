@@ -3180,6 +3180,7 @@ body.account-modal-open{overflow:hidden}
       const labels=[];
       if(permissions.includes('live.read'))labels.push('Phiên LIVE');
       if(permissions.includes('kpi.read'))labels.push('KPI nhân sự');
+      if(profile.role==='operator'&&permissions.includes('live.read')&&permissions.includes('live.assign'))labels.push('Gắn Host/Campaign-Mega · KPI nháp');
       return labels.join(' · ')||'Chưa được cấp nội dung';
     }
     function accountStatusLabel(status){
@@ -3508,7 +3509,7 @@ body.account-modal-open{overflow:hidden}
       if(!PREVIEW)return;
       const sessionEdits={};
       for(const x of state.sessions){
-        sessionEdits[x.id]={kpiMode:x.kpiMode||'auto',manualKpiType:manualKpiType(x),hostUid:x.hostUid||'',hostName:x.hostName||'',operatorUid:x.operatorUid||'',operatorName:x.operatorName||'',manualKpiEntries:Array.isArray(x.manualKpiEntries)?x.manualKpiEntries:[]};
+        sessionEdits[x.id]={kpiMode:x.kpiMode||'auto',manualKpiType:manualKpiType(x),hostUid:x.hostUid||'',hostName:x.hostName||'',operatorUid:x.operatorUid||'',operatorName:x.operatorName||'',manualKpiEntries:Array.isArray(x.manualKpiEntries)?x.manualKpiEntries:[],kpiDraft:x.kpiDraft||null};
       }
       const users=state.users.map(u=>({id:u.id,role:u.role,status:u.status,permissions:u.permissions||[]}));
       const staff=state.staff.map(x=>({id:x.id,displayName:x.displayName,role:x.role,sortOrder:x.sortOrder||0}));
@@ -3578,6 +3579,14 @@ body.account-modal-open{overflow:hidden}
         session.reconciliation={status,usableForKpi:true,gmvAmount:gmv,analyticsGmvAmount:gross,orderWindowAmount:Math.round(gross*.94),orderCount:9+(index%5),pendingOrderCount:status==='final'?0:3+(index%4),cancelledCount:index%3,returningCount:status==='final'?0:1,refundedCount:index%2,aftersalesAvailable:true,liveSignalOrders:status==='final'?(9+(index%5)):5,timeWindowOrders:status==='final'?0:4,timeWindowNetAmount:status==='final'?0:Math.round(gross*.08),attribution:status==='final'?'live_signal':'mixed',generatedAt:new Date().toISOString(),finalizedAt:status==='final'?new Date().toISOString():'',reason:status==='final'?'GMV sau khi hoàn hủy đã chốt từ các đơn có tín hiệu LIVE.':'GMV chờ đối soát chỉ gồm đơn có tín hiệu LIVE; đơn chỉ khớp thời gian không tính KPI.'};
       });
       restorePreviewState();
+      // Role simulator is scoped to /preview only, never live authentication.
+      const previewParams=new URLSearchParams(location.search);
+      const previewRole=previewParams.get('preview_role');
+      if(previewRole==='operator'||previewRole==='host'){
+        state.profile.role=previewRole;
+        state.profile.permissions=previewRole==='operator'&&previewParams.get('preview_assign')==='1'
+          ?['live.read','kpi.read','live.assign']:['live.read','kpi.read'];
+      }
       state.dataRefresh.lastAt=new Date().toISOString();
       renderAll(); bindShell(); showApp(); startAutoSyncWatcher();
       const bar=document.createElement('div');
@@ -3590,6 +3599,7 @@ body.account-modal-open{overflow:hidden}
     function showApp(){ $('#boot').classList.add('hidden'); $('#app').classList.remove('hidden'); }
     function can(p){ return state.profile?.role==='admin' || (state.profile?.status==='approved' && (state.profile?.permissions||[]).includes(p)); }
     function isAdmin(){ return state.profile?.role==='admin' && state.profile?.status==='approved'; }
+    function canAssignLiveStaff(){return isAdmin()||(state.profile?.role==='operator'&&can('live.read')&&can('live.assign'));}
 
     async function api(path, options={}){
       const {timeoutMs=API_TIMEOUT_MS,...fetchOptions}=options;
@@ -3980,6 +3990,28 @@ body.account-modal-open{overflow:hidden}
       }
     }
 
+    async function loadDelegatedLiveData(){
+      if(PREVIEW||!(can('live.read')||can('kpi.read')))return;
+      const [tags,drafts]=await Promise.all([
+        getDocs(collection(state.db,'liveAssignments')),
+        canAssignLiveStaff()?getDocs(collection(state.db,'liveKpiDrafts')):Promise.resolve(null)
+      ]);
+      const assignments=new Map(tags.docs.map(d=>[String(d.id),d.data()]));
+      const pending=new Map((drafts?.docs||[]).map(d=>[String(d.id),d.data()]));
+      for(const session of state.sessions){
+        const a=assignments.get(String(session.id));
+        if(a){
+          session.kpiMode=a.kpiMode==='manual'?'manual':'auto';
+          session.manualKpiType=a.manualKpiType==='campaign'?'campaign':a.manualKpiType==='mega'?'mega':'';
+          session.hostUid=session.kpiMode==='manual'?'':String(a.hostUid||'');
+          session.hostName=session.kpiMode==='manual'?'':String(a.hostName||'');
+          session.operatorUid=session.kpiMode==='manual'?'':String(a.operatorUid||'');
+          session.operatorName=session.kpiMode==='manual'?'':String(a.operatorName||'');
+        }
+        session.kpiDraft=pending.get(String(session.id))||null;
+      }
+    }
+
     async function loadRecentLiveSessions(cutoff,maxDocs){
       const target=Math.max(1,Math.min(FIRESTORE_TOTAL_SESSION_CAP,Number(maxDocs||FIRESTORE_TOTAL_SESSION_CAP)));
       const pageSize=safeFirestoreQueryLimit(FIRESTORE_SESSION_QUERY_PAGE_SIZE);
@@ -4019,6 +4051,7 @@ body.account-modal-open{overflow:hidden}
             .map(x=>isManualKpi(x)?{...x,hostUid:'',hostName:'',operatorUid:'',operatorName:''}:x);
           await mergeAutoSyncedSessions();
           state.sessions=state.sessions.filter(isAllowedSellerKbbLiveChannel);
+          await loadDelegatedLiveData();
         })());
       }
       if(isAdmin()){
@@ -4085,7 +4118,7 @@ body.account-modal-open{overflow:hidden}
         ]},
         {label:'Công cụ',items:[
           {id:'export',icon:'export',label:'Xuất file',show:can('live.read')||can('kpi.read')},
-          {id:'manual-kpi',icon:'settings',label:'KPI thủ công',show:isAdmin()}
+          {id:'manual-kpi',icon:'settings',label:'KPI thủ công',show:canAssignLiveStaff()}
         ]},
         {label:'Quản trị',items:[
           {id:'users',icon:'users',label:'Quản lý tài khoản',show:isAdmin()},
@@ -4812,7 +4845,7 @@ body.account-modal-open{overflow:hidden}
       $('#section-live').innerHTML=`
         ${timeFilterHtml('live')}
         ${affiliateSummaryHtml(ss)}
-        <div class="notice ok"><b>GMV LIVE tổng</b> = hàng nhà + sản phẩm Affiliate và vẫn là cơ sở tính KPI Host/Vận hành. <b>GMV Affiliate</b> được tách riêng để theo dõi theo từng phiên LIVE.</div><div class="card live-list-card">${renderLiveTable(pageRows,isAdmin())}</div>
+        <div class="notice ok"><b>GMV LIVE tổng</b> = hàng nhà + sản phẩm Affiliate và vẫn là cơ sở tính KPI Host/Vận hành. <b>GMV Affiliate</b> được tách riêng để theo dõi theo từng phiên LIVE.</div><div class="card live-list-card">${renderLiveTable(pageRows,canAssignLiveStaff())}</div>
         <div class="pagination-wrap">
           <div class="pagination-info">Đang hiển thị từ phiên <b>${from}</b> đến phiên <b>${to}</b> trên tổng số <b>${ss.length}</b> phiên · Mỗi trang hiển thị 20 phiên</div>
           <div class="pagination">
@@ -4826,7 +4859,7 @@ body.account-modal-open{overflow:hidden}
         const p=Number(b.dataset.page); if(!p||p===state.livePage||p<1||p>totalPages)return;
         state.livePage=p; renderLive(); document.querySelector('#section-live')?.scrollIntoView({behavior:'smooth',block:'start'});
       });
-      if(isAdmin()){
+      if(canAssignLiveStaff()){
         document.querySelectorAll('[data-save-session]').forEach(b=>b.onclick=()=>saveAssignment(b.dataset.saveSession,b));
         document.querySelectorAll('[data-edit-assignment]').forEach(b=>b.onclick=()=>{
           const card=b.closest('tr,.mobile-live-card');
@@ -4878,6 +4911,7 @@ body.account-modal-open{overflow:hidden}
     }
 
     async function saveAssignment(id,sourceEl){
+      if(!canAssignLiveStaff()){showToast('Bạn chưa được cấp quyền phân công Host và Campaign/Mega.');return;}
       const scopeEl=sourceEl?.closest('tr,.mobile-live-card');
       if(!scopeEl){ showToast('Không xác định được phiên LIVE cần lưu'); return; }
       const h=scopeEl.querySelector('[data-person="host"]'), o=scopeEl.querySelector('[data-person="operator"]');
@@ -4918,7 +4952,15 @@ body.account-modal-open{overflow:hidden}
         recordedItemsSold:Number(item?.recordedItemsSold||0),
         updatedAt:serverTimestamp()
       };
-      await setDoc(doc(state.db,'liveSessions',id),persist,{merge:true});
+      const assignmentDoc={...payload,liveId:String(id),updatedAt:serverTimestamp(),updatedBy:state.user.uid};
+      if(isAdmin()){
+        const batch=writeBatch(state.db);
+        batch.set(doc(state.db,'liveSessions',id),persist,{merge:true});
+        batch.set(doc(state.db,'liveAssignments',id),assignmentDoc);
+        await batch.commit();
+      }else{
+        await setDoc(doc(state.db,'liveAssignments',id),assignmentDoc);
+      }
       showToast(manual?'Đã lưu '+(manualType==='campaign'?'Ngày Campaign':'Mega Live')+' · KPI thủ công':'Đã lưu nhân sự cho phiên LIVE');
       await loadData(); renderAll();
     }
@@ -5212,8 +5254,13 @@ body.account-modal-open{overflow:hidden}
         people.map(u=>`<option value="${u.id}" ${u.id===staffSelectionId(role,value,'')?'selected':''}>${esc(u.displayName)}</option>`).join('');
     }
 
+    function manualKpiEditorEntries(session){
+      return session?.kpiDraft?.status==='pending'
+        ?normalizedManualKpiEntries({manualKpiEntries:session.kpiDraft.entries,currency:session.currency})
+        :normalizedManualKpiEntries(session);
+    }
     function manualKpiPairs(session){
-      const entries=normalizedManualKpiEntries(session);
+      const entries=manualKpiEditorEntries(session);
       const pairs=[];
       for(const entry of entries){
         if(entry.role==='host'){
