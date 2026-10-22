@@ -290,7 +290,7 @@ assert(!html.includes("GMV lần đầu ghi nhận"), "Legacy first-recorded GMV
 
 assert(html.includes("manualKpi:0"), "Manual KPI aggregate field missing");
 assert(html.includes('id="section-manual-kpi"'), "Dedicated manual KPI section missing");
-assert(html.includes("{id:'manual-kpi',icon:'settings',label:'KPI thủ công',show:isAdmin()}"), "Manual KPI nav tab missing");
+assert(html.includes("{id:'manual-kpi',icon:'settings',label:'KPI thủ công',show:canAssignLiveStaff()}"), "Manual KPI nav must be visible for admins and authorized operators");
 assert(html.includes("function renderManualKpi()"), "Manual KPI renderer missing");
 assert(html.includes("bindTimeFilter('manual-kpi')"), "Manual KPI time filter missing");
 const kpiRendererStart=html.indexOf("function renderKpi(){");
