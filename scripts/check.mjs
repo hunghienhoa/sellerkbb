@@ -402,7 +402,7 @@ assert(worker.includes("async function refreshCreatorTokenIfNeeded")&&worker.inc
 assert(worker.includes('/api/tiktok/creator/refresh')&&worker.includes('missing_creator_refresh_token'), "Creator manual Refresh Token endpoint missing");
 assert(worker.includes('refresh_token: payload.data?.refresh_token || current.refresh_token'), "Creator rotated Refresh Token must be preserved");
 assert(worker.includes("open_id khác tài khoản đã kết nối"), "Creator refresh must protect against open_id changes");
-assert(worker.includes('refreshAllCreatorTokens(env, 3600, "hourly")')&&worker.includes('refreshAllCreatorTokens(env, 86400, "daily_reconcile")'), "Scheduled Creator token refresh missing");
+assert(worker.includes('refreshAllCreatorTokens(env,3600,"hourly")')&&worker.includes('refreshAllCreatorTokens(env,86400,"daily_reconcile")'), "Scheduled Creator token refresh missing");
 assert(html.includes("data-refresh-creator")&&html.includes("Refresh Token hết hạn")&&html.includes("Làm mới token"), "Creator Refresh Token UI/status missing");
 assert(readme.includes("Refresh Token")&&readme.includes("v1.49.1"), "README Creator Refresh Token documentation missing");
 assert(html.includes("function downloadBusinessBackup()")&&html.includes('id="downloadBusinessBackup"'), "Business backup JSON UI missing");
