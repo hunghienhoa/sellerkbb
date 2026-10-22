@@ -5,6 +5,8 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>SellerKBB · TikTok LIVE Report</title>
   <meta name="theme-color" content="#fff4f9" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-title" content="SellerKBB" />
   <style>
 @import url('https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800;900&display=swap');
 
@@ -3064,6 +3066,13 @@ body.account-modal-open{overflow:hidden}
   .btn:active,.page-btn:active,.range-btn:active,.menu-toggle:active,.nav button:active{transform:none}
   .topbar-account-popover,.reconcile-modal{animation:none}
 }
+.account-install{margin:14px 0 12px;padding:14px;border:1px solid var(--line);background:var(--surface-soft);border-radius:var(--radius-lg)}
+.account-install b{font-size:13px}
+.account-install p{font-size:12px;line-height:1.6;color:var(--muted);margin:8px 0 12px}
+.account-install-actions{display:flex;gap:8px;flex-wrap:wrap}
+.account-install-actions .btn{flex:1;min-width:120px;justify-content:center}
+.account-install-instructions{font-size:12px;line-height:1.75;margin-top:12px}
+.account-install-instructions.hidden{display:none}
 </style>
 </head>
 <body>
@@ -3078,7 +3087,7 @@ body.account-modal-open{overflow:hidden}
       <header class="topbar">
         <div class="topbar-title-wrap"><button id="menuToggle" class="menu-toggle" type="button" aria-label="Mở menu" aria-expanded="false">☰</button><div><h1 id="pageTitle" class="page-title">Tổng quan</h1><div id="pageSub" class="tiny"></div></div></div>
         <div class="topbar-right">
-          <span id="syncBadge" class="pill">v1.49.14</span>
+          <span id="syncBadge" class="pill">v1.49.15</span>
           <div id="dataRefreshWrap" class="data-refresh-wrap">
             <button id="dataRefreshBtn" class="data-refresh-btn" type="button" title="Tài khoản có quyền LIVE/KPI: đồng bộ TikTok 30 ngày và cập nhật GMV Affiliate">
               <span id="dataRefreshIcon" class="data-refresh-icon">↻</span>
@@ -3589,7 +3598,7 @@ body.account-modal-open{overflow:hidden}
 
     function previewTs(iso){ return {toDate:()=>new Date(iso)}; }
     function enterPreview(){
-      state.config={version:'1.49.14-preview',tiktokConfigured:true};
+      state.config={version:'1.49.15-preview',tiktokConfigured:true};
       state.user={uid:'preview-admin',email:'admin@sellerkbb.demo',displayName:'Quản trị viên Demo',photoURL:avatarFallbackData('Quản trị viên Demo')};
       state.profile={role:'admin',status:'approved',displayName:'Quản trị viên Demo',photoURL:state.user.photoURL,permissions:['live.read','kpi.read']};
       state.maintenance={settings:{retentionDays:180,autoCleanup:true,emergencyPercent:85,firestoreSoftLimitMb:600,firestoreMaxSessions:FIRESTORE_TOTAL_SESSION_CAP,kvSoftKeyLimit:5000},github:{usedBytes:124000,limitBytes:10000000000,available:true},cloudflare:{keyCount:5,lastRun:{ranAt:new Date().toISOString(),deleted:0},usedBytes:428000,storageLimitBytes:1000000000,storageComplete:true},firebase:{freePlanMode:true,ttlEnabled:false,ttlRecommended:false,storageLimitBytes:1073741824}};
@@ -3904,9 +3913,26 @@ body.account-modal-open{overflow:hidden}
           <div id="accountProfileError" class="account-profile-feedback" role="status" aria-live="polite"></div>
           <div class="account-profile-editor-footer"><button id="accountProfileCancel" class="btn" type="button">Hủy</button><button id="accountProfileSave" class="btn primary" type="submit">${icon('check',15)} Lưu thay đổi</button></div>
         </form>
+        <section class="account-install" aria-label="Cài SellerKBB trên iPhone">
+          <b>Thêm SellerKBB vào màn hình chính</b>
+          <p>Mở nhanh dashboard như ứng dụng trên iPhone.</p>
+          <div class="account-install-actions"><button id="accountInstallGuide" class="btn primary" type="button">Thêm vào màn hình chính</button><button id="accountInstallShortcut" class="btn" type="button">Mở Phím tắt</button></div>
+          <div id="accountInstallInstructions" class="account-install-instructions hidden" role="status" aria-live="polite"></div>
+        </section>
         <button id="accountLogoutBtn" class="btn danger topbar-account-logout" type="button">${icon('logout',16)} ${PREVIEW?'Thoát Preview':'Đăng xuất'}</button>`;
       $('#accountModalClose').onclick=()=>setAccountMenu(false);
       $('#accountLogoutBtn').onclick=handleAccountLogout;
+      const installInstructions=$('#accountInstallInstructions');
+      $('#accountInstallGuide').onclick=()=>{
+        const expanded=installInstructions.classList.toggle('hidden')===false;
+        $('#accountInstallGuide').setAttribute('aria-expanded',String(expanded));
+        if(expanded)installInstructions.textContent='Trên iPhone: mở SellerKBB bằng Safari → Chia sẻ → Thêm vào MH chính → bật Mở dưới dạng ứng dụng → Thêm. Cách này mở dạng ứng dụng toàn màn hình.';
+      };
+      $('#accountInstallShortcut').onclick=()=>{
+        installInstructions.classList.remove('hidden');
+        installInstructions.textContent='Phím tắt sẽ mở trình tạo mới. Thêm tác vụ Mở URL, nhập https://sellerkbb.doanhsokpis.workers.dev/ và chọn Thêm vào MH chính. iOS không cho website tự cài sẵn phím tắt.';
+        window.location.href='shortcuts://create-shortcut';
+      };
       const editor=$('#accountProfileEditor'), photo=$('#accountPhotoPreview');
       let nextAvatar=null; // null = keep current; empty string = restore Google photo
       const error=$('#accountProfileError');
