@@ -71,7 +71,13 @@ service cloud.firestore {
           (request.resource.data.customPhotoURL is string &&
            request.resource.data.customPhotoURL.size() <= 160000 &&
            (request.resource.data.customPhotoURL == '' ||
-            request.resource.data.customPhotoURL.matches('^data:image/jpeg;base64,[A-Za-z0-9+/=]+
+            request.resource.data.customPhotoURL.matches('data:image/jpeg;base64,.*'))))
+        && (!request.resource.data.keys().hasAny(['photoURL']) ||
+          (request.resource.data.photoURL is string &&
+           request.resource.data.photoURL.size() <= 160000))
+        && request.resource.data.role == resource.data.role
+        && request.resource.data.status == resource.data.status
+        && request.resource.data.permissions == resource.data.permissions
       );
 
       allow delete: if isAdmin();
