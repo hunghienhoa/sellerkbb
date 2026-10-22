@@ -500,4 +500,20 @@ assert(rules.includes("customPhotoURL.matches('data:image/jpeg;base64,"), "Uploa
 assert(html.includes('function dismissAccountOnSignOut()')&&html.includes("if(!user){\n        dismissAccountOnSignOut();"), "Null auth state must close stale account popup");
 assert(html.includes("$('#accountLogoutBtn').onclick=handleAccountLogout")&&html.includes("setAccountMenu(false,false)"), "Logout must immediately close account overlay");
 assert(html.includes('account:{customDisplayName:')&&html.includes('if(saved.account&&state.profile)'), "Preview should persist account profile edits for browser tests");
-console.log("Project structure, secure editable profile, avatar compression, signout cleanup and desktop/mobile UI checks OK");
+assert(worker.includes("const missing = all.filter(s => s.affiliateDataAvailable !== true || s.affiliateNeedsRefresh === true)") &&
+  worker.includes('Date.parse(a.affiliateCheckedAt || "")'), "Unverified Affiliate sessions must rotate across cached 30-day history");
+assert(worker.includes('affiliateCheckedAt = new Date().toISOString()') &&
+  worker.includes("reason === \"manual\" ? 10 : reason === \"hourly\" ? 8 : 10"), "Backfill must obey free Worker API subrequest budget");
+assert(worker.includes("const existing = await getAutoSyncData(env);") &&
+  worker.includes("enrichLiveAffiliateBreakdowns(\n      env, token.access_token, merged"), "Enrichment must use persisted historical sessions, not only newest seller list");
+assert(worker.includes("if (prev.affiliateDataAvailable === true && prev.creatorGmvAvailable === true") &&
+  worker.includes("merged[field] = prev[field]"), "Partial API responses must not erase verified Affiliate GMV");
+assert(worker.includes("const snapshotAt = new Date().toISOString();") &&
+  worker.includes("for (const session of merged) session.cacheUpdatedAt = snapshotAt;"), "Auto-sync snapshot must be verifiable by the UI");
+assert(worker.includes("affiliatePending: affiliateEnrichment.pending") &&
+  worker.includes("affiliatePending: Number(result?.affiliatePending"), "Job/status must include unresolved Affiliate counts");
+assert(html.includes('async function loadVerifiedSyncSnapshot(job)') &&
+  html.includes("state.syncedSnapshotAt>=stamp"), "Dashboard must verify new KV snapshot before claiming success");
+assert(html.includes("status==='partial'?'Đã đồng bộ · còn thiếu'") &&
+  html.includes("finishDataRefresh(missing>0?'partial':'success')"), "UI must distinguish partial Affiliate results from successful complete sync");
+console.log("Project structure, durable Affiliate merge, rolling 30-day backfill, quota-safe sync and honest Dashboard status OK");
