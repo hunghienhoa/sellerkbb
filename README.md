@@ -4,7 +4,7 @@
 
 ### Báo cáo TikTok LIVE · KPI nhân sự · Tự đồng bộ 24/24
 
-**Phiên bản hiện tại: v1.49.14**
+**Phiên bản hiện tại: v1.49.15**
 
 [![GitHub Release](https://img.shields.io/github/v/release/hunghienhoa/sellerkbb?label=Release)](https://github.com/hunghienhoa/sellerkbb/releases)
 [![GitHub Actions](https://img.shields.io/github/actions/workflow/status/hunghienhoa/sellerkbb/deploy.yml?branch=main&label=Ki%E1%BB%83m%20tra%20%26%20Backup)](https://github.com/hunghienhoa/sellerkbb/actions)
@@ -17,7 +17,13 @@
 
 ---
 
-## 🆕 Cập nhật mới nhất — v1.49.14
+## 🆕 Cập nhật mới nhất — v1.49.15
+
+- **Users → Thêm SellerKBB vào màn hình chính (iPhone):** thêm thẻ hướng dẫn cài web app toàn màn hình qua Safari và nút **Mở Phím tắt** để chuyển đến màn hình tạo phím tắt iOS (`shortcuts://create-shortcut`). iOS không hỗ trợ website tự nhập sẵn một shortcut qua URL scheme; người dùng cần cấu hình tác vụ Mở URL trong ứng dụng Phím tắt.
+- **Hỗ trợ web app iPhone:** bổ sung `apple-mobile-web-app-capable` và tên ứng dụng iOS; giữ phong cách SellerKBB và các luồng đăng xuất, hồ sơ, KPI và dữ liệu.
+- **QA:** thêm kiểm tra tĩnh nút và tương tác; chưa thay đổi dữ liệu người dùng hay các quy tắc đồng bộ.
+
+### v1.49.14 — Chỉ đồng bộ GMV Affiliate hai kênh
 
 - **Giới hạn đồng bộ GMV Affiliate đúng hai kênh** `shopkhangbaby` và `mekhangsua`. Bổ sung kiểm tra allowlist trước lệnh API chi tiết Affiliate và trước khi lưu snapshot LIVE vào Cloudflare KV; các phiên kênh khác không được đưa vào cache sau đồng bộ.
 - Bộ lọc hai kênh tại bước lấy LIVE, đọc cache và Creator Authorization vẫn giữ nguyên. Không thay đổi quyền người dùng, số GMV đã xác minh, cách tính KPI hoặc dữ liệu nguồn TikTok.
