@@ -18,6 +18,8 @@ const safeWorker = worker
 new Function(safeWorker);
 
 const assert = (ok, message) => { if (!ok) throw new Error(message); };
+assert(html.includes('id="accountInstallGuide"') && html.includes('id="accountInstallShortcut"'), "iPhone install controls missing in account popup");
+assert(html.includes("shortcuts://create-shortcut") && html.includes("apple-mobile-web-app-capable"), "iPhone shortcut and web-app support missing");
 assert(worker.includes('const SELLERKBB_ALLOWED_LIVE_CHANNELS = new Set(["shopkhangbaby", "mekhangsua"])'), "TikTok channel allowlist must contain exactly the two approved creators");
 assert(worker.includes('const merged = [...byId.values()]\n      .filter(isAllowedSellerKbbLiveChannel)'), "Sync must filter unapproved channels before persisting KV");
 assert(worker.includes('if (!isAllowedSellerKbbLiveChannel(session)) return { affiliateDataAvailable: false, affiliateError: "channel_not_allowed" }'), "Affiliate product calls must reject unapproved channels");
