@@ -805,8 +805,12 @@ async function enrichLiveAffiliateBreakdowns(env, accessToken, sessions, limit =
     const values = await Promise.all(batch.map(async session => {
       try {
         const core = await fetchCreatorLiveCoreStats(env, session);
-        if (core.creatorGmvAvailable) Object.assign(session, core);
-        else session.creatorGmvError = core.creatorGmvError || "creator_live_gmv_not_verified";
+        if (core.creatorGmvAvailable) {
+          const changed = session.affiliateDataAvailable === true &&
+            moneyNumber(core.gmvAmount) !== moneyNumber(session.gmvAmount);
+          Object.assign(session, core);
+          if (changed) session.affiliateNeedsRefresh = true;
+        } else session.creatorGmvError = core.creatorGmvError || "creator_live_gmv_not_verified";
         const breakdown = await fetchLiveShopProductBreakdown(env, accessToken, session);
         return { session, breakdown };
       } catch (error) {
@@ -1549,7 +1553,8 @@ async function executeManualSyncJob(env, job) {
     cached: Number(result?.cached || 0),
     error: result?.ok === true ? null : (result?.error || "Đồng bộ TikTok không hoàn tất"),
     affiliateVerified: Number(result?.affiliateVerified ?? result?.affiliateEnrichment?.verified ?? 0),
-    affiliatePending: Number(result?.affiliatePending ?? result?.affiliateEnrichment?.pending ?? 0)
+    affiliatePending: Number(result?.affiliatePending ?? result?.affiliateEnrichment?.pending ?? 0),
+    snapshotAt: result?.snapshotAt || null
   };
   await saveManualSyncJob(env, completed);
   return completed;
@@ -1604,9 +1609,13 @@ async function runAutoSync(env, lookbackDays = 2, reason = "hourly") {
 
     const affiliateEnrichment = await enrichLiveAffiliateBreakdowns(
       env, token.access_token, merged,
-      reason === "manual" ? 80 : reason === "hourly" ? 12 : 18, reason
+      reason === "manual" ? 10 : reason === "hourly" ? 8 : 10, reason
     );
     const reconciliation = await refreshKpiReconciliations(env, token.access_token, merged, reason);
+    // Every server result carries a monotonic snapshot timestamp so the UI
+    // can tell if an edge KV read still serves the previous version.
+    const snapshotAt = new Date().toISOString();
+    for (const session of merged) session.cacheUpdatedAt = snapshotAt;
     const nextRaw = JSON.stringify(merged);
     const oldRaw = JSON.stringify(existing);
     if (nextRaw !== oldRaw) await env.TIKTOK_KV.put(AUTO_SYNC_DATA_KEY, nextRaw);
@@ -1628,6 +1637,7 @@ async function runAutoSync(env, lookbackDays = 2, reason = "hourly") {
       affiliateEnrichment,
       affiliateVerified: affiliateEnrichment.verified,
       affiliatePending: affiliateEnrichment.pending,
+      snapshotAt,
       reconciliation
     };
     await writeAutoSyncStatus(env, status);
