@@ -3879,6 +3879,7 @@ body.account-modal-open{overflow:hidden}
     function renderAccountPopover(){
       const record=accountDisplayRecord(),profile=state.profile||{};
       $('#accountPopover').innerHTML=`
+        <button id="accountModalClose" class="account-modal-close" type="button" aria-label="Đóng">×</button>
         <div class="topbar-account-popover-head">
           ${avatarHtml(record,'topbar-account-popover-avatar')}
           <div class="topbar-account-popover-copy"><b>${esc(record.displayName)}</b><span>${esc(record.email)}</span></div>
@@ -3903,7 +3904,6 @@ body.account-modal-open{overflow:hidden}
           <div id="accountProfileError" class="account-profile-feedback" role="status" aria-live="polite"></div>
           <div class="account-profile-editor-footer"><button id="accountProfileCancel" class="btn" type="button">Hủy</button><button id="accountProfileSave" class="btn primary" type="submit">${icon('check',15)} Lưu thay đổi</button></div>
         </form>
-        <button id="accountModalClose" class="account-modal-close" type="button" aria-label="Đóng">×</button>
         <button id="accountLogoutBtn" class="btn danger topbar-account-logout" type="button">${icon('logout',16)} ${PREVIEW?'Thoát Preview':'Đăng xuất'}</button>`;
       $('#accountModalClose').onclick=()=>setAccountMenu(false);
       $('#accountLogoutBtn').onclick=handleAccountLogout;
