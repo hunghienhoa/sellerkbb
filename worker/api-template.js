@@ -2013,6 +2013,9 @@ export default {
     const url = new URL(request.url);
     try {
       if (url.pathname.startsWith("/api/")) return await handleApi(request, env, ctx);
+      if (url.pathname === "/manifest.webmanifest") return new Response(JSON.stringify({name:"SellerKBB · TikTok LIVE",short_name:"SellerKBB",start_url:"/",scope:"/",display:"standalone",background_color:"#fff8fb",theme_color:"#fff4f9",icons:[{src:"/pwa-icon.svg",sizes:"any",type:"image/svg+xml",purpose:"any maskable"}]}),{headers:{"content-type":"application/manifest+json; charset=utf-8","cache-control":"public, max-age=3600"}});
+      if (url.pathname === "/pwa-icon.svg") return new Response('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><rect width="512" height="512" rx="112" fill="#a44872"/><path d="M132 135h248v242H132z" rx="30" fill="#fff4f9"/><text x="256" y="304" font-family="sans-serif" font-weight="800" font-size="125" text-anchor="middle" fill="#a44872">K</text></svg>',{headers:{"content-type":"image/svg+xml","cache-control":"public,max-age=86400"}});
+      if (url.pathname === "/sw.js") return new Response('self.addEventListener("install",()=>self.skipWaiting());self.addEventListener("activate",e=>e.waitUntil(self.clients.claim()));self.addEventListener("fetch",()=>{});',{headers:{"content-type":"application/javascript; charset=utf-8","cache-control":"no-cache","service-worker-allowed":"/"}});
       if (url.pathname === "/favicon.ico") return new Response(null, { status: 204 });
       return html(APP_HTML);
     } catch (e) {
