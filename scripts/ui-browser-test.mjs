@@ -474,9 +474,9 @@ try {
   await page.click('#nav [data-section="users"]');
   const dungGooglePhoto=await page.$eval('[data-approved-user="dung"] img[data-user-avatar]',e=>e.src);
   await page.click('#nav [data-section="kpi"]');
-  const dungKpiPhoto=await page.$eval('[data-kpi-table="final"] tbody tr',rows=>rows.querySelector('img.kpi-person-avatar')?.src);
   const dungKpiAvatar=await page.$$eval('[data-kpi-table="final"] tbody tr',rows=>rows.map(row=>({name:row.cells[0]?.textContent||'',src:row.querySelector('img.kpi-person-avatar')?.src||'',alt:row.querySelector('img.kpi-person-avatar')?.alt||''})).find(r=>r.name.includes('Dung')));
   assert(dungKpiAvatar?.src===dungGooglePhoto&&dungKpiAvatar.alt.includes('Dung'),"Linked KPI staff must use the approved Gmail avatar, not the generic initial");
+  await page.click('#nav [data-section="staff"]');
 
   await page.$eval('#newStaffName',e=>e.value='Host Mới');
   await page.select('#newStaffRole','host');
