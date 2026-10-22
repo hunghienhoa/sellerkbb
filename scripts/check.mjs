@@ -18,6 +18,10 @@ const safeWorker = worker
 new Function(safeWorker);
 
 const assert = (ok, message) => { if (!ok) throw new Error(message); };
+assert(html.includes('<title>SellerKBB · Doanh Số KPIs</title>'), "Browser tab title must show Doanh Số KPIs");
+assert(html.includes('Tài khoản mới cần được quản trị viên phê duyệt trước khi sử dụng.'), "Login approval helper text missing");
+assert(!html.includes('Tài khoản đầu tiên sẽ bootstrap thành quản trị viên'), "Old login bootstrap wording must not appear");
+
 assert(html.includes('class="login-brand-logo"') && html.includes('class="sidebar-brand-logo"'), "KHANG BABY login and sidebar logos missing");
 assert(html.includes('src="/khangbaby-mascot.png?v='+version+'"'), "Versioned baby mascot logo missing");
 assert(worker.includes('url.pathname === "/khangbaby-mascot.png"'), "Mascot Worker image endpoint missing");
