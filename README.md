@@ -4,7 +4,7 @@
 
 ### Báo cáo TikTok LIVE · KPI nhân sự · Tự đồng bộ 24/24
 
-**Phiên bản hiện tại: v1.49.11**
+**Phiên bản hiện tại: v1.49.12**
 
 [![GitHub Release](https://img.shields.io/github/v/release/hunghienhoa/sellerkbb?label=Release)](https://github.com/hunghienhoa/sellerkbb/releases)
 [![GitHub Actions](https://img.shields.io/github/actions/workflow/status/hunghienhoa/sellerkbb/deploy.yml?branch=main&label=Ki%E1%BB%83m%20tra%20%26%20Backup)](https://github.com/hunghienhoa/sellerkbb/actions)
@@ -17,7 +17,16 @@
 
 ---
 
-## 🆕 Cập nhật mới nhất — v1.49.11
+## 🆕 Cập nhật mới nhất — v1.49.12
+
+- **Sửa đồng bộ GMV Affiliate không bền:** Cả **Cập nhật dữ liệu** (Tổng quan, Admin) và **Đồng bộ ngay 30 ngày** (TikTok / API) tiếp tục sử dụng **cùng** tác vụ `POST /api/tiktok/autosync/run`; các phiên đã xác minh Creator/Affiliate được **lưu trong Cloudflare KV** và dữ liệu không bị xóa chỉ vì TikTok tạm trả thiếu, tài khoản mới không xuất hiện trong danh sách kỳ này hoặc lần API tiếp theo lỗi.
+- **Sửa đồng bộ tự động bị bỏ sót Affiliate:** đồng bộ nền sẽ lấy các phiên đang thiếu Affiliate trong kho 30 ngày làm danh sách cần đối chiếu, kể cả khi lần lấy shop LIVE mới trả **0 phiên**. Các phiên chưa xác minh được luân phiên thử lại theo thời điểm kiểm tra gần nhất; mỗi lần chỉ xử lý số yêu cầu API vừa phải (8 phiên mỗi giờ, 10 phiên khi bấm nút) để tránh lỗi vượt giới hạn Cloudflare Worker.
+- **Phân biệt đã đồng bộ và đã xác minh:** kết quả server lưu tổng số Affiliate đã xác minh/còn thiếu. Nếu còn thiếu, nút Tổng quan báo **Đã đồng bộ · còn thiếu** và dòng số phiên chưa đủ thông tin, không hiển thị một trạng thái **Đã cập nhật** gây hiểu nhầm là 100% Affiliate đều đã đúng. Hai nút vẫn có thể tiếp tục dùng; các phiên chưa xác minh tự được thử lại trong những đợt chạy nền, không phải nhập dữ liệu lần nữa.
+- **Xác minh dữ liệu sau đồng bộ:** mỗi bản ghi cache có `cacheUpdatedAt`; sau khi máy chủ báo hoàn tất, giao diện kiểm tra đã đọc được **đúng snapshot mới lưu** thay vì hiển thị thành công trên cache cũ của một vùng Cloudflare.
+- **Đối soát và số tiền:** hệ thống không suy đoán GMV Affiliate bằng 0 khi API chưa khớp: tiếp tục báo **Chưa có dữ liệu**, đồng thời giữ các khoản đã xác minh để báo cáo và KPI không tự giảm vì lỗi API tạm thời. Không thay công thức KPI, tỷ lệ sau hoàn/hủy hoặc quy tắc chốt.
+- **Kiểm tra dữ liệu thật trước sửa:** tại lúc chẩn đoán, kho đang có 70 phiên, 8 phiên có GMV Affiliate xác minh và 62 phiên chưa xác minh; đồng bộ nền gần nhất lấy 0 phiên mới và không xử lý bổ sung Affiliate. Những phiên mà TikTok không cung cấp dữ liệu phù hợp vẫn có thể ở trạng thái chờ; không được tự gắn nhãn đủ GMV khi chưa có bằng chứng.
+
+### v1.49.11 — Sửa hồ sơ tài khoản và popup đăng xuất
 
 - **Popup thông tin người dùng:** thêm nút **Đổi tên / ảnh đại diện**, cho phép chính tài khoản đang đăng nhập sửa tên hiển thị SellerKBB và **tải ảnh JPG/PNG/WebP (≤5 MB)**. Hệ thống cắt ảnh thành khung 256×256, nén JPEG trước khi lưu vào hồ sơ Firestore (không cần Storage riêng). Có xem trước, hủy, lưu và **Dùng lại ảnh Google**.
 - Tên/ảnh thay đổi chỉ áp dụng cho SellerKBB, **không thay đổi tài khoản Gmail gốc** và không động đến vai trò, quyền truy cập, dữ liệu GMV hoặc KPI. Hồ sơ tự lưu để hiển thị lại sau khi tải lại trang hoặc đăng nhập lần tiếp theo. Quy tắc Firestore chỉ cho mỗi tài khoản sửa các trường hồ sơ của chính mình và hạn chế ảnh JPEG nén.
@@ -155,7 +164,7 @@ Giao diện v1.47.1 giữ hồng pastel, dùng chữ rõ cho nhãn số liệu v
 
 **KPI nhân sự theo tháng:** tab KPI nhân sự mặc định cộng toàn bộ KPI của tháng hiện tại. Dùng control **Theo tháng** để chọn lại tháng cần xem; giao diện chỉ hiển thị tên tháng, không lặp lại khoảng ngày 01–cuối tháng. Tab này không dùng bộ lọc Hôm nay / 7 ngày / 30 ngày; các tab báo cáo khác vẫn giữ bộ lọc riêng như trước.
 
-**Cập nhật dữ liệu ở Tổng quan:** Khi **Admin** bấm **Cập nhật dữ liệu** cạnh avatar, hệ thống thực hiện luôn **Đồng bộ ngay 30 ngày** của TikTok / API (đồng bộ chạy nền trên Cloudflare), theo dõi tiến trình và **tự tải lại dữ liệu SellerKBB sau khi đồng bộ thành công**. Nút hiện **Đang đồng bộ…** đến khi có kết quả cuối cùng, chỉ hiện **Đã cập nhật** sau khi dữ liệu được tải lại, hoặc **Thử lại** khi thất bại; không mở popup/modal và không hiện toast từ nút này. Khi **Host hoặc nhân viên vận hành** bấm, hệ thống chỉ cập nhật dữ liệu SellerKBB mà tài khoản được phép xem, không tự cấp quyền khởi chạy TikTok API.
+**Cập nhật dữ liệu ở Tổng quan:** Khi **Admin** bấm **Cập nhật dữ liệu** cạnh avatar, hệ thống thực hiện luôn **Đồng bộ ngay 30 ngày** của TikTok / API (đồng bộ chạy nền trên Cloudflare), theo dõi tiến trình và **tự tải lại dữ liệu SellerKBB sau khi đồng bộ thành công**. Nút hiện **Đang đồng bộ…** đến khi có kết quả cuối cùng, chỉ hiện **Đã cập nhật** nếu đã đọc đúng dữ liệu mới và không còn phiên Affiliate cần xác minh; nếu còn thiếu sẽ hiện **Đã đồng bộ · còn thiếu** kèm số phiên cần đối chiếu tiếp; hoặc **Thử lại** khi thất bại; không mở popup/modal và không hiện toast từ nút này. Khi **Host hoặc nhân viên vận hành** bấm, hệ thống chỉ cập nhật dữ liệu SellerKBB mà tài khoản được phép xem, không tự cấp quyền khởi chạy TikTok API.
 
 **Dùng bàn phím:** Tab để di chuyển, Enter/Space để kích hoạt. Khi mở popup tài khoản/đối soát, Tab chỉ đi trong popup; Escape đóng và đưa focus về nút mở. Nếu thiết bị bật **Giảm chuyển động**, popup không chạy animation. Nút làm mới vẫn thể hiện trạng thái **Đang tải** bằng chữ.
 
@@ -358,6 +367,7 @@ README giữ lại phần này để nhân sự có thể biết **vì sao giao 
 
 | Phiên bản | Thay đổi chính |
 |---|---|
+| **v1.49.12** | Đồng bộ lưu bền GMV Affiliate đã xác minh, kiểm tra backlog 30 ngày tự động và hiển thị rõ số phiên chưa xác minh. |
 | **v1.49.11** | Cho người dùng đổi tên/ảnh SellerKBB, upload ảnh nén và đặt lại ảnh Google; sửa popup không đóng khi đăng xuất. |
 | **v1.49.10** | Tách hai thông báo Affiliate/KPI đối soát ở PC/mobile; KPI nhân sự ưu tiên ảnh Google đã liên kết, bổ sung gắn Gmail trong Quản lý nhân sự. |
 | **v1.49.9** | Nút Cập nhật dữ liệu Tổng quan của Admin gọi đồng bộ TikTok 30 ngày, chờ hoàn tất rồi tải lại dữ liệu; chung tác vụ và chống trùng với TikTok / API. |
