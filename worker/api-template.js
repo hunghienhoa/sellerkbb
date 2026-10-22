@@ -1668,7 +1668,9 @@ async function advanceManualSyncJob(env, expectedJobId="") {
     const result=await runAutoSync(env,days,"manual_scan",offset);
     if(result.ok!==true)throw new Error(result.error||"TikTok LIVE scan failed");
     const completedDays=offset+days;
-    const next={...leased,phase:completedDays>=MANUAL_SYNC_DAYS?"affiliate":"scan",
+    const next={...leased,phase:"scan",
+      // A final scan must checkpoint the pending-room ID list before switching
+      // to affiliate mode; otherwise the affiliate phase is an empty queue.
       completedDays,windowStart:shiftDateKey(1-MANUAL_SYNC_DAYS),
       windowEndExclusive:shiftDateKey(1),fetched:Number(leased.fetched||0)+Number(result.fetched||0),
       cached:Number(result.cached||0),snapshotAt:result.snapshotAt||null,
