@@ -514,7 +514,7 @@ try {
   await page.click('#nav [data-section="users"]');
   assert(await page.$eval('#section-users',e=>e.querySelectorAll('.user-list-avatar').length>=6),"User account avatars are missing from the Users page");
   assert(await page.$('#usersDockBtn')===null,"Users dock still exists");
-  const approvedRoles=await page.$eval('#section-users .approved-user-row .approved-user-role-full',els=>els.map(e=>e.textContent.trim()));
+  const approvedRoles=await page.$$eval('#section-users .approved-user-row .approved-user-role-full',els=>els.map(e=>e.textContent.trim()));
   const roleRank={'Quản trị viên':0,'Nhân viên vận hành livestream':1,'Host Livestream':2};
   assert(approvedRoles[0]==='Quản trị viên',"Approved accounts must start with administrators");
   assert(approvedRoles.every((role,i)=>i===0||(roleRank[approvedRoles[i-1]]??9)<=(roleRank[role]??9)),"Approved accounts are not sorted Admin → Operator → Host");
