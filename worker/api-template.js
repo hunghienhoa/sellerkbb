@@ -694,6 +694,8 @@ async function fetchCreatorLiveCoreStats(env, session) {
 
 async function fetchLiveShopProductBreakdown(env, accessToken, session) {
   const liveId = String(session?.liveId || "");
+  // Never fetch Affiliate product data for channels outside SellerKBB allowlist.
+  if (!isAllowedSellerKbbLiveChannel(session)) return { affiliateDataAvailable: false, affiliateError: "channel_not_allowed" };
   const shopCipher = String(session?.shopCipher || "");
   const totalGmv = moneyNumber(session?.gmvAmount);
   if (session?.creatorGmvAvailable !== true) {
@@ -1598,6 +1600,7 @@ async function runAutoSync(env, lookbackDays = 2, reason = "hourly") {
     }
 
     const merged = [...byId.values()]
+      .filter(isAllowedSellerKbbLiveChannel)
       .filter(item => Number(item?.startTimeSeconds || 0) >= cutoffSeconds)
       .sort((a, b) => Number(b.startTimeSeconds || 0) - Number(a.startTimeSeconds || 0))
       .slice(0, Math.min(12000, Number(settings.firestoreMaxSessions || 12000)));
