@@ -83,7 +83,9 @@ try {
   assert(creatorPreview.length===2&&creatorPreview.some(x=>x.channel==='shopkhangbaby')&&creatorPreview.some(x=>x.channel==='mekhangsua'),"Creator Authorization must show exactly the two SellerKBB channels");
   assert(creatorPreview.every(x=>x.text.includes('Đã kết nối')&&x.text.includes('Access Token + Refresh Token riêng')&&x.text.includes('Refresh Token:')&&x.text.includes('Có · tự gia hạn')),"Creator preview Refresh Token status/safety copy missing");
   assert((await page.$$('[data-connect-creator]')).length===2,"Creator connect/re-authorize controls missing");
-  assert((await page.$$('[data-refresh-creator]')).length===2,"Creator manual Refresh Token controls missing");
+  assert((await page.$('[data-refresh-creator]')).length===2,"Creator manual Refresh Token controls missing");
+  await page.click('[data-creator-channel="shopkhangbaby"] > summary');
+  assert(await page.$eval('[data-creator-channel="shopkhangbaby"]',e=>e.open),"Creator authorization disclosure must expand");
   await page.click('[data-refresh-creator="shopkhangbaby"]');
   assert(await page.$eval('#actionToast',e=>e.textContent.includes('Refresh Token')&&e.textContent.includes('shopkhangbaby')),"Creator preview manual Refresh Token flow missing");
   await page.click('[data-connect-creator="shopkhangbaby"]');
@@ -507,7 +509,7 @@ try {
   await page.click('#nav [data-section="users"]');
   assert(await page.$eval('#section-users',e=>e.querySelectorAll('.user-list-avatar').length>=6),"User account avatars are missing from the Users page");
   assert(await page.$('#usersDockBtn')===null,"Users dock still exists");
-  const approvedRoles=await page.$$eval('#section-users .approved-user-row .tag',els=>els.map(e=>e.textContent.trim()));
+  const approvedRoles=await page.$eval('#section-users .approved-user-row .approved-user-role-full',els=>els.map(e=>e.textContent.trim()));
   const roleRank={'Quản trị viên':0,'Nhân viên vận hành livestream':1,'Host Livestream':2};
   assert(approvedRoles[0]==='Quản trị viên',"Approved accounts must start with administrators");
   assert(approvedRoles.every((role,i)=>i===0||(roleRank[approvedRoles[i-1]]??9)<=(roleRank[role]??9)),"Approved accounts are not sorted Admin → Operator → Host");
@@ -576,6 +578,13 @@ try {
   await page.setViewport({width:390,height:844,deviceScaleFactor:1});
   await page.reload({waitUntil:"domcontentloaded"});
   await page.waitForSelector("#app:not(.hidden)",{timeout:30000});
+  await page.$eval('#nav [data-section="users"]',e=>e.click());
+  const mobileUserCards=await page.$eval('#section-users .approved-user-summary',els=>els.map(e=>{
+    const root=e.getBoundingClientRect(),identity=e.querySelector('.user-identity').getBoundingClientRect(),actions=e.querySelector('.approved-user-actions').getBoundingClientRect();
+    return {width:root.width,vw:innerWidth,height:root.height,nonOverlap:identity.right<=actions.left+2};
+  }));
+  assert(mobileUserCards.length>=6&&mobileUserCards.every(x=>x.width<x.vw&&x.height<95&&x.nonOverlap),"Approved user rows must be compact without name/action overlap on mobile");
+  assert(await page.$eval('#section-users .approved-user-role-compact',e=>getComputedStyle(e).display!=='none'),"Short role badge must be visible on mobile");
   await page.$eval('#nav [data-section="tiktok"]',e=>e.click());
   await page.waitForSelector('#section-tiktok.active [data-creator-auth-card]');
   const mobileCreatorLayout=await page.$$eval('#section-tiktok [data-creator-channel]',els=>els.map(e=>{const r=e.getBoundingClientRect();return {left:r.left,right:r.right,width:r.width,vw:innerWidth};}));
