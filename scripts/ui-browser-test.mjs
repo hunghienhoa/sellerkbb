@@ -98,7 +98,7 @@ try {
   assert(await page.$('#previewSyncNow')!==null,"Preview Sync-now button missing");
   await page.click('#previewSyncNow');
   await sleep(750);
-  assert(await page.$eval('#actionToast',e=>e.textContent.includes('đồng bộ 30 ngày thành công')),"Preview Sync-now flow missing success toast");
+  assert(await page.$eval('#actionToast',e=>e.textContent.includes('đồng bộ 120 ngày thành công')),"Preview Sync-now flow missing success toast");
   await page.click('#nav [data-section="storage"]');
   assert(await page.$('#downloadBusinessBackup')!==null,"Business backup JSON button missing");
   assert(await page.$('[data-business-backup-card]')!==null,"Business backup card missing");
@@ -115,7 +115,7 @@ try {
   const toastBeforeRefresh=await page.$eval('#actionToast',e=>e.textContent);
   await page.click('#dataRefreshBtn');
   await sleep(70);
-  assert(await page.$eval('#dataRefreshBtn',e=>e.disabled&&e.getAttribute('aria-busy')==='true'&&e.textContent.includes('Đang đồng bộ')&&e.textContent.includes('30 ngày')),"Dashboard refresh must launch the same 30-day sync job and prevent double clicks");
+  assert(await page.$eval('#dataRefreshBtn',e=>e.disabled&&e.getAttribute('aria-busy')==='true'&&e.textContent.includes('Đang đồng bộ')&&e.textContent.includes('120 ngày')),"Dashboard refresh must launch the same 30-day sync job and prevent double clicks");
   await sleep(850);
   assert(await page.$eval('#dataRefreshBtn',e=>e.classList.contains('is-success')&&e.textContent.includes('Đã cập nhật')),"Dashboard must report success after 30-day sync completes");
   assert((await page.$eval('#actionToast',e=>e.textContent))===toastBeforeRefresh,"Latest-data refresh must not show a toast notification");
