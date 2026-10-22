@@ -464,4 +464,13 @@ assert(read("AGENTS.md").includes("Mandatory UI/design skills")&&read("AGENTS.md
 assert(read("PRODUCT.md").includes("shopkhangbaby")&&read("PRODUCT.md").includes("mekhangsua"), "Impeccable product context missing");
 assert(read("DESIGN.md").includes("Three-skill design workflow"), "Design guidelines must connect all three skills");
 assert(read("README.md").includes("v1.49.5")&&read("README.md").includes("Taste Skill"), "Design-skill release docs missing");
-console.log("Project structure, syntax, business safety, desktop/mobile UI, three design skills, documented routing and release checks OK");
+const firestoreRules=read("firebase/firestore.rules");
+assert(firestoreRules.includes("match /liveAssignments/{liveId}") && firestoreRules.includes("match /liveKpiDrafts/{liveId}"), "Restricted delegation documents missing");
+assert(firestoreRules.includes("validAssignment(liveId)") && firestoreRules.includes("validOperatorDraft(liveId)") && firestoreRules.includes("currentUser().role == 'operator'"), "Operator Firestore write constraints missing");
+assert(firestoreRules.includes("allow create, update, delete: if isAdmin();"), "LIVE financial documents must remain admin write only");
+assert(html.includes("canAssignLiveStaff()") && html.includes("data-approved-perm=\"live.assign\"") && html.includes("data-perm=\"live.assign\""), "Admin user-editor toggle for operator tagging missing");
+assert(html.includes("collection(state.db,'liveKpiDrafts')") && html.includes("status:'pending'"), "Operator KPI must save to pending drafts");
+assert(html.includes("async function approveManualKpiDraft") && html.includes("runTransaction(state.db"), "Admin draft approval must be a transaction");
+assert(html.includes("manualKpiEntries:entries") && html.includes("manualKpiApprovedBy:state.user.uid"), "Approved KPI attribution missing");
+assert(html.includes("session?.kpiDraft?.status==='pending'") && html.includes("KPI nháp · chờ Admin duyệt"), "Pending drafts need a clearly visible non-final status");
+console.log("Project structure, security boundary, delegated tagging, pending KPI draft approval and desktop/mobile checks OK");
