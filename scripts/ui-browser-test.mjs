@@ -186,6 +186,11 @@ try {
   assert(await page.$eval('#reconcileModalBody',e=>e.textContent.includes('Bảo vệ đối soát 60 ngày')&&e.textContent.includes('15 ngày')&&e.textContent.includes('6 ngày')),"Reconciliation retention/return-window explanation missing");
   assert(await page.$eval('#reconcileModalBody',e=>e.textContent.includes('GMV LIVE tổng')&&e.textContent.includes('GMV từ shopkhangbaby')&&e.textContent.includes('GMV Affiliate')&&!e.textContent.includes('Hoa hồng Affiliate')&&e.textContent.includes('GMV chờ đối soát')&&e.textContent.includes('Đơn hủy từ Livestream')&&e.textContent.includes('GMV sau khi hoàn hủy')&&e.textContent.includes('KPI tự động:')),"Reconciliation popup must show Affiliate GMV without commission");
   assert(await page.$eval('#reconcileModalBody',e=>e.textContent.includes('Quy tắc Affiliate:')&&e.textContent.includes('GMV sản phẩm Affiliate vẫn được cộng vào GMV phiên và cơ sở tính KPI')),"Reconciliation popup Affiliate KPI rule missing");
+  const noticeGapDesktop=await page.$eval('#reconcileModalBody [data-reconcile-notices]',e=>{
+    const [first,second]=e.querySelectorAll('.notice');
+    return {count:e.querySelectorAll('.notice').length,gap:second.getBoundingClientRect().top-first.getBoundingClientRect().bottom};
+  });
+  assert(noticeGapDesktop.count===2&&noticeGapDesktop.gap>=11,"Desktop Affiliate rule and KPI warning must be separated by visible spacing");
   assert(await page.$eval('#reconcileModalBody',e=>e.textContent.includes('KPI tạm tính')&&e.textContent.includes('Có tín hiệu LIVE · tính KPI')),"Reconciliation attribution must show confirmed/provisional KPI inclusion");
   const returnFilter=[...await page.$$('#reconcileModalBody [data-reconcile-filter]')];
   assert(returnFilter.length>=8,"Reconciliation filter chips missing");
@@ -454,13 +459,24 @@ try {
   await page.click('#saveMaintenance');
   await sleep(100);
   await page.click('#nav [data-section="staff"]');
-  assert(await page.$eval('#section-staff',e=>e.textContent.includes('độc lập hoàn toàn với tài khoản đăng nhập')),"Staff/account separation notice missing");
+  assert(await page.$eval('#section-staff',e=>e.textContent.includes('Nhân sự độc lập với tài khoản đăng nhập')),"Staff/account separation notice missing");
   const defaultHostStaff=await page.$eval('#section-staff',e=>[...e.querySelectorAll('[data-staff-row]')].map(x=>x.textContent.trim()));
   assert(defaultHostStaff.some(x=>x.includes('Thảo My')&&x.includes('Host Livestream')),"Default Thảo My Host staff missing");
   assert(defaultHostStaff.some(x=>x.includes('Dung')&&x.includes('Host Livestream')),"Default Dung Host staff missing");
   assert(defaultHostStaff.some(x=>x.includes('Tâm')&&x.includes('Host Livestream')),"Default Tâm Host staff missing");
   assert(defaultHostStaff.some(x=>x.includes('Hùng Bắc Giang')&&x.includes('Nhân viên vận hành Livestream')),"Default Hùng Bắc Giang Operator staff missing");
   assert(defaultHostStaff.some(x=>x.includes('Hùng Hiền Hoà')&&x.includes('Nhân viên vận hành Livestream')),"Default Hùng Hiền Hoà Operator staff missing");
+  await page.click('[data-staff-edit="staff-dung"]');
+  assert(await page.$eval('[data-staff-google="staff-dung"]',e=>[...e.options].some(x=>x.value==='dung')),"Staff Gmail selector must include an approved Google login with the same role");
+  await page.select('[data-staff-google="staff-dung"]','dung');
+  await page.click('[data-staff-save="staff-dung"]');
+  assert(await page.$eval('[data-staff-row="staff-dung"]',e=>e.textContent.includes('Đã liên kết ảnh Gmail')),"Staff Gmail photo link must be saved");
+  await page.click('#nav [data-section="users"]');
+  const dungGooglePhoto=await page.$eval('[data-approved-user="dung"] img[data-user-avatar]',e=>e.src);
+  await page.click('#nav [data-section="kpi"]');
+  const dungKpiPhoto=await page.$eval('[data-kpi-table="final"] tbody tr',rows=>rows.querySelector('img.kpi-person-avatar')?.src);
+  const dungKpiAvatar=await page.$$eval('[data-kpi-table="final"] tbody tr',rows=>rows.map(row=>({name:row.cells[0]?.textContent||'',src:row.querySelector('img.kpi-person-avatar')?.src||'',alt:row.querySelector('img.kpi-person-avatar')?.alt||''})).find(r=>r.name.includes('Dung')));
+  assert(dungKpiAvatar?.src===dungGooglePhoto&&dungKpiAvatar.alt.includes('Dung'),"Linked KPI staff must use the approved Gmail avatar, not the generic initial");
 
   await page.$eval('#newStaffName',e=>e.value='Host Mới');
   await page.select('#newStaffRole','host');
@@ -689,6 +705,11 @@ try {
   assert(mobileReconLayout.bodyOverflowY==='auto'||mobileReconLayout.bodyOverflowY==='scroll',"Mobile popup content must scroll internally");
   assert(mobileReconLayout.text.includes('Chờ đóng hàng')&&mobileReconLayout.text.includes('Đang giao')&&mobileReconLayout.text.includes('Đang hoàn / trả'),"Mobile reconciliation status tags missing");
   assert(await page.$eval('#reconcileModalBody .reconcile-retention-note',e=>e.textContent.includes('60 ngày')),"Mobile reconciliation 60-day protection note missing");
+  const noticeGapMobile=await page.$eval('#reconcileModalBody [data-reconcile-notices]',e=>{
+    const [first,second]=e.querySelectorAll('.notice');
+    return second.getBoundingClientRect().top-first.getBoundingClientRect().bottom;
+  });
+  assert(noticeGapMobile>=11,"Mobile Affiliate and KPI notices must not stick together");
   assert(await page.$eval('body',e=>getComputedStyle(e).overflow==='hidden'),"Mobile popup must lock page background scrolling");
   assert(await page.$eval(mobileOpenButton,e=>e.classList.contains('hidden')),"Mobile Xem đơn button must hide while popup is open");
   await page.evaluate(()=>{const body=document.querySelector('#reconcileModalBody');body.scrollTop=body.scrollHeight;});
