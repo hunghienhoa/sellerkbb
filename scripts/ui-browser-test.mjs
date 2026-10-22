@@ -500,11 +500,14 @@ try {
   await page.click('[data-user-edit="thao-my"]');
   assert(!(await page.$eval('[data-user-editor="thao-my"]',e=>e.classList.contains('hidden'))),"Pencil button did not open approved user editor");
   await page.select('[data-approved-role="thao-my"]','operator');
+  assert(await page.$eval('[data-approved-uid="thao-my"][data-approved-perm="live.assign"]',e=>!e.disabled),"Operator assignment checkbox must be enabled when LIVE read access is checked");
+  await page.click('[data-approved-uid="thao-my"][data-approved-perm="live.assign"]');
   await page.click('[data-approved-uid="thao-my"][data-approved-perm="kpi.read"]');
   await page.click('[data-user-save="thao-my"]');
   await sleep(100);
   assert(await page.$eval('[data-approved-role="thao-my"]',e=>e.value)==='operator',"Approved user role did not update");
   assert(!(await page.$eval('[data-approved-uid="thao-my"][data-approved-perm="kpi.read"]',e=>e.checked)),"Approved user KPI permission did not update");
+  assert(await page.$eval('[data-approved-uid="thao-my"][data-approved-perm="live.assign"]',e=>e.checked),"Operator assignment permission did not persist");
   assert(await page.$eval('[data-user-editor="thao-my"]',e=>e.classList.contains('hidden')),"Editor must close after saving");
 
   page.once('dialog',dialog=>dialog.dismiss());
@@ -522,6 +525,8 @@ try {
   await page.click('#nav [data-section="users"]');
 
   await page.select('[data-role="pending-01"]','operator');
+  assert(await page.$eval('[data-uid="pending-01"][data-perm="live.assign"]',e=>!e.disabled),"Pending operator assignment permission must be selectable");
+  await page.click('[data-uid="pending-01"][data-perm="live.assign"]');
   await page.click('[data-approve="pending-01"]');
   await sleep(100);
   await page.reload({waitUntil:"domcontentloaded"});
@@ -533,6 +538,7 @@ try {
   assert(await page.$('[data-approved-user="tam"]')===null,"Deleted Preview user returned after reload");
   assert(await page.$eval('[data-approved-role="thao-my"]',e=>e.value)==='operator',"Updated Preview role did not persist after reload");
   assert(!(await page.$eval('[data-approved-uid="thao-my"][data-approved-perm="kpi.read"]',e=>e.checked)),"Updated Preview permission did not persist after reload");
+  assert(await page.$eval('[data-approved-uid="thao-my"][data-approved-perm="live.assign"]',e=>e.checked),"Updated operator assignment checkbox did not persist after reload");
 
   await page.setViewport({width:900,height:844,deviceScaleFactor:1});
   await page.reload({waitUntil:"domcontentloaded"});
@@ -786,7 +792,59 @@ try {
   await page.click('#section-live [data-apply-range="live"]');
   assert(await page.$('#section-live [data-date-calendar="live"]')===null,"Mobile calendar did not collapse after Apply");
 
-  console.log("Desktop + mobile browser smoke tests passed");
+  // Smoke test the complete delegated flow with the real preview UI, without Firestore writes.
+  const operatorUrl=new URL(previewUrl);
+  operatorUrl.searchParams.set('preview_role','operator');
+  operatorUrl.searchParams.set('preview_assign','1');
+  await page.setViewport({width:1440,height:1000,deviceScaleFactor:1});
+  await page.goto(operatorUrl.href,{waitUntil:"domcontentloaded"});
+  await page.waitForSelector('#app:not(.hidden)',{timeout:30000});
+  assert(await page.$('#nav [data-section="users"]')===null,"Operator must not gain account administration");
+  assert(await page.$('#nav [data-section="staff"]')===null,"Operator must not edit staff directory");
+  assert(await page.$('#nav [data-section="manual-kpi"]')!==null,"Delegated operator needs KPI draft workspace");
+  await page.click('#nav [data-section="live"]');
+  await page.click('#section-live [data-range-mode="30d"]');
+  const delegatedRow='#section-live .desktop-live-table tbody tr:has(.live-reconciled-badge)';
+  const delegatedId=await page.$eval(delegatedRow,e=>e.dataset.liveSession);
+  assert(Boolean(delegatedId),"Need a finalized sample LIVE for delegated role test");
+  await page.$eval(delegatedRow+' [data-manual-kpi]',e=>{e.checked=true;e.dispatchEvent(new Event('change',{bubbles:true}));});
+  await page.select(delegatedRow+' [data-manual-type]','mega');
+  await page.click(delegatedRow+' [data-save-session]');
+  assert(await page.$eval('#actionToast',e=>e.textContent.includes('Mega Live')),"Operator must be able to classify a Mega LIVE");
+  await page.click('#nav [data-section="manual-kpi"]');
+  await page.click('#section-manual-kpi [data-range-mode="30d"]');
+  const delegatedCard='#section-manual-kpi [data-manual-session="'+delegatedId+'"]';
+  assert(await page.$(delegatedCard+' [data-manual-save]')!==null,"Operator must have a KPI draft save button");
+  await page.select(delegatedCard+' [data-manual-host-person]','staff-dung');
+  await page.select(delegatedCard+' [data-manual-operator-person]','staff-hung-bg');
+  await page.$eval(delegatedCard+' [data-manual-host-gmv]',e=>{e.value='777777';e.dispatchEvent(new Event('input',{bubbles:true}));});
+  await page.click(delegatedCard+' [data-manual-save]');
+  assert(await page.$eval('#actionToast',e=>e.textContent.includes('chờ Admin duyệt')),"Operator draft must await approval");
+  assert(await page.$eval(delegatedCard,e=>e.textContent.includes('Chờ Admin duyệt')&&e.textContent.includes('chưa cộng')),"Pending KPI must show warning");
+  await page.click('#nav [data-section="kpi"]');
+  await page.select('#section-kpi [data-kpi-month-select]','2026-10');
+  assert(!(await page.$eval('[data-kpi-table="final"]',e=>e.textContent.includes('777.777'))),"Pending operator GMV must not count as finalized KPI");
+
+  await page.goto(previewUrl,{waitUntil:"domcontentloaded"});
+  await page.waitForSelector('#app:not(.hidden)',{timeout:30000});
+  await page.click('#nav [data-section="manual-kpi"]');
+  await page.click('#section-manual-kpi [data-range-mode="30d"]');
+  assert(await page.$(delegatedCard+' [data-manual-approve]')!==null,"Admin approval button must appear for delegated draft");
+  await page.click(delegatedCard+' [data-manual-approve]');
+  assert(await page.$eval('#actionToast',e=>e.textContent.includes('Đã duyệt KPI thủ công')),"Admin approval must show success");
+  await page.click('#nav [data-section="kpi"]');
+  await page.select('#section-kpi [data-kpi-month-select]','2026-10');
+  assert(await page.$eval('[data-kpi-table="final"]',e=>e.textContent.includes('777.777')),"Approved delegated manual GMV must count in finalized KPI");
+
+  const noAssignUrl=new URL(previewUrl);
+  noAssignUrl.searchParams.set('preview_role','operator');
+  await page.goto(noAssignUrl.href,{waitUntil:"domcontentloaded"});
+  await page.waitForSelector('#app:not(.hidden)',{timeout:30000});
+  assert(await page.$('#nav [data-section="manual-kpi"]')===null,"Operator must lose draft access if permission is disabled");
+  await page.click('#nav [data-section="live"]');
+  await page.click('#section-live [data-range-mode="30d"]');
+  assert(await page.$('#section-live [data-save-session]')===null,"Operator without live.assign must not edit LIVE tags");
+  console.log("Desktop + mobile browser smoke tests and delegated KPI draft approval passed");
 } catch(error) {
   fs.mkdirSync('../verification',{recursive:true});
   for(const page of await browser.pages()) {
