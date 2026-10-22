@@ -334,6 +334,22 @@ button{-webkit-tap-highlight-color:transparent}
 .topbar-account-details span{font-size:10px;color:var(--muted);font-weight:650}
 .topbar-account-details b{font-size:10.5px;color:#604654;text-align:right}
 .topbar-account-logout{width:100%;justify-content:center}
+.account-profile-actions{display:flex;gap:8px;margin:2px 0 12px}
+.account-profile-actions .btn{flex:1;justify-content:center;min-height:38px;font-size:12px}
+.account-profile-editor{display:grid;gap:12px;padding:12px 0 14px;border-bottom:1px solid var(--line)}
+.account-profile-editor.hidden{display:none!important}
+.account-profile-photo-row{display:flex;align-items:center;gap:12px}
+.account-profile-photo-preview{width:60px;height:60px;border:1px solid #ecd4df;border-radius:50%;object-fit:cover;background:var(--accent-soft);flex:0 0 60px}
+.account-profile-photo-help{display:grid;gap:6px;min-width:0}
+.account-profile-photo-help small{font-size:11px;line-height:1.45;color:var(--muted)}
+.account-profile-photo-help .btn{width:max-content;min-height:36px}
+.account-profile-field{display:grid;gap:5px;color:#654653;font-size:12px;font-weight:650}
+.account-profile-field .input{width:100%;min-width:0;font-size:16px;min-height:44px}
+.account-profile-editor-footer{display:flex;gap:8px;align-items:center;justify-content:flex-end}
+.account-profile-editor-footer .btn{min-height:40px}
+.account-profile-feedback{font-size:11.5px;line-height:1.45;color:#9c3d62}
+.account-profile-feedback:empty{display:none}
+@media(max-width:700px){.topbar-account-popover{padding:16px}.account-profile-editor-footer .btn{flex:1}.account-profile-editor-footer{justify-content:stretch}}
 .page-title{
   margin:0;
   color:#513544;
@@ -3796,7 +3812,7 @@ body.account-modal-open{overflow:hidden}
       }
     }
 
-    function setAccountMenu(open){
+    function setAccountMenu(open,restoreFocus=true){
       const btn=$('#topbarAccountBtn'), backdrop=$('#accountModalBackdrop');
       if(!btn||!backdrop)return;
       const wasOpen=!backdrop.classList.contains('hidden');
@@ -3806,7 +3822,29 @@ body.account-modal-open{overflow:hidden}
       document.body.classList.toggle('account-modal-open',open);
       $('#app').inert=open||!!state.reconcileModalSessionId;
       if(open)$('#accountModalClose')?.focus({preventScroll:true});
-      else if(wasOpen)btn.focus({preventScroll:true});
+      else if(wasOpen&&restoreFocus)btn.focus({preventScroll:true});
+    }
+    function dismissAccountOnSignOut(){
+      setAccountMenu(false,false);
+      const popover=$('#accountPopover');
+      if(popover)popover.innerHTML='';
+      document.body.classList.remove('account-modal-open');
+      $('#app').inert=false;
+    }
+    async function handleAccountLogout(){
+      dismissAccountOnSignOut();
+      if(PREVIEW){location.href='/';return;}
+      showBoot('<b>Đang đăng xuất…</b>');
+      try{
+        await signOut(state.auth);
+      }catch(error){
+        console.error('signout',error);
+        if(state.auth?.currentUser){
+          showApp();
+          bindShell();
+          showToast('Không đăng xuất được. Hãy thử lại.');
+        }
+      }
     }
 
     function renderAccountPopover(){
