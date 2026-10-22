@@ -483,4 +483,11 @@ assert(html.includes("session?.kpiDraft?.status==='pending'") && html.includes("
 assert(html.includes("function isDelegatedLiveRole(role){return role==='operator'||role==='host';}"), "Role guard must allow Host and Operator only");
 assert(html.includes("isDelegatedLiveRole(previewRole)") && html.includes("isDelegatedLiveRole(u.role)"), "Host permission must work in preview and approved user forms");
 assert(html.includes("const allowed=isDelegatedLiveRole(role)&&live?.checked===true;"), "Host assignment checkbox must depend on LIVE read");
-console.log("Project structure, Host/Operator delegation, isolated drafts, Admin approval and desktop/mobile checks OK");
+assert(html.includes('data-reconcile-notices')&&html.includes('.reconcile-notice-stack{display:grid'), "Reconciliation Affiliate/KPI banners must have dedicated gap");
+assert(html.includes('function kpiStaffIdentityHtml(uid,name')&&html.includes('kpiStaffIdentityHtml(r.uid,r.name)'), "KPI rows must display staff-specific Gmail photo or initials fallback");
+assert(html.includes('function googleAccountForStaff(member)')&&html.includes('member.googleUid'), "KPI Gmail avatar mapping must use confirmed staff identity");
+assert(html.includes('data-staff-google=')&&html.includes('staffGoogleAccountOptions(member)'), "Staff-to-approved-Gmail link selector missing");
+assert(html.includes("safePhotoURL(user.photoURL)")&&html.includes("async function refreshStaffGoogleLinks()"), "Admin must refresh safely cached staff Gmail avatar");
+assert(html.includes("googlePhotoURL:safePhotoURL(x?.googlePhotoURL)")&&html.includes("photoURL:safePhotoURL(google?.photoURL)||safePhotoURL(member.googlePhotoURL)"), "KPI avatars must work for non-admin through sanitized staff profile cache");
+assert(html.includes("await refreshStaffGoogleLinks()"), "Staff Gmail photo cache should be refreshed after loading approved accounts");
+console.log("Project structure, separate notice layout, Gmail KPI avatars, staff linking, user privacy, KPI business safety and browser checks OK");
