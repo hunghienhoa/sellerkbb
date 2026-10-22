@@ -477,7 +477,7 @@ assert(!html.includes("tính toàn bộ phiên từ ${displayDateKey(monthRange.
 assert(html.includes('id="dataRefreshBtn"'), "Dashboard latest-data refresh control missing");
 assert(html.includes("async function refreshLatestData()")&&html.includes("await withTimeout(loadData(),STARTUP_TIMEOUT_MS,'Cập nhật dữ liệu')"), "Non-admin Dashboard refresh must reload accessible data");
 assert(html.includes("async function request120DaySync(origin='tiktok',retryPending=false)"), "TikTok/Dashboard 120-day sync must share one launcher");
-assert(html.includes("await request120DaySync('dashboard')")&&html.includes("$('#syncTikTokNow').onclick=()=>request120DaySync('tiktok',manualJob?.state==='partial')"), "Dashboard and TikTok 120-day sync must use same job");
+assert(html.includes("await request120DaySync('dashboard')")&&html.includes("$('#syncTikTokNow').onclick=()=>request120DaySync('tiktok',manualIncomplete)"), "Dashboard and TikTok 120-day sync must use same job");
 assert(html.includes("method:'POST',body:JSON.stringify({days:120,retryPending})"), "120-day sync payload missing");
 assert(html.includes("if(!can('live.read')&&!can('kpi.read'))")&&html.includes("request120DaySync('dashboard')"), "Staff LIVE/KPI access must permit 120-day TikTok sync");
 assert(worker.includes('if (url.pathname === "/api/tiktok/autosync/run" && request.method === "POST") {') && worker.includes('await requireReportAccess(request,env);'), "Approved staff must retain manual sync permission");
