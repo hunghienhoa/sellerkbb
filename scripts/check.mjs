@@ -566,5 +566,5 @@ assert(worker.includes("affiliateIds:ids") && worker.includes("ids.slice(offset,
 assert(worker.includes('state:complete?(unresolved>0?"partial":"success"):"running"'),"Backfill must not declare full success with unresolved Affiliate GMV");
 assert(worker.includes("affiliateFailureReasons:manualAffiliateFailureReasons(all)"),"Backfill must diagnose reasons for missing Affiliate values");
 assert(worker.includes("existing?.state===\"partial\"") && worker.includes("retryPending:resumeMissing"),"Follow-up sync must retry only unresolved rooms without starting over");
-assert(html.includes("manualJob.state==='partial'") && html.includes("Kiểm tra lại Affiliate còn thiếu"),"UI must expose truthful partial status and one-click retry");
+assert(html.includes("const manualIncomplete=") && html.includes("Kiểm tra lại Affiliate còn thiếu"),"UI must expose truthful partial status and one-click retry");
 console.log("Project structure, durable Affiliate merge, resumable 120-day backfill, quota-safe sync and honest Dashboard status OK");
