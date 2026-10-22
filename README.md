@@ -4,7 +4,7 @@
 
 ### Báo cáo TikTok LIVE · KPI nhân sự · Tự đồng bộ 24/24
 
-**Phiên bản hiện tại: v1.49.16**
+**Phiên bản hiện tại: v1.49.17**
 
 [![GitHub Release](https://img.shields.io/github/v/release/hunghienhoa/sellerkbb?label=Release)](https://github.com/hunghienhoa/sellerkbb/releases)
 [![GitHub Actions](https://img.shields.io/github/actions/workflow/status/hunghienhoa/sellerkbb/deploy.yml?branch=main&label=Ki%E1%BB%83m%20tra%20%26%20Backup)](https://github.com/hunghienhoa/sellerkbb/actions)
@@ -17,7 +17,12 @@
 
 ---
 
-## 🆕 Cập nhật mới nhất — v1.49.16
+## 🆕 Cập nhật mới nhất — v1.49.17
+
+- Sửa mục cài đặt iPhone trong Users: bỏ nút Shortcuts mở trình chỉnh sửa rỗng, dùng nút **Xem cách cài trên iPhone** để hướng dẫn cài PWA qua Safari và xác nhận của iOS.
+- Giữ nguyên dữ liệu LIVE, KPI, GMV Affiliate và phân quyền.
+
+### v1.49.16 — Bổ sung PWA và sửa ô chọn tháng
 
 - **Bổ sung nền tảng PWA:** `/manifest.webmanifest`, biểu tượng ứng dụng `/pwa-icon.svg`, đăng ký `/sw.js`, tên SellerKBB và chế độ `standalone` để cài từ màn hình chính. Service worker chỉ quản lý vòng đời, không cache dữ liệu API, phiên đăng nhập hay báo cáo riêng tư.
 - **Sửa ô chọn tháng KPI:** bỏ viền focus mặc định của `select` nằm bên trong khung thiết kế, giữ lại vòng focus trên khung ngoài để không tạo viền chữ nhật chồng lên giao diện.
