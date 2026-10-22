@@ -591,6 +591,24 @@ function mergeLiveSessionSnapshots(previous = {}, incoming = {}) {
       merged.affiliateSource = prev.affiliateSource;
     }
   }
+  // Verified Affiliate figures are durable. A failed/partial fresh API response
+  // must not turn an already verified historical LIVE back into "unavailable".
+  if (prev.affiliateDataAvailable === true && prev.creatorGmvAvailable === true &&
+      next.affiliateDataAvailable !== true) {
+    for (const field of [
+      "affiliateDataAvailable", "affiliateDataConsistent", "shopProductGmvAmount",
+      "affiliateGmvAmount", "shopProductItemsSold", "affiliateItemsSold",
+      "affiliateSkuOrders", "shopProductSkuOrders", "shopProductMainOrders",
+      "affiliateSource", "affiliateUpdatedAt", "affiliateProducts",
+      "affiliateCommissionAvailable", "affiliateCommissionAmount"
+    ]) {
+      if (prev[field] !== undefined) merged[field] = prev[field];
+    }
+    merged.affiliateNeedsRefresh = next.creatorGmvAvailable === true &&
+      moneyNumber(next.gmvAmount) !== moneyNumber(prev.gmvAmount);
+  } else if (next.affiliateDataAvailable === true) {
+    merged.affiliateNeedsRefresh = false;
+  }
   if (preserveCompletedSnapshot) {
     merged.gmvAmount = prev.gmvAmount;
     merged.currency = prev.currency || next.currency || "VND";
@@ -761,12 +779,24 @@ async function fetchLiveShopProductBreakdown(env, accessToken, session) {
   };
 }
 
-async function enrichLiveAffiliateBreakdowns(env, accessToken, sessions, limit = 12) {
-  const candidates = (sessions || [])
+async function enrichLiveAffiliateBreakdowns(env, accessToken, sessions, limit = 12, reason = "hourly") {
+  const cutoffSeconds = Math.floor((Date.now() - 30 * 86400000) / 1000);
+  const all = (sessions || [])
     .filter(session => session?.liveId && session?.shopCipher && isAllowedSellerKbbLiveChannel(session))
-    .sort((a, b) => Number(b?.startTimeSeconds || 0) - Number(a?.startTimeSeconds || 0))
-    .slice(0, Math.max(1, Number(limit || 12)));
-
+    .filter(session => Number(session.startTimeSeconds || 0) >= cutoffSeconds);
+  // Prioritize unresolved and changed-GMV sessions; rotate retries across the
+  // whole 30-day cache instead of always retrying the newest failed 12/24.
+  const missing = all.filter(s => s.affiliateDataAvailable !== true || s.affiliateNeedsRefresh === true)
+    .sort((a, b) => {
+      const attempts = Date.parse(a.affiliateCheckedAt || "") || 0;
+      const other = Date.parse(b.affiliateCheckedAt || "") || 0;
+      return attempts - other || Number(b.startTimeSeconds || 0) - Number(a.startTimeSeconds || 0);
+    });
+  const verified = all.filter(s => s.affiliateDataAvailable === true && s.affiliateNeedsRefresh !== true)
+    .sort((a, b) => (Date.parse(a.affiliateCheckedAt || a.affiliateUpdatedAt || "") || 0) -
+      (Date.parse(b.affiliateCheckedAt || b.affiliateUpdatedAt || "") || 0));
+  const max = Math.max(1, Number(limit || 12));
+  const candidates = [...missing, ...verified].slice(0, max);
   let enriched = 0;
   const errors = [];
   const concurrency = 3;
@@ -784,17 +814,28 @@ async function enrichLiveAffiliateBreakdowns(env, accessToken, sessions, limit =
       }
     }));
     for (const { session, breakdown } of values) {
-      if (breakdown?.affiliateDataAvailable) {
+      session.affiliateCheckedAt = new Date().toISOString();
+      if (breakdown?.affiliateDataAvailable === true) {
         Object.assign(session, breakdown);
+        session.affiliateNeedsRefresh = false;
+        session.affiliateError = "";
         enriched++;
-      } else if (breakdown?.affiliateError) {
-        session.affiliateDataAvailable = false;
-        session.affiliateError = breakdown.affiliateError;
-        errors.push({ liveId: String(session?.liveId || ""), message: String(breakdown.affiliateError) });
+      } else {
+        // A transient API failure or attribution mismatch is not proof that
+        // previously verified GMV was zero; retain the last verified snapshot.
+        session.affiliateError = String(breakdown?.affiliateError || "affiliate_unverified");
+        errors.push({ liveId: String(session.liveId || ""), message: session.affiliateError });
       }
     }
   }
-  return { checked: candidates.length, enriched, errors: errors.slice(0, 5) };
+  return {
+    checked: candidates.length,
+    enriched,
+    verified: all.filter(s => s.affiliateDataAvailable === true).length,
+    pending: all.filter(s => s.affiliateDataAvailable !== true || s.affiliateNeedsRefresh === true).length,
+    total: all.length,
+    errors: errors.slice(0, 5)
+  };
 }
 
 function orderSubtotal(order) {
@@ -1506,7 +1547,9 @@ async function executeManualSyncJob(env, job) {
     finishedAt: result?.finishedAt || new Date().toISOString(),
     fetched: Number(result?.fetched || 0),
     cached: Number(result?.cached || 0),
-    error: result?.ok === true ? null : (result?.error || "Đồng bộ TikTok không hoàn tất")
+    error: result?.ok === true ? null : (result?.error || "Đồng bộ TikTok không hoàn tất"),
+    affiliateVerified: Number(result?.affiliateVerified ?? result?.affiliateEnrichment?.verified ?? 0),
+    affiliatePending: Number(result?.affiliatePending ?? result?.affiliateEnrichment?.pending ?? 0)
   };
   await saveManualSyncJob(env, completed);
   return completed;
@@ -1529,12 +1572,6 @@ async function runAutoSync(env, lookbackDays = 2, reason = "hourly") {
     const startDate = shiftDateKey(-(days - 1));
     const endDate = shiftDateKey(1);
     const data = await syncLivePerformance(env, token.access_token, startDate, endDate);
-    const affiliateEnrichment = await enrichLiveAffiliateBreakdowns(
-      env,
-      token.access_token,
-      data.sessions || [],
-      reason === "hourly" ? 12 : reason === "manual" ? 24 : 18
-    );
     const settings = await getMaintenanceSettings(env);
     const retentionMs = Math.min(180, Number(settings.retentionDays || 180)) * 86400000;
     const cutoffSeconds = Math.floor((Date.now() - retentionMs) / 1000);
@@ -1549,7 +1586,8 @@ async function runAutoSync(env, lookbackDays = 2, reason = "hourly") {
       const started = Number(item?.startTimeSeconds || 0);
       if (!id || started < cutoffSeconds) continue;
       const insideRefreshedWindow = started >= syncWindowStartSeconds && started < syncWindowEndSeconds;
-      if (insideRefreshedWindow && !freshIds.has(id)) continue;
+      // A partially available seller API list must never erase earlier
+      // synced LIVE/Affiliate results. Retention cleanup is handled above.
       byId.set(id, item);
     }
     for (const item of data.sessions || []) {
@@ -1564,6 +1602,10 @@ async function runAutoSync(env, lookbackDays = 2, reason = "hourly") {
       .sort((a, b) => Number(b.startTimeSeconds || 0) - Number(a.startTimeSeconds || 0))
       .slice(0, Math.min(12000, Number(settings.firestoreMaxSessions || 12000)));
 
+    const affiliateEnrichment = await enrichLiveAffiliateBreakdowns(
+      env, token.access_token, merged,
+      reason === "manual" ? 80 : reason === "hourly" ? 12 : 18, reason
+    );
     const reconciliation = await refreshKpiReconciliations(env, token.access_token, merged, reason);
     const nextRaw = JSON.stringify(merged);
     const oldRaw = JSON.stringify(existing);
@@ -1584,6 +1626,8 @@ async function runAutoSync(env, lookbackDays = 2, reason = "hourly") {
       allowedChannels: data.allowedChannels || [...SELLERKBB_ALLOWED_LIVE_CHANNELS],
       tokenRefreshed: Boolean(tokenResult.refreshed),
       affiliateEnrichment,
+      affiliateVerified: affiliateEnrichment.verified,
+      affiliatePending: affiliateEnrichment.pending,
       reconciliation
     };
     await writeAutoSyncStatus(env, status);
