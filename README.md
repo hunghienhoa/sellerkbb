@@ -4,7 +4,7 @@
 
 ### Báo cáo TikTok LIVE · KPI nhân sự · Tự đồng bộ 24/24
 
-**Phiên bản hiện tại: v1.49.20**
+**Phiên bản hiện tại: v1.49.21**
 
 [![GitHub Release](https://img.shields.io/github/v/release/hunghienhoa/sellerkbb?label=Release)](https://github.com/hunghienhoa/sellerkbb/releases)
 [![GitHub Actions](https://img.shields.io/github/actions/workflow/status/hunghienhoa/sellerkbb/deploy.yml?branch=main&label=Ki%E1%BB%83m%20tra%20%26%20Backup)](https://github.com/hunghienhoa/sellerkbb/actions)
@@ -17,7 +17,13 @@
 
 ---
 
-## 🆕 Cập nhật mới nhất — v1.49.20
+## 🆕 Cập nhật mới nhất — v1.49.21
+
+- **Bổ sung logo KHANG BABY có chữ:** sử dụng đúng ảnh do người dùng cung cấp, loại bỏ phần nền trống và tối ưu PNG trong suốt cho màn hình đăng nhập SellerKBB và thanh điều hướng PC/mobile. Logo căn giữa phía trên tên SellerKBB tại màn hình đăng nhập, giữ nguyên nút đăng nhập Google, vai trò và dữ liệu.
+- **Tối ưu phân phối hình ảnh:** thêm `public/khangbaby-wordmark.png` và endpoint same-origin `/khangbaby-wordmark.png` trên Cloudflare Worker; asset được nhúng vào Worker khi build, không phụ thuộc GitHub Raw hay dịch vụ ảnh khác. Cân chỉnh chiều rộng 252 px đăng nhập, 178 px thanh menu, thu nhỏ trên điện thoại.
+- **Áp dụng Taste Skill, Emil Kowalski và Impeccable:** giữ thứ bậc thương hiệu và nội dung đăng nhập, bảo đảm logo không đè thông tin hay các thao tác quan trọng; không sửa KPI/GMV Affiliate hoặc token.
+
+### v1.49.20 — Sửa biểu tượng ứng dụng iPhone
 
 - **Sửa biểu tượng thêm vào Màn hình chính iPhone:** Apple Touch Icon không dùng logo chữ `K` SVG nữa mà trả ảnh em bé KHANG BABY do người dùng cung cấp, kích thước PNG 180×180, cùng tên app `SellerKBB`. Route `/apple-touch-icon.png` trả PNG thực với MIME `image/png`, không chuyển hướng sang nguồn ngoài.
 - **Đồng bộ PWA icon:** Manifest trỏ tới PNG em bé và SVG chứa ảnh em bé thay cho chữ `K` cũ; URL icon có phiên bản để hạn chế cache. Người dùng đã cài ứng dụng với biểu tượng cũ cần xóa biểu tượng khỏi màn hình chính và thêm lại bằng Safari để iOS đọc ảnh mới.
