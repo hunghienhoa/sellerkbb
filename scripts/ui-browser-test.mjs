@@ -14,6 +14,7 @@ const chrome = [
 if (!chrome) throw new Error("Chrome/Chromium executable not found");
 
 const server = http.createServer((req,res)=>{
+  if (req.url?.startsWith("/khangbaby-wordmark.png")) { res.writeHead(200,{"content-type":"image/png"}); return res.end(fs.readFileSync(new URL("../public/khangbaby-wordmark.png", import.meta.url))); }
   if (req.url === "/favicon.ico") { res.writeHead(204); return res.end(); }
   res.writeHead(200,{"content-type":"text/html; charset=utf-8","cache-control":"no-store"});
   res.end(html);
@@ -50,7 +51,8 @@ try {
   assert(await page.$('#nav .nav-group:nth-child(3) [data-section="staff"]')!==null,"Quản lý nhân sự must be a separate Quản trị tab");
   assert(await page.$eval('#nav [data-section="staff"]',e=>e.textContent.includes('Quản lý nhân sự')),"Quản lý nhân sự label is missing");
   assert(await page.$('#usersDockBtn')===null,"Duplicate external Users dock must be removed");
-  assert(await page.$eval('.side-brand .brand-lockup',e=>e.textContent.replace(/\s+/g,'').includes('SellerKBBLIVE')),"SellerKBB LIVE brand lockup is incorrect");
+  assert(await page.$eval('.side-brand .sidebar-brand-logo',e=>e.getAttribute("alt").includes("KHANG BABY")),"KHANG BABY sidebar logo is missing");
+  assert(await page.$eval('.side-brand .sidebar-brand-caption',e=>e.textContent.includes("SellerKBB")),"SellerKBB sidebar caption is missing");
   assert(await page.$eval('html',e=>getComputedStyle(e).getPropertyValue('--accent').trim())==='#e7a3c0',"Pastel pink theme accent is not active");
   assert(await page.$('#sidebar #userAvatar')===null,"Current user must no longer be inside the sidebar");
   assert(await page.$('#topbarAccountBtn #userAvatar')!==null,"Current user avatar must be the topbar trigger");
