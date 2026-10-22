@@ -4,7 +4,7 @@
 
 ### Báo cáo TikTok LIVE · KPI nhân sự · Tự đồng bộ 24/24
 
-**Phiên bản hiện tại: v1.49.15**
+**Phiên bản hiện tại: v1.49.16**
 
 [![GitHub Release](https://img.shields.io/github/v/release/hunghienhoa/sellerkbb?label=Release)](https://github.com/hunghienhoa/sellerkbb/releases)
 [![GitHub Actions](https://img.shields.io/github/actions/workflow/status/hunghienhoa/sellerkbb/deploy.yml?branch=main&label=Ki%E1%BB%83m%20tra%20%26%20Backup)](https://github.com/hunghienhoa/sellerkbb/actions)
@@ -17,7 +17,13 @@
 
 ---
 
-## 🆕 Cập nhật mới nhất — v1.49.15
+## 🆕 Cập nhật mới nhất — v1.49.16
+
+- **Bổ sung nền tảng PWA:** `/manifest.webmanifest`, biểu tượng ứng dụng `/pwa-icon.svg`, đăng ký `/sw.js`, tên SellerKBB và chế độ `standalone` để cài từ màn hình chính. Service worker chỉ quản lý vòng đời, không cache dữ liệu API, phiên đăng nhập hay báo cáo riêng tư.
+- **Sửa ô chọn tháng KPI:** bỏ viền focus mặc định của `select` nằm bên trong khung thiết kế, giữ lại vòng focus trên khung ngoài để không tạo viền chữ nhật chồng lên giao diện.
+- **Kiểm tra thiết kế:** đối chiếu Taste Skill (app screens), Emil Kowalski, Impeccable và PRODUCT/DESIGN. Chưa xác nhận kiểm thử tương tác tự động toàn bộ màn hình trên thiết bị thực tế.
+
+### v1.49.15 — Cài SellerKBB từ Users
 
 - **Users → Thêm SellerKBB vào màn hình chính (iPhone):** thêm thẻ hướng dẫn cài web app toàn màn hình qua Safari và nút **Mở Phím tắt** để chuyển đến màn hình tạo phím tắt iOS (`shortcuts://create-shortcut`). iOS không hỗ trợ website tự nhập sẵn một shortcut qua URL scheme; người dùng cần cấu hình tác vụ Mở URL trong ứng dụng Phím tắt.
 - **Hỗ trợ web app iPhone:** bổ sung `apple-mobile-web-app-capable` và tên ứng dụng iOS; giữ phong cách SellerKBB và các luồng đăng xuất, hồ sơ, KPI và dữ liệu.
