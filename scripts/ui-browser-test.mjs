@@ -834,7 +834,9 @@ try {
   assert(await page.$eval('#actionToast',e=>e.textContent.includes('Đã duyệt KPI thủ công')),"Admin approval must show success");
   await page.click('#nav [data-section="kpi"]');
   await page.select('#section-kpi [data-kpi-month-select]','2026-10');
-  assert(await page.$eval('[data-kpi-table="final"]',e=>e.textContent.includes('777.777')),"Approved delegated manual GMV must count in finalized KPI");
+  const approvedRows=await page.$eval('[data-kpi-table="final"]',e=>e.textContent);
+  if(!approvedRows.includes('777.777'))console.error('DELEGATED APPROVAL DEBUG',JSON.stringify({delegatedId,kpiText:approvedRows.slice(0,2400),manualText:await page.$eval('#section-manual-kpi',e=>e.textContent.slice(0,700))}));
+  assert(approvedRows.includes('777.777'),"Approved delegated manual GMV must count in finalized KPI");
 
   const noAssignUrl=new URL(previewUrl);
   noAssignUrl.searchParams.set('preview_role','operator');
