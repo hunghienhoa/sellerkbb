@@ -496,7 +496,7 @@ assert(html.includes('async function prepareAccountAvatar(file)')&&html.includes
 assert(html.includes('await updateDoc(doc(state.db,\'users\',state.user.uid)')&&html.includes('customDisplayName:name,customPhotoURL:uploaded'), "Account changes must persist to own Firestore profile");
 assert(html.includes('customDisplayName=String(old.customDisplayName')&&html.includes('const photoURL=customPhotoURL||'), "Google login must not override a custom SellerKBB name or avatar");
 assert(rules.includes(".affectedKeys().hasOnly([")&&rules.includes("'customDisplayName', 'customPhotoURL'"), "Self-profile permission changes must be restricted to own editable fields");
-assert(rules.includes("customPhotoURL.matches('^data:image/jpeg;base64,"), "Uploaded avatar must be limited to compressed JPEG data");
+assert(rules.includes("customPhotoURL.matches('data:image/jpeg;base64,"), "Uploaded avatar must be limited to compressed JPEG data");
 assert(html.includes('function dismissAccountOnSignOut()')&&html.includes("if(!user){\n        dismissAccountOnSignOut();"), "Null auth state must close stale account popup");
 assert(html.includes("$('#accountLogoutBtn').onclick=handleAccountLogout")&&html.includes("setAccountMenu(false,false)"), "Logout must immediately close account overlay");
 assert(html.includes('account:{customDisplayName:')&&html.includes('if(saved.account&&state.profile)'), "Preview should persist account profile edits for browser tests");
