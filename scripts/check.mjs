@@ -18,6 +18,9 @@ const safeWorker = worker
 new Function(safeWorker);
 
 const assert = (ok, message) => { if (!ok) throw new Error(message); };
+assert(html.includes('rel="manifest" href="/manifest.webmanifest"') && html.includes('navigator.serviceWorker.register("/sw.js")'),"PWA metadata/registration missing");
+assert(worker.includes('url.pathname === "/manifest.webmanifest"') && worker.includes('url.pathname === "/sw.js"'),"PWA server endpoints missing");
+assert(html.includes(".kpi-month-select:focus-visible{outline:0!important"),"KPI month double-focus outline fix missing");
 assert(html.includes('id="accountInstallGuide"') && html.includes('id="accountInstallShortcut"'), "iPhone install controls missing in account popup");
 assert(html.includes("shortcuts://create-shortcut") && html.includes("apple-mobile-web-app-capable"), "iPhone shortcut and web-app support missing");
 assert(worker.includes('const SELLERKBB_ALLOWED_LIVE_CHANNELS = new Set(["shopkhangbaby", "mekhangsua"])'), "TikTok channel allowlist must contain exactly the two approved creators");
