@@ -75,6 +75,63 @@ service cloud.firestore {
       allow create, update, delete: if isAdmin();
     }
 
+    // Dedicated restricted paths. Operators cannot modify liveSessions, KPI or GMV.
+    function canTagAndDraft() {
+      return isAdmin() || (
+        signedIn() && exists(currentUserPath()) &&
+        currentUser().status == 'approved' &&
+        currentUser().role == 'operator' &&
+        currentUser().permissions.hasAll(['live.read', 'live.assign'])
+      );
+    }
+
+    function validAssignment(liveId) {
+      let a = request.resource.data;
+      return a.keys().hasOnly([
+        'liveId', 'kpiMode', 'manualKpiType', 'hostUid', 'hostName',
+        'operatorUid', 'operatorName', 'updatedAt', 'updatedBy'
+      ]) && a.keys().hasAll([
+        'liveId', 'kpiMode', 'manualKpiType', 'hostUid', 'hostName',
+        'operatorUid', 'operatorName', 'updatedAt', 'updatedBy'
+      ])
+      && a.liveId == liveId && a.updatedBy == request.auth.uid
+      && a.updatedAt is timestamp
+      && a.kpiMode in ['auto','manual']
+      && a.manualKpiType is string
+      && a.hostUid is string && a.hostName is string
+      && a.operatorUid is string && a.operatorName is string
+      && a.hostUid.size() <= 128 && a.operatorUid.size() <= 128
+      && a.hostName.size() <= 160 && a.operatorName.size() <= 160
+      && ((a.kpiMode == 'manual' &&
+           a.manualKpiType in ['campaign','mega'] &&
+           a.hostUid == '' && a.hostName == '' &&
+           a.operatorUid == '' && a.operatorName == '')
+         || (a.kpiMode == 'auto' && a.manualKpiType == ''));
+    }
+
+    function validOperatorDraft(liveId) {
+      let d = request.resource.data;
+      return d.keys().hasOnly(['liveId','entries','status','updatedAt','updatedBy'])
+        && d.keys().hasAll(['liveId','entries','status','updatedAt','updatedBy'])
+        && d.liveId == liveId
+        && d.status == 'pending'
+        && d.updatedBy == request.auth.uid
+        && d.updatedAt is timestamp
+        && d.entries is list && d.entries.size() <= 40;
+    }
+
+    match /liveAssignments/{liveId} {
+      allow read: if hasPermission('live.read') || hasPermission('kpi.read');
+      allow create, update: if isAdmin() || (canTagAndDraft() && validAssignment(liveId));
+      allow delete: if isAdmin();
+    }
+
+    match /liveKpiDrafts/{liveId} {
+      allow read: if canTagAndDraft();
+      allow create, update: if isAdmin() || (canTagAndDraft() && validOperatorDraft(liveId));
+      allow delete: if isAdmin();
+    }
+
     match /settings/{docId} {
       allow read: if signedIn();
       allow write: if isAdmin();
