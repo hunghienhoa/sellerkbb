@@ -919,7 +919,61 @@ try {
   await page.click('#nav [data-section="live"]');
   await page.click('#section-live [data-range-mode="30d"]');
   assert(await page.$('#section-live [data-save-session]')===null,"Host without live.assign must not tag sessions");
-  console.log("Desktop + mobile browser smoke tests for Host/Operator delegation and Admin approval passed");
+
+  // Profile editor verification in isolated Preview: upload compressed image,
+  // change own display name, restore after reload, and close on logout.
+  await page.goto(previewUrl,{waitUntil:'domcontentloaded'});
+  await page.waitForSelector('#app:not(.hidden)',{timeout:30000});
+  await page.setViewport({width:390,height:844,deviceScaleFactor:1});
+  await page.click('#topbarAccountBtn');
+  await page.click('#accountProfileEdit');
+  assert(await page.$eval('#accountProfileEditor',e=>!e.classList.contains('hidden')),"Profile edit form must open inside account popup");
+  const profileBounds=await page.$eval('#accountPopover',e=>({width:e.getBoundingClientRect().width,screen:innerWidth}));
+  assert(profileBounds.width<=profileBounds.screen-10,"Editable profile popup must fit mobile viewport");
+  await page.$eval('#accountAvatarUpload',async input=>{
+    const canvas=document.createElement('canvas');
+    canvas.width=48;canvas.height=48;
+    const ctx=canvas.getContext('2d');
+    ctx.fillStyle='#e7a3c0';ctx.fillRect(0,0,48,48);
+    ctx.fillStyle='#fff';ctx.fillRect(12,12,24,24);
+    const blob=await new Promise(resolve=>canvas.toBlob(resolve,'image/png'));
+    const transfer=new DataTransfer();
+    transfer.items.add(new File([blob],'avatar.png',{type:'image/png'}));
+    input.files=transfer.files;
+    input.dispatchEvent(new Event('change',{bubbles:true}));
+  });
+  await page.waitForFunction(()=>document.querySelector('#accountPhotoPreview')?.src.startsWith('data:image/jpeg;base64,'),{timeout:10000});
+  await page.$eval('#accountProfileName',e=>{e.value='Hồ Sơ Mới';e.dispatchEvent(new Event('input',{bubbles:true}));});
+  await page.click('#accountProfileSave');
+  await page.waitForFunction(()=>document.querySelector('#accountPopover')?.textContent.includes('Hồ Sơ Mới'));
+  const savedPhoto=await page.$eval('#userAvatar',e=>e.src);
+  assert(savedPhoto.startsWith('data:image/jpeg;base64,')&&savedPhoto.length<160000,"Uploaded image must be compressed and shown in topbar");
+  await page.goto(previewUrl,{waitUntil:'domcontentloaded'});
+  await page.waitForSelector('#app:not(.hidden)',{timeout:30000});
+  await page.click('#topbarAccountBtn');
+  assert(await page.$eval('#accountPopover',e=>e.textContent.includes('Hồ Sơ Mới')),"Edited display name must persist after reloading");
+  assert(await page.$eval('#userAvatar',e=>e.src===document.querySelector('#accountPopover img[data-user-avatar]')?.src&&e.src.startsWith('data:image/jpeg;base64,')),"Saved avatar must persist in account popup and topbar");
+  await page.click('#accountProfileEdit');
+  await page.click('#accountGoogleAvatar');
+  await page.click('#accountProfileSave');
+  assert(await page.$eval('#userAvatar',e=>!e.src.startsWith('data:image/jpeg;base64,')),"Restore Google photo must remove the uploaded override");
+  assert(await page.$eval('#accountModalBackdrop',e=>!e.classList.contains('hidden')),"Saving profile must not unexpectedly close modal");
+
+  // Signout: popup must be dismissed synchronously, even before Firebase
+  // sends the eventual null-auth callback.
+  const logoutClosed=await page.evaluate(()=>{
+    document.querySelector('#accountLogoutBtn').click();
+    const backdrop=document.querySelector('#accountModalBackdrop');
+    return backdrop.classList.contains('hidden')&&
+      backdrop.getAttribute('aria-hidden')==='true'&&
+      !document.body.classList.contains('account-modal-open')&&
+      !document.querySelector('#app').inert;
+  });
+  assert(logoutClosed,"Signout must close and clear the user popup immediately");
+  await page.waitForFunction(()=>location.pathname==='/',{timeout:15000});
+  assert(await page.$eval('#accountModalBackdrop',e=>e.classList.contains('hidden')),"Signed-out screen must not retain account popup");
+
+  console.log("Desktop/mobile browser smoke tests, profile image/name persistence and signout popup cleanup passed");
 } catch(error) {
   fs.mkdirSync('../verification',{recursive:true});
   for(const page of await browser.pages()) {
