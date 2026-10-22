@@ -3557,14 +3557,20 @@ body.account-modal-open{overflow:hidden}
       for(const x of state.sessions){
         sessionEdits[x.id]={kpiMode:x.kpiMode||'auto',manualKpiType:manualKpiType(x),hostUid:x.hostUid||'',hostName:x.hostName||'',operatorUid:x.operatorUid||'',operatorName:x.operatorName||'',manualKpiEntries:Array.isArray(x.manualKpiEntries)?x.manualKpiEntries:[],kpiDraft:x.kpiDraft||null};
       }
-      const users=state.users.map(u=>({id:u.id,role:u.role,status:u.status,permissions:u.permissions||[]}));
+      const users=state.users.map(u=>({id:u.id,role:u.role,status:u.status,permissions:u.permissions||[],displayName:u.displayName,photoURL:u.photoURL,customDisplayName:u.customDisplayName||'',customPhotoURL:u.customPhotoURL||''}));
       const staff=state.staff.map(x=>({id:x.id,displayName:x.displayName,role:x.role,sortOrder:x.sortOrder||0,googleUid:x.googleUid||'',googlePhotoURL:x.googlePhotoURL||'',googleDisplayName:x.googleDisplayName||''}));
-      localStorage.setItem(PREVIEW_STATE_KEY,JSON.stringify({sessionEdits,users,staff,maintenance:state.maintenance.settings}));
+      localStorage.setItem(PREVIEW_STATE_KEY,JSON.stringify({sessionEdits,users,staff,maintenance:state.maintenance.settings,account:{customDisplayName:state.profile?.customDisplayName||'',customPhotoURL:state.profile?.customPhotoURL||'',displayName:state.profile?.displayName||'',photoURL:state.profile?.photoURL||''}}));
     }
     function restorePreviewState(){
       if(!PREVIEW)return;
       const saved=readPreviewState();
       if(saved.maintenance)state.maintenance.settings={...state.maintenance.settings,...saved.maintenance};
+      if(saved.account&&state.profile){
+        const fields=saved.account;
+        const displayName=String(fields.customDisplayName||fields.displayName||state.profile.displayName);
+        const photoURL=safePhotoURL(fields.customPhotoURL||fields.photoURL)||state.user.photoURL;
+        state.profile={...state.profile,customDisplayName:String(fields.customDisplayName||''),customPhotoURL:safePhotoURL(fields.customPhotoURL),displayName,photoURL};
+      }
       if(saved.sessionEdits){
         for(const item of state.sessions){
           if(saved.sessionEdits[item.id])Object.assign(item,saved.sessionEdits[item.id]);
@@ -3688,12 +3694,17 @@ body.account-modal-open{overflow:hidden}
     }
 
     async function handleAuth(user){
-      state.user=user;
       if(!user){
+        dismissAccountOnSignOut();
+        if(state.autoSyncWatcher){clearInterval(state.autoSyncWatcher);state.autoSyncWatcher=null;}
+        state.user=null;state.profile=null;
+        state.users=[];state.staff=[];state.sessions=[];
         showBoot(`<b>Đăng nhập bằng Gmail để vào hệ thống.</b><br><br>Tài khoản đầu tiên sẽ bootstrap thành quản trị viên; các tài khoản tiếp theo sẽ chờ quản trị viên duyệt.`, `<button id="loginBtn" class="btn primary">Đăng nhập Google</button>`);
         $('#loginBtn').onclick=async()=>{ try{ await signInWithPopup(state.auth,new GoogleAuthProvider()); }catch(e){ alert(e.message); } };
         return;
       }
+      dismissAccountOnSignOut();
+      state.user=user;
       await withTimeout(ensureProfile(user),10000,'Kiểm tra tài khoản');
       state.profile=(await withTimeout(getDoc(doc(state.db,'users',user.uid)),10000,'Đọc hồ sơ tài khoản')).data();
       if(state.profile?.status==='pending'){
@@ -3717,7 +3728,16 @@ body.account-modal-open{overflow:hidden}
     async function ensureProfile(user){
       const uref=doc(state.db,'users',user.uid); const snap=await getDoc(uref);
       if(snap.exists()){
-        await updateDoc(uref,{displayName:user.displayName||user.email||'',photoURL:user.photoURL||'',lastLoginAt:serverTimestamp(),updatedAt:serverTimestamp()}).catch(()=>{}); return;
+        const old=snap.data()||{};
+        const customDisplayName=String(old.customDisplayName||'').trim();
+        const customPhotoURL=String(old.customPhotoURL||'');
+        const displayName=customDisplayName||String(old.displayName||user.displayName||user.email||'');
+        const photoURL=customPhotoURL||String(old.photoURL||user.photoURL||'');
+        await updateDoc(uref,{
+          displayName,photoURL,
+          lastLoginAt:serverTimestamp(),updatedAt:serverTimestamp()
+        }).catch(()=>{});
+        return;
       }
       const bootstrapRef=doc(state.db,'system','bootstrap'); const bs=await getDoc(bootstrapRef);
       if(!bs.exists()){
