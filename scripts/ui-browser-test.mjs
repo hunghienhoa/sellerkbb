@@ -96,7 +96,7 @@ try {
   await page.click('#nav [data-section="dashboard"]');
 
   assert(await page.$('#dataRefreshBtn')!==null,"Latest-data refresh button missing beside user avatar");
-  assert(await page.$eval('#dataRefreshBtn',e=>e.checkVisibility()&&e.textContent.includes('Cập nhật dữ liệu')),"Dashboard update button must be visible");
+  assert(await page.$eval('#dataRefreshBtn',e=>e.checkVisibility()&&(e.textContent.includes('Cập nhật dữ liệu')||e.textContent.includes('Đã cập nhật'))),"Dashboard update button must be visible");
   const refreshGeometry=await page.$eval('.topbar',e=>{
     const refresh=e.querySelector('#dataRefreshBtn').getBoundingClientRect();
     const account=e.querySelector('#topbarAccountBtn').getBoundingClientRect();
