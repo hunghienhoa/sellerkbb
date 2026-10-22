@@ -9,7 +9,11 @@ const MAINTENANCE_LAST_RUN_KEY = "maintenance:last_run";
 const AUTO_SYNC_DATA_KEY = "autosync:rolling";
 const AUTO_SYNC_STATUS_KEY = "autosync:status";
 const MANUAL_SYNC_JOB_KEY = "autosync:manual_job";
-const MANUAL_SYNC_MAX_RUNNING_MS = 20 * 60 * 1000;
+const MANUAL_SYNC_MAX_RUNNING_MS = 60 * 60 * 1000;
+const MANUAL_SYNC_DAYS = 120;
+const MANUAL_SYNC_WINDOW_DAYS = 30;
+const MANUAL_AFFILIATE_BATCH_SIZE = 8;
+const MANUAL_SYNC_LEASE_MS = 150000;
 const GITHUB_REPO_CACHE_KEY = "maintenance:github_repo";
 const LIVE_RECONCILE_CACHE_PREFIX = "reconcile:live:";
 const LIVE_RECONCILE_CACHE_TTL_SECONDS = 600;
@@ -801,7 +805,7 @@ function liveAffiliateComparison(session) {
 }
 
 async function enrichLiveAffiliateBreakdowns(env, accessToken, sessions, limit = 12, reason = "hourly") {
-  const cutoffSeconds = Math.floor((Date.now() - 30 * 86400000) / 1000);
+  const cutoffSeconds = Math.floor((Date.now() - MANUAL_SYNC_DAYS * 86400000) / 1000);
   const all = (sessions || [])
     .filter(session => session?.liveId && session?.shopCipher && isAllowedSellerKbbLiveChannel(session))
     .filter(session => Number(session.startTimeSeconds || 0) >= cutoffSeconds);
@@ -1548,7 +1552,7 @@ async function getManualSyncJob(env) {
   if (!raw) return null;
   try {
     const job = JSON.parse(raw);
-    if (job?.state === "running" && Date.now() - Date.parse(job.startedAt || "") > MANUAL_SYNC_MAX_RUNNING_MS) {
+    if (job?.state === "running" && Date.now() - Date.parse(job.updatedAt || job.startedAt || "") > MANUAL_SYNC_MAX_RUNNING_MS) {
       return { ...job, state: "stale", error: "Tác vụ chưa có kết quả sau 20 phút. Hãy kiểm tra trạng thái đồng bộ trước khi chạy lại." };
     }
     return job;
@@ -1559,30 +1563,87 @@ async function saveManualSyncJob(env, job) {
   await env.TIKTOK_KV.put(MANUAL_SYNC_JOB_KEY, JSON.stringify(job), { expirationTtl: 86400 });
 }
 
-async function executeManualSyncJob(env, job) {
-  let result;
-  try {
-    result = await runAutoSync(env, job.days, "manual");
-  } catch (error) {
-    result = { ok: false, error: String(error?.message || error), finishedAt: new Date().toISOString() };
-  }
-  const completed = {
-    ...job,
-    state: result?.ok === true ? "success" : "error",
-    finishedAt: result?.finishedAt || new Date().toISOString(),
-    fetched: Number(result?.fetched || 0),
-    cached: Number(result?.cached || 0),
-    error: result?.ok === true ? null : (result?.error || "Đồng bộ TikTok không hoàn tất"),
-    affiliateVerified: Number(result?.affiliateVerified ?? result?.affiliateEnrichment?.verified ?? 0),
-    affiliatePending: Number(result?.affiliatePending ?? result?.affiliateEnrichment?.pending ?? 0),
-    affiliateEstimates: Number(result?.affiliateEstimates ?? 0),
-    snapshotAt: result?.snapshotAt || null
+
+function manualAffiliateTotals(sessions) {
+  const eligible=(sessions || []).filter(x=>isAllowedSellerKbbLiveChannel(x) &&
+    Number(x.startTimeSeconds || 0) >= Math.floor((Date.now()-MANUAL_SYNC_DAYS*86400000)/1000));
+  return {
+    affiliateVerified: eligible.filter(x=>x.affiliateDataAvailable===true && x.creatorGmvAvailable===true).length,
+    affiliatePending: eligible.filter(x=>x.affiliateDataAvailable!==true || x.affiliateNeedsRefresh===true).length,
+    affiliateTotal: eligible.length
   };
-  await saveManualSyncJob(env, completed);
-  return completed;
 }
 
-async function runAutoSync(env, lookbackDays = 2, reason = "hourly") {
+// A manual backfill is resumable. Every invocation processes ONE 30-day LIVE
+// window or EIGHT room-level Affiliate requests and persists a checkpoint.
+async function runManualAffiliateSlice(env, job) {
+  const all=await getAutoSyncData(env);
+  const eligible=all.filter(x=>x.liveId && x.shopCipher && isAllowedSellerKbbLiveChannel(x) &&
+    Number(x.startTimeSeconds||0)>=Math.floor((Date.now()-MANUAL_SYNC_DAYS*86400000)/1000))
+    .sort((a,b)=>Number(b.startTimeSeconds||0)-Number(a.startTimeSeconds||0));
+  const offset=Math.max(0,Number(job.affiliateOffset||0));
+  const slice=eligible.slice(offset,offset+MANUAL_AFFILIATE_BATCH_SIZE);
+  if (slice.length) {
+    const refreshed=await refreshTikTokTokenIfNeeded(env,3600,"manual_affiliate_120");
+    if (!refreshed.token?.access_token) throw new Error("tiktok_not_connected");
+    await enrichLiveAffiliateBreakdowns(env,refreshed.token.access_token,slice,slice.length,"manual_affiliate_120");
+    for(const row of slice) Object.assign(row,liveAffiliateComparison(row));
+    const stamp=new Date().toISOString();
+    for(const row of all)row.cacheUpdatedAt=stamp;
+    await env.TIKTOK_KV.put(AUTO_SYNC_DATA_KEY,JSON.stringify(all));
+    const totals=manualAffiliateTotals(all);
+    await writeAutoSyncStatus(env,{ok:true,reason:"manual_affiliate_120",snapshotAt:stamp,...totals});
+    return {processed:slice.length,total:eligible.length,snapshotAt:stamp,...totals,cached:all.length};
+  }
+  return {processed:0,total:eligible.length,...manualAffiliateTotals(all),cached:all.length};
+}
+
+async function advanceManualSyncJob(env, expectedJobId="") {
+  const current=await getManualSyncJob(env);
+  if(!current || current.state!=="running" || (expectedJobId&&current.jobId!==expectedJobId))return current;
+  if(Number(current.leaseUntil||0)>Date.now())return current;
+  const leased={...current,updatedAt:new Date().toISOString(),leaseUntil:Date.now()+MANUAL_SYNC_LEASE_MS};
+  await saveManualSyncJob(env,leased);
+  try {
+    if(leased.phase==="affiliate") {
+      const result=await runManualAffiliateSlice(env,leased);
+      const offset=Number(leased.affiliateOffset||0)+result.processed;
+      const complete=offset>=result.total;
+      const updated={...leased,...result,affiliateOffset:offset,
+        affiliateProcessed:offset,phase:complete?"done":"affiliate",
+        state:complete?"success":"running",error:null,leaseUntil:0,
+        finishedAt:complete?new Date().toISOString():null,updatedAt:new Date().toISOString()};
+      await saveManualSyncJob(env,updated);
+      return updated;
+    }
+    const offset=Math.max(0,Number(leased.completedDays||0));
+    if(offset>=MANUAL_SYNC_DAYS) {
+      const next={...leased,phase:"affiliate",leaseUntil:0,updatedAt:new Date().toISOString()};
+      await saveManualSyncJob(env,next);
+      return next;
+    }
+    const days=Math.min(MANUAL_SYNC_WINDOW_DAYS,MANUAL_SYNC_DAYS-offset);
+    const result=await runAutoSync(env,days,"manual_scan",offset);
+    if(result.ok!==true)throw new Error(result.error||"TikTok LIVE scan failed");
+    const completedDays=offset+days;
+    const next={...leased,phase:completedDays>=MANUAL_SYNC_DAYS?"affiliate":"scan",
+      completedDays,windowStart:shiftDateKey(1-MANUAL_SYNC_DAYS),
+      windowEndExclusive:shiftDateKey(1),fetched:Number(leased.fetched||0)+Number(result.fetched||0),
+      cached:Number(result.cached||0),snapshotAt:result.snapshotAt||null,
+      affiliateVerified:Number(result.affiliateVerified||0),
+      affiliatePending:Number(result.affiliatePending||0),leaseUntil:0,
+      updatedAt:new Date().toISOString(),error:null};
+    await saveManualSyncJob(env,next);
+    return next;
+  }catch(error){
+    const failed={...leased,state:"error",leaseUntil:0,updatedAt:new Date().toISOString(),
+      finishedAt:new Date().toISOString(),error:String(error?.message||error)};
+    await saveManualSyncJob(env,failed);
+    return failed;
+  }
+}
+
+async function runAutoSync(env, lookbackDays = 2, reason = "hourly", offsetDays = 0) {
   const startedAt = new Date().toISOString();
   if (!env.TIKTOK_KV) return { ok: false, reason, error: "kv_not_bound", startedAt };
 
@@ -1595,12 +1656,14 @@ async function runAutoSync(env, lookbackDays = 2, reason = "hourly") {
       return status;
     }
 
-    const days = Math.max(1, Math.min(30, Number(lookbackDays) || 2));
-    const startDate = shiftDateKey(-(days - 1));
-    const endDate = shiftDateKey(1);
+    const days = Math.max(1, Math.min(MANUAL_SYNC_WINDOW_DAYS, Number(lookbackDays) || 2));
+    const offset = Math.max(0,Math.min(MANUAL_SYNC_DAYS-days,Number(offsetDays)||0));
+    const startDate = shiftDateKey(1-offset-days);
+    const endDate = shiftDateKey(1-offset);
     const data = await syncLivePerformance(env, token.access_token, startDate, endDate);
     const settings = await getMaintenanceSettings(env);
-    const retentionMs = Math.min(180, Number(settings.retentionDays || 180)) * 86400000;
+    // Historic 120-day reports must survive short-term retention settings.
+    const retentionMs = Math.max(MANUAL_SYNC_DAYS,Math.min(180,Number(settings.retentionDays || 180))) * 86400000;
     const cutoffSeconds = Math.floor((Date.now() - retentionMs) / 1000);
     const existing = await getAutoSyncData(env);
     const byId = new Map();
@@ -1628,11 +1691,14 @@ async function runAutoSync(env, lookbackDays = 2, reason = "hourly") {
     // Keep an explicitly UNVERIFIED comparison even for sessions not reached by
     // today's API retry limit. Do not overwrite prior verified snapshots.
     for (const session of merged) Object.assign(session, liveAffiliateComparison(session));
-    const affiliateEnrichment = await enrichLiveAffiliateBreakdowns(
-      env, token.access_token, merged,
-      reason === "manual" ? 10 : reason === "hourly" ? 8 : 10, reason
-    );
-    const reconciliation = await refreshKpiReconciliations(env, token.access_token, merged, reason);
+    const affiliateEnrichment = reason==="manual_scan"
+      ? {checked:0,enriched:0,verified:manualAffiliateTotals(merged).affiliateVerified,
+          pending:manualAffiliateTotals(merged).affiliatePending,
+          total:manualAffiliateTotals(merged).affiliateTotal,errors:[]}
+      : await enrichLiveAffiliateBreakdowns(env,token.access_token,merged,reason==="hourly"?8:10,reason);
+    const reconciliation=reason==="manual_scan"
+      ? {checked:0,refreshed:0,finalized:0,blocked:0,errors:[]}
+      : await refreshKpiReconciliations(env,token.access_token,merged,reason);
     // Every server result carries a monotonic snapshot timestamp so the UI
     // can tell if an edge KV read still serves the previous version.
     const snapshotAt = new Date().toISOString();
@@ -1940,28 +2006,29 @@ async function handleApi(request, env, ctx) {
   }
 
   if (url.pathname === "/api/tiktok/autosync/run" && request.method === "POST") {
-    // Approved staff with LIVE/KPI report access may refresh shared TikTok data.
-    // OAuth, token management and all other administrative endpoints remain Admin-only.
-    await requireReportAccess(request, env);
-    if (!env.TIKTOK_KV || !ctx?.waitUntil) return json({ error: "manual_sync_unavailable", message: "Chưa thể chạy đồng bộ nền trên máy chủ." }, 503);
-    const existing = await getManualSyncJob(env);
-    if (existing?.state === "running") {
-      return json({ ok: true, accepted: true, alreadyRunning: true, jobId: existing.jobId, startedAt: existing.startedAt }, 202);
-    }
-    const body = await request.json().catch(() => ({}));
-    const days = Math.max(1, Math.min(30, Number(body?.days || 30)));
-    const job = {
-      jobId: crypto.randomUUID(),
-      state: "running",
-      reason: "manual",
-      days,
-      startedAt: new Date().toISOString(),
-      finishedAt: null,
-      error: null
-    };
-    await saveManualSyncJob(env, job);
-    ctx.waitUntil(executeManualSyncJob(env, job));
-    return json({ ok: true, accepted: true, jobId: job.jobId, startedAt: job.startedAt, days }, 202);
+    await requireReportAccess(request,env);
+    if(!env.TIKTOK_KV||!ctx?.waitUntil) return json({error:"manual_sync_unavailable"},503);
+    const existing=await getManualSyncJob(env);
+    if(existing?.state==="running") return json({ok:true,accepted:true,alreadyRunning:true,
+      jobId:existing.jobId,days:existing.days,completedDays:existing.completedDays,
+      phase:existing.phase,startedAt:existing.startedAt},202);
+    const job={jobId:crypto.randomUUID(),state:"running",phase:"scan",
+      reason:"manual_120",days:MANUAL_SYNC_DAYS,completedDays:0,
+      affiliateOffset:0,affiliateProcessed:0,updatedAt:new Date().toISOString(),
+      leaseUntil:0,startedAt:new Date().toISOString(),finishedAt:null,error:null};
+    await saveManualSyncJob(env,job);
+    ctx.waitUntil(advanceManualSyncJob(env,job.jobId));
+    return json({ok:true,accepted:true,jobId:job.jobId,startedAt:job.startedAt,
+      days:MANUAL_SYNC_DAYS},202);
+  }
+
+  if(url.pathname==="/api/tiktok/autosync/continue" && request.method==="POST"){
+    await requireReportAccess(request,env);
+    if(!ctx?.waitUntil||!env.TIKTOK_KV)return json({error:"manual_sync_unavailable"},503);
+    const job=await getManualSyncJob(env);
+    if(job?.state!=="running")return json({ok:true,manualJob:job});
+    if(Number(job.leaseUntil||0)<=Date.now())ctx.waitUntil(advanceManualSyncJob(env,job.jobId));
+    return json({ok:true,accepted:true,manualJob:job},202);
   }
 
   if (url.pathname === "/api/tiktok/autosync/status" && request.method === "GET") {
@@ -2016,17 +2083,21 @@ async function handleApi(request, env, ctx) {
 export default {
   async scheduled(controller, env, ctx) {
     if (controller.cron === "0 * * * *") {
-      ctx.waitUntil(Promise.all([
-        runAutoSync(env, 2, "hourly"),
-        refreshAllCreatorTokens(env, 3600, "hourly")
-      ]));
+      ctx.waitUntil((async()=>{
+        const job=await getManualSyncJob(env);
+        await Promise.all([
+          job?.state==="running"?advanceManualSyncJob(env,job.jobId):runAutoSync(env,2,"hourly"),
+          refreshAllCreatorTokens(env,3600,"hourly")
+        ]);
+      })());
       return;
     }
     if (controller.cron === "15 3 * * *") {
       ctx.waitUntil((async () => {
+        const job=await getManualSyncJob(env);
         await Promise.all([
-          runAutoSync(env, 30, "daily_reconcile"),
-          refreshAllCreatorTokens(env, 86400, "daily_reconcile")
+          job?.state==="running"?advanceManualSyncJob(env,job.jobId):runAutoSync(env,30,"daily_reconcile"),
+          refreshAllCreatorTokens(env,86400,"daily_reconcile")
         ]);
         await runKvMaintenance(env, "daily_free_plan");
       })());
