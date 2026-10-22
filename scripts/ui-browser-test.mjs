@@ -574,8 +574,10 @@ try {
   });
   assert(mobileRefreshGeometry.refreshWidth<=44&&mobileRefreshGeometry.refreshRight<=mobileRefreshGeometry.accountLeft&&mobileRefreshGeometry.refreshRight<=mobileRefreshGeometry.barRight,"Mobile latest-data button must compact without overlapping avatar");
   await page.click('#dataRefreshBtn');
-  await sleep(520);
-  assert(await page.$eval('#dataRefreshBtn',e=>e.textContent.includes('Đã cập nhật')),"Mobile latest-data button must show success feedback");
+  await sleep(70);
+  assert(await page.$eval('#dataRefreshBtn',e=>e.disabled&&e.getAttribute('aria-busy')==='true'),"Mobile Dashboard must lock the button during TikTok 30-day sync");
+  await sleep(850);
+  assert(await page.$eval('#dataRefreshBtn',e=>e.textContent.includes('Đã cập nhật')),"Mobile Dashboard must show success after the sync completes");
   assert(await page.$('#dataRefreshModalBackdrop')===null&&await page.$('#dataRefreshPopover')===null,"Mobile latest-data popup/modal must stay removed");
   const mobileFormFonts=await page.evaluate(()=>[...document.querySelectorAll('input,select,textarea')].map(e=>({
     tag:e.tagName,
