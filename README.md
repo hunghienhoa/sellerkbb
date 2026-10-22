@@ -4,7 +4,7 @@
 
 ### Báo cáo TikTok LIVE · KPI nhân sự · Tự đồng bộ 24/24
 
-**Phiên bản hiện tại: v1.49.8**
+**Phiên bản hiện tại: v1.49.9**
 
 [![GitHub Release](https://img.shields.io/github/v/release/hunghienhoa/sellerkbb?label=Release)](https://github.com/hunghienhoa/sellerkbb/releases)
 [![GitHub Actions](https://img.shields.io/github/actions/workflow/status/hunghienhoa/sellerkbb/deploy.yml?branch=main&label=Ki%E1%BB%83m%20tra%20%26%20Backup)](https://github.com/hunghienhoa/sellerkbb/actions)
@@ -17,7 +17,15 @@
 
 ---
 
-## 🆕 Cập nhật mới nhất — v1.49.8
+## 🆕 Cập nhật mới nhất — v1.49.9
+
+- Nút **Cập nhật dữ liệu** cạnh avatar, ở **Tổng quan**, nay thực hiện cả **Đồng bộ ngay 30 ngày**: Admin nhấn một lần để gọi đúng tác vụ nền TikTok đang dùng ở **TikTok / API**, theo dõi kết quả rồi tự tải lại dữ liệu SellerKBB mới.
+- Hai nút dùng **cùng endpoint** `POST /api/tiktok/autosync/run` với `days:30`; máy chủ trả về job đang chạy nếu đã có và nút được khóa khi đang đồng bộ để tránh bấm lặp.
+- Nút trên thanh trên cùng hiển thị **Đang đồng bộ… · TikTok LIVE · 30 ngày**, sau đó **Đã cập nhật** chỉ khi máy chủ xác nhận đồng bộ thành công và trang tải lại dữ liệu. Nếu thất bại hiển thị **Thử lại** và thông tin lỗi trên tooltip, không báo thành công sai.
+- Giữ an toàn phân quyền: **chỉ Admin được khởi chạy đồng bộ TikTok**; Host/Vận hành khi bấm nút ở Tổng quan vẫn chỉ tải lại dữ liệu được phép xem. Nút trong TikTok / API vẫn hoạt động riêng như trước.
+- Bổ sung kiểm tra tĩnh và kiểm thử PC/mobile cho luồng đồng bộ chung và trạng thái đang chạy/thành công/lỗi; không thay đổi công thức GMV, Affiliate, hậu mãi hay KPI.
+
+### v1.49.8 — Bổ sung quyền Host nhập KPI nháp
 
 - **Host Livestream cũng được cấp quyền tương tự Nhân viên vận hành livestream**, qua checkbox **“Gắn Host/Vận hành, Campaign/Mega và nhập KPI nháp”** trong **Quản lý tài khoản → Quyền truy cập**.
 - Admin bật hoặc tắt quyền **riêng cho từng Host hoặc nhân viên vận hành**. Quyền chỉ có hiệu lực khi tài khoản đã duyệt, có `live.read` và checkbox `live.assign` được bật; mặc định Host chưa bật thì chỉ xem.
@@ -132,7 +140,7 @@ Giao diện v1.47.1 giữ hồng pastel, dùng chữ rõ cho nhãn số liệu v
 
 **KPI nhân sự theo tháng:** tab KPI nhân sự mặc định cộng toàn bộ KPI của tháng hiện tại. Dùng control **Theo tháng** để chọn lại tháng cần xem; giao diện chỉ hiển thị tên tháng, không lặp lại khoảng ngày 01–cuối tháng. Tab này không dùng bộ lọc Hôm nay / 7 ngày / 30 ngày; các tab báo cáo khác vẫn giữ bộ lọc riêng như trước.
 
-**Cập nhật dữ liệu ở Tổng quan:** nút **Cập nhật dữ liệu** cạnh avatar chỉ tải lại dữ liệu SellerKBB đang có để màn hình hiển thị bản mới nhất; đây **không phải Đồng bộ TikTok** và không gọi tác vụ Sync-now. Sau khi hoàn tất chỉ cập nhật trạng thái ngay trên nút, không mở popup/modal và không hiện toast.
+**Cập nhật dữ liệu ở Tổng quan:** Khi **Admin** bấm **Cập nhật dữ liệu** cạnh avatar, hệ thống thực hiện luôn **Đồng bộ ngay 30 ngày** của TikTok / API (đồng bộ chạy nền trên Cloudflare), theo dõi tiến trình và **tự tải lại dữ liệu SellerKBB sau khi đồng bộ thành công**. Nút hiện **Đang đồng bộ…** đến khi có kết quả cuối cùng, chỉ hiện **Đã cập nhật** sau khi dữ liệu được tải lại, hoặc **Thử lại** khi thất bại; không mở popup/modal và không hiện toast từ nút này. Khi **Host hoặc nhân viên vận hành** bấm, hệ thống chỉ cập nhật dữ liệu SellerKBB mà tài khoản được phép xem, không tự cấp quyền khởi chạy TikTok API.
 
 **Dùng bàn phím:** Tab để di chuyển, Enter/Space để kích hoạt. Khi mở popup tài khoản/đối soát, Tab chỉ đi trong popup; Escape đóng và đưa focus về nút mở. Nếu thiết bị bật **Giảm chuyển động**, popup không chạy animation. Nút làm mới vẫn thể hiện trạng thái **Đang tải** bằng chữ.
 
@@ -327,6 +335,7 @@ README giữ lại phần này để nhân sự có thể biết **vì sao giao 
 
 | Phiên bản | Thay đổi chính |
 |---|---|
+| **v1.49.9** | Nút Cập nhật dữ liệu Tổng quan của Admin gọi đồng bộ TikTok 30 ngày, chờ hoàn tất rồi tải lại dữ liệu; chung tác vụ và chống trùng với TikTok / API. |
 | **v1.49.8** | Host cũng có quyền gắn Host/Vận hành, Campaign/Mega và nhập KPI nháp khi Admin bật checkbox; Firestore chặn mặc định và vẫn chỉ Admin duyệt. |
 | **v1.49.7** | Cấp quyền gắn Host/Vận hành và Campaign/Mega cho Operator; cho lưu KPI nháp, Admin duyệt mới tính KPI; Firestore giới hạn quyền. |
 | **v1.49.6** | Đổi nhãn GMV hàng nhà thành GMV từ shopkhangbaby ở PC, mobile và popup đối soát; không đổi số liệu hoặc KPI. |
