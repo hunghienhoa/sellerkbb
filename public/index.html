@@ -4036,15 +4036,15 @@ body.account-modal-open{overflow:hidden}
       button.disabled=active;
       button.setAttribute('aria-busy',String(active));
       label.textContent=status==='syncing'?'Đang đồng bộ…':status==='loading'?'Đang cập nhật…'
-        :status==='success'?'Đã cập nhật':status==='partial'?'Đã đồng bộ · còn thiếu':status==='error'?'Thử lại':'Cập nhật dữ liệu';
+        :status==='success'?'Đã cập nhật':status==='partial'?'Đã đồng bộ LIVE':status==='error'?'Thử lại':'Cập nhật dữ liệu';
       meta.textContent=status==='syncing'?'TikTok LIVE · 30 ngày'
         :status==='loading'?'Đang tải dữ liệu mới nhất'
         :status==='error'?(state.dataRefresh.error?'Đồng bộ chưa hoàn tất':'Cập nhật thất bại')
-        :status==='partial'?('Còn '+new Intl.NumberFormat('vi-VN').format(Number(state.dataRefresh.affiliatePending||0))+' phiên Affiliate')
+        :status==='partial'?('Affiliate: '+new Intl.NumberFormat('vi-VN').format(Number(state.dataRefresh.affiliatePending||0))+' phiên đang đối soát')
         :last?('Lúc '+last):(can('live.read')||can('kpi.read'))?'Bao gồm đồng bộ TikTok':'Dữ liệu mới nhất';
       const iconName=status==='success'?'check':status==='error'?'history':'refresh';
       $('#dataRefreshIcon').innerHTML=icon(iconName,16);
-      button.title=(status==='partial'?'Đã lưu phiên LIVE nhưng còn '+Number(state.dataRefresh.affiliatePending||0)+' phiên chưa có GMV Affiliate xác minh. Hệ thống sẽ tiếp tục đối chiếu tự động.':state.dataRefresh.error) || (isAdmin()
+      button.title=(status==='partial'?'Đã đồng bộ LIVE; '+Number(state.dataRefresh.affiliatePending||0)+' phiên Affiliate chưa xác minh do khác biệt ghi nhận TikTok Seller/Creator. Giá trị tham khảo không được tính là GMV Affiliate chính xác.':state.dataRefresh.error) || (isAdmin()
         ? 'Đồng bộ TikTok 30 ngày, sau đó tải dữ liệu SellerKBB mới nhất'
         : 'Tải dữ liệu được phép xem; chỉ Admin được khởi chạy đồng bộ TikTok');
     }
@@ -5038,7 +5038,15 @@ body.account-modal-open{overflow:hidden}
       const shop=available?Math.max(0,Number(session?.affiliateDataAvailable===true?session.shopProductGmvAmount:Math.max(0,total-(affiliate||0)))||0):null;
       const itemsTotal=Math.max(0,Number(session?.currentItemsSold??session?.recordedItemsSold??0));
       const affiliateItems=available?Math.max(0,Number(session?.affiliateDataAvailable===true?session.affiliateItemsSold:Math.round(itemsTotal*((affiliate||0)/Math.max(1,total))))||0):null;
-      return {total,available,shop,affiliate,affiliateItems};
+      // The creator-side commission-attributed GMV and seller-side last-click
+      // GMV are NOT mathematically interchangeable according to TikTok.
+      // Expose their gap only as a comparison, never as verified Affiliate GMV.
+      const creator=Number(session?.creatorGmvAmount);
+      const seller=Number(session?.sellerGmvAmount);
+      const estimateAvailable=!available && session?.creatorGmvAvailable===true &&
+        Number.isFinite(creator)&&Number.isFinite(seller)&&seller>0&&creator>=seller;
+      const estimate=estimateAvailable?Math.max(0,Math.round(creator-seller)):null;
+      return {total,available,shop,affiliate,affiliateItems,estimateAvailable,estimate};
     }
 
     function affiliateLiveSummary(sessions){
@@ -5047,7 +5055,9 @@ body.account-modal-open{overflow:hidden}
       const total=rows.reduce((sum,x)=>sum+x.fig.total,0);
       const shop=known.reduce((sum,x)=>sum+Number(x.fig.shop||0),0);
       const affiliate=known.reduce((sum,x)=>sum+Number(x.fig.affiliate||0),0);
-      return {total,shop,affiliate,knownCount:known.length,totalCount:rows.length};
+      const estimates=rows.filter(x=>!x.fig.available && x.fig.estimateAvailable);
+      return {total,shop,affiliate,knownCount:known.length,totalCount:rows.length,
+        estimateCount:estimates.length,estimateTotal:estimates.reduce((sum,x)=>sum+Number(x.fig.estimate||0),0)};
     }
 
     function affiliateSummaryHtml(sessions){
@@ -5057,7 +5067,7 @@ body.account-modal-open{overflow:hidden}
       return `<div class="grid stats affiliate-live-summary">
         <div class="card"><div class="stat-label">GMV LIVE tổng</div><div class="stat-value">${fmtMoney(summary.total)}</div><div class="affiliate-live-summary-note">Hàng nhà + sản phẩm Affiliate</div></div>
         <div class="card"><div class="stat-label">GMV từ shopkhangbaby</div><div class="stat-value ${summary.knownCount?'':'unavailable'}">${summary.knownCount?fmtMoney(summary.shop):'Chưa có dữ liệu'}</div><div class="affiliate-live-summary-note">${splitHint}</div></div>
-        <div class="card"><div class="stat-label">GMV Affiliate</div><div class="stat-value ${summary.knownCount?'':'unavailable'}">${summary.knownCount?fmtMoney(summary.affiliate):'Chưa có dữ liệu'}</div><div class="affiliate-live-summary-note">${allKnown?'Đã tách toàn bộ phiên':'Chỉ cộng các phiên đã tách được'}</div></div>
+        <div class="card"><div class="stat-label">GMV Affiliate</div><div class="stat-value ${summary.knownCount?'':'unavailable'}">${summary.knownCount?fmtMoney(summary.affiliate):'Chưa có dữ liệu'}</div><div class="affiliate-live-summary-note">${allKnown?'Đã tách toàn bộ phiên':'Chỉ cộng các phiên đã tách được · '+summary.estimateCount+' phiên có chênh lệch Creator/Seller tham khảo'}</div></div>
       </div>`;
     }
 
@@ -5073,7 +5083,7 @@ body.account-modal-open{overflow:hidden}
         <td>${fmtLiveDuration(s)}</td>
         <td class="money"><b>${fmtMoney(figures.recorded,s.currency)}</b><div class="tiny">${s.syncPending===true?'TikTok đang cập nhật · số tạm tính':'Đã gồm hàng nhà + Affiliate'}</div></td>
         <td class="money"><b>${affiliate.available?fmtMoney(affiliate.shop,s.currency):'Chưa có dữ liệu'}</b><div class="tiny">${affiliate.available?'Sản phẩm thuộc shop':'Chờ TikTok tách sản phẩm'}</div></td>
-        <td class="money"><b>${affiliate.available?fmtMoney(affiliate.affiliate,s.currency):'Chưa có dữ liệu'}</b><div class="tiny">${affiliate.available?new Intl.NumberFormat('vi-VN').format(Number(affiliate.affiliateItems||0))+' món Affiliate':'Không tự suy đoán'}</div></td>
+        <td class="money"><b>${affiliate.available?fmtMoney(affiliate.affiliate,s.currency):'Chưa xác minh'}</b><div class="tiny">${affiliate.available?new Intl.NumberFormat('vi-VN').format(Number(affiliate.affiliateItems||0))+' món Affiliate':affiliate.estimateAvailable?'Chênh lệch Creator/Seller: '+fmtMoney(affiliate.estimate,s.currency)+' · chỉ tham khảo':'Đang đối soát nguồn TikTok'}</div></td>
         <td class="money">${gmvPendingDisplay(s)}<div class="tiny">${figures.pending!==null?'Tạm tính · đã gồm Affiliate':reconciled?'Đã chuyển sang số chốt':'Chưa đủ dữ liệu đối soát'}</div></td>
         <td class="money"><b>${gmvFinalDisplay(s)}</b><div class="tiny">${reconciled?'Số chốt KPI · đã gồm Affiliate':'Chưa đủ điều kiện chốt'}</div></td>
         <td>${new Intl.NumberFormat('vi-VN').format(Number(s.currentItemsSold??s.recordedItemsSold??0))}</td>
@@ -5090,7 +5100,7 @@ body.account-modal-open{overflow:hidden}
         <div class="mobile-grid">
           <div class="mobile-field"><span class="tiny">GMV LIVE tổng</span><strong>${fmtMoney(figures.recorded,s.currency)}</strong><small>Hàng nhà + Affiliate</small></div>
           <div class="mobile-field"><span class="tiny">GMV từ shopkhangbaby</span><strong>${affiliate.available?fmtMoney(affiliate.shop,s.currency):'Chưa có dữ liệu'}</strong><small>${affiliate.available?'Sản phẩm thuộc shop':'Chờ dữ liệu tách'}</small></div>
-          <div class="mobile-field"><span class="tiny">GMV Affiliate</span><strong>${affiliate.available?fmtMoney(affiliate.affiliate,s.currency):'Chưa có dữ liệu'}</strong><small>${affiliate.available?new Intl.NumberFormat('vi-VN').format(Number(affiliate.affiliateItems||0))+' món Affiliate':'Không tự suy đoán'}</small></div>
+          <div class="mobile-field"><span class="tiny">GMV Affiliate</span><strong>${affiliate.available?fmtMoney(affiliate.affiliate,s.currency):'Chưa xác minh'}</strong><small>${affiliate.available?new Intl.NumberFormat('vi-VN').format(Number(affiliate.affiliateItems||0))+' món Affiliate':affiliate.estimateAvailable?'Chênh lệch Creator/Seller tham khảo: '+fmtMoney(affiliate.estimate,s.currency):'Đang đối soát nguồn TikTok'}</small></div>
           <div class="mobile-field"><span class="tiny">GMV chờ đối soát</span><strong>${gmvPendingDisplay(s)}</strong><small>${reconciled?'Đã chuyển sang số chốt':'Tạm tính · đã gồm Affiliate'}</small></div>
           <div class="mobile-field"><span class="tiny">GMV sau khi hoàn hủy</span><strong>${gmvFinalDisplay(s)}</strong><small>${reconciled?'✓ Số chốt KPI · đã gồm Affiliate':'Chưa đủ điều kiện chốt'}</small></div>
           <div class="mobile-field"><span class="tiny">Số món bán đã ghi nhận</span><strong>${new Intl.NumberFormat('vi-VN').format(Number(s.currentItemsSold??s.recordedItemsSold??0))}</strong></div>
