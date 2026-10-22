@@ -4,7 +4,7 @@
 
 ### Báo cáo TikTok LIVE · KPI nhân sự · Tự đồng bộ 24/24
 
-**Phiên bản hiện tại: v1.49.26**
+**Phiên bản hiện tại: v1.49.27**
 
 [![GitHub Release](https://img.shields.io/github/v/release/hunghienhoa/sellerkbb?label=Release)](https://github.com/hunghienhoa/sellerkbb/releases)
 [![GitHub Actions](https://img.shields.io/github/actions/workflow/status/hunghienhoa/sellerkbb/deploy.yml?branch=main&label=Ki%E1%BB%83m%20tra%20%26%20Backup)](https://github.com/hunghienhoa/sellerkbb/actions)
@@ -17,7 +17,15 @@
 
 ---
 
-## 🆕 Cập nhật mới nhất — v1.49.26
+## 🆕 Cập nhật mới nhất — v1.49.27
+
+- **Khắc phục bỏ sót phiên Affiliate trong đồng bộ 120 ngày:** sau khi quét đủ bốn chặng 30 ngày, hệ thống chốt danh sách các LIVE ID chưa xác minh, sau đó đối soát tuần tự theo 8 ID mỗi lượt. Trước đây lọc/sắp xếp danh sách lại ở từng vòng có thể khiến vị trí offset dịch chuyển và bỏ qua các phiên chưa được kiểm tra.
+- **Tránh hết hạn tác vụ khi trang đã đóng:** tăng giới hạn không có tiến độ từ 1 giờ lên 4 giờ, do fallback cron thực thi mỗi giờ; giữ checkpoint KV đến 7 ngày.
+- **Trạng thái trung thực:** kiểm tra hết danh sách mà Affiliate vẫn thiếu sẽ trả trạng thái `partial`, kèm tổng số phiên chưa xác minh và nhóm nguyên nhân (thiếu quyền, lỗi token, dữ liệu Creator, định nghĩa Seller/Creator khác nhau...). **Không** báo thành công hoàn toàn chỉ vì API đã được gọi xong.
+- **Thử lại nhanh phần còn thiếu:** TikTok / API hiển thị **Kiểm tra lại Affiliate còn thiếu** khi đồng bộ 120 ngày ở trạng thái `partial`. Nút này tạo một danh sách mới chỉ gồm các phiên chưa đối soát, không cần quét lại 120 ngày. Nút Tổng quan vẫn hỗ trợ đồng bộ đầy đủ.
+- **Giới hạn nguồn dữ liệu:** TikTok Get Shop LIVE Products Performance List v202512 chỉ áp dụng LIVE của tài khoản official/marketing; Creator LIVE Core Stats sử dụng quy tắc khác. Chênh lệch hai nguồn chưa thể coi là GMV Affiliate chính thức. Muốn đối chiếu số liệu đúng đơn Affiliate cần nguồn đơn Affiliate tương ứng và quyền Read Creator/Seller Affiliate Collaborations của ứng dụng trên TikTok Partner Center. Không xóa dữ liệu lịch sử đã lưu.
+
+### v1.49.26 — Đồng bộ LIVE 120 ngày chia chặng và Affiliate từng phiên
 
 - **Đồng bộ LIVE 120 ngày:** nút TikTok / API đổi thành **Đồng bộ ngay 120 ngày**; nút cập nhật từ Tổng quan (cả tài khoản nhân sự có quyền LIVE/KPI) cùng khởi chạy tác vụ 120 ngày. Máy chủ chia thành **4 cửa sổ 30 ngày** liên tục, giữ nguyên dữ liệu đã đồng bộ, cho phép tiếp tục qua endpoint `/api/tiktok/autosync/continue` và checkpoint trong KV (`completedDays`).
 - **GMV Affiliate theo từng phiên:** sau bốn lượt quét, tác vụ chuyển sang giai đoạn xác minh các phiên LIVE từ hai kênh `shopkhangbaby`, `mekhangsua`, mỗi lượt tối đa 8 phiên. Lưu tiến độ (`affiliateProcessed`, `affiliateVerified`, `affiliatePending`) và tự tiếp tục qua giao diện hoặc cron mỗi giờ nếu trang đã đóng. Các phiên còn thiếu do phạm vi ghi nhận Seller/Creator khác nhau được báo **chưa xác minh**, không bịa GMV Affiliate. Tự động đối soát Affiliate hằng giờ mở rộng sang cache 120 ngày.
@@ -452,6 +460,7 @@ README giữ lại phần này để nhân sự có thể biết **vì sao giao 
 
 | Phiên bản | Thay đổi chính |
 |---|---|
+| **v1.49.27** | Sửa hàng đợi Affiliate ổn định theo LIVE ID, tăng độ bền checkpoint, báo trạng thái thiếu và cho phép chỉ thử lại các phiên chưa xác minh. |
 | **v1.49.26** | Đồng bộ LIVE lùi 120 ngày theo bốn chặng 30 ngày, tự tiếp tục qua checkpoint/cron, kiểm tra Affiliate từng phiên theo batch 8 và bảo vệ dữ liệu đã xác minh. |
 | **v1.49.25** | Sửa ý nghĩa trạng thái đồng bộ LIVE và bảo vệ dữ liệu Affiliate đã xác minh; bổ sung chênh lệch Creator/Seller chỉ để tham khảo; giao diện mobile tài khoản gọn và thu gọn các khối ủy quyền TikTok. |
 | **v1.49.24** | Đổi tên tab trình duyệt thành “SellerKBB · Doanh Số KPIs”; viết lại hướng dẫn đăng nhập Google và xét duyệt tài khoản mới, bỏ thuật ngữ “bootstrap” khỏi giao diện. |
