@@ -4,7 +4,7 @@
 
 ### Báo cáo TikTok LIVE · KPI nhân sự · Tự đồng bộ 24/24
 
-**Phiên bản hiện tại: v1.49.25**
+**Phiên bản hiện tại: v1.49.26**
 
 [![GitHub Release](https://img.shields.io/github/v/release/hunghienhoa/sellerkbb?label=Release)](https://github.com/hunghienhoa/sellerkbb/releases)
 [![GitHub Actions](https://img.shields.io/github/actions/workflow/status/hunghienhoa/sellerkbb/deploy.yml?branch=main&label=Ki%E1%BB%83m%20tra%20%26%20Backup)](https://github.com/hunghienhoa/sellerkbb/actions)
@@ -17,7 +17,14 @@
 
 ---
 
-## 🆕 Cập nhật mới nhất — v1.49.25
+## 🆕 Cập nhật mới nhất — v1.49.26
+
+- **Đồng bộ LIVE 120 ngày:** nút TikTok / API đổi thành **Đồng bộ ngay 120 ngày**; nút cập nhật từ Tổng quan (cả tài khoản nhân sự có quyền LIVE/KPI) cùng khởi chạy tác vụ 120 ngày. Máy chủ chia thành **4 cửa sổ 30 ngày** liên tục, giữ nguyên dữ liệu đã đồng bộ, cho phép tiếp tục qua endpoint `/api/tiktok/autosync/continue` và checkpoint trong KV (`completedDays`).
+- **GMV Affiliate theo từng phiên:** sau bốn lượt quét, tác vụ chuyển sang giai đoạn xác minh các phiên LIVE từ hai kênh `shopkhangbaby`, `mekhangsua`, mỗi lượt tối đa 8 phiên. Lưu tiến độ (`affiliateProcessed`, `affiliateVerified`, `affiliatePending`) và tự tiếp tục qua giao diện hoặc cron mỗi giờ nếu trang đã đóng. Các phiên còn thiếu do phạm vi ghi nhận Seller/Creator khác nhau được báo **chưa xác minh**, không bịa GMV Affiliate. Tự động đối soát Affiliate hằng giờ mở rộng sang cache 120 ngày.
+- **Bảo vệ dữ liệu:** bảo vệ snapshot Affiliate đã xác minh khi API trả thiếu hoặc trả lỗi; cache LIVE tối thiểu giữ 120 ngày dù người dùng chỉnh số ngày dọn thấp hơn. Trình quản lý dữ liệu và KPI/host/vận hành không bị thay đổi.
+- **Trạng thái trung thực:** phân biệt giai đoạn tải LIVE (0–120 ngày) và giai đoạn kiểm tra Affiliate (N/M phiên), không tuyên bố đối soát xong nếu vẫn còn `affiliatePending`. Nếu TikTok không cho lấy khoảng lịch sử cũ, tác vụ báo lỗi theo chặng và giữ những phiên đã lưu trước đó.
+
+### v1.49.25 — GMV Affiliate tham khảo và giao diện mobile gọn
 
 - **Đối soát GMV Affiliate nhiều phiên chưa xác minh:** kiểm tra trực tiếp snapshot Cloudflare lúc 17:00 22/10/2026 ghi nhận 70 phiên trong cửa sổ 30 ngày: 20 phiên Affiliate đã có dữ liệu, 50 phiên chưa đối soát được vì `seller_product_gmv_not_reconciled_or_exceeds_creator_gmv`. Lỗi do nguồn GMV Creator (commission attribution) và Seller (last-click attribution) có quy tắc khác nhau, không thể mặc nhiên coi chênh lệch là GMV Affiliate chính xác.
 - **Sửa trạng thái đồng bộ và giữ dữ liệu:** phiên LIVE đã đồng bộ thành công sẽ hiển thị "Đã đồng bộ LIVE" thay vì ngụ ý toàn bộ job lỗi khi Affiliate còn chờ. Bảo vệ Affiliate đã xác minh trong cache giao diện khi dữ liệu mới trả thiếu; giữ nguyên KPI, không tự ghi chênh lệch vào Affiliate xác minh.
@@ -93,7 +100,7 @@
 
 ### v1.49.12 — Lưu bền GMV Affiliate và đồng bộ 30 ngày
 
-- **Sửa đồng bộ GMV Affiliate không bền:** Cả **Cập nhật dữ liệu** (Tổng quan, Admin) và **Đồng bộ ngay 30 ngày** (TikTok / API) tiếp tục sử dụng **cùng** tác vụ `POST /api/tiktok/autosync/run`; các phiên đã xác minh Creator/Affiliate được **lưu trong Cloudflare KV** và dữ liệu không bị xóa chỉ vì TikTok tạm trả thiếu, tài khoản mới không xuất hiện trong danh sách kỳ này hoặc lần API tiếp theo lỗi.
+- **Sửa đồng bộ GMV Affiliate không bền:** Cả **Cập nhật dữ liệu** (Tổng quan, Admin) và **Đồng bộ ngay 120 ngày** (TikTok / API) tiếp tục sử dụng **cùng** tác vụ `POST /api/tiktok/autosync/run`; các phiên đã xác minh Creator/Affiliate được **lưu trong Cloudflare KV** và dữ liệu không bị xóa chỉ vì TikTok tạm trả thiếu, tài khoản mới không xuất hiện trong danh sách kỳ này hoặc lần API tiếp theo lỗi.
 - **Sửa đồng bộ tự động bị bỏ sót Affiliate:** đồng bộ nền sẽ lấy các phiên đang thiếu Affiliate trong kho 30 ngày làm danh sách cần đối chiếu, kể cả khi lần lấy shop LIVE mới trả **0 phiên**. Các phiên chưa xác minh được luân phiên thử lại theo thời điểm kiểm tra gần nhất; mỗi lần chỉ xử lý số yêu cầu API vừa phải (8 phiên mỗi giờ, 10 phiên khi bấm nút) để tránh lỗi vượt giới hạn Cloudflare Worker.
 - **Phân biệt đã đồng bộ và đã xác minh:** kết quả server lưu tổng số Affiliate đã xác minh/còn thiếu. Nếu còn thiếu, nút Tổng quan báo **Đã đồng bộ · còn thiếu** và dòng số phiên chưa đủ thông tin, không hiển thị một trạng thái **Đã cập nhật** gây hiểu nhầm là 100% Affiliate đều đã đúng. Hai nút vẫn có thể tiếp tục dùng; các phiên chưa xác minh tự được thử lại trong những đợt chạy nền, không phải nhập dữ liệu lần nữa.
 - **Xác minh dữ liệu sau đồng bộ:** mỗi bản ghi cache có `cacheUpdatedAt`; sau khi máy chủ báo hoàn tất, giao diện kiểm tra đã đọc được **đúng snapshot mới lưu** thay vì hiển thị thành công trên cache cũ của một vùng Cloudflare.
@@ -445,6 +452,7 @@ README giữ lại phần này để nhân sự có thể biết **vì sao giao 
 
 | Phiên bản | Thay đổi chính |
 |---|---|
+| **v1.49.26** | Đồng bộ LIVE lùi 120 ngày theo bốn chặng 30 ngày, tự tiếp tục qua checkpoint/cron, kiểm tra Affiliate từng phiên theo batch 8 và bảo vệ dữ liệu đã xác minh. |
 | **v1.49.25** | Sửa ý nghĩa trạng thái đồng bộ LIVE và bảo vệ dữ liệu Affiliate đã xác minh; bổ sung chênh lệch Creator/Seller chỉ để tham khảo; giao diện mobile tài khoản gọn và thu gọn các khối ủy quyền TikTok. |
 | **v1.49.24** | Đổi tên tab trình duyệt thành “SellerKBB · Doanh Số KPIs”; viết lại hướng dẫn đăng nhập Google và xét duyệt tài khoản mới, bỏ thuật ngữ “bootstrap” khỏi giao diện. |
 | **v1.49.12** | Đồng bộ lưu bền GMV Affiliate đã xác minh, kiểm tra backlog 30 ngày tự động và hiển thị rõ số phiên chưa xác minh. |
