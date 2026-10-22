@@ -2058,7 +2058,9 @@ async function handleApi(request, env, ctx) {
       phase:existing.phase,startedAt:existing.startedAt},202);
 
     const body=await request.json().catch(()=>({}));
-    const resumeMissing=body?.retryPending===true && existing?.state==="partial" &&
+    const previousIncomplete=existing?.state==="partial" ||
+      (existing?.state==="success" && Number(existing?.affiliatePending||0)>0);
+    const resumeMissing=body?.retryPending===true && previousIncomplete &&
       existing?.completedDays>=MANUAL_SYNC_DAYS;
     const retryRows=resumeMissing?await getAutoSyncData(env):[];
     const retryIds=resumeMissing?manualAffiliatePendingIds(retryRows):[];
