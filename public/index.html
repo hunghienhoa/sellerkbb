@@ -6741,7 +6741,7 @@ body.account-modal-open{overflow:hidden}
       const creatorChannels=Array.isArray(creatorStatus?.channels)&&creatorStatus.channels.length
         ?creatorStatus.channels
         :[{channel:'shopkhangbaby',connected:false},{channel:'mekhangsua',connected:false}];
-      const creatorConnectedCount=creatorChannels.filter(item=>item.connected===true&&!(item.missingScopes||[]).length).length;
+      const creatorConnectedCount=creatorChannels.filter(item=>item.connected===true&&!(item.missingScopes||[]).length&&item.hasRefreshToken===true&&!item.refreshError&&!item.error).length;
 
       $('#section-tiktok').innerHTML=`
         <div class="api-hero">
