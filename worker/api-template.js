@@ -782,6 +782,24 @@ async function fetchLiveShopProductBreakdown(env, accessToken, session) {
   };
 }
 
+// Diagnostic only: creator-side commission attribution and seller-side last-click
+// GMV use different TikTok metric definitions. Their difference must NEVER
+// be promoted to verified Affiliate GMV or used as a reconciled KPI value.
+function liveAffiliateComparison(session) {
+  const creator = Number(session?.creatorGmvAmount);
+  const seller = Number(session?.sellerGmvAmount);
+  const allowed = isAllowedSellerKbbLiveChannel(session);
+  if (!allowed || session?.creatorGmvAvailable !== true || !Number.isFinite(creator) ||
+      !Number.isFinite(seller) || creator < 0 || seller <= 0 || creator < seller) {
+    return { affiliateEstimateAvailable: false, affiliateEstimateAmount: null };
+  }
+  return {
+    affiliateEstimateAvailable: true,
+    affiliateEstimateAmount: Math.max(0, Math.round(creator - seller)),
+    affiliateEstimateSource: "creator_minus_seller_different_attribution_unverified"
+  };
+}
+
 async function enrichLiveAffiliateBreakdowns(env, accessToken, sessions, limit = 12, reason = "hourly") {
   const cutoffSeconds = Math.floor((Date.now() - 30 * 86400000) / 1000);
   const all = (sessions || [])
@@ -1557,6 +1575,7 @@ async function executeManualSyncJob(env, job) {
     error: result?.ok === true ? null : (result?.error || "Đồng bộ TikTok không hoàn tất"),
     affiliateVerified: Number(result?.affiliateVerified ?? result?.affiliateEnrichment?.verified ?? 0),
     affiliatePending: Number(result?.affiliatePending ?? result?.affiliateEnrichment?.pending ?? 0),
+    affiliateEstimates: Number(result?.affiliateEstimates ?? 0),
     snapshotAt: result?.snapshotAt || null
   };
   await saveManualSyncJob(env, completed);
@@ -1606,6 +1625,9 @@ async function runAutoSync(env, lookbackDays = 2, reason = "hourly") {
       .sort((a, b) => Number(b.startTimeSeconds || 0) - Number(a.startTimeSeconds || 0))
       .slice(0, Math.min(12000, Number(settings.firestoreMaxSessions || 12000)));
 
+    // Keep an explicitly UNVERIFIED comparison even for sessions not reached by
+    // today's API retry limit. Do not overwrite prior verified snapshots.
+    for (const session of merged) Object.assign(session, liveAffiliateComparison(session));
     const affiliateEnrichment = await enrichLiveAffiliateBreakdowns(
       env, token.access_token, merged,
       reason === "manual" ? 10 : reason === "hourly" ? 8 : 10, reason
@@ -1636,6 +1658,7 @@ async function runAutoSync(env, lookbackDays = 2, reason = "hourly") {
       affiliateEnrichment,
       affiliateVerified: affiliateEnrichment.verified,
       affiliatePending: affiliateEnrichment.pending,
+      affiliateEstimates: merged.filter(x => x.affiliateDataAvailable !== true && x.affiliateEstimateAvailable === true).length,
       snapshotAt,
       reconciliation
     };
