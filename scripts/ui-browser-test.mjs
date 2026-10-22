@@ -835,7 +835,7 @@ try {
   await page.click('#nav [data-section="kpi"]');
   await page.select('#section-kpi [data-kpi-month-select]','2026-10');
   const manualGmvAfterApproval=await page.$eval('[data-kpi-table="final"]',e=>[...e.querySelectorAll('tbody tr')].reduce((sum,row)=>sum+(Number((row.cells[3]?.textContent||'').replace(/[^0-9]/g,''))||0),0));
-  assert(manualGmvAfterApproval===manualGmvBeforeApproval+777777,"Approved delegated manual GMV must increase finalized KPI exactly once");
+  assert(manualGmvAfterApproval===manualGmvBeforeApproval+777777*2,"Approved Host and Operator manual GMV allocations must each appear once after approval");
 
   const noAssignUrl=new URL(previewUrl);
   noAssignUrl.searchParams.set('preview_role','operator');
