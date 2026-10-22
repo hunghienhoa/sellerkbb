@@ -419,7 +419,8 @@ assert(!html.includes("Hoa hồng Affiliate")&&!html.includes("Không cộng và
 assert(html.includes("singleLiveTotalKpiGmvAmount=Math.round(analytics*singleLiveAdjustmentRatio)"), "Frontend KPI fallback must include Affiliate GMV in total LIVE basis");
 assert(html.includes("affiliateDataAvailable:src.affiliateDataAvailable===true"), "Auto-sync frontend merge must carry Affiliate split fields");
 assert(worker.includes("filter(Boolean).filter(isAllowedSellerKbbLiveChannel)"), "Cached LIVE data must be sanitized then whitelist-filtered");
-assert(worker.includes("insideRefreshedWindow")&&worker.includes("freshIds.has(id)"), "Refreshed sync window must prune stale affiliate sessions");
+assert(!worker.includes("insideRefreshedWindow && !freshIds.has(id)") &&
+  worker.includes("byId.set(id, item);"), "Partial shop LIVE lists must not prune historically verified sessions");
 assert(worker.includes("function validLiveStartSeconds")&&worker.includes("function validLiveEndSeconds"), "LIVE timestamp validation missing");
 assert(worker.includes("function sanitizeStoredLiveSession")&&worker.includes("function mergeLiveSessionSnapshots"), "LIVE cache sanitation/safe merge missing");
 assert(worker.includes('syncState: !start ? "invalid_start_time" : (end ? "complete" : "pending_end_time")'), "Incomplete LIVE state marker missing");
