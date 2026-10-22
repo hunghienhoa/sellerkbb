@@ -3108,7 +3108,7 @@ body.account-modal-open{overflow:hidden}
     const STARTUP_TIMEOUT_MS = 18000;
     const API_TIMEOUT_MS = 12000;
     let initializeApp, getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged;
-    let getFirestore, doc, getDoc, setDoc, updateDoc, deleteDoc, getDocs, collection, query, orderBy, where, limit, startAfter, writeBatch, serverTimestamp, Timestamp;
+    let getFirestore, doc, getDoc, setDoc, updateDoc, deleteDoc, getDocs, collection, query, orderBy, where, limit, startAfter, writeBatch, runTransaction, serverTimestamp, Timestamp;
 
     async function withTimeout(promise,ms,label='Tác vụ'){
       let timer;
@@ -3128,7 +3128,7 @@ body.account-modal-open{overflow:hidden}
       ]),12000,'Tải Firebase');
       ({initializeApp}=appModule);
       ({getAuth,GoogleAuthProvider,signInWithPopup,signOut,onAuthStateChanged}=authModule);
-      ({getFirestore,doc,getDoc,setDoc,updateDoc,deleteDoc,getDocs,collection,query,orderBy,where,limit,startAfter,writeBatch,serverTimestamp,Timestamp}=firestoreModule);
+      ({getFirestore,doc,getDoc,setDoc,updateDoc,deleteDoc,getDocs,collection,query,orderBy,where,limit,startAfter,writeBatch,runTransaction,serverTimestamp,Timestamp}=firestoreModule);
     }
 
     const $ = (s) => document.querySelector(s);
@@ -5334,14 +5334,17 @@ body.account-modal-open{overflow:hidden}
     }
 
     function manualKpiSessionCard(session,editable){
-      const saved=normalizedManualKpiEntries(session);
+      const saved=manualKpiEditorEntries(session);
+      const approved=normalizedManualKpiEntries(session);
+      const pending=session?.kpiDraft?.status==='pending';
       const pairs=manualKpiPairs(session);
       const rows=pairs.length?pairs:[{host:null,operator:null}];
       const validation=manualKpiValidation(session,saved);
-      const totalManual=validation.countable?saved.reduce((sum,e)=>sum+Math.round(Number(e.gmv||0)*(e.role==='operator'?.001:.003)),0):0;
+      const approvedValidation=manualKpiValidation(session,approved);
+      const totalManual=approvedValidation.countable?approved.reduce((sum,e)=>sum+Math.round(Number(e.gmv||0)*(e.role==='operator'?.001:.003)),0):0;
       const peopleCount=saved.filter(e=>e.uid||e.name).length;
-      const status=validation.status==='draft'?'Đã lưu nháp':validation.status==='excess'?'Cần sửa · vượt GMV':peopleCount?'Đã nhập '+peopleCount+' người':'Chưa nhập';
-      const statusClass=validation.status==='excess'?'bad':validation.status==='draft'?'warn':validation.countable?'ok':'warn';
+      const status=pending?'Chờ Admin duyệt':validation.status==='draft'?'Đã lưu nháp':validation.status==='excess'?'Cần sửa · vượt GMV':peopleCount?'Đã nhập '+peopleCount+' người':'Chưa nhập';
+      const statusClass=pending?'warn':validation.status==='excess'?'bad':validation.status==='draft'?'warn':approvedValidation.countable?'ok':'warn';
       const reconciled=sessionGmvFigures(session).final!==null;
       const compactSaved=editable&&saved.length>0&&validation.status!=='excess';
       const savedPairCount=pairs.filter(pair=>pair?.host?.uid||pair?.host?.name||pair?.operator?.uid||pair?.operator?.name).length;
@@ -5352,12 +5355,14 @@ body.account-modal-open{overflow:hidden}
             <div class="row manual-kpi-title-row"><b>${esc(session.title||'Phiên LIVE')}</b><span class="pill warn manual-live-type-pill">${esc(manualKpiTypeLabel(session))}</span>${reconciled?'<span class="pill manual-reconciled-badge">✓ Đã đối soát</span>':''}<span class="pill ${statusClass}">${status}</span></div>
             <div class="tiny">@${esc(session.channelUsername||'—')} · ${fmtLiveTimeRange(session)} · GMV đã ghi nhận: ${fmtMoney(sessionGmvFigures(session).recorded,session.currency)}</div>
           </div>
-          <div class="manual-kpi-total"><span>KPI thủ công được tính</span><b>${fmtMoney(totalManual,session.currency)}</b></div>
+          <div class="manual-kpi-total"><span>KPI thủ công đã duyệt</span><b>${fmtMoney(totalManual,session.currency)}</b>${pending?'<small class="pill warn">Đang chờ duyệt bản nháp mới</small>':''}</div>
         </div>
+        ${pending?'<div class="notice warn">Bản nháp đang chờ Admin duyệt. Số tiền vừa nhập chưa được cộng vào KPI nhân sự.</div>':''}
+        ${pending&&isAdmin()?`<div class="row" style="margin:8px 0"><button class="btn primary small" type="button" data-manual-approve>${icon('check',14)} Duyệt KPI nháp</button></div>`:''}
         ${compactSaved?`<div class="manual-kpi-saved-summary" data-manual-kpi-session-summary>
           <div class="manual-kpi-saved-summary-copy">
-            <b>✓ KPI thủ công đã lưu</b>
-            <span>${savedPairCount} nhóm Host/Vận hành · GMV Host ${fmtMoney(savedHostGmv,session.currency)}${validation.countable?' · KPI '+fmtMoney(totalManual,session.currency):' · đang lưu nháp'}</span>
+            <b>${pending?'KPI nháp · chờ Admin duyệt':'✓ KPI thủ công đã lưu'}</b>
+            <span>${savedPairCount} nhóm Host/Vận hành · GMV Host ${fmtMoney(savedHostGmv,session.currency)}${pending?' · chưa cộng KPI':approvedValidation.countable?' · KPI '+fmtMoney(totalManual,session.currency):' · đang lưu nháp'}</span>
           </div>
           <button class="btn small manual-kpi-session-edit" type="button" data-manual-kpi-edit>${icon('edit',13)} Sửa KPI</button>
         </div>`:''}
@@ -5365,7 +5370,7 @@ body.account-modal-open{overflow:hidden}
           <div class="manual-kpi-rule">${icon('shield',15)} <span>Chỉ nhập GMV sau hoàn/hủy của từng Host. Tổng GMV Host không được vượt <b>GMV sau khi hoàn hủy</b> đã chốt của phiên. SellerKBB không tự chia GMV tổng phiên. Không bắt buộc đủ số người tham gia. Nếu phiên chưa chốt, dữ liệu được lưu nháp và chưa cộng vào KPI nhân sự.</span></div>
           <div data-manual-balance>${manualKpiBalanceHtml(session,manualKpiHostTotal(saved))}</div>
           <div class="manual-kpi-entries">${rows.map((pair,index)=>manualKpiPairRow(session,pair,index,editable)).join('')}</div>
-          ${editable?`<div class="manual-kpi-actions"><button class="btn" type="button" data-manual-add>${icon('users',15)} Thêm người</button><button class="btn primary" type="button" data-manual-save>${icon('check',15)} Lưu KPI thủ công</button></div>`:''}
+          ${editable?`<div class="manual-kpi-actions"><button class="btn" type="button" data-manual-add>${icon('users',15)} Thêm người</button><button class="btn primary" type="button" data-manual-save>${icon('check',15)} ${isAdmin()?(pending?'Duyệt và lưu KPI':'Lưu KPI thủ công'):'Lưu nháp · chờ Admin duyệt'}</button></div>`:''}
         </div>
       </div>`;
     }
@@ -5408,12 +5413,18 @@ body.account-modal-open{overflow:hidden}
         showToast('Không thể lưu: GMV các Host vượt GMV sau khi hoàn hủy '+fmtMoney(validation.excess,session.currency));
         return;
       }
-      session.manualKpiEntries=entries;
-      const message=validation.status==='draft'||validation.status==='waiting'
-        ?'Đã lưu nháp KPI thủ công · chưa cộng vào KPI đã chốt'
-        :validation.status==='under'
-          ?'Đã lưu KPI thủ công · còn '+fmtMoney(validation.remaining,session.currency)+' GMV chưa phân bổ'
-          :'Đã lưu KPI thủ công · GMV đã khớp với số sau hoàn hủy';
+      if(!canAssignLiveStaff()){showToast('Bạn không có quyền nhập KPI thủ công.');return;}
+      const delegated=!isAdmin();
+      const message=delegated?'Đã lưu nháp KPI · chờ Admin duyệt · chưa cộng KPI'
+        :validation.status==='draft'||validation.status==='waiting'?'Đã lưu nháp KPI thủ công · chưa có GMV chốt'
+        :validation.status==='under'?'Đã duyệt KPI thủ công · còn '+fmtMoney(validation.remaining,session.currency)+' GMV chưa phân bổ'
+        :'Đã duyệt KPI thủ công · GMV đã khớp'; 
+      if(delegated){
+        session.kpiDraft={liveId:String(sessionId),entries,status:'pending',updatedBy:state.user.uid,updatedAt:new Date().toISOString()};
+      }else{
+        session.manualKpiEntries=entries;
+        if(session.kpiDraft?.status==='pending')session.kpiDraft={...session.kpiDraft,entries,status:'approved',approvedBy:state.user.uid};
+      }
       if(PREVIEW){
         persistPreviewState();
         showToast(message);
@@ -5421,21 +5432,82 @@ body.account-modal-open{overflow:hidden}
         renderKpi();
         return;
       }
-      await setDoc(doc(state.db,'liveSessions',sessionId),{
-        manualKpiEntries:entries,
-        manualKpiUpdatedAt:serverTimestamp(),
-        updatedAt:serverTimestamp()
-      },{merge:true});
+      if(delegated){
+        await setDoc(doc(state.db,'liveKpiDrafts',sessionId),{
+          liveId:String(sessionId),entries,status:'pending',
+          updatedBy:state.user.uid,updatedAt:serverTimestamp()
+        });
+      }else{
+        const batch=writeBatch(state.db);
+        batch.set(doc(state.db,'liveSessions',sessionId),{
+          manualKpiEntries:entries,manualKpiUpdatedAt:serverTimestamp(),
+          manualKpiApprovedAt:serverTimestamp(),manualKpiApprovedBy:state.user.uid,
+          updatedAt:serverTimestamp()
+        },{merge:true});
+        if(session.kpiDraft){
+          batch.set(doc(state.db,'liveKpiDrafts',sessionId),{
+            liveId:String(sessionId),entries,status:'approved',
+            approvedBy:state.user.uid,approvedAt:serverTimestamp(),
+            updatedAt:serverTimestamp(),updatedBy:state.user.uid
+          });
+        }
+        await batch.commit();
+      }
       showToast(message);
       await loadData();
       renderAll();
     }
 
+    async function approveManualKpiDraft(sessionId){
+      if(!isAdmin()){showToast('Chỉ Admin được duyệt KPI thủ công.');return;}
+      const session=state.sessions.find(s=>s.id===sessionId);
+      if(!session||!isManualKpi(session)){showToast('Phiên chưa được gắn Campaign/Mega.');return;}
+      if(PREVIEW){
+        if(session.kpiDraft?.status!=='pending')return;
+        const entries=manualKpiEditorEntries(session);
+        const check=manualKpiValidation(session,entries);
+        if(!check.countable){showToast('Chỉ được duyệt khi GMV đã chốt và phân bổ hợp lệ.');return;}
+        session.manualKpiEntries=entries;
+        session.kpiDraft={...session.kpiDraft,status:'approved',approvedBy:state.user.uid};
+        persistPreviewState();renderAll();showToast('Đã duyệt KPI thủ công và cập nhật KPI nhân sự');return;
+      }
+      try{
+        const draftRef=doc(state.db,'liveKpiDrafts',sessionId);
+        const liveRef=doc(state.db,'liveSessions',sessionId);
+        const assignmentRef=doc(state.db,'liveAssignments',sessionId);
+        await runTransaction(state.db,async tx=>{
+          const [draftSnap,liveSnap,assignmentSnap]=await Promise.all([
+            tx.get(draftRef),tx.get(liveRef),tx.get(assignmentRef)
+          ]);
+          const draft=draftSnap.data();
+          if(draft?.status!=='pending')throw new Error('Bản nháp này đã thay đổi. Hãy tải lại trước khi duyệt.');
+          const live=liveSnap.data()||{};
+          if(assignmentSnap.exists()&&assignmentSnap.data()?.kpiMode!=='manual')throw new Error('Phiên không còn là Campaign/Mega.');
+          const entries=normalizedManualKpiEntries({manualKpiEntries:draft.entries,currency:session.currency});
+          if(entries.length===0||entries.length>40||!entries.some(e=>e.role==='host'&&e.uid))
+            throw new Error('Bản nháp chưa có Host hợp lệ.');
+          if(entries.some(e=>!e.uid||!Number.isFinite(e.gmv)||e.gmv<0))
+            throw new Error('Bản nháp có thông tin nhân sự hoặc tiền không hợp lệ.');
+          const latest={...session,...live,manualKpiEntries:entries};
+          const validation=manualKpiValidation(latest,entries);
+          if(!validation.countable)throw new Error('GMV đã chốt không đủ hoặc vượt mức. Chưa thể duyệt.');
+          tx.set(liveRef,{manualKpiEntries:entries,manualKpiUpdatedAt:serverTimestamp(),
+            manualKpiApprovedAt:serverTimestamp(),manualKpiApprovedBy:state.user.uid,
+            updatedAt:serverTimestamp()},{merge:true});
+          tx.set(draftRef,{...draft,entries,status:'approved',
+            approvedBy:state.user.uid,approvedAt:serverTimestamp(),updatedAt:serverTimestamp()});
+        });
+        showToast('Đã duyệt KPI thủ công và cộng vào KPI nhân sự');
+        await loadData();renderAll();
+      }catch(error){showToast(error?.message||'Không thể duyệt KPI thủ công');}
+    }
+
     function bindManualKpiEditors(){
-      if(!isAdmin())return;
+      if(!canAssignLiveStaff())return;
       document.querySelectorAll('[data-manual-session]').forEach(card=>{
         const sessionId=card.dataset.manualSession;
         card.querySelectorAll('[data-manual-entry]').forEach(bindManualKpiPair);
+        card.querySelector('[data-manual-approve]')?.addEventListener('click',()=>approveManualKpiDraft(sessionId));
 
         card.querySelector('[data-manual-kpi-edit]')?.addEventListener('click',()=>{
           card.querySelector('[data-manual-kpi-session-summary]')?.classList.add('hidden');
@@ -5491,11 +5563,11 @@ body.account-modal-open{overflow:hidden}
     }
 
     function renderManualKpi(){
-      if(!isAdmin()){ $('#section-manual-kpi').innerHTML=''; return; }
+      if(!canAssignLiveStaff()){ $('#section-manual-kpi').innerHTML=''; return; }
       const manualSessions=sessionsForRange().filter(isManualKpi);
       const validations=manualSessions.map(session=>({session,entries:normalizedManualKpiEntries(session),validation:manualKpiValidation(session)}));
       const countable=validations.filter(x=>x.validation.countable);
-      const drafts=validations.filter(x=>x.entries.length&&!x.validation.countable);
+      const drafts=validations.filter(x=>x.session.kpiDraft?.status==='pending'||(x.entries.length&&!x.validation.countable));
       const currency=manualSessions[0]?.currency||'VND';
       const totalManualKpi=countable.reduce((sum,x)=>sum+x.entries.reduce((s,e)=>s+Number(e.kpi||0),0),0);
       const totalManualGmv=countable.reduce((sum,x)=>sum+manualKpiHostTotal(x.entries),0);
@@ -5507,7 +5579,7 @@ body.account-modal-open{overflow:hidden}
           ${metricCard('history','Nháp / cần sửa',drafts.length)}
           ${metricCard('kpi','KPI thủ công đã chốt',fmtMoney(totalManualKpi,currency),fmtMoney(totalManualGmv,currency)+' GMV Host')}
         </div>
-        <div class="data-note">${icon('shield',16)}<span>KPI thủ công chỉ được cộng vào KPI nhân sự khi phiên đã có <b>GMV sau khi hoàn hủy</b> và tổng GMV các Host không vượt số đó. Thiếu GMV thì cảnh báo vàng nhưng vẫn lưu; vượt GMV thì chặn lưu; chưa có số chốt thì lưu nháp.</span></div>
+        <div class="data-note">${icon('shield',16)}<span>Nhân viên vận hành chỉ lưu nháp; Admin duyệt mới cộng KPI thủ công. KPI chỉ được cộng khi phiên đã có <b>GMV sau khi hoàn hủy</b> và tổng GMV các Host không vượt số đó. Thiếu GMV thì cảnh báo vàng nhưng vẫn lưu; vượt GMV thì chặn lưu; chưa có số chốt thì lưu nháp.</span></div>
         <div class="card manual-kpi-section">
           <div class="row space manual-kpi-section-head"><div><h3 class="heading-with-icon">${icon('settings',18)} Phiên cần tính KPI thủ công</h3><div class="sub">Phiên nào đã tích “Tính KPI thủ công” ở tab Phiên LIVE sẽ tự xuất hiện tại đây.</div></div><span class="pill">${manualSessions.length} phiên</span></div>
           ${manualSessions.length?`<div class="manual-kpi-session-list">${manualSessions.map(s=>manualKpiSessionCard(s,true)).join('')}</div>`:'<div class="empty">Không có phiên KPI thủ công trong khoảng thời gian này.</div>'}
