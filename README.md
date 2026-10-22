@@ -24,6 +24,7 @@
 - **Trạng thái trung thực:** kiểm tra hết danh sách mà Affiliate vẫn thiếu sẽ trả trạng thái `partial`, kèm tổng số phiên chưa xác minh và nhóm nguyên nhân (thiếu quyền, lỗi token, dữ liệu Creator, định nghĩa Seller/Creator khác nhau...). **Không** báo thành công hoàn toàn chỉ vì API đã được gọi xong.
 - **Thử lại nhanh phần còn thiếu:** TikTok / API hiển thị **Kiểm tra lại Affiliate còn thiếu** khi đồng bộ 120 ngày ở trạng thái `partial`. Nút này tạo một danh sách mới chỉ gồm các phiên chưa đối soát, không cần quét lại 120 ngày. Nút Tổng quan vẫn hỗ trợ đồng bộ đầy đủ.
 - **Giới hạn nguồn dữ liệu:** TikTok Get Shop LIVE Products Performance List v202512 chỉ áp dụng LIVE của tài khoản official/marketing; Creator LIVE Core Stats sử dụng quy tắc khác. Chênh lệch hai nguồn chưa thể coi là GMV Affiliate chính thức. Muốn đối chiếu số liệu đúng đơn Affiliate cần nguồn đơn Affiliate tương ứng và quyền Read Creator/Seller Affiliate Collaborations của ứng dụng trên TikTok Partner Center. Không xóa dữ liệu lịch sử đã lưu.
+- **Kiểm tra sau triển khai:** nhấn **Đồng bộ ngay 120 ngày** một lần, quan sát đủ tiến độ quét 120/120 ngày rồi kiểm tra số `Affiliate chưa xác minh`. Khi tác vụ báo `partial`, dùng nút **Kiểm tra lại Affiliate còn thiếu** để chỉ gọi API cho các LIVE chưa đối soát. Mọi số Affiliate suy ra từ chênh lệch Core Stats và Shop Products cần được kiểm chứng bằng báo cáo Affiliate Orders/Creator trong TikTok; không tự xem là số chính thức.
 
 ### v1.49.26 — Đồng bộ LIVE 120 ngày chia chặng và Affiliate từng phiên
 
