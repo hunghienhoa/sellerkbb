@@ -5679,19 +5679,36 @@ body.account-modal-open{overflow:hidden}
         s.onchange=()=>syncApprovedPermissionControls(s.dataset.approvedRole);
         syncApprovedPermissionControls(s.dataset.approvedRole);
       });
+      document.querySelectorAll('[data-approved-perm="live.read"]').forEach(c=>c.onchange=()=>syncApprovedPermissionControls(c.dataset.approvedUid));
+      document.querySelectorAll('[data-role]').forEach(c=>{
+        c.onchange=()=>syncPendingPermissionControls(c.dataset.role);
+        syncPendingPermissionControls(c.dataset.role);
+      });
+      document.querySelectorAll('[data-perm="live.read"]').forEach(c=>c.onchange=()=>syncPendingPermissionControls(c.dataset.uid));
     }
 
+    function syncPendingPermissionControls(uid){
+      const role=document.querySelector(`[data-role="${CSS.escape(uid)}"]`)?.value;
+      const live=document.querySelector(`[data-uid="${CSS.escape(uid)}"][data-perm="live.read"]`);
+      const assign=document.querySelector(`[data-uid="${CSS.escape(uid)}"][data-perm="live.assign"]`);
+      if(!assign)return;
+      const allowed=role==='operator'&&live?.checked===true;
+      assign.disabled=!allowed;
+      if(!allowed)assign.checked=false;
+      assign.closest('[data-pending-assign-row]')?.classList.toggle('hidden',role!=='operator');
+    }
     function userRoleOptions(role){
       return [['host','Host Livestream'],['operator','Nhân viên vận hành livestream'],['admin','Quản trị viên']].map(([value,label])=>`<option value="${value}" ${role===value?'selected':''}>${label}</option>`).join('');
     }
 
     function userApprovalCard(u){
-      return `<div class="approval-item"><div class="row space">${userIdentityHtml(u,true)}<span class="pill warn">Chờ duyệt</span></div><div class="form-grid" style="margin-top:16px"><label><div class="tiny">Vai trò</div><select class="input" style="width:100%" data-role="${u.id}">${userRoleOptions('host')}</select></label><div><div class="tiny">Nội dung được phép xem</div><label class="checkline"><input type="checkbox" data-perm="live.read" data-uid="${u.id}" checked> Phiên LIVE</label><label class="checkline"><input type="checkbox" data-perm="kpi.read" data-uid="${u.id}" checked> KPI cá nhân / báo cáo</label></div></div><div class="row space" style="margin-top:16px"><button class="btn danger small" data-user-delete="${u.id}">${icon('logout',14)} Xóa user</button><button class="btn primary" data-approve="${u.id}">${icon('check',15)} Duyệt tài khoản</button></div></div>`;
+      return `<div class="approval-item"><div class="row space">${userIdentityHtml(u,true)}<span class="pill warn">Chờ duyệt</span></div><div class="form-grid" style="margin-top:16px"><label><div class="tiny">Vai trò</div><select class="input" style="width:100%" data-role="${u.id}">${userRoleOptions('host')}</select></label><div><div class="tiny">Nội dung được phép xem</div><label class="checkline"><input type="checkbox" data-perm="live.read" data-uid="${u.id}" checked> Phiên LIVE</label><label class="checkline"><input type="checkbox" data-perm="kpi.read" data-uid="${u.id}" checked> KPI cá nhân / báo cáo</label><label class="checkline hidden" data-pending-assign-row="${u.id}"><input type="checkbox" data-uid="${u.id}" data-perm="live.assign"> Gắn Host/Vận hành, Campaign/Mega và nhập KPI nháp</label></div></div><div class="row space" style="margin-top:16px"><button class="btn danger small" data-user-delete="${u.id}">${icon('logout',14)} Xóa user</button><button class="btn primary" data-approve="${u.id}">${icon('check',15)} Duyệt tài khoản</button></div></div>`;
     }
 
     function userApprovedRow(u){
       const self=u.id===state.user?.uid;
       const permissions=Array.isArray(u.permissions)?u.permissions:[];
+      const assignChecked=u.role==='operator'&&permissions.includes('live.read')&&permissions.includes('live.assign');
       const liveChecked=u.role==='admin'||permissions.includes('live.read');
       const kpiChecked=u.role==='admin'||permissions.includes('kpi.read');
       return `<div class="approved-user-card approved-user-row" data-approved-user="${u.id}">
@@ -5707,7 +5724,7 @@ body.account-modal-open{overflow:hidden}
         </div>
         <div class="user-access-grid hidden" data-user-editor="${u.id}">
           <label><div class="tiny">Vai trò</div><select class="input" style="width:100%" data-approved-role="${u.id}" ${self?'disabled':''}>${userRoleOptions(u.role)}</select></label>
-          <div><div class="tiny">Quyền truy cập</div><label class="checkline"><input type="checkbox" data-approved-perm="live.read" data-approved-uid="${u.id}" ${liveChecked?'checked':''} ${self?'disabled':''}> Phiên LIVE</label><label class="checkline"><input type="checkbox" data-approved-perm="kpi.read" data-approved-uid="${u.id}" ${kpiChecked?'checked':''} ${self?'disabled':''}> KPI nhân sự / báo cáo</label></div>
+          <div><div class="tiny">Quyền truy cập</div><label class="checkline"><input type="checkbox" data-approved-perm="live.read" data-approved-uid="${u.id}" ${liveChecked?'checked':''} ${self?'disabled':''}> Phiên LIVE</label><label class="checkline"><input type="checkbox" data-approved-perm="kpi.read" data-approved-uid="${u.id}" ${kpiChecked?'checked':''} ${self?'disabled':''}> KPI nhân sự / báo cáo</label><label class="checkline" data-approved-assign-row="${u.id}"><input type="checkbox" data-approved-perm="live.assign" data-approved-uid="${u.id}" ${assignChecked?'checked':''} ${self?'disabled':''}> Gắn Host/Vận hành, Campaign/Mega và nhập KPI nháp</label><div class="tiny">Bản nháp không tính KPI cho đến khi Admin duyệt.</div></div>
           <div class="row user-access-actions">${self?'<span class="user-self-note">Tài khoản đang đăng nhập được khóa thao tác để tránh tự mất quyền Admin.</span>':''}<button class="btn ghost small" type="button" data-user-edit="${u.id}">Đóng</button><button class="btn primary small" data-user-save="${u.id}" ${self?'disabled':''}>${icon('check',14)} Lưu quyền</button></div>
         </div>
       </div>`;
@@ -5729,13 +5746,24 @@ body.account-modal-open{overflow:hidden}
       const boxes=[...document.querySelectorAll(`[data-approved-uid="${CSS.escape(uid)}"][data-approved-perm]`)];
       if(uid===state.user?.uid)return;
       const full=role==='admin';
-      boxes.forEach(x=>{ x.disabled=full; if(full)x.checked=true; });
+      boxes.forEach(x=>{x.disabled=full;if(full)x.checked=true;});
+      const live=boxes.find(x=>x.dataset.approvedPerm==='live.read');
+      const assign=boxes.find(x=>x.dataset.approvedPerm==='live.assign');
+      if(assign){
+        const allowed=role==='operator'&&live?.checked===true;
+        assign.disabled=full||!allowed;
+        if(!allowed)assign.checked=false;
+        assign.closest('[data-approved-assign-row]')?.classList.toggle('hidden',role!=='operator');
+      }
     }
 
     async function approveUser(uid){
       const role=document.querySelector(`[data-role="${CSS.escape(uid)}"]`).value;
       const permissions=[...document.querySelectorAll(`[data-uid="${CSS.escape(uid)}"][data-perm]:checked`)].map(x=>x.dataset.perm);
       if(role==='admin')permissions.splice(0,permissions.length,'live.read','kpi.read');
+      else if(role!=='operator'||!permissions.includes('live.read')){
+        const idx=permissions.indexOf('live.assign');if(idx>=0)permissions.splice(idx,1);
+      }
       if(PREVIEW){
         const u=state.users.find(x=>x.id===uid);
         Object.assign(u,{role,status:'approved',permissions});
@@ -5750,6 +5778,9 @@ body.account-modal-open{overflow:hidden}
       const role=document.querySelector(`[data-approved-role="${CSS.escape(uid)}"]`)?.value||'host';
       const permissions=[...document.querySelectorAll(`[data-approved-uid="${CSS.escape(uid)}"][data-approved-perm]:checked`)].map(x=>x.dataset.approvedPerm);
       if(role==='admin')permissions.splice(0,permissions.length,'live.read','kpi.read');
+      else if(role!=='operator'||!permissions.includes('live.read')){
+        const idx=permissions.indexOf('live.assign');if(idx>=0)permissions.splice(idx,1);
+      }
       if(PREVIEW){
         const u=state.users.find(x=>x.id===uid);
         if(u)Object.assign(u,{role,status:'approved',permissions});
