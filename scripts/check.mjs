@@ -466,11 +466,14 @@ assert(read("DESIGN.md").includes("Three-skill design workflow"), "Design guidel
 assert(read("README.md").includes("v1.49.5")&&read("README.md").includes("Taste Skill"), "Design-skill release docs missing");
 const firestoreRules=read("firebase/firestore.rules");
 assert(firestoreRules.includes("match /liveAssignments/{liveId}") && firestoreRules.includes("match /liveKpiDrafts/{liveId}"), "Restricted delegation documents missing");
-assert(firestoreRules.includes("validAssignment(liveId)") && firestoreRules.includes("validOperatorDraft(liveId)") && firestoreRules.includes("currentUser().role == 'operator'"), "Operator Firestore write constraints missing");
+assert(firestoreRules.includes("validAssignment(liveId)") && firestoreRules.includes("validDelegatedDraft(liveId)") && firestoreRules.includes("currentUser().role in ['operator', 'host']"), "Host/Operator Firestore write constraints missing");
 assert(firestoreRules.includes("allow create, update, delete: if isAdmin();"), "LIVE financial documents must remain admin write only");
-assert(html.includes("canAssignLiveStaff()") && html.includes("data-approved-perm=\"live.assign\"") && html.includes("data-perm=\"live.assign\""), "Admin user-editor toggle for operator tagging missing");
+assert(html.includes("canAssignLiveStaff()") && html.includes("data-approved-perm=\"live.assign\"") && html.includes("data-perm=\"live.assign\""), "Admin user-editor toggle for Host/Operator tagging missing");
 assert(html.includes("collection(state.db,'liveKpiDrafts')") && html.includes("status:'pending'"), "Operator KPI must save to pending drafts");
 assert(html.includes("async function approveManualKpiDraft") && html.includes("runTransaction(state.db"), "Admin draft approval must be a transaction");
 assert(html.includes("manualKpiEntries:entries") && html.includes("manualKpiApprovedBy:state.user.uid"), "Approved KPI attribution missing");
 assert(html.includes("session?.kpiDraft?.status==='pending'") && html.includes("KPI nháp · chờ Admin duyệt"), "Pending drafts need a clearly visible non-final status");
-console.log("Project structure, security boundary, delegated tagging, pending KPI draft approval and desktop/mobile checks OK");
+assert(html.includes("function isDelegatedLiveRole(role){return role==='operator'||role==='host';}"), "Role guard must allow Host and Operator only");
+assert(html.includes("isDelegatedLiveRole(previewRole)") && html.includes("isDelegatedLiveRole(u.role)"), "Host permission must work in preview and approved user forms");
+assert(html.includes("const allowed=isDelegatedLiveRole(role)&&live?.checked===true;"), "Host assignment checkbox must depend on LIVE read");
+console.log("Project structure, Host/Operator delegation, isolated drafts, Admin approval and desktop/mobile checks OK");

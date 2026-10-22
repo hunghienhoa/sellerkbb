@@ -510,6 +510,13 @@ try {
   assert(await page.$eval('[data-approved-uid="thao-my"][data-approved-perm="live.assign"]',e=>e.checked),"Operator assignment permission did not persist");
   assert(await page.$eval('[data-user-editor="thao-my"]',e=>e.classList.contains('hidden')),"Editor must close after saving");
 
+  await page.click('[data-user-edit="dung"]');
+  assert(await page.$eval('[data-approved-role="dung"]',e=>e.value)==='host',"Host account role unexpectedly changed");
+  assert(await page.$eval('[data-approved-uid="dung"][data-approved-perm="live.assign"]',e=>e.checkVisibility()&&!e.disabled),"Host must be able to receive delegated LIVE and draft rights");
+  await page.click('[data-approved-uid="dung"][data-approved-perm="live.assign"]');
+  await page.click('[data-user-save="dung"]');
+  assert(await page.$eval('[data-approved-uid="dung"][data-approved-perm="live.assign"]',e=>e.checked),"Host assignment permission was not saved");
+
   page.once('dialog',dialog=>dialog.dismiss());
   await page.click('[data-user-delete="tam"]');
   await sleep(80);
@@ -539,6 +546,7 @@ try {
   assert(await page.$eval('[data-approved-role="thao-my"]',e=>e.value)==='operator',"Updated Preview role did not persist after reload");
   assert(!(await page.$eval('[data-approved-uid="thao-my"][data-approved-perm="kpi.read"]',e=>e.checked)),"Updated Preview permission did not persist after reload");
   assert(await page.$eval('[data-approved-uid="thao-my"][data-approved-perm="live.assign"]',e=>e.checked),"Updated operator assignment checkbox did not persist after reload");
+  assert(await page.$eval('[data-approved-uid="dung"][data-approved-perm="live.assign"]',e=>e.checked),"Updated Host permission did not persist after reload");
 
   await page.setViewport({width:900,height:844,deviceScaleFactor:1});
   await page.reload({waitUntil:"domcontentloaded"});
@@ -845,7 +853,50 @@ try {
   await page.click('#nav [data-section="live"]');
   await page.click('#section-live [data-range-mode="30d"]');
   assert(await page.$('#section-live [data-save-session]')===null,"Operator without live.assign must not edit LIVE tags");
-  console.log("Desktop + mobile browser smoke tests and delegated KPI draft approval passed");
+
+  // A Host with the same opt-in permission may tag sessions, create pending
+  // KPI allocations, and must still wait for an Admin to approve them.
+  const hostUrl=new URL(previewUrl);
+  hostUrl.searchParams.set('preview_role','host');
+  hostUrl.searchParams.set('preview_assign','1');
+  await page.goto(hostUrl.href,{waitUntil:"domcontentloaded"});
+  await page.waitForSelector('#app:not(.hidden)',{timeout:30000});
+  assert(await page.$('#nav [data-section="users"]')===null,"Host must not gain account administration");
+  assert(await page.$('#nav [data-section="staff"]')===null,"Host must not edit personnel directory");
+  assert(await page.$('#nav [data-section="manual-kpi"]')!==null,"Authorized Host must see manual KPI drafts");
+  await page.click('#nav [data-section="live"]');
+  await page.click('#section-live [data-range-mode="30d"]');
+  const hostRow='#section-live .desktop-live-table tbody tr:has(.live-reconciled-badge):not(:has([data-manual-type-summary]))';
+  const hostSessionId=await page.$eval(hostRow,e=>e.dataset.liveSession);
+  assert(Boolean(hostSessionId),"Host permission test needs a finalized untagged session");
+  await page.select(hostRow+' select[data-person="host"]','staff-thao-my');
+  await page.select(hostRow+' select[data-person="operator"]','staff-hung-hh');
+  await page.click(hostRow+' [data-save-session]');
+  assert(await page.$eval('#actionToast',e=>e.textContent.includes('Đã lưu nhân sự')),"Host must be allowed to tag Host/Operator");
+  const hostSavedRow='#section-live .desktop-live-table tbody tr[data-live-session="'+hostSessionId+'"]';
+  await page.$eval(hostSavedRow+' [data-manual-kpi]',e=>{e.checked=true;e.dispatchEvent(new Event('change',{bubbles:true}));});
+  await page.select(hostSavedRow+' [data-manual-type]','campaign');
+  await page.click(hostSavedRow+' [data-save-session]');
+  assert(await page.$eval('#actionToast',e=>e.textContent.includes('Ngày Campaign')),"Host must be able to tag Campaign LIVE");
+  await page.click('#nav [data-section="manual-kpi"]');
+  await page.click('#section-manual-kpi [data-range-mode="30d"]');
+  const hostCard='#section-manual-kpi [data-manual-session="'+hostSessionId+'"]';
+  await page.select(hostCard+' [data-manual-host-person]','staff-thao-my');
+  await page.select(hostCard+' [data-manual-operator-person]','staff-hung-hh');
+  await page.$eval(hostCard+' [data-manual-host-gmv]',e=>{e.value='555555';e.dispatchEvent(new Event('input',{bubbles:true}));});
+  await page.click(hostCard+' [data-manual-save]');
+  assert(await page.$eval('#actionToast',e=>e.textContent.includes('chờ Admin duyệt')),"Host manual KPI must save only a draft");
+  assert(await page.$eval(hostCard,e=>e.textContent.includes('Chờ Admin duyệt')),"Host manual KPI must show pending approval");
+
+  const hostDeniedUrl=new URL(previewUrl);
+  hostDeniedUrl.searchParams.set('preview_role','host');
+  await page.goto(hostDeniedUrl.href,{waitUntil:"domcontentloaded"});
+  await page.waitForSelector('#app:not(.hidden)',{timeout:30000});
+  assert(await page.$('#nav [data-section="manual-kpi"]')===null,"Host without live.assign must lose draft access");
+  await page.click('#nav [data-section="live"]');
+  await page.click('#section-live [data-range-mode="30d"]');
+  assert(await page.$('#section-live [data-save-session]')===null,"Host without live.assign must not tag sessions");
+  console.log("Desktop + mobile browser smoke tests for Host/Operator delegation and Admin approval passed");
 } catch(error) {
   fs.mkdirSync('../verification',{recursive:true});
   for(const page of await browser.pages()) {

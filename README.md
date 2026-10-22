@@ -4,7 +4,7 @@
 
 ### Báo cáo TikTok LIVE · KPI nhân sự · Tự đồng bộ 24/24
 
-**Phiên bản hiện tại: v1.49.7**
+**Phiên bản hiện tại: v1.49.8**
 
 [![GitHub Release](https://img.shields.io/github/v/release/hunghienhoa/sellerkbb?label=Release)](https://github.com/hunghienhoa/sellerkbb/releases)
 [![GitHub Actions](https://img.shields.io/github/actions/workflow/status/hunghienhoa/sellerkbb/deploy.yml?branch=main&label=Ki%E1%BB%83m%20tra%20%26%20Backup)](https://github.com/hunghienhoa/sellerkbb/actions)
@@ -17,7 +17,14 @@
 
 ---
 
-## 🆕 Cập nhật mới nhất — v1.49.7
+## 🆕 Cập nhật mới nhất — v1.49.8
+
+- **Host Livestream cũng được cấp quyền tương tự Nhân viên vận hành livestream**, qua checkbox **“Gắn Host/Vận hành, Campaign/Mega và nhập KPI nháp”** trong **Quản lý tài khoản → Quyền truy cập**.
+- Admin bật hoặc tắt quyền **riêng cho từng Host hoặc nhân viên vận hành**. Quyền chỉ có hiệu lực khi tài khoản đã duyệt, có `live.read` và checkbox `live.assign` được bật; mặc định Host chưa bật thì chỉ xem.
+- Host được gắn Host/Vận hành theo phiên, chọn Campaign/Mega, nhập/sửa GMV thủ công và **lưu nháp chờ Admin duyệt**. Cơ chế duyệt không thay đổi: chỉ Admin có thể phê duyệt KPI, người được cấp quyền không thể sửa trực tiếp KPI đã chốt hoặc dữ liệu TikTok.
+- Sửa kiểm soát Firestore cho cả hai vai trò `host` và `operator`, cập nhật kiểm thử cấp/thu hồi quyền, lưu nháp và giao diện PC/mobile.
+
+### v1.49.7 — Phân quyền nhân viên vận hành và duyệt KPI nháp
 
 - Thêm checkbox **“Gắn Host/Vận hành, Campaign/Mega và nhập KPI nháp”** trong **Quản lý tài khoản → Quyền truy cập**. Admin có thể bật/tắt riêng cho từng tài khoản có vai trò **Nhân viên vận hành livestream** (yêu cầu quyền xem Phiên LIVE).
 - Khi được bật, nhân viên vận hành có thể phân công Host/Vận hành cho từng phiên và chọn **Ngày Campaign** hoặc **Mega Live**; có tab **KPI thủ công** để nhập/sửa GMV từng người và **Lưu nháp · chờ Admin duyệt**.
@@ -297,11 +304,11 @@ Vào tab **Đối soát đơn LIVE**:
 
 ### 8. Phân quyền gắn phiên LIVE và phê duyệt KPI nháp
 
-Admin vào **Quản trị → Quản lý tài khoản → tài khoản Nhân viên vận hành livestream → Chỉnh sửa**. Chọn bật hoặc tắt quyền **Gắn Host/Vận hành, Campaign/Mega và nhập KPI nháp** và bấm **Lưu quyền**. Khi tắt, nhân viên chỉ xem được các mục còn được cấp và không được lưu phân công hay KPI nháp.
+Admin vào **Quản trị → Quản lý tài khoản → tài khoản Host Livestream hoặc Nhân viên vận hành livestream → Chỉnh sửa**. Chọn bật hoặc tắt quyền **Gắn Host/Vận hành, Campaign/Mega và nhập KPI nháp** và bấm **Lưu quyền**. Khi tắt, nhân viên chỉ xem được các mục còn được cấp và không được lưu phân công hay KPI nháp.
 
-Khi được bật: trong **Phiên LIVE**, nhân viên chọn Host/Vận hành hoặc bật **Ngày Campaign/Mega Live · tính KPI thủ công** để chọn loại phiên. Trong **Công cụ → KPI thủ công**, nhân viên nhập GMV sau hoàn/hủy của từng Host và người vận hành rồi bấm **Lưu nháp · chờ Admin duyệt**. Phiên chưa có GMV chốt vẫn có thể lưu nháp. Bản nháp **không được cộng KPI**, dù số tiền đã được nhập.
+Khi được bật: trong **Phiên LIVE**, Host hoặc nhân viên vận hành chọn Host/Vận hành hoặc bật **Ngày Campaign/Mega Live · tính KPI thủ công** để chọn loại phiên. Trong **Công cụ → KPI thủ công**, người được cấp quyền nhập GMV sau hoàn/hủy của từng Host và người vận hành rồi bấm **Lưu nháp · chờ Admin duyệt**. Phiên chưa có GMV chốt vẫn có thể lưu nháp. Bản nháp **không được cộng KPI**, dù số tiền đã được nhập.
 
-Admin vào **Công cụ → KPI thủ công**, kiểm tra bản nháp **Chờ Admin duyệt** và bấm **Duyệt KPI nháp** (hoặc chỉnh sửa rồi chọn **Duyệt và lưu KPI**). Admin chỉ duyệt khi GMV sau hoàn/hủy đã chốt, tổng GMV Host hợp lệ và có Host. Sau duyệt, KPI mới được cộng vào **KPI nhân sự**. Mọi lần nhân viên sửa tiếp theo tạo lại bản nháp chờ duyệt; khoản đã được duyệt trước đó không tự thay đổi.
+Admin vào **Công cụ → KPI thủ công**, kiểm tra bản nháp **Chờ Admin duyệt** và bấm **Duyệt KPI nháp** (hoặc chỉnh sửa rồi chọn **Duyệt và lưu KPI**). Admin chỉ duyệt khi GMV sau hoàn/hủy đã chốt, tổng GMV Host hợp lệ và có Host. Sau duyệt, KPI mới được cộng vào **KPI nhân sự**. Mọi lần Host hoặc nhân viên vận hành sửa tiếp theo tạo lại bản nháp chờ duyệt; khoản đã được duyệt trước đó không tự thay đổi.
 
 ### 9. Hồ sơ Google trên top bar
 
@@ -320,6 +327,7 @@ README giữ lại phần này để nhân sự có thể biết **vì sao giao 
 
 | Phiên bản | Thay đổi chính |
 |---|---|
+| **v1.49.8** | Host cũng có quyền gắn Host/Vận hành, Campaign/Mega và nhập KPI nháp khi Admin bật checkbox; Firestore chặn mặc định và vẫn chỉ Admin duyệt. |
 | **v1.49.7** | Cấp quyền gắn Host/Vận hành và Campaign/Mega cho Operator; cho lưu KPI nháp, Admin duyệt mới tính KPI; Firestore giới hạn quyền. |
 | **v1.49.6** | Đổi nhãn GMV hàng nhà thành GMV từ shopkhangbaby ở PC, mobile và popup đối soát; không đổi số liệu hoặc KPI. |
 | **v1.49.5** | Cài đặt Taste Skill và định tuyến 3 skills cho UI/UX, tạo PRODUCT.md và quy tắc QA, không đổi dữ liệu LIVE/KPI. |

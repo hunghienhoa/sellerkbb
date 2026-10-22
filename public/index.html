@@ -3054,7 +3054,7 @@ body.account-modal-open{overflow:hidden}
       <header class="topbar">
         <div class="topbar-title-wrap"><button id="menuToggle" class="menu-toggle" type="button" aria-label="Mở menu" aria-expanded="false">☰</button><div><h1 id="pageTitle" class="page-title">Tổng quan</h1><div id="pageSub" class="tiny"></div></div></div>
         <div class="topbar-right">
-          <span id="syncBadge" class="pill">v1.49.7</span>
+          <span id="syncBadge" class="pill">v1.49.8</span>
           <div id="dataRefreshWrap" class="data-refresh-wrap">
             <button id="dataRefreshBtn" class="data-refresh-btn" type="button" title="Tải lại dữ liệu SellerKBB hiện có · không chạy đồng bộ TikTok">
               <span id="dataRefreshIcon" class="data-refresh-icon">↻</span>
@@ -3180,7 +3180,7 @@ body.account-modal-open{overflow:hidden}
       const labels=[];
       if(permissions.includes('live.read'))labels.push('Phiên LIVE');
       if(permissions.includes('kpi.read'))labels.push('KPI nhân sự');
-      if(profile.role==='operator'&&permissions.includes('live.read')&&permissions.includes('live.assign'))labels.push('Gắn Host/Campaign-Mega · KPI nháp');
+      if(isDelegatedLiveRole(profile.role)&&permissions.includes('live.read')&&permissions.includes('live.assign'))labels.push('Gắn Host/Vận hành · Campaign/Mega · KPI nháp');
       return labels.join(' · ')||'Chưa được cấp nội dung';
     }
     function accountStatusLabel(status){
@@ -3537,7 +3537,7 @@ body.account-modal-open{overflow:hidden}
 
     function previewTs(iso){ return {toDate:()=>new Date(iso)}; }
     function enterPreview(){
-      state.config={version:'1.49.7-preview',tiktokConfigured:true};
+      state.config={version:'1.49.8-preview',tiktokConfigured:true};
       state.user={uid:'preview-admin',email:'admin@sellerkbb.demo',displayName:'Quản trị viên Demo',photoURL:avatarFallbackData('Quản trị viên Demo')};
       state.profile={role:'admin',status:'approved',displayName:'Quản trị viên Demo',photoURL:state.user.photoURL,permissions:['live.read','kpi.read']};
       state.maintenance={settings:{retentionDays:180,autoCleanup:true,emergencyPercent:85,firestoreSoftLimitMb:600,firestoreMaxSessions:FIRESTORE_TOTAL_SESSION_CAP,kvSoftKeyLimit:5000},github:{usedBytes:124000,limitBytes:10000000000,available:true},cloudflare:{keyCount:5,lastRun:{ranAt:new Date().toISOString(),deleted:0},usedBytes:428000,storageLimitBytes:1000000000,storageComplete:true},firebase:{freePlanMode:true,ttlEnabled:false,ttlRecommended:false,storageLimitBytes:1073741824}};
@@ -3584,7 +3584,7 @@ body.account-modal-open{overflow:hidden}
       const previewRole=previewParams.get('preview_role');
       if(previewRole==='operator'||previewRole==='host'){
         state.profile.role=previewRole;
-        state.profile.permissions=previewRole==='operator'&&previewParams.get('preview_assign')==='1'
+        state.profile.permissions=isDelegatedLiveRole(previewRole)&&previewParams.get('preview_assign')==='1'
           ?['live.read','kpi.read','live.assign']:['live.read','kpi.read'];
       }
       state.dataRefresh.lastAt=new Date().toISOString();
@@ -3599,7 +3599,8 @@ body.account-modal-open{overflow:hidden}
     function showApp(){ $('#boot').classList.add('hidden'); $('#app').classList.remove('hidden'); }
     function can(p){ return state.profile?.role==='admin' || (state.profile?.status==='approved' && (state.profile?.permissions||[]).includes(p)); }
     function isAdmin(){ return state.profile?.role==='admin' && state.profile?.status==='approved'; }
-    function canAssignLiveStaff(){return isAdmin()||(state.profile?.role==='operator'&&can('live.read')&&can('live.assign'));}
+    function isDelegatedLiveRole(role){return role==='operator'||role==='host';}
+    function canAssignLiveStaff(){return isAdmin()||(isDelegatedLiveRole(state.profile?.role)&&can('live.read')&&can('live.assign'));}
 
     async function api(path, options={}){
       const {timeoutMs=API_TIMEOUT_MS,...fetchOptions}=options;
@@ -5764,10 +5765,10 @@ body.account-modal-open{overflow:hidden}
       const live=document.querySelector(`[data-uid="${CSS.escape(uid)}"][data-perm="live.read"]`);
       const assign=document.querySelector(`[data-uid="${CSS.escape(uid)}"][data-perm="live.assign"]`);
       if(!assign)return;
-      const allowed=role==='operator'&&live?.checked===true;
+      const allowed=isDelegatedLiveRole(role)&&live?.checked===true;
       assign.disabled=!allowed;
       if(!allowed)assign.checked=false;
-      assign.closest('[data-pending-assign-row]')?.classList.toggle('hidden',role!=='operator');
+      assign.closest('[data-pending-assign-row]')?.classList.toggle('hidden',!isDelegatedLiveRole(role));
     }
     function userRoleOptions(role){
       return [['host','Host Livestream'],['operator','Nhân viên vận hành livestream'],['admin','Quản trị viên']].map(([value,label])=>`<option value="${value}" ${role===value?'selected':''}>${label}</option>`).join('');
@@ -5780,7 +5781,7 @@ body.account-modal-open{overflow:hidden}
     function userApprovedRow(u){
       const self=u.id===state.user?.uid;
       const permissions=Array.isArray(u.permissions)?u.permissions:[];
-      const assignChecked=u.role==='operator'&&permissions.includes('live.read')&&permissions.includes('live.assign');
+      const assignChecked=isDelegatedLiveRole(u.role)&&permissions.includes('live.read')&&permissions.includes('live.assign');
       const liveChecked=u.role==='admin'||permissions.includes('live.read');
       const kpiChecked=u.role==='admin'||permissions.includes('kpi.read');
       return `<div class="approved-user-card approved-user-row" data-approved-user="${u.id}">
@@ -5822,10 +5823,10 @@ body.account-modal-open{overflow:hidden}
       const live=boxes.find(x=>x.dataset.approvedPerm==='live.read');
       const assign=boxes.find(x=>x.dataset.approvedPerm==='live.assign');
       if(assign){
-        const allowed=role==='operator'&&live?.checked===true;
+        const allowed=isDelegatedLiveRole(role)&&live?.checked===true;
         assign.disabled=full||!allowed;
         if(!allowed)assign.checked=false;
-        assign.closest('[data-approved-assign-row]')?.classList.toggle('hidden',role!=='operator');
+        assign.closest('[data-approved-assign-row]')?.classList.toggle('hidden',!isDelegatedLiveRole(role));
       }
     }
 
@@ -5833,7 +5834,7 @@ body.account-modal-open{overflow:hidden}
       const role=document.querySelector(`[data-role="${CSS.escape(uid)}"]`).value;
       const permissions=[...document.querySelectorAll(`[data-uid="${CSS.escape(uid)}"][data-perm]:checked`)].map(x=>x.dataset.perm);
       if(role==='admin')permissions.splice(0,permissions.length,'live.read','kpi.read');
-      else if(role!=='operator'||!permissions.includes('live.read')){
+      else if(!isDelegatedLiveRole(role)||!permissions.includes('live.read')){
         const idx=permissions.indexOf('live.assign');if(idx>=0)permissions.splice(idx,1);
       }
       if(PREVIEW){
@@ -5850,7 +5851,7 @@ body.account-modal-open{overflow:hidden}
       const role=document.querySelector(`[data-approved-role="${CSS.escape(uid)}"]`)?.value||'host';
       const permissions=[...document.querySelectorAll(`[data-approved-uid="${CSS.escape(uid)}"][data-approved-perm]:checked`)].map(x=>x.dataset.approvedPerm);
       if(role==='admin')permissions.splice(0,permissions.length,'live.read','kpi.read');
-      else if(role!=='operator'||!permissions.includes('live.read')){
+      else if(!isDelegatedLiveRole(role)||!permissions.includes('live.read')){
         const idx=permissions.indexOf('live.assign');if(idx>=0)permissions.splice(idx,1);
       }
       if(PREVIEW){

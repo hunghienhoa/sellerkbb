@@ -80,7 +80,7 @@ service cloud.firestore {
       return isAdmin() || (
         signedIn() && exists(currentUserPath()) &&
         currentUser().status == 'approved' &&
-        currentUser().role == 'operator' &&
+        currentUser().role in ['operator', 'host'] &&
         currentUser().permissions.hasAll(['live.read', 'live.assign'])
       );
     }
@@ -109,7 +109,7 @@ service cloud.firestore {
          || (a.kpiMode == 'auto' && a.manualKpiType == ''));
     }
 
-    function validOperatorDraft(liveId) {
+    function validDelegatedDraft(liveId) {
       let d = request.resource.data;
       return d.keys().hasOnly(['liveId','entries','status','updatedAt','updatedBy'])
         && d.keys().hasAll(['liveId','entries','status','updatedAt','updatedBy'])
@@ -128,7 +128,7 @@ service cloud.firestore {
 
     match /liveKpiDrafts/{liveId} {
       allow read: if canTagAndDraft();
-      allow create, update: if isAdmin() || (canTagAndDraft() && validOperatorDraft(liveId));
+      allow create, update: if isAdmin() || (canTagAndDraft() && validDelegatedDraft(liveId));
       allow delete: if isAdmin();
     }
 
