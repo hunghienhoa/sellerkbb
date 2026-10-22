@@ -26,3 +26,7 @@ SellerKBB is an internal Vietnamese operational dashboard to check TikTok LIVE p
 Product behaviour, auth, reconciliation and KPI formulas are outside the scope of visual-only refinements. Treat `DESIGN.md`, `AGENTS.md` and `docs/DESIGN-SKILLS.md` as the source of design-work rules. Changes run `npm run check`, Chromium smoke tests and a11y audit, then use the existing GitHub Actions deployment/release verification flow. Production: https://sellerkbb.doanhsokpis.workers.dev/ ; safe demo: /preview.
 
 This file records known project facts from its source/README. It does not claim a live business-data audit or an interactive `/impeccable init` session took place.
+
+## Delegated LIVE tagging and KPI draft review (v1.49.7)
+
+Admin can toggle `live.assign` for approved livestream-operator accounts that have `live.read`. The delegated operator may tag Host/Operator and Campaign/Mega LIVE, and save draft manual KPI GMV allocations. Drafts live in `liveKpiDrafts`; only Admin may approve and transfer allocations into `liveSessions.manualKpiEntries`. Assignments live in `liveAssignments`. KPI calculations must never include a pending draft or permit an operator to write approved financial fields. Admin may still edit/approve directly. Keep all permission enforcement in Firestore Rules, not UI alone.

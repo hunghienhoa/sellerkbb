@@ -4,7 +4,7 @@
 
 ### Báo cáo TikTok LIVE · KPI nhân sự · Tự đồng bộ 24/24
 
-**Phiên bản hiện tại: v1.49.6**
+**Phiên bản hiện tại: v1.49.7**
 
 [![GitHub Release](https://img.shields.io/github/v/release/hunghienhoa/sellerkbb?label=Release)](https://github.com/hunghienhoa/sellerkbb/releases)
 [![GitHub Actions](https://img.shields.io/github/actions/workflow/status/hunghienhoa/sellerkbb/deploy.yml?branch=main&label=Ki%E1%BB%83m%20tra%20%26%20Backup)](https://github.com/hunghienhoa/sellerkbb/actions)
@@ -17,7 +17,15 @@
 
 ---
 
-## 🆕 Cập nhật mới nhất — v1.49.6
+## 🆕 Cập nhật mới nhất — v1.49.7
+
+- Thêm checkbox **“Gắn Host/Vận hành, Campaign/Mega và nhập KPI nháp”** trong **Quản lý tài khoản → Quyền truy cập**. Admin có thể bật/tắt riêng cho từng tài khoản có vai trò **Nhân viên vận hành livestream** (yêu cầu quyền xem Phiên LIVE).
+- Khi được bật, nhân viên vận hành có thể phân công Host/Vận hành cho từng phiên và chọn **Ngày Campaign** hoặc **Mega Live**; có tab **KPI thủ công** để nhập/sửa GMV từng người và **Lưu nháp · chờ Admin duyệt**.
+- KPI nháp được lưu riêng trong `liveKpiDrafts`, không tính vào KPI nhân sự hay báo cáo thanh toán. Admin thấy nhãn **Chờ Admin duyệt** và nút **Duyệt KPI nháp**. Chỉ sau khi Admin xác nhận, kiểm tra GMV đã chốt và số GMV phân bổ hợp lệ, hệ thống mới lưu khoản được duyệt vào `liveSessions` để cộng KPI.
+- Gắn thẻ phân công/loại phiên được tách vào `liveAssignments`; nhân viên vận hành **không có quyền** sửa TikTok/GMV, đơn hàng, phân quyền, quản lý nhân sự, xóa dữ liệu hoặc duyệt KPI. Firestore Rules bảo vệ độc lập hai loại bản ghi.
+- Cập nhật kiểm thử quyền bật/tắt, giới hạn Firestore và luồng **nhân viên lưu nháp → Admin duyệt → KPI mới được tính** trên PC/mobile.
+
+### v1.49.6 — Đổi nhãn GMV từ shopkhangbaby
 
 - Đổi nhãn hiển thị **“GMV hàng nhà”** thành **“GMV từ shopkhangbaby”** ở phần tổng hợp phiên LIVE, bảng desktop, card mobile và popup Đối soát đơn LIVE.
 - Giữ nguyên dữ liệu GMV Affiliate, doanh thu LIVE, phân loại đơn và công thức KPI; đây chỉ là thay đổi cách gọi trên giao diện.
@@ -287,7 +295,15 @@ Vào tab **Đối soát đơn LIVE**:
 
 > **Vì sao chưa chốt ngay sau khi giao?** Người mua vẫn có thể mở yêu cầu trả/hoàn sau khi đơn ở trạng thái Delivered. Với chính sách TikTok Shop Việt Nam hiện hành, cửa sổ này có thể tới 15 ngày với đa số nhóm hàng và 6 ngày với một số nhóm hàng. Vì vậy muốn gọi là “GMV đã chốt” phải dựa trên trạng thái đơn + hậu mãi, không chỉ dựa vào ngày LIVE.
 
-### 8. Hồ sơ Google trên top bar
+### 8. Phân quyền gắn phiên LIVE và phê duyệt KPI nháp
+
+Admin vào **Quản trị → Quản lý tài khoản → tài khoản Nhân viên vận hành livestream → Chỉnh sửa**. Chọn bật hoặc tắt quyền **Gắn Host/Vận hành, Campaign/Mega và nhập KPI nháp** và bấm **Lưu quyền**. Khi tắt, nhân viên chỉ xem được các mục còn được cấp và không được lưu phân công hay KPI nháp.
+
+Khi được bật: trong **Phiên LIVE**, nhân viên chọn Host/Vận hành hoặc bật **Ngày Campaign/Mega Live · tính KPI thủ công** để chọn loại phiên. Trong **Công cụ → KPI thủ công**, nhân viên nhập GMV sau hoàn/hủy của từng Host và người vận hành rồi bấm **Lưu nháp · chờ Admin duyệt**. Phiên chưa có GMV chốt vẫn có thể lưu nháp. Bản nháp **không được cộng KPI**, dù số tiền đã được nhập.
+
+Admin vào **Công cụ → KPI thủ công**, kiểm tra bản nháp **Chờ Admin duyệt** và bấm **Duyệt KPI nháp** (hoặc chỉnh sửa rồi chọn **Duyệt và lưu KPI**). Admin chỉ duyệt khi GMV sau hoàn/hủy đã chốt, tổng GMV Host hợp lệ và có Host. Sau duyệt, KPI mới được cộng vào **KPI nhân sự**. Mọi lần nhân viên sửa tiếp theo tạo lại bản nháp chờ duyệt; khoản đã được duyệt trước đó không tự thay đổi.
+
+### 9. Hồ sơ Google trên top bar
 
 - SellerKBB dùng **ảnh đại diện Google/Gmail** của tài khoản đã đăng nhập.
 - Ảnh được lưu cùng hồ sơ người dùng trong Firestore để Admin nhận diện tài khoản ở trang **Quản lý tài khoản**.
@@ -304,6 +320,7 @@ README giữ lại phần này để nhân sự có thể biết **vì sao giao 
 
 | Phiên bản | Thay đổi chính |
 |---|---|
+| **v1.49.7** | Cấp quyền gắn Host/Vận hành và Campaign/Mega cho Operator; cho lưu KPI nháp, Admin duyệt mới tính KPI; Firestore giới hạn quyền. |
 | **v1.49.6** | Đổi nhãn GMV hàng nhà thành GMV từ shopkhangbaby ở PC, mobile và popup đối soát; không đổi số liệu hoặc KPI. |
 | **v1.49.5** | Cài đặt Taste Skill và định tuyến 3 skills cho UI/UX, tạo PRODUCT.md và quy tắc QA, không đổi dữ liệu LIVE/KPI. |
 | **v1.49.4** | Đối chiếu GMV Creator theo Room ID, kiểm soát chia Affiliate và chặn KPI từ nguồn Seller thiếu. |
