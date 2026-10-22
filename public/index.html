@@ -3488,6 +3488,9 @@ body.account-modal-open{overflow:hidden}
           id:String(x?.id||'').trim()||`staff-${Date.now()}-${index}`,
           displayName:String(x?.displayName||x?.name||'').trim(),
           role:x?.role==='operator'?'operator':'host',
+          googleUid:String(x?.googleUid||''),
+          googlePhotoURL:safePhotoURL(x?.googlePhotoURL),
+          googleDisplayName:String(x?.googleDisplayName||''),
           sortOrder:Number(x?.sortOrder||((index+1)*10))
         }))
         .filter(x=>x.displayName);
@@ -3501,6 +3504,24 @@ body.account-modal-open{overflow:hidden}
       return state.staff.find(x=>x.id===uid)
         || state.staff.find(x=>String(x.displayName||'').localeCompare(String(name||''),'vi',{sensitivity:'base'})===0)
         || {id:uid||'',displayName:name||'Chưa đặt tên'};
+    }
+    function normalizedStaffName(name){
+      return String(name||'').trim().toLowerCase().normalize('NFD')
+        .replace(/[\u0300-\u036f]/g,'').replace(/đ/g,'d').replace(/\s+/g,' ');
+    }
+    function googleAccountForStaff(member){
+      if(!member)return null;
+      const users=(state.users||[]).filter(u=>u.status==='approved'&&(u.role==='host'||u.role==='operator'));
+      if(member.googleUid)return users.find(u=>u.id===member.googleUid&&u.role===member.role)||null;
+      const matched=users.filter(u=>u.role===member.role&&normalizedStaffName(u.displayName)===normalizedStaffName(member.displayName));
+      const sameNameStaff=state.staff.filter(x=>x.role===member.role&&normalizedStaffName(x.displayName)===normalizedStaffName(member.displayName));
+      return matched.length===1&&sameNameStaff.length===1?matched[0]:null;
+    }
+    function kpiStaffIdentityHtml(uid,name=''){
+      const member=staffDisplayRecord(uid,name);
+      const google=googleAccountForStaff(member);
+      const profile={displayName:member.displayName||name||'Chưa đặt tên',photoURL:safePhotoURL(google?.photoURL)||safePhotoURL(member.googlePhotoURL)||''};
+      return `<div class="user-identity kpi-person-identity">${avatarHtml(profile,'user-list-avatar kpi-person-avatar')}<div class="user-identity-copy"><b title="${esc(profile.displayName)}">${esc(profile.displayName)}</b></div></div>`;
     }
     function staffSelectionId(role,uid,name=''){
       const mappedUid=LEGACY_STAFF_ID_MAP[uid]||uid;
@@ -3521,7 +3542,7 @@ body.account-modal-open{overflow:hidden}
         sessionEdits[x.id]={kpiMode:x.kpiMode||'auto',manualKpiType:manualKpiType(x),hostUid:x.hostUid||'',hostName:x.hostName||'',operatorUid:x.operatorUid||'',operatorName:x.operatorName||'',manualKpiEntries:Array.isArray(x.manualKpiEntries)?x.manualKpiEntries:[],kpiDraft:x.kpiDraft||null};
       }
       const users=state.users.map(u=>({id:u.id,role:u.role,status:u.status,permissions:u.permissions||[]}));
-      const staff=state.staff.map(x=>({id:x.id,displayName:x.displayName,role:x.role,sortOrder:x.sortOrder||0}));
+      const staff=state.staff.map(x=>({id:x.id,displayName:x.displayName,role:x.role,sortOrder:x.sortOrder||0,googleUid:x.googleUid||'',googlePhotoURL:x.googlePhotoURL||'',googleDisplayName:x.googleDisplayName||''}));
       localStorage.setItem(PREVIEW_STATE_KEY,JSON.stringify({sessionEdits,users,staff,maintenance:state.maintenance.settings}));
     }
     function restorePreviewState(){
@@ -5662,7 +5683,7 @@ body.account-modal-open{overflow:hidden}
             <div><h3>KPI chưa chốt</h3><div class="sub">Chỉ hiển thị phần còn thay đổi: GMV chờ đối soát, KPI tạm tính và số phiên chưa đủ dữ liệu. Không dùng bảng này để thanh toán KPI cuối cùng.</div></div>
             <div class="kpi-split-summary"><span class="pill warn">Tạm tính ${fmtMoney(totalProvisionalKpi,currency)}</span><span class="pill warn">${waitingSessions} phiên chờ đối soát</span></div>
           </div>
-          ${pendingRows.length?`<div class="table-wrap kpi-pending-table"><table style="min-width:760px"><thead><tr><th>Nhân sự</th><th>Vai trò</th><th>GMV chờ đối soát</th><th>KPI tạm tính</th><th>Chờ đối soát</th></tr></thead><tbody>${pendingRows.map(r=>`<tr><td>${userIdentityHtml(staffDisplayRecord(r.uid,r.name),false)}</td><td><span class="tag ${r.roles[0]||''}">${esc(kpiRoleSummary(r))}</span></td><td class="money">${fmtMoney(r.provisionalAutoGmv,r.currency)}</td><td class="money"><b>${fmtMoney(r.provisionalKpi,r.currency)}</b></td><td>${r.waitingSessions?'<span class="pill warn">'+r.waitingSessions+' phiên</span>':'<span class="pill ok">0</span>'}</td></tr>`).join('')}</tbody></table></div>`:'<div class="empty">Không có KPI chưa chốt trong tháng này.</div>'}
+          ${pendingRows.length?`<div class="table-wrap kpi-pending-table"><table style="min-width:760px"><thead><tr><th>Nhân sự</th><th>Vai trò</th><th>GMV chờ đối soát</th><th>KPI tạm tính</th><th>Chờ đối soát</th></tr></thead><tbody>${pendingRows.map(r=>`<tr><td>${kpiStaffIdentityHtml(r.uid,r.name)}</td><td><span class="tag ${r.roles[0]||''}">${esc(kpiRoleSummary(r))}</span></td><td class="money">${fmtMoney(r.provisionalAutoGmv,r.currency)}</td><td class="money"><b>${fmtMoney(r.provisionalKpi,r.currency)}</b></td><td>${r.waitingSessions?'<span class="pill warn">'+r.waitingSessions+' phiên</span>':'<span class="pill ok">0</span>'}</td></tr>`).join('')}</tbody></table></div>`:'<div class="empty">Không có KPI chưa chốt trong tháng này.</div>'}
         </div>
 
         <div class="card kpi-split-card" data-kpi-table="final">
@@ -5670,7 +5691,7 @@ body.account-modal-open{overflow:hidden}
             <div><h3>KPI đã chốt</h3><div class="sub">Chỉ hiển thị phần đã đủ điều kiện dùng để thanh toán: KPI tự động đã chốt và KPI thủ công hợp lệ.</div></div>
             <div class="kpi-split-summary"><span class="pill ok">Đã chốt ${fmtMoney(totalFinalKpi,currency)}</span></div>
           </div>
-          ${finalRows.length?`<div class="table-wrap kpi-final-table"><table style="min-width:980px"><thead><tr><th>Nhân sự</th><th>Vai trò</th><th>GMV tự động đã chốt</th><th>GMV thủ công</th><th>KPI tự động đã chốt</th><th>KPI thủ công</th><th>Tổng KPI đã chốt</th></tr></thead><tbody>${finalRows.map(r=>`<tr><td>${userIdentityHtml(staffDisplayRecord(r.uid,r.name),false)}</td><td><span class="tag ${r.roles[0]||''}">${esc(kpiRoleSummary(r))}</span></td><td class="money">${fmtMoney(r.finalAutoGmv,r.currency)}</td><td class="money manual-kpi-value">${fmtMoney(r.manualGmv,r.currency)}</td><td class="money">${fmtMoney(r.finalAutoKpi,r.currency)}</td><td class="money manual-kpi-value">${fmtMoney(r.manualKpi,r.currency)}</td><td class="money"><b>${fmtMoney(r.finalKpi,r.currency)}</b></td></tr>`).join('')}</tbody></table></div>`:'<div class="empty">Chưa có KPI đã chốt trong tháng này.</div>'}
+          ${finalRows.length?`<div class="table-wrap kpi-final-table"><table style="min-width:980px"><thead><tr><th>Nhân sự</th><th>Vai trò</th><th>GMV tự động đã chốt</th><th>GMV thủ công</th><th>KPI tự động đã chốt</th><th>KPI thủ công</th><th>Tổng KPI đã chốt</th></tr></thead><tbody>${finalRows.map(r=>`<tr><td>${kpiStaffIdentityHtml(r.uid,r.name)}</td><td><span class="tag ${r.roles[0]||''}">${esc(kpiRoleSummary(r))}</span></td><td class="money">${fmtMoney(r.finalAutoGmv,r.currency)}</td><td class="money manual-kpi-value">${fmtMoney(r.manualGmv,r.currency)}</td><td class="money">${fmtMoney(r.finalAutoKpi,r.currency)}</td><td class="money manual-kpi-value">${fmtMoney(r.manualKpi,r.currency)}</td><td class="money"><b>${fmtMoney(r.finalKpi,r.currency)}</b></td></tr>`).join('')}</tbody></table></div>`:'<div class="empty">Chưa có KPI đã chốt trong tháng này.</div>'}
           ${totalManualKpi?'<div class="tiny" style="margin-top:2px">Trong tổng KPI đã chốt có KPI thủ công hợp lệ: <b>'+fmtMoney(totalManualKpi,currency)+'</b>.</div>':''}
         </div>
 
