@@ -4874,7 +4874,7 @@ body.account-modal-open{overflow:hidden}
       }
       try{
         const result=PREVIEW?previewReconciliation(session):await api('/api/tiktok/reconcile/live?live_id='+encodeURIComponent(session.liveId||session.id)+(force?'&refresh=1':''));
-        result.kpiSummary=deriveKpiSummaryFromReconciliation(result);
+        result.kpiSummary=(!PREVIEW&&result.kpiSummary)?result.kpiSummary:deriveKpiSummaryFromReconciliation(result);
         session.reconciliation=result.kpiSummary;
         if(result?.live?.affiliateDataAvailable===true){
           session.affiliateDataAvailable=true;
@@ -5078,7 +5078,7 @@ body.account-modal-open{overflow:hidden}
           <div class="dashboard-final-gmv-copy">
             <span>GMV sau khi hoàn hủy</span>
             <strong>${fmtMoney(finalizedGmv,currency)}</strong>
-            <small>Chỉ cộng số cuối cùng của các phiên đã chốt/đã đối soát · ${finalizedSessions.length}/${ss.length} phiên trong khoảng đang chọn.</small>
+            <small>Gồm GMV đã tạm chốt khi giao thành công; có thể điều chỉnh theo hoàn tiền về sau · ${finalizedSessions.length}/${ss.length} phiên toàn phần hoặc một phần.</small>
           </div>
           <span class="pill ok">Đã chốt ${finalizedSessions.length} phiên</span>
         </div>
@@ -5445,7 +5445,16 @@ body.account-modal-open{overflow:hidden}
           return;
         }
         const kpi=basis.gmv*rate;
-        if(basis.status==='final'){
+        if(basis.status==='partial_final'){
+          cur.finalSessions++;
+          cur.finalAutoGmv+=basis.gmv;
+          cur.finalAutoKpi+=kpi;
+          if(basis.pendingGmv>0){
+            cur.provisionalSessions++;
+            cur.provisionalAutoGmv+=basis.pendingGmv;
+            cur.provisionalAutoKpi+=basis.pendingGmv*rate;
+          }
+        }else if(basis.status==='final'){
           cur.finalSessions++;
           cur.finalAutoGmv+=basis.gmv;
           cur.finalAutoKpi+=kpi;
