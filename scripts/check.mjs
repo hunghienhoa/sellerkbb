@@ -364,6 +364,23 @@ assert(html.includes("reconcile-session.reconciled"), "Reconciliation list green
 assert(html.includes("replace(/[^0-9]/g,''"), "Manual KPI money parser missing");
 assert(html.includes('data-manual-host-person'), "Host Livestream selector missing");
 assert(html.includes('data-manual-operator-person'), "Operator Livestream selector missing");
+assert(html.includes('MANUAL_SHARED_OPERATOR_VALUE') && html.includes('Hùng Hiền Hòa + Hùng Bắc Giang') &&
+  html.includes('manualSharedOperatorStaff()') && html.includes('splitManualOperatorKpi(entry.gmv)') &&
+  html.includes("['campaign','mega'].includes(manualKpiType(session))") &&
+  html.includes('sharedOperators:members.map('),
+  "Campaign/Mega manual KPI must save the optional two-person operation team without double counting");
+const splitStart=html.indexOf("function splitManualOperatorKpi(");
+const splitEnd=html.indexOf("\n    function googleAccountForStaff(",splitStart);
+assert(splitStart>0&&splitEnd>splitStart,"Manual operator GMV/KPI split function missing");
+const splitOperator=new Function(html.slice(splitStart,splitEnd)+"\nreturn splitManualOperatorKpi;")();
+const splitExample=splitOperator(1234000);
+assert(splitExample[0].gmv===617000&&splitExample[1].gmv===617000&&
+  splitExample[0].kpi===617&&splitExample[1].kpi===617,
+  "Combined operators must each receive half GMV and exactly half of total 0.1% KPI");
+const oddSplit=splitOperator(1234001);
+assert(oddSplit.reduce((sum,part)=>sum+part.gmv,0)===1234001&&
+  oddSplit.reduce((sum,part)=>sum+part.kpi,0)===1234,
+  "Odd GMV must still conserve total amount and operator KPI without rounding loss");
 assert(html.includes("Host Livestream</span><select"), "Host Livestream label missing");
 assert(html.includes("Nhân viên vận hành Livestream</span><select"), "Operator Livestream label missing");
 assert(html.includes('data-manual-host-gmv'), "Host GMV field missing");
