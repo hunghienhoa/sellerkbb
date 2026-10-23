@@ -3153,7 +3153,7 @@ body.account-modal-open{overflow:hidden}
         <div class="topbar-right">
           <span id="syncBadge" class="pill">v1.49.31</span>
           <div id="dataRefreshWrap" class="data-refresh-wrap">
-            <button id="dataRefreshBtn" class="data-refresh-btn" type="button" title="Tài khoản có quyền LIVE/KPI: đồng bộ LIVE 120 ngày và kiểm tra GMV Affiliate từng phiên">
+            <button id="dataRefreshBtn" class="data-refresh-btn" type="button" title="Tài khoản có quyền LIVE/KPI: đồng bộ LIVE 30 ngày và kiểm tra GMV Affiliate từng phiên">
               <span id="dataRefreshIcon" class="data-refresh-icon">↻</span>
               <span class="data-refresh-copy"><b id="dataRefreshLabel">Cập nhật dữ liệu</b><small id="dataRefreshMeta">Dữ liệu mới nhất</small></span>
             </button>
@@ -4094,7 +4094,7 @@ body.account-modal-open{overflow:hidden}
       button.setAttribute('aria-busy',String(active));
       label.textContent=status==='syncing'?'Đang đồng bộ…':status==='loading'?'Đang cập nhật…'
         :status==='success'?'Đã cập nhật':status==='partial'?'Đã đồng bộ LIVE':status==='error'?'Thử lại':'Cập nhật dữ liệu';
-      meta.textContent=status==='syncing'?'TikTok LIVE + Affiliate · 120 ngày'
+      meta.textContent=status==='syncing'?'TikTok LIVE + Affiliate · 30 ngày'
         :status==='loading'?'Đang tải dữ liệu mới nhất'
         :status==='error'?(state.dataRefresh.error?'Đồng bộ chưa hoàn tất':'Cập nhật thất bại')
         :status==='partial'?('Affiliate: '+new Intl.NumberFormat('vi-VN').format(Number(state.dataRefresh.affiliatePending||0))+' phiên đang đối soát')
@@ -4102,8 +4102,8 @@ body.account-modal-open{overflow:hidden}
       const iconName=status==='success'?'check':status==='error'?'history':'refresh';
       $('#dataRefreshIcon').innerHTML=icon(iconName,16);
       button.title=(status==='partial'?'Đã đồng bộ LIVE; '+Number(state.dataRefresh.affiliatePending||0)+' phiên Affiliate chưa xác minh do khác biệt ghi nhận TikTok Seller/Creator. Giá trị tham khảo không được tính là GMV Affiliate chính xác.':state.dataRefresh.error) || (isAdmin()
-        ? 'Đồng bộ TikTok LIVE 120 ngày, bao gồm kiểm tra Affiliate từng phiên'
-        : 'Cập nhật dữ liệu LIVE/KPI theo quyền được cấp (120 ngày)');
+        ? 'Đồng bộ TikTok LIVE 30 ngày, bao gồm kiểm tra Affiliate từng phiên'
+        : 'Cập nhật dữ liệu LIVE/KPI theo quyền được cấp (30 ngày)');
     }
 
     function finishDataRefresh(status,error=''){
@@ -4126,7 +4126,7 @@ body.account-modal-open{overflow:hidden}
       state.dataRefresh.error='';
       renderDataRefreshControl();
       if(can('live.read')||can('kpi.read')){
-        await request120DaySync('dashboard');
+        await request30DaySync('dashboard');
         return;
       }
       try{
@@ -6428,7 +6428,7 @@ body.account-modal-open{overflow:hidden}
           <div class="row space"><div><h3 class="heading-with-icon">${icon('settings',18)} Cài đặt tự động dọn dữ liệu</h3><div class="sub">Chỉ áp dụng cho dữ liệu báo cáo và cache. Source website, GitHub, tài khoản người dùng và token TikTok được bảo vệ.</div></div><span class="pill ok">60–180 ngày</span></div>
           <div class="notice ok" style="margin-top:12px"><b>Bảo vệ đối soát:</b> hệ thống không tự xóa phiên LIVE trong 60 ngày gần nhất, kể cả khi chạm ngưỡng dọn khẩn cấp. Cache đối soát 10 phút có thể hết hạn và được tải lại từ TikTok, nên không làm mất dữ liệu nguồn.</div>
           <div class="settings-grid">
-            <label><span class="tiny">Thời gian lưu dữ liệu LIVE</span><select id="retentionDays" class="input"><option value="60">60 ngày · tối thiểu để đối soát</option><option value="90">90 ngày</option><option value="120">120 ngày</option><option value="150">150 ngày</option><option value="180">180 ngày (6 tháng)</option></select></label>
+            <label><span class="tiny">Thời gian lưu dữ liệu LIVE</span><select id="retentionDays" class="input"><option value="60">60 ngày · tối thiểu để đối soát</option><option value="90">90 ngày</option><option value="120">30 ngày</option><option value="150">150 ngày</option><option value="180">180 ngày (6 tháng)</option></select></label>
             <label><span class="tiny">Ngưỡng bắt đầu dọn khẩn cấp</span><select id="emergencyPercent" class="input"><option value="75">75%</option><option value="80">80%</option><option value="85">85% (khuyến nghị)</option><option value="90">90%</option></select></label>
             <label><span class="tiny">Ngưỡng Firestore của ứng dụng</span><div class="input-unit"><input id="firestoreSoftLimitMb" class="input" type="number" min="100" max="900" value="${m.firestoreSoftLimitMb}"><span>MB</span></div></label>
             <label><span class="tiny">Số phiên LIVE tối đa trước khi dọn</span><input id="firestoreMaxSessions" class="input" type="number" min="500" max="50000" value="${m.firestoreMaxSessions}"></label>
@@ -6453,7 +6453,7 @@ body.account-modal-open{overflow:hidden}
           <h3 class="heading-with-icon">${icon('settings',18)} Gợi ý cài đặt</h3>
           <div class="recommend-list">
             <div><b>Khuyến nghị hiện tại</b><span>180 ngày · bảo vệ đối soát tối thiểu 60 ngày · dọn ở 85% · TikTok tự đồng bộ mỗi 1 giờ.</span></div>
-            <div><b>Nếu dữ liệu tăng rất nhanh</b><span>Có thể giảm còn 60–120 ngày; hệ thống vẫn không xóa vùng 60 ngày gần nhất.</span></div>
+            <div><b>Nếu dữ liệu tăng rất nhanh</b><span>Có thể giảm còn 60–30 ngày; hệ thống vẫn không xóa vùng 60 ngày gần nhất.</span></div>
             <div><b>Nếu muốn ưu tiên lịch sử</b><span>Giữ 180 ngày và nâng ngưỡng ứng dụng; không được vượt quá 180 ngày.</span></div>
           </div>
         </div>`;
@@ -6543,13 +6543,13 @@ body.account-modal-open{overflow:hidden}
         </div>
       </details>`;
     }
-    async function request120DaySync(origin='tiktok',retryPending=false){
+    async function request30DaySync(origin='tiktok',retryPending=false){
       if(!can('live.read')&&!can('kpi.read')){
         showToast('Tài khoản chưa có quyền xem dữ liệu LIVE/KPI để đồng bộ.');
         return;
       }
       if(['loading','syncing'].includes(state.dataRefresh.status)&&origin!=='dashboard'){
-        showToast('Đang đồng bộ TikTok 120 ngày. Vui lòng theo dõi tiến trình.');
+        showToast('Đang đồng bộ TikTok 30 ngày. Vui lòng theo dõi tiến trình.');
         return;
       }
       clearTimeout(refreshLatestData.resetTimer);
@@ -6565,16 +6565,16 @@ body.account-modal-open{overflow:hidden}
         state.autoSyncRefreshing=false;
         finishDataRefresh('success');
         renderAll();
-        if(origin==='tiktok')showToast('Preview: đã mô phỏng đồng bộ 120 ngày thành công');
+        if(origin==='tiktok')showToast('Preview: đã mô phỏng đồng bộ 30 ngày thành công');
         state.manualSyncOrigin='';
         return;
       }
       try{
         const result=await api('/api/tiktok/autosync/run',{
-          method:'POST',body:JSON.stringify({days:120,retryPending}),timeoutMs:15000
+          method:'POST',body:JSON.stringify({days:30,retryPending}),timeoutMs:15000
         });
         if(!result.accepted||!result.jobId)throw new Error('Máy chủ chưa xác nhận tác vụ đồng bộ.');
-        if(origin==='tiktok')showToast(result.alreadyRunning?'Tác vụ đang chạy, tiếp tục theo dõi.':result.retryPending?'Đang kiểm tra lại đúng các phiên Affiliate còn thiếu.':'Đã bắt đầu đồng bộ 120 ngày và đối soát Affiliate theo từng chặng.');
+        if(origin==='tiktok')showToast(result.alreadyRunning?'Tác vụ đang chạy, tiếp tục theo dõi.':result.retryPending?'Đang kiểm tra lại đúng các phiên Affiliate còn thiếu.':'Đã bắt đầu đồng bộ 30 ngày và đối soát Affiliate theo từng chặng.');
         startManualSyncPolling(result.jobId);
         if(state.section==='tiktok')await renderTikTok();
       }catch(error){
@@ -6712,7 +6712,7 @@ body.account-modal-open{overflow:hidden}
         $('#section-tiktok').querySelectorAll('[data-refresh-creator]').forEach(button=>button.onclick=()=>showToast('Preview: đã làm mới Refresh Token cho @'+button.dataset.refreshCreator));
         $('#section-tiktok').querySelectorAll('[data-connect-creator]').forEach(button=>button.onclick=()=>showToast('Preview: Creator '+button.dataset.connectCreator+' đã được mô phỏng kết nối'));
         $('#previewSync').onclick=()=>showToast('Kết nối TikTok mẫu hoạt động bình thường');
-        $('#previewSyncNow').onclick=()=>request120DaySync('tiktok');
+        $('#previewSyncNow').onclick=()=>request30DaySync('tiktok');
         return;
       }
 
@@ -6735,7 +6735,7 @@ body.account-modal-open{overflow:hidden}
       const manualIncomplete=manualJob?.state==='partial'||(manualJob?.state==='success'&&Number(manualJob.affiliatePending||0)>0);
       const manualProgress=manualJob?.phase==='affiliate'
         ?('Đang đối soát GMV Affiliate: '+Number(manualJob.affiliateProcessed||0)+'/'+Number(manualJob.total||0)+' phiên')
-        :('Đã quét '+Number(manualJob?.completedDays||0)+'/'+Number(manualJob?.days||120)+' ngày');
+        :('Đã quét '+Number(manualJob?.completedDays||0)+'/'+Number(manualJob?.days||30)+' ngày');
       const missingReasons=manualJob?.affiliateFailureReasons||{};
       const missingReasonText=[
         Number(missingReasons.incompatible_attribution||0)>0?Number(missingReasons.incompatible_attribution)+' phiên khác định nghĩa Seller/Creator':null,
@@ -6744,13 +6744,13 @@ body.account-modal-open{overflow:hidden}
         Number(missingReasons.creator_data||0)>0?Number(missingReasons.creator_data)+' phiên thiếu dữ liệu Creator':null
       ].filter(Boolean).join(' · ');
       const manualJobNotice=manualJob?(manualRunning
-        ?'<div class="notice warn" role="status" data-manual-sync-state="running"><b>Đồng bộ LIVE 120 ngày:</b> '+manualProgress+'. Chỉ lấy @shopkhangbaby và @mekhangsua. Các phiên đã lưu vẫn được giữ nguyên.</div>'
+        ?'<div class="notice warn" role="status" data-manual-sync-state="running"><b>Đồng bộ LIVE 30 ngày:</b> '+manualProgress+'. Chỉ lấy @shopkhangbaby và @mekhangsua. Các phiên đã lưu vẫn được giữ nguyên.</div>'
         :manualIncomplete
-          ?'<div class="notice warn" role="status" data-manual-sync-state="partial"><b>Đã quét đủ 120 ngày nhưng GMV Affiliate chưa đầy đủ:</b> '+Number(manualJob.affiliatePending||0)+'/'+Number(manualJob.affiliateTotal||0)+' phiên còn cần xác minh. '+esc(missingReasonText)+'<div class="tiny">Đã thử tất cả ID trong danh sách; không tự lấy chênh lệch Seller/Creator làm Affiliate GMV thật.</div></div>'
+          ?'<div class="notice warn" role="status" data-manual-sync-state="partial"><b>Đã quét đủ 30 ngày nhưng GMV Affiliate chưa đầy đủ:</b> '+Number(manualJob.affiliatePending||0)+'/'+Number(manualJob.affiliateTotal||0)+' phiên còn cần xác minh. '+esc(missingReasonText)+'<div class="tiny">Đã thử tất cả ID trong danh sách; không tự lấy chênh lệch Seller/Creator làm Affiliate GMV thật.</div></div>'
           :manualJob.state==='success'
-          ?'<div class="notice ok" role="status" data-manual-sync-state="success">Đồng bộ LIVE 120 ngày đã hoàn tất · '+new Intl.NumberFormat('vi-VN').format(Number(manualJob.cached||0))+' phiên trong cache · Affiliate đã xác minh '+Number(manualJob.affiliateVerified||0)+' phiên.</div>'
+          ?'<div class="notice ok" role="status" data-manual-sync-state="success">Đồng bộ LIVE 30 ngày đã hoàn tất · '+new Intl.NumberFormat('vi-VN').format(Number(manualJob.cached||0))+' phiên trong cache · Affiliate đã xác minh '+Number(manualJob.affiliateVerified||0)+' phiên.</div>'
           :manualJob.state==='error'||manualJob.state==='stale'
-            ?'<div class="notice bad" role="status" data-manual-sync-state="error">Đồng bộ LIVE 120 ngày chưa hoàn tất ('+manualProgress+'): '+esc(manualJob.error||'Chưa rõ nguyên nhân')+'. Các phiên đã lưu vẫn được giữ nguyên.</div>'
+            ?'<div class="notice bad" role="status" data-manual-sync-state="error">Đồng bộ LIVE 30 ngày chưa hoàn tất ('+manualProgress+'): '+esc(manualJob.error||'Chưa rõ nguyên nhân')+'. Các phiên đã lưu vẫn được giữ nguyên.</div>'
             :'')
         :'';
       const lastSync=sync.finishedAt?fmtDate({toDate:()=>new Date(sync.finishedAt)}):'Chưa chạy';
@@ -6802,7 +6802,7 @@ body.account-modal-open{overflow:hidden}
           <div><b>LIVE Performance API</b><span>/analytics/202509/shop_lives/performance</span></div>
           <div class="row">
             ${status.configured&&!status.connected?'<button id="connectTikTok" class="btn primary">'+icon('link')+' Kết nối TikTok Seller</button>':''}
-            ${status.connected?'<button id="syncTikTokNow" class="btn primary" '+(manualRunning?'disabled aria-busy="true"':'')+'>'+icon(manualRunning?'refresh':'sync')+(manualRunning?' Đang đồng bộ trên máy chủ…':manualIncomplete?' Kiểm tra lại Affiliate còn thiếu':' Đồng bộ ngay 120 ngày')+'</button>':''}
+            ${status.connected?'<button id="syncTikTokNow" class="btn primary" '+(manualRunning?'disabled aria-busy="true"':'')+'>'+icon(manualRunning?'refresh':'sync')+(manualRunning?' Đang đồng bộ trên máy chủ…':manualIncomplete?' Kiểm tra lại Affiliate còn thiếu':' Đồng bộ ngay 30 ngày')+'</button>':''}
             ${status.connected?'<button id="checkTikTok" class="btn">'+icon('check')+' Kiểm tra trạng thái</button>':''}
           </div>
         </div>
@@ -6851,7 +6851,7 @@ body.account-modal-open{overflow:hidden}
           api('/api/tiktok/autosync/continue',{method:'POST',body:'{}',timeoutMs:8000}).catch(()=>null);
         }
       }
-      if($('#syncTikTokNow'))$('#syncTikTokNow').onclick=()=>request120DaySync('tiktok',manualIncomplete);
+      if($('#syncTikTokNow'))$('#syncTikTokNow').onclick=()=>request30DaySync('tiktok',manualIncomplete);
     }
 
     function renderAll(){ renderNav(); renderDashboard(); renderLive(); renderReconcile(); renderKpi(); renderManualKpi(); renderExport(); renderUsers(); renderStaff(); renderTikTok(); renderStorage(); switchSection(state.section); }
