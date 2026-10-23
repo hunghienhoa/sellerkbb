@@ -2207,7 +2207,7 @@ export default {
       ctx.waitUntil((async()=>{
         const job=await getManualSyncJob(env);
         await Promise.all([
-          job?.state==="running"?advanceManualSyncJob(env,job.jobId):runAutoSync(env,2,"hourly"),
+          job?.state==="running"?Promise.resolve(null):runAutoSync(env,2,"hourly"),
           refreshAllCreatorTokens(env,3600,"hourly")
         ]);
       })());
@@ -2217,7 +2217,7 @@ export default {
       ctx.waitUntil((async () => {
         const job=await getManualSyncJob(env);
         await Promise.all([
-          job?.state==="running"?advanceManualSyncJob(env,job.jobId):runAutoSync(env,30,"daily_reconcile"),
+          job?.state==="running"?Promise.resolve(null):runAutoSync(env,30,"daily_reconcile"),
           refreshAllCreatorTokens(env,86400,"daily_reconcile")
         ]);
         await runKvMaintenance(env, "daily_free_plan");
