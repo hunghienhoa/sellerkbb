@@ -864,7 +864,7 @@ function liveAffiliateComparison(session) {
 async function enrichLiveAffiliateBreakdowns(env, accessToken, sessions, limit = 12, reason = "hourly") {
   const cutoffSeconds = Math.floor((Date.now() - MANUAL_SYNC_DAYS * 86400000) / 1000);
   const all = (sessions || [])
-    .filter(session => session?.liveId && session?.shopCipher && isAllowedSellerKbbLiveChannel(session))
+    .filter(session => session?.liveId && isAllowedSellerKbbLiveChannel(session))
     .filter(session => Number(session.startTimeSeconds || 0) >= cutoffSeconds);
   // Prioritize unresolved and changed-GMV sessions; rotate retries across the
   // whole 30-day cache instead of always retrying the newest failed 12/24.
@@ -1623,7 +1623,7 @@ async function saveManualSyncJob(env, job) {
 
 function manualAffiliateEligible(sessions) {
   const cutoff = Math.floor((Date.now()-MANUAL_SYNC_DAYS*86400000)/1000);
-  return (sessions||[]).filter(x => x.liveId && x.shopCipher && isAllowedSellerKbbLiveChannel(x) &&
+  return (sessions||[]).filter(x => x.liveId && isAllowedSellerKbbLiveChannel(x) &&
     Number(x.startTimeSeconds||0)>=cutoff)
     .sort((a,b)=>Number(b.startTimeSeconds||0)-Number(a.startTimeSeconds||0));
 }
@@ -1645,10 +1645,11 @@ function manualAffiliateFailureReasons(sessions) {
   const reasons={};
   for(const row of manualAffiliateEligible(sessions)){
     if(row.affiliateDataAvailable===true && row.affiliateNeedsRefresh!==true)continue;
-    const cause=String(row.affiliateError||row.creatorGmvError||"affiliate_source_unavailable").slice(0,140);
+    const cause=String(!row.shopCipher ? "missing_shop_cipher" : row.affiliateError||row.creatorGmvError||"affiliate_source_unavailable").slice(0,140);
     const category= cause.includes("scope") || cause.includes("permission") || cause.includes("105005")
       ? "missing_permission"
       : cause.includes("token") || cause.includes("105002") ? "authorization"
+      : cause.includes("missing_shop_cipher") ? "missing_shop_binding"
       : cause.includes("seller_product_gmv_not_reconciled") ? "legacy_incompatible_attribution"
       : cause.includes("creator_room_product_gmv_mismatch") ? "creator_product_reconciliation"
       : cause.includes("own_shop_products_not_identified") ? "seller_product_ownership"
