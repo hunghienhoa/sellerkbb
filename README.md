@@ -4,7 +4,7 @@
 
 ### Báo cáo TikTok LIVE · KPI nhân sự · Tự đồng bộ 24/24
 
-**Phiên bản hiện tại: v1.49.30**
+**Phiên bản hiện tại: v1.49.31**
 
 [![GitHub Release](https://img.shields.io/github/v/release/hunghienhoa/sellerkbb?label=Release)](https://github.com/hunghienhoa/sellerkbb/releases)
 [![GitHub Actions](https://img.shields.io/github/actions/workflow/status/hunghienhoa/sellerkbb/deploy.yml?branch=main&label=Ki%E1%BB%83m%20tra%20%26%20Backup)](https://github.com/hunghienhoa/sellerkbb/actions)
@@ -17,7 +17,14 @@
 
 ---
 
-## 🆕 Cập nhật mới nhất — v1.49.30
+## 🆕 Cập nhật mới nhất — v1.49.31
+
+- **Chốt số khi khách đã nhận hàng:** đơn ở trạng thái TikTok `DELIVERED` hoặc `COMPLETED` (không có yêu cầu hoàn/trả đang xử lý) được đánh dấu đủ điều kiện chốt GMV/KPI ngay, không chờ thêm 15 ngày. Các đơn đang xử lý hoàn/trả vẫn tạm chưa chốt.
+- **Vẫn đối soát hoàn tiền về sau:** khi TikTok cập nhật đơn hoàn sau giao, lần đồng bộ/đối soát kế tiếp cập nhật `netAmount` và KPI theo khoản hoàn xác nhận; không xóa lịch sử đơn.
+- **Bố trí rõ thông tin hậu mãi:** popup đối soát bổ sung thẻ **Đơn đã hoàn tiền** (số lượng và tổng giá trị hoàn); từng đơn hiển thị tiền đã hoàn riêng, bên cạnh số tiền sau hủy/hoàn. Thời hạn trả/hoàn thực tế theo TikTok vẫn có hiệu lực, chỉ thay đổi thời điểm chốt nội bộ.
+- **Lưu ý nghiệp vụ:** số chốt khi giao là chốt nội bộ có thể điều chỉnh khi xuất hiện hoàn tiền mới; cần tiếp tục chạy đồng bộ định kỳ để nhận các khoản hoàn sau giao.
+
+### v1.49.30 — Theo dõi phiên LIVE thiếu shopCipher
 
 - **Không bỏ sót phiên LIVE thiếu `shopCipher`:** danh sách tồn đọng Affiliate 120 ngày giờ bao gồm cả phiên chưa gắn mã shop. Các phiên này vẫn được tính trong `affiliatePending` và được đưa vào hàng đợi đối soát; nếu Seller API chưa cung cấp mã shop thì ghi nhận rõ nhóm lỗi `missing_shop_binding`, không báo hoàn thành nhầm.
 - **Bảo vệ số liệu:** không tự suy diễn Affiliate GMV và không ghi đè kết quả đã xác minh. Cần xác minh lại nguồn Seller để bổ sung `shopCipher` cho phiên thiếu; bản sửa này chủ yếu khắc phục bỏ sót trong thống kê và hàng đợi.
