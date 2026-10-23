@@ -4,7 +4,7 @@
 
 ### Báo cáo TikTok LIVE · KPI nhân sự · Tự đồng bộ 24/24
 
-**Phiên bản hiện tại: v1.49.34**
+**Phiên bản hiện tại: v1.49.35**
 
 [![GitHub Release](https://img.shields.io/github/v/release/hunghienhoa/sellerkbb?label=Release)](https://github.com/hunghienhoa/sellerkbb/releases)
 [![GitHub Actions](https://img.shields.io/github/actions/workflow/status/hunghienhoa/sellerkbb/deploy.yml?branch=main&label=Ki%E1%BB%83m%20tra%20%26%20Backup)](https://github.com/hunghienhoa/sellerkbb/actions)
@@ -17,7 +17,13 @@
 
 ---
 
-## 🆕 Cập nhật mới nhất — v1.49.34
+## 🆕 Cập nhật mới nhất — v1.49.35
+
+- **Đăng nhập Google — logo Khang Baby gọn đúng yêu cầu:** đưa logo em bé lên góc trên bên phải của khung đăng nhập, giảm đúng 50% kích thước hiển thị (94 → 47px trên PC, 88 → 44px trên điện thoại); không đổi file ảnh/logo ở thanh bên.
+- **Giữ bố cục không đè chữ:** dùng định vị theo khung và chừa hàng tiêu đề cho SellerKBB LIVE, không sử dụng `transform:scale()` gây lệch khoảng trống; không thay đổi nội dung đăng nhập, xác thực hay logic GMV/KPI.
+- **Kiểm thử hồi quy:** bổ sung kiểm tra mã nguồn và kiểm tra hình học logo/tiêu đề bằng trình duyệt ở kích thước desktop + điện thoại; giữ nguyên bộ kiểm thử vận hành hiện có.
+
+### v1.49.34 — Chốt từng phần GMV sau giao và rà soát hoàn/trả 30 ngày
 
 - **GMV chốt một phần ngay khi giao thành công:** phiên chưa giao hết nhưng đã có đơn ở trạng thái `DELIVERED`/`COMPLETED` (không có yêu cầu hoàn đang xử lý) được phân loại **Đã chốt một phần**. Tách **GMV đã giao thành công**, **GMV chờ đối soát**, **Đơn hoàn / hủy** và **GMV thực nhận tạm chốt** trong popup. Không chờ 15 ngày.
 - **Chống đếm trùng Affiliate:** mọi số phân bổ chốt/chờ được tính từ một nguồn GMV Creator LIVE toàn phiên, ước tính theo tỷ trọng giá trị đơn Seller đủ điều kiện; không cộng GMV Affiliate lên GMV Creator lần thứ hai. Đây là ước tính KPI nội bộ, không phải báo cáo thanh toán chính thức từ TikTok.
