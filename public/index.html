@@ -5680,10 +5680,10 @@ body.account-modal-open{overflow:hidden}
       return role?staffForRole(role):[...staffForRole('host'),...staffForRole('operator')];
     }
 
-    function manualKpiPersonOptions(role,value=''){
+    function manualKpiPersonOptions(role,value='',session=null){
       const people=manualKpiPeople(role);
       const selected=value===MANUAL_SHARED_OPERATOR_VALUE?value:staffSelectionId(role,value,'');
-      const pairAvailable=manualSharedOperatorStaff().length===2;
+      const pairAvailable=['campaign','mega'].includes(manualKpiType(session))&&manualSharedOperatorStaff().length===2;
       const teamOption=role==='operator'&&(pairAvailable||selected===MANUAL_SHARED_OPERATOR_VALUE)
         ?`<option value="${MANUAL_SHARED_OPERATOR_VALUE}" ${selected===MANUAL_SHARED_OPERATOR_VALUE?'selected':''}>${esc(MANUAL_SHARED_OPERATOR_LABEL)} · chia đôi</option>`
         :'';
@@ -5746,7 +5746,7 @@ body.account-modal-open{overflow:hidden}
         </div>`:''}
         <div class="manual-kpi-entry-details ${saved?'hidden':''}" data-manual-entry-details>
           <label><span>Host Livestream</span><select class="input" data-manual-host-person>${manualKpiPersonOptions('host',staffSelectionId('host',host.uid,host.name))}</select></label>
-          <label><span>Nhân viên vận hành Livestream</span><select class="input" data-manual-operator-person>${manualKpiPersonOptions('operator',sharedOperator?MANUAL_SHARED_OPERATOR_VALUE:staffSelectionId('operator',operator.uid,operator.name))}</select>
+          <label><span>Nhân viên vận hành Livestream</span><select class="input" data-manual-operator-person>${manualKpiPersonOptions('operator',sharedOperator?MANUAL_SHARED_OPERATOR_VALUE:staffSelectionId('operator',operator.uid,operator.name),session)}</select>
             <small class="manual-shared-operator-hint tiny ${sharedOperator?'':'hidden'}" data-manual-shared-operator-hint aria-live="polite"></small>
           </label>
           <label class="manual-host-gmv-field"><span>GMV sau hoàn/hủy của Host Livestream</span><div class="manual-money-input"><input class="input" type="text" inputmode="numeric" autocomplete="off" data-manual-host-gmv value="${manualMoneyInputDisplay(gmv)}"><span class="manual-money-input-suffix">đ</span></div></label>
