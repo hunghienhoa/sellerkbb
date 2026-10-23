@@ -1460,14 +1460,13 @@ async function refreshKpiReconciliations(env, accessToken, sessions, reason = "h
   const daily = reason === "daily_reconcile";
   const lookback = daily ? KPI_RECONCILE_DAILY_LOOKBACK_SECONDS : KPI_RECONCILE_HOURLY_LOOKBACK_SECONDS;
   const maxSessions = daily ? KPI_RECONCILE_DAILY_MAX_SESSIONS : KPI_RECONCILE_HOURLY_MAX_SESSIONS;
-  const minRefreshMs = daily ? 18 * 3600000 : 45 * 60000;
+  const minRefreshMs = daily ? 8 * 3600000 : 3 * 3600000;
 
   const candidates = (sessions || [])
     .filter(session => {
       const end = Number(session?.endTimeSeconds || 0);
       if (!session?.liveId || !session?.shopCipher || !end || end > nowSeconds) return false;
       if (nowSeconds - end > lookback) return false;
-      if (session?.reconciliation?.status === "final" && session?.reconciliation?.affiliateDataAvailable === true && findOverlappingLiveSessions(session, sessions).length === 0 && session?.creatorGmvAvailable === true) return false;
       const last = reconciliationGeneratedMs(session?.reconciliation);
       return !last || Date.now() - last >= minRefreshMs;
     })
