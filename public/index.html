@@ -3585,6 +3585,9 @@ body.account-modal-open{overflow:hidden}
       'hung-bg':'staff-hung-bg',
       'hung-hh':'staff-hung-hh'
     };
+    // Only the Campaign/Mega manual KPI operator selector may use this virtual team.
+    const MANUAL_SHARED_OPERATOR_VALUE='team:hung-hien-hoa+hung-bac-giang';
+    const MANUAL_SHARED_OPERATOR_LABEL='Hùng Hiền Hòa + Hùng Bắc Giang';
     function defaultStaffMembers(){ return DEFAULT_STAFF_MEMBERS.map((x,index)=>({...x,sortOrder:(index+1)*10})); }
     function normalizeStaffMembers(items){
       return (Array.isArray(items)?items:[])
@@ -3612,6 +3615,21 @@ body.account-modal-open{overflow:hidden}
     function normalizedStaffName(name){
       return String(name||'').trim().toLowerCase().normalize('NFD')
         .replace(/[\u0300-\u036f]/g,'').replace(/đ/g,'d').replace(/\s+/g,' ');
+    }
+    function manualSharedOperatorStaff(){
+      const operators=staffForRole('operator');
+      return ['hung hien hoa','hung bac giang']
+        .map(name=>operators.find(person=>normalizedStaffName(person.displayName)===name))
+        .filter(Boolean);
+    }
+    function splitManualOperatorKpi(gmv){
+      const amount=Math.max(0,Math.round(Number(gmv||0)));
+      const totalKpi=Math.round(amount*.001);
+      const firstGmv=Math.floor(amount/2),firstKpi=Math.floor(totalKpi/2);
+      return [
+        {gmv:firstGmv,kpi:firstKpi},
+        {gmv:amount-firstGmv,kpi:totalKpi-firstKpi}
+      ];
     }
     function googleAccountForStaff(member){
       if(!member)return null;
@@ -5368,6 +5386,10 @@ body.account-modal-open{overflow:hidden}
             gmv,
             kpi:Math.round(gmv*(role==='operator'?.001:.003)),
             currency:String(entry?.currency||session?.currency||'VND'),
+            sharedOperators:role==='operator'&&entry?.uid===MANUAL_SHARED_OPERATOR_VALUE
+              ?(Array.isArray(entry?.sharedOperators)?entry.sharedOperators:[]).slice(0,2)
+                .map(member=>({uid:String(member?.uid||''),name:String(member?.name||'')}))
+              :[],
             index
           };
         })
@@ -5510,6 +5532,21 @@ body.account-modal-open{overflow:hidden}
             for(const entry of manualEntries){
               const cur=ensure(entry.uid,entry.name,entry.currency||session.currency);
               if(!cur)continue;
+              if(entry.role==='operator'&&entry.uid===MANUAL_SHARED_OPERATOR_VALUE){
+                const members=entry.sharedOperators?.length===2?entry.sharedOperators
+                  :manualSharedOperatorStaff().map(person=>({uid:person.id,name:person.displayName}));
+                if(members.length===2&&members[0].uid!==members[1].uid){
+                  const parts=splitManualOperatorKpi(entry.gmv);
+                  members.forEach((member,i)=>{
+                    const shared=ensure(member.uid,member.name,entry.currency||session.currency);
+                    if(!shared)return;
+                    shared.roles.add('operator');
+                    shared.manualGmv+=parts[i].gmv;
+                    shared.manualKpi+=parts[i].kpi;
+                  });
+                }
+                continue;
+              }
               cur.roles.add(entry.role);
               cur.manualGmv+=entry.gmv;
               cur.manualKpi+=entry.kpi;
