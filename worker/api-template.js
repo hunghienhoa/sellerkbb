@@ -1067,7 +1067,7 @@ function normalizeReconcileOrder(order, aftersales, fallbackCurrency, allowTimeW
   const cancelled = status === "CANCELLED";
   const netAmount = cancelled ? 0 : Math.max(0, amount - refundAmount);
   const autoCombineOrderId = String(order?.auto_combine_order_id || "");
-  const finalized = cancelled || (status === "COMPLETED" && active.length === 0);
+  const finalized = cancelled || ((status === "DELIVERED" || status === "COMPLETED") && active.length === 0);
   const deliveredAt = orderDeliveredTime(order);
   return {
     id: String(order?.id || ""),
@@ -1234,6 +1234,7 @@ async function buildLiveReconciliationForSession(env, accessToken, session, opti
     },
     policy: {
       generalReturnDays: 15,
+      kpiFinalization: "Chốt khi Delivered/Completed và không có yêu cầu hoàn/trả đang xử lý; hoàn tiền phát sinh sau đó được đối soát lại.",
       reducedCategoryDays: 6,
       reconciliationProtectionDays: RECONCILIATION_PROTECTION_DAYS,
       note: "Mốc hậu mãi tính từ khi đơn chuyển sang Delivered; SellerKBB bảo vệ dữ liệu phiên LIVE tối thiểu 60 ngày để tránh tự dọn khi đơn vẫn còn trong vòng đời giao hàng/hậu mãi."
@@ -1335,7 +1336,7 @@ function summarizeLiveReconciliation(result) {
       gmvAmount = overlapAdjustedGmvAmount;
       status = allFinal ? "final" : "provisional";
       reason = allFinal
-        ? "LIVE nội bộ chồng giờ đã được xử lý: SellerKBB dùng GMV TikTok Analytics riêng của phiên (đã gồm hàng nhà + Affiliate) và áp dụng tỷ lệ hủy/hoàn từ các đơn trong đúng khung giờ. Toàn bộ đơn đối soát đã kết thúc nên số này đã chốt."
+        ? "Đã chốt khi các đơn giao thành công hoặc hủy và không có hậu mãi đang xử lý. Hoàn tiền phát sinh sau giao vẫn được cập nhật, điều chỉnh GMV/KPI theo lần đối soát kế tiếp."
         : "LIVE nội bộ chồng giờ đã được xử lý: SellerKBB dùng GMV TikTok Analytics riêng của phiên (đã gồm hàng nhà + Affiliate) và áp dụng tỷ lệ hủy/hoàn từ các đơn trong đúng khung giờ. Không gán cùng một đơn trực tiếp cho hai phiên; số này sẽ tự cập nhật khi đơn hủy/hoàn thay đổi.";
     }
   } else if (!hasSingleLiveData) {
@@ -1349,8 +1350,8 @@ function summarizeLiveReconciliation(result) {
     if (allFinal) {
       status = "final";
       reason = (provisionalTimeWindowOrders > 0
-        ? "Đã chốt theo quy tắc một kênh nội bộ LIVE trong khung giờ; toàn bộ đơn hàng nhà dùng cho KPI đã kết thúc và không còn hậu mãi đang xử lý."
-        : "Toàn bộ đơn hàng nhà có tín hiệu LIVE dùng cho KPI đã kết thúc và không còn hậu mãi đang xử lý.") + affiliateNote;
+        ? "Đã chốt khi đơn giao thành công, không cần chờ thêm 15 ngày; các yêu cầu hoàn/trả phát sinh sẽ được đối soát lại."
+        : "Các đơn hàng nhà có tín hiệu LIVE đã giao hoặc hủy, không có hậu mãi đang xử lý; hoàn tiền phát sinh sẽ tiếp tục cập nhật.") + affiliateNote;
     } else if (provisionalTimeWindowOrders > 0) {
       reason = "Chỉ có một kênh nội bộ LIVE trong khung giờ, nên " + provisionalTimeWindowOrders + " đơn khớp thời gian được tính KPI tạm tính. Phần Affiliate được cộng theo GMV TikTok Analytics của phiên và điều chỉnh theo tỷ lệ hủy/hoàn hiện có của hàng nhà." + affiliateNote;
     } else {
