@@ -1452,12 +1452,31 @@ async function buildLiveReconciliation(env, accessToken, liveId, options = {}) {
   return buildLiveReconciliationForSession(env, accessToken, session, { ...options, allSessions: sessions });
 }
 
+// Keep a limited, buyer-identity-free history of changes to settled KPI.
+function recordReconciliationChange(session, summary) {
+  const previous = session?.reconciliation;
+  const history = Array.isArray(session?.reconciliationHistory) ? session.reconciliationHistory.slice(-39) : [];
+  const oldGmv = moneyNumber(previous?.finalizedGmvAmount ?? (previous?.status === "final" ? previous.gmvAmount : 0));
+  const nextGmv = moneyNumber(summary?.finalizedGmvAmount ?? (summary?.status === "final" ? summary.gmvAmount : 0));
+  const oldRefund = moneyNumber(previous?.refundedOrderAmount);
+  const nextRefund = moneyNumber(summary?.refundedOrderAmount);
+  if (summary?.usableForKpi === true && (!previous || oldGmv !== nextGmv || oldRefund !== nextRefund)) {
+    history.push({at:summary.generatedAt || new Date().toISOString(),
+      type:previous ? "adjustment" : "initial",
+      previousAmount:oldGmv,currentAmount:nextGmv,deltaAmount:nextGmv-oldGmv,
+      refundedOrderAmount:nextRefund,refundDeltaAmount:nextRefund-oldRefund});
+  }
+  session.reconciliationHistory = history.slice(-40);
+  session.reconciliation = summary;
+  return session.reconciliationHistory;
+}
+
 async function persistReconciliationSummary(env, liveId, summary) {
   if (!env.TIKTOK_KV || !liveId || !summary) return false;
   const sessions = await getAutoSyncData(env);
   const target = sessions.find(x => String(x?.liveId || "") === String(liveId));
   if (!target) return false;
-  target.reconciliation = summary;
+  const history = recordReconciliationChange(target, summary);
   if (summary?.creatorGmvAvailable === true && moneyNumber(summary.analyticsGmvAmount) >= 0) {
     target.sellerGmvAmount = moneyNumber(summary.sellerGmvAmount);
     target.creatorGmvAvailable = true;
@@ -1479,7 +1498,7 @@ async function persistReconciliationSummary(env, liveId, summary) {
     target.affiliateSource = String(summary.affiliateSource || target.affiliateSource || "");
   }
   await env.TIKTOK_KV.put(AUTO_SYNC_DATA_KEY, JSON.stringify(sessions));
-  return true;
+  return history;
 }
 
 function reconciliationGeneratedMs(summary) {
