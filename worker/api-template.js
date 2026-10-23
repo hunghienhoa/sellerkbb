@@ -2194,6 +2194,15 @@ async function handleApi(request, env, ctx) {
 
 export default {
   async scheduled(controller, env, ctx) {
+    // Backfill a bounded batch of historical Creator product attribution every
+    // five minutes. Idle periods only read the small job status key from KV.
+    if (controller.cron === "*/5 * * * *") {
+      ctx.waitUntil((async()=>{
+        const job=await getManualSyncJob(env);
+        if(job?.state==="running")await advanceManualSyncJob(env,job.jobId);
+      })());
+      return;
+    }
     if (controller.cron === "0 * * * *") {
       ctx.waitUntil((async()=>{
         const job=await getManualSyncJob(env);
