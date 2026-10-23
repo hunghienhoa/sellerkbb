@@ -1536,12 +1536,13 @@ async function refreshKpiReconciliations(env, accessToken, sessions, reason = "h
   for (const session of candidates) {
     try {
       const result = await buildLiveReconciliationForSession(env, accessToken, session, { hydrateDetails: true, allSessions: sessions });
-      session.reconciliation = result.kpiSummary;
+      recordReconciliationChange(session, result.kpiSummary);
+      session.reconciliationRefreshError = "";
       refreshed++;
       if (result.kpiSummary?.status === "final") finalized++;
       if (result.kpiSummary?.status === "blocked") blocked++;
     } catch (error) {
-      session.reconciliation = {
+      const blockedSummary = {
         status: "blocked",
         usableForKpi: false,
         gmvAmount: 0,
@@ -1554,6 +1555,8 @@ async function refreshKpiReconciliations(env, accessToken, sessions, reason = "h
         generatedAt: new Date().toISOString(),
         reason: String(error?.message || error)
       };
+      if (!session.reconciliation?.usableForKpi) session.reconciliation = blockedSummary;
+      session.reconciliationRefreshError = blockedSummary.reason;
       blocked++;
       errors.push({ liveId: String(session?.liveId || ""), message: String(error?.message || error) });
     }
@@ -2222,8 +2225,8 @@ async function handleApi(request, env, ctx) {
         try {
           const cachedResult = JSON.parse(cachedRaw);
           cachedResult.kpiSummary = cachedResult.kpiSummary || summarizeLiveReconciliation(cachedResult);
-          await persistReconciliationSummary(env, liveId, cachedResult.kpiSummary);
-          return json({ ...cachedResult, cached: true });
+          const adjustmentHistory = await persistReconciliationSummary(env, liveId, cachedResult.kpiSummary);
+          return json({ ...cachedResult, adjustmentHistory, cached: true });
         } catch {}
       }
     }
@@ -2233,7 +2236,7 @@ async function handleApi(request, env, ctx) {
       const result = await buildLiveReconciliation(env, token.access_token, liveId, { hydrateDetails: true });
       if (env.TIKTOK_KV) {
         await env.TIKTOK_KV.put(cacheKey, JSON.stringify(result), { expirationTtl: LIVE_RECONCILE_CACHE_TTL_SECONDS });
-        await persistReconciliationSummary(env, liveId, result.kpiSummary);
+        result.adjustmentHistory = await persistReconciliationSummary(env, liveId, result.kpiSummary);
       }
       return json({ ...result, cached: false });
     } catch (e) {
