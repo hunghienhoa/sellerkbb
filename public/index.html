@@ -6,8 +6,8 @@
   <title>SellerKBB · Doanh Số KPIs</title>
   <meta name="theme-color" content="#fff4f9" />
   <link rel="manifest" href="/manifest.webmanifest" />
-  <link rel="icon" type="image/png" sizes="180x180" href="/khangbaby-mascot.png?v=1.49.30" />
-  <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png?v=1.49.30" />
+  <link rel="icon" type="image/png" sizes="180x180" href="/khangbaby-mascot.png?v=1.49.31" />
+  <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png?v=1.49.31" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-title" content="SellerKBB" />
   <style>
@@ -3140,18 +3140,18 @@ body.account-modal-open{overflow:hidden}
   <script>if("serviceWorker" in navigator)window.addEventListener("load",()=>navigator.serviceWorker.register("/sw.js").catch(()=>{}));</script>
 </head>
 <body>
-  <div id="boot" class="boot"><div class="boot-card"><img class="login-brand-logo" src="/khangbaby-mascot.png?v=1.49.30" width="180" height="180" alt="Logo em bé Khang Baby" decoding="async" fetchpriority="high"><div class="brand brand-lockup"><span class="brand-seller">Seller</span><b>KBB</b><span class="brand-live">LIVE</span></div><p class="sub" id="bootText">Đang kiểm tra cấu hình hệ thống…</p><div id="bootActions" class="row"></div></div></div>
+  <div id="boot" class="boot"><div class="boot-card"><img class="login-brand-logo" src="/khangbaby-mascot.png?v=1.49.31" width="180" height="180" alt="Logo em bé Khang Baby" decoding="async" fetchpriority="high"><div class="brand brand-lockup"><span class="brand-seller">Seller</span><b>KBB</b><span class="brand-live">LIVE</span></div><p class="sub" id="bootText">Đang kiểm tra cấu hình hệ thống…</p><div id="bootActions" class="row"></div></div></div>
   <div id="app" class="hidden">
     <div id="mobileMenuOverlay" class="mobile-menu-overlay" aria-hidden="true"></div>
     <aside class="sidebar" id="sidebar">
-      <div class="side-brand"><img class="sidebar-brand-logo" src="/khangbaby-mascot.png?v=1.49.30" width="180" height="180" alt="Logo em bé Khang Baby" decoding="async"><span class="sidebar-brand-caption">SellerKBB · LIVE</span></div>
+      <div class="side-brand"><img class="sidebar-brand-logo" src="/khangbaby-mascot.png?v=1.49.31" width="180" height="180" alt="Logo em bé Khang Baby" decoding="async"><span class="sidebar-brand-caption">SellerKBB · LIVE</span></div>
       <nav class="nav" id="nav"></nav>
     </aside>
     <main class="main">
       <header class="topbar">
         <div class="topbar-title-wrap"><button id="menuToggle" class="menu-toggle" type="button" aria-label="Mở menu" aria-expanded="false">☰</button><div><h1 id="pageTitle" class="page-title">Tổng quan</h1><div id="pageSub" class="tiny"></div></div></div>
         <div class="topbar-right">
-          <span id="syncBadge" class="pill">v1.49.30</span>
+          <span id="syncBadge" class="pill">v1.49.31</span>
           <div id="dataRefreshWrap" class="data-refresh-wrap">
             <button id="dataRefreshBtn" class="data-refresh-btn" type="button" title="Tài khoản có quyền LIVE/KPI: đồng bộ LIVE 120 ngày và kiểm tra GMV Affiliate từng phiên">
               <span id="dataRefreshIcon" class="data-refresh-icon">↻</span>
@@ -3662,7 +3662,7 @@ body.account-modal-open{overflow:hidden}
 
     function previewTs(iso){ return {toDate:()=>new Date(iso)}; }
     function enterPreview(){
-      state.config={version:'1.49.30-preview',tiktokConfigured:true};
+      state.config={version:'1.49.31-preview',tiktokConfigured:true};
       state.user={uid:'preview-admin',email:'admin@sellerkbb.demo',displayName:'Quản trị viên Demo',photoURL:avatarFallbackData('Quản trị viên Demo')};
       state.profile={role:'admin',status:'approved',displayName:'Quản trị viên Demo',photoURL:state.user.photoURL,permissions:['live.read','kpi.read']};
       state.maintenance={settings:{retentionDays:180,autoCleanup:true,emergencyPercent:85,firestoreSoftLimitMb:600,firestoreMaxSessions:FIRESTORE_TOTAL_SESSION_CAP,kvSoftKeyLimit:5000},github:{usedBytes:124000,limitBytes:10000000000,available:true},cloudflare:{keyCount:5,lastRun:{ranAt:new Date().toISOString(),deleted:0},usedBytes:428000,storageLimitBytes:1000000000,storageComplete:true},firebase:{freePlanMode:true,ttlEnabled:false,ttlRecommended:false,storageLimitBytes:1073741824}};
