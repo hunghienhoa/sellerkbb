@@ -4,7 +4,7 @@
 
 ### Báo cáo TikTok LIVE · KPI nhân sự · Tự đồng bộ 24/24
 
-**Phiên bản hiện tại: v1.49.35**
+**Phiên bản hiện tại: v1.49.36**
 
 [![GitHub Release](https://img.shields.io/github/v/release/hunghienhoa/sellerkbb?label=Release)](https://github.com/hunghienhoa/sellerkbb/releases)
 [![GitHub Actions](https://img.shields.io/github/actions/workflow/status/hunghienhoa/sellerkbb/deploy.yml?branch=main&label=Ki%E1%BB%83m%20tra%20%26%20Backup)](https://github.com/hunghienhoa/sellerkbb/actions)
@@ -17,7 +17,15 @@
 
 ---
 
-## 🆕 Cập nhật mới nhất — v1.49.35
+## 🆕 Cập nhật mới nhất — v1.49.36
+
+- **Thêm lựa chọn Vận hành ghép đôi cho Ngày Campaign / Mega Live:** trong **Công cụ → KPI thủ công**, dropdown **Nhân viên vận hành Livestream** có thêm **Hùng Hiền Hòa + Hùng Bắc Giang · chia đôi**, bên cạnh hai lựa chọn riêng lẻ hiện có. Chỉ xuất hiện trong màn hình nhập KPI thủ công, không thay đổi Vận hành của phiên LIVE/KPI tự động.
+- **Chia đều GMV Host, tổng KPI Vận hành vẫn là 0,1%:** ví dụ Host có GMV sau hoàn/hủy **10.000.000đ** → mỗi Vận hành nhận **5.000.000đ GMV**, **5.000đ KPI**; tổng KPI Vận hành vẫn **10.000đ**, tuyệt đối không tính 0,1% cho cả hai trên toàn GMV. Nếu tiền lẻ, phân bổ làm tròn sao cho tổng hai người đúng tổng GMV và tổng KPI. **KPI Host 0,3% không đổi**.
+- **Chỉ chia khi chủ động chọn ghép đôi:** chọn Hùng Hiền Hòa hoặc Hùng Bắc Giang riêng lẻ thì Vận hành đó tiếp tục được tính trọn **0,1% GMV Host**, không chia cho người khác.
+- **Lưu, mở lại và tổng hợp đúng hai người:** lựa chọn ghép đôi được lưu trong phiên Campaign/Mega cùng mã của hai nhân sự thật; phần tóm tắt hiển thị tên ghép đôi, phần Chi tiết giải thích số chia. Tại **KPI nhân sự**, GMV/KPI ghép đôi được phân bổ vào từng người; không tạo một nhân sự ảo hoặc nhân đôi KPI. Giữ nguyên quy trình lưu nháp, Admin duyệt, kiểm soát tổng GMV Host.
+- **Kiểm thử hồi quy:** kiểm tra số chia chẵn/lẻ, tỷ lệ 0,1%, chọn lại từng người, lưu/mở lại sau tải trang trên PC và điện thoại; không thay đổi logic TikTok, Affiliate và đối soát.
+
+### v1.49.35 — Logo baby đăng nhập ở góc phải, kích thước bằng 50%
 
 - **Đăng nhập Google — logo Khang Baby gọn đúng yêu cầu:** đưa logo em bé lên góc trên bên phải của khung đăng nhập, giảm đúng 50% kích thước hiển thị (94 → 47px trên PC, 88 → 44px trên điện thoại); không đổi file ảnh/logo ở thanh bên.
 - **Giữ bố cục không đè chữ:** dùng định vị theo khung và chừa hàng tiêu đề cho SellerKBB LIVE, không sử dụng `transform:scale()` gây lệch khoảng trống; không thay đổi nội dung đăng nhập, xác thực hay logic GMV/KPI.
