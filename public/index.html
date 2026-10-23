@@ -4232,6 +4232,8 @@ body.account-modal-open{overflow:hidden}
             // Preserve last valid Affiliate snapshot when a newer retry is incomplete.
             // Never replace verified values with 0 just because a secondary API failed.
             affiliateDataAvailable:confirmedAffiliate || keepPreviousAffiliate,
+            affiliateNeedsRefresh:src.affiliateNeedsRefresh===true ||
+              (src.affiliateNeedsRefresh===undefined && old.affiliateNeedsRefresh===true),
             creatorGmvAvailable:src.creatorGmvAvailable===true || (keepPreviousAffiliate&&old.creatorGmvAvailable===true),
             creatorGmvAmount:src.creatorGmvAvailable===true?Number(src.creatorGmvAmount??amount):Number(old.creatorGmvAmount??0),
             sellerGmvAmount:Number(src.sellerGmvAmount??src.gmvAmount??0),
@@ -4247,6 +4249,7 @@ body.account-modal-open{overflow:hidden}
             affiliateEstimateAvailable:src.affiliateEstimateAvailable===true,
             affiliateEstimateAmount:src.affiliateEstimateAvailable===true?Number(src.affiliateEstimateAmount||0):null,
             affiliateError:src.affiliateError||'',
+            affiliateLegacyNeedsReview:src.affiliateLegacyNeedsReview===true,
             reconciliation:pending?null:(src.reconciliation||old.reconciliation||null),
             syncPending:pending,
             syncState:pending?'pending_end_time':'complete',
@@ -5089,7 +5092,7 @@ body.account-modal-open{overflow:hidden}
     function affiliateFigures(session){
       const total=Math.max(0,Number(finalGmv(session)||0));
       const previewAvailable=PREVIEW&&session?.affiliateDataAvailable!==false;
-      const available=(session?.affiliateDataAvailable===true&&session?.creatorGmvAvailable===true)||previewAvailable;
+      const available=(session?.affiliateDataAvailable===true&&session?.creatorGmvAvailable===true&&session?.affiliateNeedsRefresh!==true)||previewAvailable;
       const previewAffiliate=previewAvailable&&session?.affiliateDataAvailable!==true?Math.round(total*((String(session?.id||'').charCodeAt(0)%5+17)/100)):0;
       const affiliate=available?Math.max(0,Number(session?.affiliateDataAvailable===true?session.affiliateGmvAmount:previewAffiliate)||0):null;
       const shop=available?Math.max(0,Number(session?.affiliateDataAvailable===true?session.shopProductGmvAmount:Math.max(0,total-(affiliate||0)))||0):null;
