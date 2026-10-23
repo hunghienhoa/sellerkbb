@@ -3097,8 +3097,8 @@ body.account-modal-open{overflow:hidden}
 @media(max-width:700px){
   #section-tiktok .creator-channel-grid{grid-template-columns:minmax(0,1fr)}
   #section-tiktok .creator-auth-head.auth-summary{gap:6px}
-  #section-tiktok .creator-auth-head p{display:none}
-  #section-tiktok .creator-channel-name span{display:none}
+  #section-tiktok .creator-auth-head p{display:block}
+  #section-tiktok .creator-channel-name span{display:block}
   #section-tiktok .creator-channel-top .pill{white-space:nowrap}
   #section-tiktok .api-disclosure{padding:12px}
   #section-tiktok .auth-chevron{font-size:18px}
@@ -6496,13 +6496,18 @@ body.account-modal-open{overflow:hidden}
     }
     const tiktokDisclosurePreference=new Map();
     function tiktokDisclosureIsOpen(key,defaultOpen=true){
-      return tiktokDisclosurePreference.has(key)?tiktokDisclosurePreference.get(key):defaultOpen;
+      // TikTok/API is an always-expanded diagnostic view; never hide connected tokens or readiness.
+      return true;
     }
     function bindTikTokDisclosures(){
       document.querySelectorAll('#section-tiktok [data-tiktok-disclosure]').forEach(panel=>{
+        panel.open=true;
         const summary=panel.querySelector(':scope > summary');
         if(!summary)return;
-        summary.addEventListener('click',()=>tiktokDisclosurePreference.set(panel.dataset.tiktokDisclosure,!panel.open));
+        summary.addEventListener('click',event=>{
+          event.preventDefault();
+          panel.open=true;
+        });
       });
     }
     function creatorChannelCardHtml(item={}){
