@@ -819,7 +819,7 @@ function reconcileCreatorLiveProductOwnership(session,creatorData,sellerData){
   const sum=(xs,k)=>xs.reduce((n,x)=>n+Number(x[k]||0),0);
   return {
     affiliateDataAvailable:true,affiliateDataConsistent:true,affiliateError:"",
-    affiliateNeedsRefresh:false,
+    affiliateNeedsRefresh:false,affiliateLegacyNeedsReview:false,
     affiliateSource:"creator_room_product_stats_202502_by_seller_shop_product_ids_202512",
     affiliateUpdatedAt:new Date().toISOString(),creatorProductStatsVerified:true,
     creatorProductStatsCount:creator.length,creatorProductStatsTotal:total,
