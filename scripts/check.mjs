@@ -125,6 +125,12 @@ assert(html.includes('Tài khoản mới cần được quản trị viên phê 
 assert(!html.includes('Tài khoản đầu tiên sẽ bootstrap thành quản trị viên'), "Old login bootstrap wording must not appear");
 
 assert(html.includes('class="login-brand-logo"') && html.includes('class="sidebar-brand-logo"'), "KHANG BABY login and sidebar logos missing");
+assert(html.includes('.boot-card{max-width:480px;position:relative}') &&
+  html.includes('width:47px;') && html.includes('height:47px;') &&
+  html.includes('top:22px;') && html.includes('right:24px;') &&
+  html.includes('.boot-card>.login-brand-logo{top:18px;right:18px;width:44px;height:44px}') &&
+  html.includes('.boot-card>.brand-lockup{min-height:44px;padding-right:60px}'),
+  "Login baby logo must be exactly half size at top right with clear mobile heading");
 assert(html.includes('src="/khangbaby-mascot.png?v='+version+'"'), "Versioned baby mascot logo missing");
 assert(worker.includes('url.pathname === "/khangbaby-mascot.png"'), "Mascot Worker image endpoint missing");
 assert(read("scripts/build-worker.mjs").includes('khangbaby-mascot.png') && read("scripts/build-worker.mjs").includes('__BRAND_MASCOT_B64__'), "Mascot image must be packaged in Worker");
