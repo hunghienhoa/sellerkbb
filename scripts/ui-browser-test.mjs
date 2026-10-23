@@ -466,6 +466,57 @@ try {
   assert(await page.$eval(savedManualCard+' [data-manual-host-gmv]',e=>e.value)==='1.234.000',"Formatted Host GMV did not persist after reload");
   assert(await page.$eval(savedManualCard+' [data-manual-operator-kpi]',e=>e.textContent.trim())==='1.234đ',"Operator auto KPI did not persist after reload");
 
+  // Campaign/Mega-only optional duo: split one Host's GMV and the total 0.1% KPI
+  // between two actual operators. Individual selection must remain unchanged.
+  const duoValue='team:hung-hien-hoa+hung-bac-giang';
+  const sharedOptions=await page.$eval(savedManualCard+' [data-manual-operator-person] option',items=>items.map(o=>({value:o.value,label:o.textContent})));
+  assert(sharedOptions.some(o=>o.value===duoValue&&o.label.includes('Hùng Hiền Hòa + Hùng Bắc Giang')),
+    "Campaign/Mega operator duo choice is missing");
+  await page.select(savedManualCard+' [data-manual-operator-person]',duoValue);
+  assert(await page.$eval(savedManualCard+' [data-manual-shared-operator-hint]',e=>!e.classList.contains('hidden')&&
+    e.textContent.includes('617.000')&&e.textContent.includes('617')&&e.textContent.includes('0,1%')),
+    "Shared operator explanation must split Host GMV and total KPI exactly once");
+  assert(await page.$eval(savedManualCard+' [data-manual-operator-kpi]',e=>e.textContent.trim())==='1.234đ',
+    "Shared operators must NOT double the total 0.1% KPI");
+  await page.click(savedManualCard+' [data-manual-save]');
+  await sleep(160);
+  assert(await page.$eval(savedManualCard,e=>e.textContent.includes('Hùng Hiền Hòa + Hùng Bắc Giang')),
+    "Saved manual KPI must display the combined operator names");
+
+  await page.click('[data-section="kpi"]');
+  await page.select('#section-kpi [data-kpi-month-select]','2026-10');
+  const sharedStaffRows=await page.$eval('[data-kpi-table="final"] tbody tr',rows=>rows.map(row=>({
+    name:row.cells[0]?.textContent||'',
+    manualGmv:row.cells[3]?.textContent||'',
+    manualKpi:row.cells[5]?.textContent||''
+  })));
+  assert(!sharedStaffRows.some(row=>row.name.includes('Hùng Hiền Hòa + Hùng Bắc Giang')),
+    "Operator team must not appear as a fake staff member");
+  assert(sharedStaffRows.some(row=>row.name.includes('Hùng Hiền')&&row.manualGmv.includes('617.000')&&row.manualKpi.includes('617')) &&
+    sharedStaffRows.some(row=>row.name.includes('Hùng Bắc Giang')&&row.manualGmv.includes('617.000')&&row.manualKpi.includes('617')),
+    "Both operators must receive half Host GMV and half the original 0.1% KPI");
+
+  await page.reload({waitUntil:"domcontentloaded"});
+  await page.waitForSelector("#app:not(.hidden)",{timeout:30000});
+  await page.click('[data-section="manual-kpi"]');
+  await page.click('#section-manual-kpi [data-range-mode="30d"]');
+  await page.click(savedManualCard+' [data-manual-kpi-edit]');
+  await page.click(savedManualCard+' [data-manual-entry-saved="1"] [data-manual-detail-toggle]');
+  assert(await page.$eval(savedManualCard+' [data-manual-operator-person]',e=>e.value)===duoValue,
+    "Combined operator option must persist after reloading");
+
+  // Opt out: choosing one Operator must preserve the original individual 0.1%.
+  await page.select(savedManualCard+' [data-manual-operator-person]','staff-hung-bg');
+  assert(await page.$eval(savedManualCard+' [data-manual-shared-operator-hint]',e=>e.classList.contains('hidden')),
+    "Splitting message must vanish for a single Operator");
+  await page.click(savedManualCard+' [data-manual-save]');
+  await sleep(160);
+  await page.click(savedManualCard+' [data-manual-kpi-edit]');
+  await page.click(savedManualCard+' [data-manual-entry-saved="1"] [data-manual-detail-toggle]');
+  assert(await page.$eval(savedManualCard+' [data-manual-operator-person]',e=>e.value)==='staff-hung-bg',
+    "Choosing a single Operator must restore the normal calculation and saved selection");
+
+
   await page.click('[data-section="export"]');
   assert(await page.$eval('#section-export',e=>e.textContent.includes('BO_HO_SO_KPI_KHANGCHOU_'+new Date().getFullYear())),"Khangchou KPI dossier export item missing");
   await page.click('#exportKhangchouDossier');
