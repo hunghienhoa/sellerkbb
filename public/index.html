@@ -4485,9 +4485,10 @@ body.account-modal-open{overflow:hidden}
         };
       }
       return {
-        status:summary.status==='final'?'final':'provisional',
+        status:summary.status==='final'?'final':summary.status==='partial_final'?'partial_final':'provisional',
         usable:true,
-        gmv:Math.max(0,Number(summary.gmvAmount||0)),
+        gmv:Math.max(0,Number(summary.status==='partial_final'?summary.finalizedGmvAmount:summary.gmvAmount)||0),
+        pendingGmv:Math.max(0,Number(summary.pendingGmvAmount||0)),
         gross:finalGmv(session),
         reason:summary.reason||'',
         generatedAt:summary.generatedAt||''
@@ -4501,8 +4502,8 @@ body.account-modal-open{overflow:hidden}
       const status=session?.syncPending===true?'waiting':(summary?.status||'waiting');
       return {
         recorded,
-        pending:usable&&status!=='final'?Math.max(0,Number(summary.gmvAmount||0)):null,
-        final:usable&&status==='final'?Math.max(0,Number(summary.gmvAmount||0)):null,
+        pending:usable&&status!=='final'?Math.max(0,Number(status==='partial_final'?summary.pendingGmvAmount:summary.gmvAmount)||0):null,
+        final:usable&&(status==='final'||status==='partial_final')?Math.max(0,Number(status==='partial_final'?summary.finalizedGmvAmount:summary.gmvAmount)||0):null,
         status,
         excludedTimeWindow:Math.max(0,Number(summary?.excludedTimeWindowAmount||0)),
         liveSignalOrders:Number(summary?.liveSignalOrders||0),
@@ -4524,6 +4525,7 @@ body.account-modal-open{overflow:hidden}
 
     function kpiStatusLabel(status,summary=null){
       if(status==='final')return 'Đã chốt';
+      if(status==='partial_final')return 'Đã chốt một phần';
       if(status==='provisional')return 'Tạm tính';
       if(status==='blocked'){
         if(summary?.overlapAmbiguous===true)return 'LIVE chồng thời gian';
