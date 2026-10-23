@@ -18,6 +18,31 @@ const safeWorker = worker
 new Function(safeWorker);
 
 const assert = (ok, message) => { if (!ok) throw new Error(message); };
+const reconcileSourceStart=worker.indexOf("function reconcileCreatorLiveProductOwnership(");
+const reconcileSourceEnd=worker.indexOf("\nasync function fetchVerifiedLiveAffiliateBreakdown",reconcileSourceStart);
+assert(reconcileSourceStart>0&&reconcileSourceEnd>reconcileSourceStart,"Affiliate product classifier missing");
+const classifyAffiliate=new Function("moneyNumber","isAllowedSellerKbbLiveChannel",
+  worker.slice(reconcileSourceStart,reconcileSourceEnd)+"\nreturn reconcileCreatorLiveProductOwnership;")(
+    x=>Number(x||0),x=>["shopkhangbaby","mekhangsua"].includes(x.channelUsername));
+const testLive={channelUsername:"mekhangsua",creatorGmvAvailable:true,creatorGmvAmount:150,sellerGmvAmount:120};
+const creatorFixture={ok:true,products:[{id:"SHOP",gmvAmount:90,itemsSold:2,skuOrders:1},
+  {id:"OTHER",gmvAmount:60,itemsSold:3,skuOrders:2}]};
+const sellerFixture={shopProductSourceAvailable:true,shopProducts:[{id:"SHOP",gmvAmount:120}]};
+const separated=classifyAffiliate(testLive,creatorFixture,sellerFixture);
+assert(separated.affiliateDataAvailable===true&&separated.affiliateGmvAmount===60&&
+  separated.shopProductGmvAmount===90&&separated.affiliateItemsSold===3&&
+  separated.affiliateSource.includes("product_stats"),
+  "Room product GMV must be partitioned by IDs without mixing seller last-click GMV");
+assert(classifyAffiliate(testLive,{ok:true,products:creatorFixture.products.slice(0,1)},sellerFixture)
+  .affiliateDataAvailable===false,"Incomplete Creator product breakdown must fail closed");
+assert(classifyAffiliate(testLive,creatorFixture,{shopProductSourceAvailable:true,shopProducts:[]})
+  .affiliateDataAvailable===false,"Missing own-shop product identities must fail closed");
+assert(classifyAffiliate({...testLive,channelUsername:"other"},creatorFixture,sellerFixture)
+  .affiliateDataAvailable===false,"Other Creator channels must not get Affiliate GMV");
+assert(html.includes("session?.affiliateNeedsRefresh!==true")&&
+  worker.includes("affiliateLegacyNeedsReview"),
+  "Legacy subtraction must remain pending until room product audit passes");
+
 assert(worker.includes("function liveAffiliateComparison(session)"),"Unverified Seller/Creator GMV comparison helper missing");
 assert(worker.includes('affiliateEstimates: merged.filter('),"30-day sync summary must track unverified GMV comparisons");
 assert(html.includes("Chênh lệch Creator/Seller tham khảo:"),"Mobile LIVE should show unverified comparison label");
@@ -437,7 +462,11 @@ assert(html.includes("Tỷ lệ hủy/hoàn hiện tại"), "Overlap aftersales 
 assert(worker.includes("SELLERKBB_ALLOWED_LIVE_CHANNELS"), "SellerKBB LIVE channel whitelist missing");
 assert(worker.includes("/analytics/202512/shop/")&&worker.includes("/products_performance"), "TikTok LIVE products performance integration missing");
 assert(worker.includes("async function fetchLiveShopProductBreakdown")&&worker.includes("async function enrichLiveAffiliateBreakdowns"), "Affiliate LIVE enrichment helpers missing");
-assert(worker.includes("affiliateDataAvailable: consistent") && worker.includes("sellerMatchesProducts"), "Affiliate split requires seller product reconciliation");
+assert(worker.includes("async function fetchCreatorLiveProductStats") &&
+  worker.includes("/product_stats") && worker.includes("function reconcileCreatorLiveProductOwnership") &&
+  worker.includes("async function fetchVerifiedLiveAffiliateBreakdown") &&
+  !worker.includes("sellerMatchesProducts"),
+  "Affiliate must reconcile Creator room products by seller-owned product IDs, never by cross-attribution GMV subtraction");
 assert(worker.includes("/analytics/202502/live_rooms/") && worker.includes("/core_stats"), "Creator room-level GMV verification missing");
 assert(worker.includes("const usableForKpi = creatorVerified && aftersalesAvailable"), "Unverified seller GMV must never finalize KPI");
 assert(html.includes("src.affiliateDataAvailable===true&&src.creatorGmvAvailable===true"), "UI must reject legacy unverified Affiliate splits");
