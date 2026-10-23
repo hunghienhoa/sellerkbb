@@ -4619,10 +4619,23 @@ body.account-modal-open{overflow:hidden}
         }
       }
 
+      const sampleGross=finalRows.reduce((n,o)=>n+Math.max(0,Number(o.amount||0)),0);
+      const deliveredRows=finalRows.filter(o=>['DELIVERED','COMPLETED'].includes(o.status) &&
+        (o.finalized===true || reconcileAfterSaleState(o)!=='returning'));
+      const deliveredNet=deliveredRows.reduce((n,o)=>n+Math.max(0,Number(o.netAmount||0)),0);
+      if(status==='provisional'&&usable&&deliveredRows.length){
+        status='partial_final';
+        reason='Đã tạm chốt theo tỷ lệ các đơn được giao; sẽ điều chỉnh nếu hoàn tiền phát sinh sau giao.';
+      }
+      const finalizedGmvAmount=status==='final'?gmvAmount:status==='partial_final'&&sampleGross>0
+        ?Math.min(gmvAmount,Math.round(analytics*deliveredNet/sampleGross)):0;
       return {
         status,
         usableForKpi:usable,
         gmvAmount:usable?gmvAmount:0,
+        finalizedGmvAmount,
+        pendingGmvAmount:usable?Math.max(0,gmvAmount-finalizedGmvAmount):0,
+        settledOrderCount:deliveredRows.length,
         analyticsGmvAmount:analytics,
         orderWindowAmount:orderWindow,
         confirmedLiveSignalAmount,
