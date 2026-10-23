@@ -444,8 +444,8 @@ assert(html.includes("Kiểm tra sẵn sàng chạy thật")&&html.includes("dat
 assert(html.includes('id="syncTikTokNow"')&&html.includes('id="previewSyncNow"'), "Sync-now controls missing");
 assert(worker.includes('MANUAL_SYNC_JOB_KEY = "autosync:manual_job"'), "Manual TikTok sync job persistence missing");
 assert(worker.includes("ctx.waitUntil(advanceManualSyncJob(env,job.jobId))") &&
-  worker.includes('"/api/tiktok/autosync/continue"'), "Resumable 120-day sync must run in background and expose continuation endpoint");
-assert(worker.includes('existing?.state==="running"')&&worker.includes("alreadyRunning:true"), "Duplicate manual 120-day sync guard missing");
+  worker.includes('"/api/tiktok/autosync/continue"'), "Resumable 30-day sync must run in background and expose continuation endpoint");
+assert(worker.includes('existing?.state==="running"')&&worker.includes("alreadyRunning:true"), "Duplicate manual 30-day sync guard missing");
 assert(worker.includes("manualJob: await getManualSyncJob(env)"), "Manual sync status must include job state");
 assert(worker.includes("async fetch(request, env, ctx)")&&worker.includes("handleApi(request, env, ctx)"), "Worker execution context is required for background sync");
 assert(!worker.includes('const result = await runAutoSync(env, days, "manual");'), "Manual sync endpoint must not block response");
@@ -544,14 +544,14 @@ assert(!kpiMonthMarkup.includes("range-summary")&&!kpiMonthMarkup.includes("rang
 assert(!html.includes("tính toàn bộ phiên từ ${displayDateKey(monthRange.startKey)} đến ${displayDateKey(monthRange.endKey)}"), "KPI monthly note must not repeat start/end date text");
 assert(html.includes('id="dataRefreshBtn"'), "Dashboard latest-data refresh control missing");
 assert(html.includes("async function refreshLatestData()")&&html.includes("await withTimeout(loadData(),STARTUP_TIMEOUT_MS,'Cập nhật dữ liệu')"), "Non-admin Dashboard refresh must reload accessible data");
-assert(html.includes("async function request120DaySync(origin='tiktok',retryPending=false)"), "TikTok/Dashboard 120-day sync must share one launcher");
-assert(html.includes("await request120DaySync('dashboard')")&&html.includes("$('#syncTikTokNow').onclick=()=>request120DaySync('tiktok',manualIncomplete)"), "Dashboard and TikTok 120-day sync must use same job");
-assert(html.includes("method:'POST',body:JSON.stringify({days:120,retryPending})"), "120-day sync payload missing");
-assert(html.includes("if(!can('live.read')&&!can('kpi.read'))")&&html.includes("request120DaySync('dashboard')"), "Staff LIVE/KPI access must permit 120-day TikTok sync");
+assert(html.includes("async function request30DaySync(origin='tiktok',retryPending=false)"), "TikTok/Dashboard 30-day sync must share one launcher");
+assert(html.includes("await request30DaySync('dashboard')")&&html.includes("$('#syncTikTokNow').onclick=()=>request30DaySync('tiktok',manualIncomplete)"), "Dashboard and TikTok 30-day sync must use same job");
+assert(html.includes("method:'POST',body:JSON.stringify({days:30,retryPending})"), "30-day sync payload missing");
+assert(html.includes("if(!can('live.read')&&!can('kpi.read'))")&&html.includes("request30DaySync('dashboard')"), "Staff LIVE/KPI access must permit 30-day TikTok sync");
 assert(worker.includes('if (url.pathname === "/api/tiktok/autosync/run" && request.method === "POST") {') && worker.includes('await requireReportAccess(request,env);'), "Approved staff must retain manual sync permission");
 const refreshLatestBlock=html.slice(html.indexOf("async function refreshLatestData()"),html.indexOf("function bindShell()",html.indexOf("async function refreshLatestData()")));
-assert(refreshLatestBlock.includes("await request120DaySync('dashboard')"), "Dashboard update must start 120-day server-side TikTok sync");
-assert(html.includes("Tài khoản có quyền LIVE/KPI: đồng bộ LIVE 120 ngày"), "Dashboard tooltip must describe 120-day staff sync");
+assert(refreshLatestBlock.includes("await request30DaySync('dashboard')"), "Dashboard update must start 30-day server-side TikTok sync");
+assert(html.includes("Tài khoản có quyền LIVE/KPI: đồng bộ LIVE 30 ngày"), "Dashboard tooltip must describe 30-day staff sync");
 assert(html.includes(".data-refresh-btn.is-loading")&&html.includes(".data-refresh-btn.is-success")&&html.includes("@keyframes data-refresh-spin"), "Refresh control loading/success motion states missing");
 assert(html.includes("state.section==='dashboard'"), "Latest-data control must stay scoped to Tổng quan");
 assert(!html.includes('id="dataRefreshModalBackdrop"')&&!html.includes('id="dataRefreshModal"')&&!html.includes('id="dataRefreshPopover"'), "Latest-data detail popup/modal must stay hidden/removed");
@@ -619,20 +619,20 @@ assert(html.includes('async function loadVerifiedSyncSnapshot(job)') &&
   html.includes("state.syncedSnapshotAt>=stamp"), "Dashboard must verify new KV snapshot before claiming success");
 assert(html.includes("status==='partial'?'Đã đồng bộ LIVE'") &&
   html.includes("finishDataRefresh(missing>0?'partial':'success')"), "UI must distinguish partial Affiliate results from successful complete sync");
-assert(worker.includes("const MANUAL_SYNC_DAYS = 120;") &&
+assert(worker.includes("const MANUAL_SYNC_DAYS = 30;") &&
   worker.includes("MANUAL_SYNC_WINDOW_DAYS = 30") &&
   worker.includes('runAutoSync(env,days,"manual_scan",offset)') &&
   worker.includes('phase:complete?"done":"affiliate"') && worker.includes("manualAffiliatePendingIds(all)") && worker.includes('advanceManualSyncJob(env,job.jobId)') &&
   worker.includes('MANUAL_SYNC_DAYS * 86400000'),
-  "120-day scan/affiliate job must checkpoint all 4 windows and all LIVE rooms");
-assert(html.includes("Đồng bộ ngay 120 ngày") &&
+  "30-day scan/affiliate job must checkpoint all 4 windows and all LIVE rooms");
+assert(html.includes("Đồng bộ ngay 30 ngày") &&
   html.includes("Đang đối soát GMV Affiliate") &&
   html.includes("/api/tiktok/autosync/continue"),
-  "120-day sync UI must expose progress and auto-continue");
-assert(worker.includes("const MANUAL_SYNC_MAX_RUNNING_MS = 4 * 60 * 60 * 1000;"),"Cron must not mark 120-day backfill stale at one hour");
+  "30-day sync UI must expose progress and auto-continue");
+assert(worker.includes("const MANUAL_SYNC_MAX_RUNNING_MS = 4 * 60 * 60 * 1000;"),"Cron must not mark 30-day backfill stale at one hour");
 assert(worker.includes("affiliateIds:ids") && worker.includes("ids.slice(offset,offset+MANUAL_AFFILIATE_BATCH_SIZE)"),"Affiliate queue must have stable room IDs and never skip missing rooms after resorting");
 assert(worker.includes('state:complete?(unresolved>0?"partial":"success"):"running"'),"Backfill must not declare full success with unresolved Affiliate GMV");
 assert(worker.includes("affiliateFailureReasons:manualAffiliateFailureReasons(all)"),"Backfill must diagnose reasons for missing Affiliate values");
 assert(worker.includes("existing?.state===\"partial\"") && worker.includes("retryPending:resumeMissing"),"Follow-up sync must retry only unresolved rooms without starting over");
 assert(html.includes("const manualIncomplete=") && html.includes("Kiểm tra lại Affiliate còn thiếu"),"UI must expose truthful partial status and one-click retry");
-console.log("Project structure, durable Affiliate merge, resumable 120-day backfill, quota-safe sync and honest Dashboard status OK");
+console.log("Project structure, durable Affiliate merge, resumable 30-day backfill, quota-safe sync and honest Dashboard status OK");
