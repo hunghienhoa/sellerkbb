@@ -191,6 +191,12 @@ try {
   assert(await page.$eval('#reconcileModalBody',e=>e.textContent.includes('Đang hoàn / trả')&&e.textContent.includes('Đã hoàn tiền')&&e.textContent.includes('Đã hủy')&&e.textContent.includes('Hoàn tất')),"Aftersale/final-state chips missing");
   assert(await page.$eval('#reconcileModalBody',e=>e.textContent.includes('Có tín hiệu LIVE')&&e.textContent.includes('1 kênh nội bộ LIVE')),"LIVE attribution confidence labels missing");
   assert(await page.$eval('#reconcileModalBody',e=>e.textContent.includes('Bảo vệ đối soát 60 ngày')&&e.textContent.includes('không chờ 15 ngày')&&e.textContent.includes('Nếu khách hoàn sau giao')),"Reconciliation retention/return-window explanation missing");
+  assert(await page.$eval('#reconcileModalBody',e=>e.textContent.includes('GMV đã giao thành công')&&
+    e.textContent.includes('GMV chờ đối soát')&&e.textContent.includes('Đơn đã hoàn tiền')&&
+    e.textContent.includes('GMV thực nhận tạm chốt')&&e.textContent.includes('Nhật ký điều chỉnh sau giao hàng')),
+    "Delivered/pending/refund settlement details must be visible in reconciliation popup");
+  assert(await page.$('#reconcileModalBody [data-reconcile-history]')!==null,
+    "Refund adjustment history disclosure must be available on desktop and mobile");
   assert(await page.$eval('#reconcileModalBody',e=>e.textContent.includes('GMV LIVE tổng')&&e.textContent.includes('GMV từ shopkhangbaby')&&e.textContent.includes('GMV Affiliate')&&!e.textContent.includes('Hoa hồng Affiliate')&&e.textContent.includes('GMV chờ đối soát')&&e.textContent.includes('Đơn hủy từ Livestream')&&e.textContent.includes('GMV sau khi hoàn hủy')&&e.textContent.includes('KPI tự động:')),"Reconciliation popup must show Affiliate GMV without commission");
   assert(await page.$eval('#reconcileModalBody',e=>e.textContent.includes('Quy tắc Affiliate:')&&e.textContent.includes('GMV sản phẩm Affiliate vẫn được cộng vào GMV phiên và cơ sở tính KPI')),"Reconciliation popup Affiliate KPI rule missing");
   const noticeGapDesktop=await page.$eval('#reconcileModalBody [data-reconcile-notices]',e=>{
