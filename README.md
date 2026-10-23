@@ -4,7 +4,7 @@
 
 ### Báo cáo TikTok LIVE · KPI nhân sự · Tự đồng bộ 24/24
 
-**Phiên bản hiện tại: v1.49.33**
+**Phiên bản hiện tại: v1.49.34**
 
 [![GitHub Release](https://img.shields.io/github/v/release/hunghienhoa/sellerkbb?label=Release)](https://github.com/hunghienhoa/sellerkbb/releases)
 [![GitHub Actions](https://img.shields.io/github/actions/workflow/status/hunghienhoa/sellerkbb/deploy.yml?branch=main&label=Ki%E1%BB%83m%20tra%20%26%20Backup)](https://github.com/hunghienhoa/sellerkbb/actions)
@@ -17,7 +17,16 @@
 
 ---
 
-## 🆕 Cập nhật mới nhất — v1.49.33
+## 🆕 Cập nhật mới nhất — v1.49.34
+
+- **GMV chốt một phần ngay khi giao thành công:** phiên chưa giao hết nhưng đã có đơn ở trạng thái `DELIVERED`/`COMPLETED` (không có yêu cầu hoàn đang xử lý) được phân loại **Đã chốt một phần**. Tách **GMV đã giao thành công**, **GMV chờ đối soát**, **Đơn hoàn / hủy** và **GMV thực nhận tạm chốt** trong popup. Không chờ 15 ngày.
+- **Chống đếm trùng Affiliate:** mọi số phân bổ chốt/chờ được tính từ một nguồn GMV Creator LIVE toàn phiên, ước tính theo tỷ trọng giá trị đơn Seller đủ điều kiện; không cộng GMV Affiliate lên GMV Creator lần thứ hai. Đây là ước tính KPI nội bộ, không phải báo cáo thanh toán chính thức từ TikTok.
+- **KPI nhân sự:** phần đã giao được ghi nhận vào KPI đã chốt; phần chưa giao tiếp tục nằm trong KPI tạm tính. Nếu chưa xác minh được GMV Creator hay Return/Refund, không tự chuyển sang số đã chốt.
+- **Đối soát xoay vòng 30 ngày:** cron mỗi giờ xử lý tối đa 6 phiên, cron mỗi ngày tối đa 18 phiên có thời gian đối soát lâu nhất; kể cả các phiên đã chốt cũng được kiểm tra lại để phát hiện hoàn tiền sau giao. Lịch chạy có giới hạn quota nên với rất nhiều phiên, một vòng đầy đủ có thể cần nhiều lượt.
+- **Nhật ký điều chỉnh:** ghi tối đa 40 lần thay đổi GMV đã chốt/giá trị hoàn theo từng phiên, không lưu thông tin khách hàng; mỗi lần hoàn tiền phát sinh có thể làm thay đổi KPI số đã chốt. Lỗi API tạm thời không xóa số KPI đã xác minh trước đó.
+- **Chống lỗi triển khai:** mở rộng kiểm thử hồi quy cho giao thành công một phần, hoàn sau giao, giao diện đối soát và đồng bộ phiên bản; giữ nguyên 2 Creator cho phép, lịch sử dữ liệu và phân quyền.
+
+### v1.49.33 — Hiển thị đầy đủ TikTok / API
 
 - **Khôi phục TikTok / API hiển thị đầy đủ:** các mục Kiểm tra sẵn sàng chạy thật, Creator Authorization và chi tiết của cả hai tài khoản Creator luôn mở, không còn tự thu gọn sau khi kết nối.
 - **Hiển thị đầy đủ trên điện thoại:** giữ lại dòng mô tả và trạng thái token ở những thẻ Creator thay vì tự ẩn bằng CSS; vẫn sắp xếp một cột để phù hợp màn hình nhỏ.
