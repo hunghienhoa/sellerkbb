@@ -469,7 +469,7 @@ try {
   // Campaign/Mega-only optional duo: split one Host's GMV and the total 0.1% KPI
   // between two actual operators. Individual selection must remain unchanged.
   const duoValue='team:hung-hien-hoa+hung-bac-giang';
-  const sharedOptions=await page.$eval(savedManualCard+' [data-manual-operator-person] option',items=>items.map(o=>({value:o.value,label:o.textContent})));
+  const sharedOptions=await page.$$eval(savedManualCard+' [data-manual-operator-person] option',items=>items.map(o=>({value:o.value,label:o.textContent})));
   assert(sharedOptions.some(o=>o.value===duoValue&&o.label.includes('Hùng Hiền Hòa + Hùng Bắc Giang')),
     "Campaign/Mega operator duo choice is missing");
   await page.select(savedManualCard+' [data-manual-operator-person]',duoValue);
@@ -485,7 +485,7 @@ try {
 
   await page.click('[data-section="kpi"]');
   await page.select('#section-kpi [data-kpi-month-select]','2026-10');
-  const sharedStaffRows=await page.$eval('[data-kpi-table="final"] tbody tr',rows=>rows.map(row=>({
+  const sharedStaffRows=await page.$$eval('[data-kpi-table="final"] tbody tr',rows=>rows.map(row=>({
     name:row.cells[0]?.textContent||'',
     manualGmv:row.cells[3]?.textContent||'',
     manualKpi:row.cells[5]?.textContent||''
