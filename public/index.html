@@ -4857,6 +4857,14 @@ body.account-modal-open{overflow:hidden}
             <span>Đơn đã giao thành công được chốt ngay nếu không có yêu cầu hoàn/trả đang xử lý; không chờ 15 ngày. Nếu khách hoàn sau giao, dữ liệu hoàn và GMV/KPI điều chỉnh sẽ cập nhật khi đồng bộ đối soát. Thời hạn trả/hoàn TikTok vẫn áp dụng theo chính sách nền tảng.</span>
             <span>Khi chỉ có một kênh nội bộ đang LIVE, đơn khớp thời gian được tính KPI tạm tính. Khi hai kênh LIVE chồng giờ, SellerKBB dùng GMV TikTok riêng của từng phiên và chỉ dùng đơn trong khung giờ để tính tỷ lệ hủy/hoàn, tránh cộng trùng cùng một đơn cho hai phiên.</span>
           </div>
+        </details>
+        <details class="reconcile-policy" data-reconcile-history>
+          <summary>Nhật ký điều chỉnh sau giao hàng</summary>
+          <div class="reconcile-policy-body">
+            ${(Array.isArray(result.adjustmentHistory)?result.adjustmentHistory:[]).length
+              ? result.adjustmentHistory.slice().reverse().map(entry=>`<div class="row space"><span>${esc(fmtDate({toDate:()=>new Date(entry.at)}))} · ${entry.type==='initial'?'Ghi nhận tạm chốt':'Điều chỉnh GMV/KPI'}<small> · Hoàn tiền: ${fmtMoney(Number(entry.refundedOrderAmount||0),session.currency)}</small></span><b>${Number(entry.deltaAmount||0)>0?'+':''}${fmtMoney(Number(entry.deltaAmount||0),session.currency)}</b></div>`).join('')
+              : '<span>Chưa có lần thay đổi số chốt được lưu.</span>'}
+          </div>
         </details>`;
       root.querySelectorAll('[data-reconcile-filter]').forEach(btn=>btn.onclick=()=>applyReconcileFilter(root,btn.dataset.reconcileFilter));
     }
