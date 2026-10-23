@@ -4,7 +4,7 @@
 
 ### Báo cáo TikTok LIVE · KPI nhân sự · Tự đồng bộ 24/24
 
-**Phiên bản hiện tại: v1.49.31**
+**Phiên bản hiện tại: v1.49.32**
 
 [![GitHub Release](https://img.shields.io/github/v/release/hunghienhoa/sellerkbb?label=Release)](https://github.com/hunghienhoa/sellerkbb/releases)
 [![GitHub Actions](https://img.shields.io/github/actions/workflow/status/hunghienhoa/sellerkbb/deploy.yml?branch=main&label=Ki%E1%BB%83m%20tra%20%26%20Backup)](https://github.com/hunghienhoa/sellerkbb/actions)
@@ -17,7 +17,14 @@
 
 ---
 
-## 🆕 Cập nhật mới nhất — v1.49.31
+## 🆕 Cập nhật mới nhất — v1.49.32
+
+- **Đồng bộ 30 ngày gần nhất:** đổi tác vụ đồng bộ thủ công trong TikTok / API và nút Cập nhật dữ liệu ở Tổng quan từ quét 120 ngày sang 30 ngày gần nhất, gồm cả đối soát GMV Affiliate từng phiên của hai kênh @shopkhangbaby và @mekhangsua.
+- **Giữ dữ liệu cũ:** giới hạn phạm vi *quét lại* trong 30 ngày, không xóa cache LIVE lịch sử hoặc dữ liệu đã xác minh; chính sách lưu trữ đang có vẫn bảo vệ dữ liệu cũ.
+- **Đúng trạng thái:** tiếp tục danh sách ID Affiliate chưa xác minh, hiển thị `partial` nếu còn thiếu; cả nút đồng bộ và thông báo tiến độ phản ánh 30 ngày.
+- **Bộ kiểm thử:** cập nhật các ràng buộc hồi quy theo phạm vi 30 ngày, tránh kiểm thử cũ yêu cầu 120 ngày làm hỏng triển khai.
+
+### v1.49.31 — Chốt đơn ngay khi Delivered và tiếp tục theo dõi hoàn tiền
 
 - **Chốt số khi khách đã nhận hàng:** đơn ở trạng thái TikTok `DELIVERED` hoặc `COMPLETED` (không có yêu cầu hoàn/trả đang xử lý) được đánh dấu đủ điều kiện chốt GMV/KPI ngay, không chờ thêm 15 ngày. Các đơn đang xử lý hoàn/trả vẫn tạm chưa chốt.
 - **Vẫn đối soát hoàn tiền về sau:** khi TikTok cập nhật đơn hoàn sau giao, lần đồng bộ/đối soát kế tiếp cập nhật `netAmount` và KPI theo khoản hoàn xác nhận; không xóa lịch sử đơn.
