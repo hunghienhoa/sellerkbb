@@ -808,7 +808,7 @@ function reconcileCreatorLiveProductOwnership(session,creatorData,sellerData){
   if(seller.some(x=>!String(x.id||"")))return fail("seller_product_id_missing");
   const ownIds=new Set(seller.map(x=>String(x.id)));
   const core=moneyNumber(session.creatorGmvAmount),total=creator.reduce((n,x)=>n+x.gmvAmount,0);
-  if(Math.abs(total-core)>Math.max(1000,core*0.005))
+  if(Math.abs(total-core)>Math.max(1,core*0.005))
     return {...fail("creator_room_product_gmv_mismatch"),creatorProductStatsTotal:total};
   // A shop with positive seller GMV and NO own product ID matching the room
   // cannot prove every unmatched Creator product belongs to another shop.
