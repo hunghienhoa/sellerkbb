@@ -5824,7 +5824,7 @@ body.account-modal-open{overflow:hidden}
           <button class="btn small manual-kpi-session-edit" type="button" data-manual-kpi-edit>${icon('edit',13)} Sửa KPI</button>
         </div>`:''}
         <div class="manual-kpi-session-editor ${compactSaved?'hidden':''}" data-manual-kpi-session-editor>
-          <div class="manual-kpi-rule">${icon('shield',15)} <span>Chỉ nhập GMV sau hoàn/hủy của từng Host. Tổng GMV Host không được vượt <b>GMV sau khi hoàn hủy</b> đã chốt của phiên. SellerKBB không tự chia GMV tổng phiên. Không bắt buộc đủ số người tham gia. Nếu phiên chưa chốt, dữ liệu được lưu nháp và chưa cộng vào KPI nhân sự.</span></div>
+          <div class="manual-kpi-rule">${icon('shield',15)} <span>Chỉ nhập GMV sau hoàn/hủy của từng Host. Tổng GMV Host không được vượt <b>GMV sau khi hoàn hủy</b> đã chốt của phiên. SellerKBB không tự chia GMV tổng phiên. Không bắt buộc đủ số người tham gia. <b>Chỉ khi chọn “Hùng Hiền Hòa + Hùng Bắc Giang”</b>, GMV của Host được chia đôi cho hai Vận hành và tổng KPI Vận hành vẫn là <b>0,1%</b> (mỗi người một nửa). Lựa chọn Vận hành riêng vẫn giữ cách tính cũ. Nếu phiên chưa chốt, dữ liệu được lưu nháp và chưa cộng vào KPI nhân sự.</span></div>
           <div data-manual-balance>${manualKpiBalanceHtml(session,manualKpiHostTotal(saved))}</div>
           <div class="manual-kpi-entries">${rows.map((pair,index)=>manualKpiPairRow(session,pair,index,editable)).join('')}</div>
           ${editable?`<div class="manual-kpi-actions"><button class="btn" type="button" data-manual-add>${icon('users',15)} Thêm người</button><button class="btn primary" type="button" data-manual-save>${icon('check',15)} ${isAdmin()?(pending?'Duyệt và lưu KPI':'Lưu KPI thủ công'):'Lưu nháp · chờ Admin duyệt'}</button></div>`:''}
@@ -5849,8 +5849,19 @@ body.account-modal-open{overflow:hidden}
         if(!host)throw new Error('Không tìm thấy Host Livestream đã chọn.');
         entries.push({uid:hostUid,name:host.displayName||'',role:'host',gmv,kpi:hostKpi,currency:session.currency||'VND'});
 
-        if(operatorUid){
-          const operator=state.staff.find(u=>u.id===operatorUid);
+        if(operatorUid===MANUAL_SHARED_OPERATOR_VALUE){
+          if(!['campaign','mega'].includes(manualKpiType(session)))
+            throw new Error('Chỉ được chia đôi Vận hành ở Ngày Campaign hoặc Mega Live.');
+          const members=manualSharedOperatorStaff();
+          if(members.length!==2||members[0].id===members[1].id)
+            throw new Error('Cần có đủ Hùng Hiền Hòa và Hùng Bắc Giang trong danh sách Vận hành.');
+          entries.push({
+            uid:MANUAL_SHARED_OPERATOR_VALUE,name:MANUAL_SHARED_OPERATOR_LABEL,
+            role:'operator',gmv,kpi:operatorKpi,currency:session.currency||'VND',
+            sharedOperators:members.map(member=>({uid:member.id,name:member.displayName}))
+          });
+        }else if(operatorUid){
+          const operator=state.staff.find(u=>u.id===operatorUid&&u.role==='operator');
           if(!operator)throw new Error('Không tìm thấy Nhân viên vận hành Livestream đã chọn.');
           entries.push({uid:operatorUid,name:operator.displayName||'',role:'operator',gmv,kpi:operatorKpi,currency:session.currency||'VND'});
         }
