@@ -57,6 +57,28 @@ assert(afterRefund.finalized===true&&afterRefund.netAmount===75000,
 assert(html.includes("Đơn đã hoàn tiền")&&html.includes("không chờ 15 ngày"),
   "Reconciliation UI must show refunds and immediate delivery closing");
 
+const splitStart=worker.indexOf("function calculateLiveSettlementSplit(");
+const splitEnd=worker.indexOf("\nfunction summarizeLiveReconciliation(",splitStart);
+assert(splitStart>0&&splitEnd>splitStart,"Delivery split calculation missing");
+const splitLive=new Function("moneyNumber",worker.slice(splitStart,splitEnd)+"\nreturn calculateLiveSettlementSplit;")(n=>Number(n||0));
+const partly=splitLive([
+  {status:"DELIVERED",finalized:true,amount:100,netAmount:100},
+  {status:"IN_TRANSIT",finalized:false,amount:100,netAmount:100}],200);
+assert(partly.settledOrderCount===1&&partly.settledGmvAmount===100&&partly.pendingGmvAmount===100,
+  "Delivered orders must settle without waiting for undelivered orders");
+const returned=splitLive([
+  {status:"DELIVERED",finalized:true,amount:100,netAmount:75},
+  {status:"IN_TRANSIT",finalized:false,amount:100,netAmount:100}],200);
+assert(returned.settledGmvAmount===75&&returned.refundedOrderAmount===25,
+  "Confirmed refund after delivery must reduce partial-settled GMV");
+assert(worker.includes('recordReconciliationChange(session, result.kpiSummary)') &&
+  worker.includes('reconciliationHistory') && worker.includes('KPI_RECONCILE_HOURLY_LOOKBACK_SECONDS = 30 * 86400') &&
+  !worker.includes('if (session?.reconciliation?.status === "final" && session?.reconciliation?.affiliateDataAvailable'),
+  "30-day reconciliation must revisit finalized sessions and preserve refund adjustment history");
+assert(html.includes('data-reconcile-history') && html.includes('GMV đã giao thành công') &&
+  html.includes('Đã chốt một phần') && html.includes('result.kpiSummary=(!PREVIEW&&result.kpiSummary)'),
+  "UI must show partial settlement and retain authoritative server summary");
+
 const reconcileSourceStart=worker.indexOf("function reconcileCreatorLiveProductOwnership(");
 const reconcileSourceEnd=worker.indexOf("\nasync function fetchVerifiedLiveAffiliateBreakdown",reconcileSourceStart);
 assert(reconcileSourceStart>0&&reconcileSourceEnd>reconcileSourceStart,"Affiliate product classifier missing");
@@ -387,7 +409,7 @@ assert(html.includes("GMV LIVE tổng")&&html.includes("GMV chờ đối soát")
 assert(html.includes("data-dashboard-final-gmv"), "Dashboard finalized GMV summary missing");
 assert(html.includes("const finalizedSessions=ss.filter(s=>sessionGmvFigures(s).final!==null)"), "Dashboard must aggregate finalized sessions only");
 assert(html.includes("const finalizedGmv=finalizedSessions.reduce"), "Dashboard finalized GMV aggregation missing");
-assert(html.includes("Chỉ cộng số cuối cùng của các phiên đã chốt/đã đối soát"), "Dashboard finalized GMV explanation missing");
+assert(html.includes("Gồm GMV đã tạm chốt khi giao thành công"), "Dashboard partial settlement explanation missing");
 assert(!html.includes("GMV lần đầu ghi nhận"), "Legacy first-recorded GMV label must be removed");
 
 assert(html.includes("manualKpi:0"), "Manual KPI aggregate field missing");
