@@ -1335,6 +1335,7 @@ function summarizeLiveReconciliation(result) {
   const usableForKpi = creatorVerified && aftersalesAvailable && (overlapAmbiguous ? hasOverlapData : hasSingleLiveData);
   const finalRows = overlapAmbiguous ? orders : singleLiveKpiRows;
   const allFinal = usableForKpi && finalRows.every(order => order?.finalized === true);
+  const split = calculateLiveSettlementSplit(finalRows, analyticsGmvAmount);
 
   let status = "provisional";
   let reason = "";
@@ -1377,10 +1378,23 @@ function summarizeLiveReconciliation(result) {
     }
   }
 
+  if (status === "provisional" && usableForKpi && split.settledOrderCount > 0) {
+    status = "partial_final";
+    reason = "Đã tạm chốt GMV tương ứng đơn giao thành công; phần còn lại tiếp tục đối soát. Nếu hoàn tiền sau giao, KPI sẽ được điều chỉnh khi đồng bộ lại.";
+  }
+  const closedGmv = status === "final" ? gmvAmount :
+    status === "partial_final" ? Math.min(gmvAmount,split.settledGmvAmount) : 0;
+  const waitingGmv = usableForKpi ? Math.max(0,gmvAmount-closedGmv) : 0;
   return {
     status,
     usableForKpi,
     gmvAmount: usableForKpi ? gmvAmount : 0,
+    finalizedGmvAmount: closedGmv,
+    pendingGmvAmount: waitingGmv,
+    settledOrderCount: split.settledOrderCount,
+    refundedOrderAmount: split.refundedOrderAmount,
+    refundedGmvEstimate: split.refundedGmvEstimate,
+    allocationMethod: split.allocationMethod,
     analyticsGmvAmount,
     creatorGmvAvailable: creatorVerified,
     sellerGmvAmount: moneyNumber(result?.live?.sellerGmvAmount),
@@ -1426,7 +1440,7 @@ function summarizeLiveReconciliation(result) {
           ? (liveSignalOrders > 0 ? "mixed_single_live" : "time_window_single_live")
           : (liveSignalOrders > 0 ? "live_signal" : "time_window")),
     generatedAt: result?.generatedAt || new Date().toISOString(),
-    finalizedAt: allFinal ? (result?.generatedAt || new Date().toISOString()) : "",
+    finalizedAt: (status === "final" || status === "partial_final") ? (result?.generatedAt || new Date().toISOString()) : "",
     reason
   };
 }
