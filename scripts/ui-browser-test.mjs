@@ -29,6 +29,22 @@ const browser = await puppeteer.launch({
 const assert = (ok,msg) => { if(!ok) throw new Error(msg); };
 const sleep = ms => new Promise(r=>setTimeout(r,ms));
 
+// Verify the actual login card while functional tests use the preview dashboard.
+const loginMascotGeometry = page => page.evaluate(() => {
+  const boot=document.querySelector('#boot'),app=document.querySelector('#app');
+  const bootHidden=boot.classList.contains('hidden'),appHidden=app.classList.contains('hidden');
+  boot.classList.remove('hidden');app.classList.add('hidden');
+  const card=boot.querySelector('.boot-card').getBoundingClientRect();
+  const logo=boot.querySelector('.login-brand-logo').getBoundingClientRect();
+  const wordmark=boot.querySelector('.brand-live').getBoundingClientRect();
+  const metrics={width:logo.width,height:logo.height,top:logo.top-card.top,
+    right:card.right-logo.right,withinCard:logo.left>=card.left&&logo.right<=card.right&&
+      logo.top>=card.top&&logo.bottom<=card.bottom,
+    avoidsTitle:wordmark.right+8<=logo.left};
+  boot.classList.toggle('hidden',bootHidden);app.classList.toggle('hidden',appHidden);
+  return metrics;
+});
+
 try {
   const page = await browser.newPage();
   await page.setViewport({width:1440,height:1000,deviceScaleFactor:1});
@@ -41,6 +57,10 @@ try {
   await page.waitForSelector("#app:not(.hidden)",{timeout:30000});
   await page.evaluate(()=>document.fonts.ready);
 
+  const loginDesktop=await loginMascotGeometry(page);
+  assert(loginDesktop.width===47&&loginDesktop.height===47&&loginDesktop.withinCard&&
+    loginDesktop.avoidsTitle&&Math.abs(loginDesktop.top-22)<1&&Math.abs(loginDesktop.right-24)<1,
+    "Desktop login mascot must be half size in upper-right corner without title overlap: "+JSON.stringify(loginDesktop));
   assert((await page.$eval('#userAvatar',e=>e.getAttribute('src')||'')).length>0,"Sidebar Google avatar is missing");
   const navGroups=await page.$$eval('#nav .nav-group-title',els=>els.map(e=>e.textContent.trim()));
   assert(navGroups.join('|')==='Báo cáo|Công cụ|Quản trị',"Sidebar groups are not ordered correctly");
@@ -585,6 +605,10 @@ try {
   assert(await page.$('#usersDockBtn')===null,"Tablet duplicate Users dock must be removed");
 
   await page.setViewport({width:390,height:844,deviceScaleFactor:1});
+  const loginMobile=await loginMascotGeometry(page);
+  assert(loginMobile.width===44&&loginMobile.height===44&&loginMobile.withinCard&&
+    loginMobile.avoidsTitle&&Math.abs(loginMobile.top-18)<1&&Math.abs(loginMobile.right-18)<1,
+    "Mobile login mascot must be half size in upper-right corner without title overlap: "+JSON.stringify(loginMobile));
   await page.reload({waitUntil:"domcontentloaded"});
   await page.waitForSelector("#app:not(.hidden)",{timeout:30000});
   await page.$eval('#nav [data-section="users"]',e=>e.click());
