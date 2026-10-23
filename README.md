@@ -4,7 +4,7 @@
 
 ### Báo cáo TikTok LIVE · KPI nhân sự · Tự đồng bộ 24/24
 
-**Phiên bản hiện tại: v1.49.28**
+**Phiên bản hiện tại: v1.49.29**
 
 [![GitHub Release](https://img.shields.io/github/v/release/hunghienhoa/sellerkbb?label=Release)](https://github.com/hunghienhoa/sellerkbb/releases)
 [![GitHub Actions](https://img.shields.io/github/actions/workflow/status/hunghienhoa/sellerkbb/deploy.yml?branch=main&label=Ki%E1%BB%83m%20tra%20%26%20Backup)](https://github.com/hunghienhoa/sellerkbb/actions)
@@ -17,7 +17,14 @@
 
 ---
 
-## 🆕 Cập nhật mới nhất — v1.49.28
+## 🆕 Cập nhật mới nhất — v1.49.29
+
+- **Thay phương pháp xác minh GMV Affiliate theo phòng LIVE:** dùng Creator API `/analytics/202502/live_rooms/{live_room_id}/product_stats` lấy các mã sản phẩm, GMV và số lượng thực tế trong đúng phòng LIVE của kênh `shopkhangbaby` hoặc `mekhangsua`. So sánh tổng GMV sản phẩm với Creator `core_stats` cùng phòng LIVE và cùng loại tiền; tách các mã sản phẩm shop đã xác định từ Seller `/analytics/202512/shop/{live_id}/products_performance` (chỉ dùng ID sản phẩm thuộc shop, **không** trừ GMV từ hai cơ chế ghi nhận khác nhau). Các mã sản phẩm Creator không khớp shop đã xác định mới được phân loại sang nhóm Affiliate khi đủ điều kiện xác minh; không gán số khi thiếu dữ liệu hoặc không định danh được sản phẩm của shop.
+- **Ngăn sai số lặp lại:** các bản ghi cũ dùng công thức `Creator GMV - Seller products GMV` được giữ lại để audit nhưng đánh dấu cần đối soát lại; không còn được coi là Affiliate đã xác minh trước khi kiểm tra mã sản phẩm. Sau khi xác minh thành công, hệ thống xóa trạng thái chờ và ghi rõ nguồn `creator_room_product_stats_202502_by_seller_shop_product_ids_202512`.
+- **Không xóa GMV gốc/KPI:** giữ dữ liệu và lịch sử giao dịch, đồng bộ LIVE 120 ngày và quyền nhân sự như cũ. Bộ kiểm tra hồi quy xác nhận từ chối khi thiếu danh sách sản phẩm, không khớp tổng GMV Creator, hoặc phòng LIVE ngoài hai kênh cho phép.
+- **Giới hạn xác minh:** TikTok quy định GMV Creator và Seller khác nhau theo cách ghi nhận; nếu API thiếu danh sách sản phẩm hoặc không đủ mã shop để phân loại, hiển thị chưa xác minh. Chưa thể khẳng định 273 phiên cũ đều có Affiliate dương hoặc đã được sửa đủ cho đến khi đồng bộ lại trên production.
+
+### v1.49.28 — Tác vụ kiểm tra lại Affiliate còn thiếu
 
 - **Nhận biết tác vụ cũ còn thiếu Affiliate:** những lần đồng bộ v1.49.26 từng ghi `success` mặc dù `affiliatePending > 0` sẽ được hiển thị như trạng thái *chưa đối soát xong*, cho phép bấm **Kiểm tra lại Affiliate còn thiếu**. Máy chủ tạo danh sách LIVE ID chưa có dữ liệu xác minh và chỉ gọi API cho các ID đó.
 - **Không thay đổi công thức GMV tự động:** các số GMV Creator và Seller từ API có định nghĩa khác nhau; không gán phần chênh lệch thành GMV Affiliate chính thức khi thiếu nguồn đơn Affiliate và quyền API thích hợp.
@@ -466,6 +473,7 @@ README giữ lại phần này để nhân sự có thể biết **vì sao giao 
 
 | Phiên bản | Thay đổi chính |
 |---|---|
+| **v1.49.29** | Chuyển Affiliate từ phép trừ GMV Creator/Seller sang đối chiếu mã sản phẩm cùng phòng LIVE theo Creator product_stats + Seller product IDs; đánh dấu số cũ cần xác minh lại; kiểm thử các tình huống thiếu dữ liệu. |
 | **v1.49.28** | Cho phép thử lại GMV Affiliate còn thiếu từ cả các job cũ đã được ghi nhận thành công chưa đầy đủ. |
 | **v1.49.27** | Sửa hàng đợi Affiliate ổn định theo LIVE ID, tăng độ bền checkpoint, báo trạng thái thiếu và cho phép chỉ thử lại các phiên chưa xác minh. |
 | **v1.49.26** | Đồng bộ LIVE lùi 120 ngày theo bốn chặng 30 ngày, tự tiếp tục qua checkpoint/cron, kiểm tra Affiliate từng phiên theo batch 8 và bảo vệ dữ liệu đã xác minh. |
