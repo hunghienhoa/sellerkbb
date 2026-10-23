@@ -765,6 +765,77 @@ async function fetchLiveShopProductBreakdown(env, accessToken, session) {
     shopProducts:normalizedProducts};
 }
 
+// Unlike seller last-click GMV, product_stats shares Creator LIVE room
+// attribution with core_stats. Classify by stable IDs, not by subtraction
+// across incompatible TikTok metrics.
+async function fetchCreatorLiveProductStats(env,session){
+  if(!isAllowedSellerKbbLiveChannel(session)||!session?.liveId)return {ok:false,error:"channel_not_allowed"};
+  const token=await getCreatorToken(env,sellerKbbChannelKey(session));
+  if(!token?.access_token)return {ok:false,error:"creator_token_missing"};
+  const path=`/analytics/202502/live_rooms/${encodeURIComponent(String(session.liveId))}/product_stats`;
+  const result=await tiktokCall(env,token.access_token,path);
+  if(result.payload?.code!==0)return {ok:false,error:"creator_product_stats_"+String(result.payload?.code||"error")};
+  const list=result.payload?.data?.product_stats;
+  if(!Array.isArray(list))return {ok:false,error:"creator_product_stats_missing"};
+  const currency=String(session.currency||"VND"),seen=new Set(),products=[];
+  for(const row of list){
+    const id=String(row?.product_id||"").trim(),raw=row?.local_gmv?.amount,n=Number(raw);
+    if(!id||seen.has(id)||raw===undefined||raw===null||raw===""||
+      !Number.isFinite(n)||n<0||String(row?.local_gmv?.currency||currency)!==currency)
+      return {ok:false,error:"creator_product_stats_invalid_or_currency_mismatch"};
+    seen.add(id);
+    products.push({id,gmvAmount:n,itemsSold:Math.max(0,Number(row.inventory_consumption_count||0)),
+      skuOrders:Math.max(0,Number(row.paid_order_count||0))});
+  }
+  return {ok:true,products};
+}
+
+function reconcileCreatorLiveProductOwnership(session,creatorData,sellerData){
+  const fail=(affiliateError)=>({affiliateDataAvailable:false,affiliateError});
+  if(!isAllowedSellerKbbLiveChannel(session))return fail("channel_not_allowed");
+  if(session.creatorGmvAvailable!==true)return fail("creator_live_gmv_not_verified");
+  if(!creatorData?.ok)return fail(creatorData?.error||"creator_product_stats_unavailable");
+  if(sellerData?.shopProductSourceAvailable!==true)
+    return fail(sellerData?.affiliateError||"seller_shop_products_unavailable");
+  const creator=creatorData.products||[],seller=sellerData.shopProducts||[];
+  if(seller.some(x=>!String(x.id||"")))return fail("seller_product_id_missing");
+  const ownIds=new Set(seller.map(x=>String(x.id)));
+  const core=moneyNumber(session.creatorGmvAmount),total=creator.reduce((n,x)=>n+x.gmvAmount,0);
+  if(Math.abs(total-core)>Math.max(1000,core*0.02))
+    return {...fail("creator_room_product_gmv_mismatch"),creatorProductStatsTotal:total};
+  // A shop with positive seller GMV and NO own product ID matching the room
+  // cannot prove every unmatched Creator product belongs to another shop.
+  const own=creator.filter(x=>ownIds.has(x.id));
+  if(moneyNumber(session.sellerGmvAmount)>0&&!own.length)
+    return fail("own_shop_products_not_identified");
+  const affiliate=creator.filter(x=>!ownIds.has(x.id));
+  const sum=(xs,k)=>xs.reduce((n,x)=>n+Number(x[k]||0),0);
+  return {
+    affiliateDataAvailable:true,affiliateDataConsistent:true,affiliateError:"",
+    affiliateNeedsRefresh:false,
+    affiliateSource:"creator_room_product_stats_202502_by_seller_shop_product_ids_202512",
+    affiliateUpdatedAt:new Date().toISOString(),creatorProductStatsVerified:true,
+    creatorProductStatsCount:creator.length,creatorProductStatsTotal:total,
+    ownShopProductIdsCount:ownIds.size,
+    shopProductGmvAmount:sum(own,"gmvAmount"),affiliateGmvAmount:sum(affiliate,"gmvAmount"),
+    shopProductItemsSold:sum(own,"itemsSold"),affiliateItemsSold:sum(affiliate,"itemsSold"),
+    shopProductSkuOrders:sum(own,"skuOrders"),affiliateSkuOrders:sum(affiliate,"skuOrders"),
+    affiliateCommissionAvailable:false,affiliateCommissionAmount:null,
+    affiliateProducts:affiliate.slice(0,100).map(x=>({
+      id:x.id,gmvAmount:x.gmvAmount,itemsSold:x.itemsSold,skuOrders:x.skuOrders}))
+  };
+}
+
+async function fetchVerifiedLiveAffiliateBreakdown(env,sellerAccessToken,session){
+  if(!isAllowedSellerKbbLiveChannel(session))
+    return {affiliateDataAvailable:false,affiliateError:"channel_not_allowed"};
+  const [creator,seller]=await Promise.all([
+    fetchCreatorLiveProductStats(env,session),
+    fetchLiveShopProductBreakdown(env,sellerAccessToken,session)
+  ]);
+  return reconcileCreatorLiveProductOwnership(session,creator,seller);
+}
+
 // Diagnostic only: creator-side commission attribution and seller-side last-click
 // GMV use different TikTok metric definitions. Their difference must NEVER
 // be promoted to verified Affiliate GMV or used as a reconciled KPI value.
@@ -815,7 +886,7 @@ async function enrichLiveAffiliateBreakdowns(env, accessToken, sessions, limit =
           Object.assign(session, core);
           if (changed) session.affiliateNeedsRefresh = true;
         } else session.creatorGmvError = core.creatorGmvError || "creator_live_gmv_not_verified";
-        const breakdown = await fetchLiveShopProductBreakdown(env, accessToken, session);
+        const breakdown = await fetchVerifiedLiveAffiliateBreakdown(env, accessToken, session);
         return { session, breakdown };
       } catch (error) {
         return { session, breakdown: { affiliateDataAvailable: false, affiliateError: String(error?.message || error) } };
@@ -1042,7 +1113,7 @@ async function buildLiveReconciliationForSession(env, accessToken, session, opti
   }
   if (session?.affiliateDataAvailable !== true) {
     try {
-      const affiliateBreakdown = await fetchLiveShopProductBreakdown(env, accessToken, session);
+      const affiliateBreakdown = await fetchVerifiedLiveAffiliateBreakdown(env, accessToken, session);
       if (affiliateBreakdown?.affiliateDataAvailable) Object.assign(session, affiliateBreakdown);
     } catch {}
   }
