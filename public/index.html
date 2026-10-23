@@ -5530,8 +5530,6 @@ body.account-modal-open{overflow:hidden}
           const validation=manualKpiValidation(session,manualEntries);
           if(validation.countable){
             for(const entry of manualEntries){
-              const cur=ensure(entry.uid,entry.name,entry.currency||session.currency);
-              if(!cur)continue;
               if(entry.role==='operator'&&entry.uid===MANUAL_SHARED_OPERATOR_VALUE){
                 const members=entry.sharedOperators?.length===2?entry.sharedOperators
                   :manualSharedOperatorStaff().map(person=>({uid:person.id,name:person.displayName}));
@@ -5547,6 +5545,8 @@ body.account-modal-open{overflow:hidden}
                 }
                 continue;
               }
+              const cur=ensure(entry.uid,entry.name,entry.currency||session.currency);
+              if(!cur)continue;
               cur.roles.add(entry.role);
               cur.manualGmv+=entry.gmv;
               cur.manualKpi+=entry.kpi;
@@ -5680,8 +5680,14 @@ body.account-modal-open{overflow:hidden}
 
     function manualKpiPersonOptions(role,value=''){
       const people=manualKpiPeople(role);
+      const selected=value===MANUAL_SHARED_OPERATOR_VALUE?value:staffSelectionId(role,value,'');
+      const pairAvailable=manualSharedOperatorStaff().length===2;
+      const teamOption=role==='operator'&&(pairAvailable||selected===MANUAL_SHARED_OPERATOR_VALUE)
+        ?`<option value="${MANUAL_SHARED_OPERATOR_VALUE}" ${selected===MANUAL_SHARED_OPERATOR_VALUE?'selected':''}>${esc(MANUAL_SHARED_OPERATOR_LABEL)} · chia đôi</option>`
+        :'';
       return '<option value="">— Chọn '+(role==='operator'?'nhân viên vận hành':'Host')+' —</option>'+
-        people.map(u=>`<option value="${u.id}" ${u.id===staffSelectionId(role,value,'')?'selected':''}>${esc(u.displayName)}</option>`).join('');
+        people.map(u=>`<option value="${u.id}" ${u.id===selected?'selected':''}>${esc(u.displayName)}</option>`).join('')+
+        teamOption;
     }
 
     function manualKpiEditorEntries(session){
