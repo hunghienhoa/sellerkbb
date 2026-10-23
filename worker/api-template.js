@@ -550,8 +550,14 @@ function sanitizeStoredLiveSession(item) {
   const rawEnd = Number(item.endTimeSeconds || 0);
   const start = validLiveStartSeconds(rawStart) ? rawStart : 0;
   const end = validLiveEndSeconds(rawEnd, start) ? rawEnd : 0;
+  const legacyAffiliate=item.affiliateDataAvailable===true &&
+    String(item.affiliateSource||"").includes("minus_seller_products_202512");
   return {
     ...item,
+    // Old cross-attribution subtraction is not a verified room-level Affiliate
+    // result. Keep its stored amount for audit; require new product-ID review.
+    affiliateNeedsRefresh:legacyAffiliate || item.affiliateNeedsRefresh===true,
+    affiliateLegacyNeedsReview:legacyAffiliate,
     startTimeSeconds: start,
     endTimeSeconds: end,
     durationSeconds: end ? Math.max(0, end - start) : 0,
@@ -610,8 +616,9 @@ function mergeLiveSessionSnapshots(previous = {}, incoming = {}) {
     ]) {
       if (prev[field] !== undefined) merged[field] = prev[field];
     }
-    merged.affiliateNeedsRefresh = next.creatorGmvAvailable === true &&
-      moneyNumber(next.gmvAmount) !== moneyNumber(prev.gmvAmount);
+    merged.affiliateNeedsRefresh = prev.affiliateNeedsRefresh===true ||
+      (next.creatorGmvAvailable === true &&
+      moneyNumber(next.gmvAmount) !== moneyNumber(prev.gmvAmount));
   } else if (next.affiliateDataAvailable === true) {
     merged.affiliateNeedsRefresh = false;
   }
@@ -801,7 +808,7 @@ function reconcileCreatorLiveProductOwnership(session,creatorData,sellerData){
   if(seller.some(x=>!String(x.id||"")))return fail("seller_product_id_missing");
   const ownIds=new Set(seller.map(x=>String(x.id)));
   const core=moneyNumber(session.creatorGmvAmount),total=creator.reduce((n,x)=>n+x.gmvAmount,0);
-  if(Math.abs(total-core)>Math.max(1000,core*0.02))
+  if(Math.abs(total-core)>Math.max(1000,core*0.005))
     return {...fail("creator_room_product_gmv_mismatch"),creatorProductStatsTotal:total};
   // A shop with positive seller GMV and NO own product ID matching the room
   // cannot prove every unmatched Creator product belongs to another shop.
@@ -1642,7 +1649,10 @@ function manualAffiliateFailureReasons(sessions) {
     const category= cause.includes("scope") || cause.includes("permission") || cause.includes("105005")
       ? "missing_permission"
       : cause.includes("token") || cause.includes("105002") ? "authorization"
-      : cause.includes("seller_product_gmv_not_reconciled") ? "incompatible_attribution"
+      : cause.includes("seller_product_gmv_not_reconciled") ? "legacy_incompatible_attribution"
+      : cause.includes("creator_room_product_gmv_mismatch") ? "creator_product_reconciliation"
+      : cause.includes("own_shop_products_not_identified") ? "seller_product_ownership"
+      : cause.includes("creator_product_stats") ? "creator_product_data"
       : cause.includes("product") ? "shop_product_data"
       : cause.includes("creator") ? "creator_data"
       : "other";
