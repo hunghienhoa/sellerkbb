@@ -11,7 +11,7 @@ const AUTO_SYNC_STATUS_KEY = "autosync:status";
 const MANUAL_SYNC_JOB_KEY = "autosync:manual_job";
 // Cron resumes checkpoints hourly; a one-hour expiry races with normal cron jitter.
 const MANUAL_SYNC_MAX_RUNNING_MS = 4 * 60 * 60 * 1000;
-const MANUAL_SYNC_DAYS = 120;
+const MANUAL_SYNC_DAYS = 30;
 const MANUAL_SYNC_WINDOW_DAYS = 30;
 const MANUAL_AFFILIATE_BATCH_SIZE = 8;
 const MANUAL_SYNC_LEASE_MS = 150000;
@@ -1767,7 +1767,7 @@ async function runAutoSync(env, lookbackDays = 2, reason = "hourly", offsetDays 
     const endDate = shiftDateKey(1-offset);
     const data = await syncLivePerformance(env, token.access_token, startDate, endDate);
     const settings = await getMaintenanceSettings(env);
-    // Historic 120-day reports must survive short-term retention settings.
+    // Keep historic LIVE records even when the manual scan covers only the latest 30 days.
     const retentionMs = Math.max(MANUAL_SYNC_DAYS,Math.min(180,Number(settings.retentionDays || 180))) * 86400000;
     const cutoffSeconds = Math.floor((Date.now() - retentionMs) / 1000);
     const existing = await getAutoSyncData(env);
@@ -2126,7 +2126,7 @@ async function handleApi(request, env, ctx) {
     const retryRows=resumeMissing?await getAutoSyncData(env):[];
     const retryIds=resumeMissing?manualAffiliatePendingIds(retryRows):[];
     const job={jobId:crypto.randomUUID(),state:"running",phase:resumeMissing?"affiliate":"scan",
-      reason:"manual_120",days:MANUAL_SYNC_DAYS,completedDays:resumeMissing?MANUAL_SYNC_DAYS:0,
+      reason:"manual_30",days:MANUAL_SYNC_DAYS,completedDays:resumeMissing?MANUAL_SYNC_DAYS:0,
       affiliateIds:retryIds,total:retryIds.length,
       affiliateOffset:0,affiliateProcessed:0,updatedAt:new Date().toISOString(),
       leaseUntil:0,startedAt:new Date().toISOString(),finishedAt:null,error:null};
