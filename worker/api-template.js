@@ -1261,6 +1261,24 @@ async function buildLiveReconciliationForSession(env, accessToken, session, opti
   return result;
 }
 
+function calculateLiveSettlementSplit(rows, roomGmv) {
+  const source = Array.isArray(rows) ? rows : [];
+  const gross = source.reduce((n,o) => n + Math.max(0,moneyNumber(o?.amount)), 0);
+  const settled = source.filter(o => ["DELIVERED","COMPLETED"].includes(o?.status) && o?.finalized === true);
+  const pending = source.filter(o => o?.finalized !== true && o?.status !== "CANCELLED");
+  const refund = source.filter(o => o?.status !== "CANCELLED").reduce((n,o) =>
+    n + Math.max(0,moneyNumber(o?.amount)-moneyNumber(o?.netAmount)),0);
+  const ratio = value => gross > 0 ? Math.round(Math.max(0,roomGmv) * value / gross) : 0;
+  return {
+    settledOrderCount: settled.length,
+    settledGmvAmount: ratio(settled.reduce((n,o)=>n+Math.max(0,moneyNumber(o?.netAmount)),0)),
+    pendingGmvAmount: ratio(pending.reduce((n,o)=>n+Math.max(0,moneyNumber(o?.netAmount)),0)),
+    refundedOrderAmount: refund,
+    refundedGmvEstimate: ratio(refund),
+    allocationMethod: "creator_room_gmv_weighted_by_order_value_estimate"
+  };
+}
+
 function summarizeLiveReconciliation(result) {
   const orders = Array.isArray(result?.orders) ? result.orders : [];
   const analyticsGmvAmount = moneyNumber(result?.live?.analyticsGmvAmount);
