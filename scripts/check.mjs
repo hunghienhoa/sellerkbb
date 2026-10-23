@@ -18,6 +18,16 @@ const safeWorker = worker
 new Function(safeWorker);
 
 const assert = (ok, message) => { if (!ok) throw new Error(message); };
+const pkg = JSON.parse(read("package.json"));
+const wrangler = read("wrangler.toml");
+assert(pkg.version === version, "package.json version must match VERSION");
+assert(wrangler.includes('APP_VERSION = "' + version + '"'),
+  "wrangler.toml APP_VERSION must match VERSION (production /api/health)");
+assert(html.includes('/khangbaby-mascot.png?v=' + version + '"'),
+  "Brand mascot cache version must match VERSION");
+assert(html.includes('/apple-touch-icon.png?v=' + version + '"'),
+  "Apple touch icon cache version must match VERSION");
+
 const reconcileSourceStart=worker.indexOf("function reconcileCreatorLiveProductOwnership(");
 const reconcileSourceEnd=worker.indexOf("\nasync function fetchVerifiedLiveAffiliateBreakdown",reconcileSourceStart);
 assert(reconcileSourceStart>0&&reconcileSourceEnd>reconcileSourceStart,"Affiliate product classifier missing");
