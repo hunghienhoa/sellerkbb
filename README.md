@@ -4,7 +4,7 @@
 
 ### Báo cáo TikTok LIVE · KPI nhân sự · Tự đồng bộ 24/24
 
-**Phiên bản hiện tại: v1.49.32**
+**Phiên bản hiện tại: v1.49.33**
 
 [![GitHub Release](https://img.shields.io/github/v/release/hunghienhoa/sellerkbb?label=Release)](https://github.com/hunghienhoa/sellerkbb/releases)
 [![GitHub Actions](https://img.shields.io/github/actions/workflow/status/hunghienhoa/sellerkbb/deploy.yml?branch=main&label=Ki%E1%BB%83m%20tra%20%26%20Backup)](https://github.com/hunghienhoa/sellerkbb/actions)
@@ -17,7 +17,13 @@
 
 ---
 
-## 🆕 Cập nhật mới nhất — v1.49.32
+## 🆕 Cập nhật mới nhất — v1.49.33
+
+- **Khôi phục TikTok / API hiển thị đầy đủ:** các mục Kiểm tra sẵn sàng chạy thật, Creator Authorization và chi tiết của cả hai tài khoản Creator luôn mở, không còn tự thu gọn sau khi kết nối.
+- **Hiển thị đầy đủ trên điện thoại:** giữ lại dòng mô tả và trạng thái token ở những thẻ Creator thay vì tự ẩn bằng CSS; vẫn sắp xếp một cột để phù hợp màn hình nhỏ.
+- **Không đổi nghiệp vụ:** giữ nguyên token, quyền, dữ liệu LIVE, phạm vi đồng bộ 30 ngày, Affiliate và KPI. Bổ sung kiểm thử hồi quy giao diện mở đầy đủ trên PC/mobile.
+
+### v1.49.32 — Đồng bộ các phiên LIVE 30 ngày gần nhất
 
 - **Đồng bộ 30 ngày gần nhất:** đổi tác vụ đồng bộ thủ công trong TikTok / API và nút Cập nhật dữ liệu ở Tổng quan từ quét 120 ngày sang 30 ngày gần nhất, gồm cả đối soát GMV Affiliate từng phiên của hai kênh @shopkhangbaby và @mekhangsua.
 - **Giữ dữ liệu cũ:** giới hạn phạm vi *quét lại* trong 30 ngày, không xóa cache LIVE lịch sử hoặc dữ liệu đã xác minh; chính sách lưu trữ đang có vẫn bảo vệ dữ liệu cũ.
