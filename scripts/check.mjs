@@ -27,6 +27,10 @@ assert(html.includes('/khangbaby-mascot.png?v=' + version + '"'),
   "Brand mascot cache version must match VERSION");
 assert(html.includes('/apple-touch-icon.png?v=' + version + '"'),
   "Apple touch icon cache version must match VERSION");
+assert(html.includes("version:'" + version + "-preview'"),
+  "Preview version must match VERSION");
+assert(html.includes('id="syncBadge" class="pill">v' + version + '</span>'),
+  "Visible app version badge must match VERSION");
 
 const reconcileSourceStart=worker.indexOf("function reconcileCreatorLiveProductOwnership(");
 const reconcileSourceEnd=worker.indexOf("\nasync function fetchVerifiedLiveAffiliateBreakdown",reconcileSourceStart);
