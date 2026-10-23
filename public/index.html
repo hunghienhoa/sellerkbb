@@ -4585,7 +4585,7 @@ body.account-modal-open{overflow:hidden}
 
       const usable=aftersalesAvailable&&(overlapAmbiguous?(overlapProrated&&orders.length>0):(singleLiveRows.length>0||analytics===0));
       const finalRows=overlapAmbiguous?orders:singleLiveRows;
-      const allFinal=usable&&finalRows.every(order=>order?.finalized===true||order?.status==='CANCELLED'||order?.status==='COMPLETED');
+      const allFinal=usable&&finalRows.every(order=>order?.finalized===true||(order?.status==='CANCELLED')||(['DELIVERED','COMPLETED'].includes(order?.status)&&reconcileAfterSaleState(order)!=='returning'));
 
       let status='provisional',reason='',gmvAmount=0;
       if(!aftersalesAvailable){
@@ -4609,7 +4609,7 @@ body.account-modal-open{overflow:hidden}
         gmvAmount=singleLiveTotalKpiGmvAmount;
         if(allFinal){
           status='final';
-          reason=(provisionalTimeWindowOrders>0?'Đã chốt theo quy tắc một kênh nội bộ LIVE trong khung giờ.':'Toàn bộ đơn có tín hiệu LIVE dùng cho KPI đã kết thúc hậu mãi.')+' GMV Affiliate vẫn nằm trong cơ sở KPI.';
+          reason=(provisionalTimeWindowOrders>0?'Đã giao thành công: chốt theo quy tắc một kênh LIVE trong khung giờ.':'Đơn đã giao thành công, không chờ thêm 15 ngày.')+' Nếu phát sinh hoàn/trả sau giao, số chốt và KPI sẽ cập nhật theo số hoàn thực tế. GMV Affiliate vẫn nằm trong cơ sở KPI.';
         }else if(provisionalTimeWindowOrders>0){
           reason='Chỉ có một kênh nội bộ LIVE trong khung giờ, nên '+provisionalTimeWindowOrders+' đơn khớp thời gian được dùng làm tỷ lệ hủy/hoàn cho toàn GMV LIVE (đã gồm Affiliate).';
         }else{
@@ -4629,7 +4629,7 @@ body.account-modal-open{overflow:hidden}
         timeWindowNetAmount,
         orderCount:orders.length,
         kpiOrderCount:overlapAmbiguous?orders.length:singleLiveRows.length,
-        pendingOrderCount:finalRows.filter(order=>order?.finalized!==true&&order?.status!=='CANCELLED'&&order?.status!=='COMPLETED').length,
+        pendingOrderCount:finalRows.filter(order=>order?.finalized!==true&&order?.status!=='CANCELLED'&&!( ['DELIVERED','COMPLETED'].includes(order?.status)&&reconcileAfterSaleState(order)!=='returning')).length,
         cancelledCount:Number(result?.counts?.cancelled||0),
         cancelledAmount:Number(result?.totals?.cancelledAmount ?? orders.filter(order=>String(order?.status||'')==='CANCELLED').reduce((sum,order)=>sum+Number(order?.amount||0),0)),
         returningCount:Number(result?.counts?.returning||0),
@@ -4762,6 +4762,7 @@ body.account-modal-open{overflow:hidden}
         </div>
         <div class="reconcile-order-bottom">
           <div><span>Sau hủy/hoàn đã biết</span><b>${fmtMoney(order.netAmount,order.currency||session.currency)}</b></div>
+          <div><span>Đã hoàn tiền</span><b>${fmtMoney(Math.max(0,Number(order.amount||0)-Number(order.netAmount||0)),order.currency||session.currency)}</b></div>
           <div><span>Hậu mãi</span><b>${order?.aftersalesAvailable===false?'Chưa kiểm tra được':after==='returning'?'Đang xử lý hoàn/trả':after==='refunded'?'Đã hoàn tiền':after==='closed'?'Đã đóng':'Không có'}</b></div>
         </div>
       </article>`;
@@ -4833,6 +4834,7 @@ body.account-modal-open{overflow:hidden}
           <div class="reconcile-overview-card affiliate"><span>GMV Affiliate</span><b>${liveAffiliateAvailable?fmtMoney(liveAffiliateGmv,session.currency):'Chưa có dữ liệu'}</b></div>
           <div class="reconcile-overview-card"><span>GMV chờ đối soát</span><b>${result?.kpiSummary?.usableForKpi&&result?.kpiSummary?.status!=='final'?fmtMoney(result.kpiSummary.gmvAmount,session.currency):result?.kpiSummary?.status==='final'?'Đã chốt':'Chờ dữ liệu'}</b></div>
           <div class="reconcile-overview-card cancelled"><span>Đơn hủy từ Livestream</span><b>${fmtMoney(cancelledAmount,session.currency)}</b></div>
+          <div class="reconcile-overview-card cancelled"><span>Đơn đã hoàn tiền</span><b>${new Intl.NumberFormat('vi-VN').format(orders.filter(o=>reconcileAfterSaleState(o)==='refunded').length)} đơn</b><small>${fmtMoney(orders.filter(o=>o.status!=='CANCELLED').reduce((sum,o)=>sum+Math.max(0,Number(o.amount||0)-Number(o.netAmount||0)),0),session.currency)}</small></div>
           <div class="reconcile-overview-card primary"><span>GMV sau khi hoàn hủy</span><b>${result?.kpiSummary?.status==='final'?fmtMoney(result.kpiSummary.gmvAmount,session.currency):'Chưa chốt'}</b></div>
         </div>
         <div class="reconcile-notice-stack" data-reconcile-notices>
@@ -4849,7 +4851,7 @@ body.account-modal-open{overflow:hidden}
           <summary>Giải thích đối soát & dữ liệu hậu mãi</summary>
           <div class="reconcile-policy-body">
             <span>${aftersalesAvailable?'Đã đọc được dữ liệu Return/Refund của TikTok.':'Chưa đọc được Return/Refund'+(result?.scope?.aftersalesError?' · '+esc(result.scope.aftersalesError):'')+'.'}</span>
-            <span>Cửa sổ trả/hoàn có thể kéo dài tới 15 ngày sau Delivered; một số danh mục là 6 ngày.</span>
+            <span>Đơn đã giao thành công được chốt ngay nếu không có yêu cầu hoàn/trả đang xử lý; không chờ 15 ngày. Nếu khách hoàn sau giao, dữ liệu hoàn và GMV/KPI điều chỉnh sẽ cập nhật khi đồng bộ đối soát. Thời hạn trả/hoàn TikTok vẫn áp dụng theo chính sách nền tảng.</span>
             <span>Khi chỉ có một kênh nội bộ đang LIVE, đơn khớp thời gian được tính KPI tạm tính. Khi hai kênh LIVE chồng giờ, SellerKBB dùng GMV TikTok riêng của từng phiên và chỉ dùng đơn trong khung giờ để tính tỷ lệ hủy/hoàn, tránh cộng trùng cùng một đơn cho hai phiên.</span>
           </div>
         </details>`;
