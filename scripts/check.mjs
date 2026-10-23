@@ -179,7 +179,7 @@ assert(worker.includes("async function searchReturnsForOrders"), "Batch Return/R
 assert(worker.includes("order_ids: ids"), "Return/Refund lookup must batch order IDs as a list");
 assert(worker.includes("function summarizeLiveReconciliation"), "Reconciliation KPI summary missing");
 assert(worker.includes("async function refreshKpiReconciliations"), "Scheduled KPI reconciliation refresher missing");
-assert(worker.includes('status === "COMPLETED" && active.length === 0'), "Completed-order finalization rule missing");
+assert(worker.includes('(status === "DELIVERED" || status === "COMPLETED") && active.length === 0'), "Delivered/Completed-order finalization rule missing");
 assert(worker.includes("const finalized = cancelled ||"), "Cancelled orders must finalize reconciliation");
 assert(worker.includes("let cancelledAmount = 0;")&&worker.includes("cancelledAmount += order.amount"), "Cancelled order value accumulator missing");
 assert(html.includes("Đơn hủy từ Livestream"), "Cancelled-order value card missing from reconciliation overview");
