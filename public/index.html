@@ -4539,7 +4539,7 @@ body.account-modal-open{overflow:hidden}
       if(isManualKpi(session))return '<span class="pill ok kpi-status-final">KPI thủ công</span>';
       if(session?.syncPending===true)return '<span class="pill warn kpi-status-waiting">⏳ Chờ TikTok hoàn tất phiên</span>';
       const basis=automaticKpiBasis(session);
-      const cls=basis.status==='final'?'kpi-status-final':basis.status==='provisional'?'kpi-status-provisional':'kpi-status-waiting';
+      const cls=basis.status==='final'?'kpi-status-final':['provisional','partial_final'].includes(basis.status)?'kpi-status-provisional':'kpi-status-waiting';
       const value=basis.usable?' · '+fmtMoney(basis.gmv,session.currency):'';
       const mark=basis.status==='final'?'✓ ':''; 
       return '<span class="pill '+cls+'">'+mark+esc(kpiStatusLabel(basis.status,session?.reconciliation||null))+value+'</span>';
@@ -4723,7 +4723,7 @@ body.account-modal-open{overflow:hidden}
             <div class="reconcile-session-meta"><span>@${esc(session.channelUsername||'—')}</span><span>${fmtLiveTimeRange(session)}</span></div>
             <div class="reconcile-session-gmv">${icon('money',13)} GMV đã ghi nhận: ${fmtMoney(finalGmv(session),session.currency)}${waitingTikTok?' · tạm tính':''}</div>
             ${waitingTikTok?'<div class="pill warn" style="margin-top:8px">⏳ Chờ TikTok trả giờ kết thúc để đối soát</div>':''}
-            ${reconciled?'<div class="reconcile-success-badge">✓ Đã đối soát</div>':''}
+            ${reconciled?'<div class="reconcile-success-badge">✓ '+(sessionGmvFigures(session).status==='partial_final'?'Đã chốt một phần':'Đã đối soát')+'</div>':''}
             ${isOpen?'<div class="reconcile-card-open-note">Đang mở chi tiết đơn trong popup</div>':''}
           </div>
           <div class="reconcile-actions">
@@ -4834,10 +4834,11 @@ body.account-modal-open{overflow:hidden}
           <div class="reconcile-overview-card"><span>GMV LIVE tổng</span><b>${fmtMoney(result?.live?.analyticsGmvAmount,session.currency)}</b></div>
           <div class="reconcile-overview-card"><span>GMV từ shopkhangbaby</span><b>${liveAffiliateAvailable?fmtMoney(liveShopGmv,session.currency):'Chưa có dữ liệu'}</b></div>
           <div class="reconcile-overview-card affiliate"><span>GMV Affiliate</span><b>${liveAffiliateAvailable?fmtMoney(liveAffiliateGmv,session.currency):'Chưa có dữ liệu'}</b></div>
-          <div class="reconcile-overview-card"><span>GMV chờ đối soát</span><b>${result?.kpiSummary?.usableForKpi&&result?.kpiSummary?.status!=='final'?fmtMoney(result.kpiSummary.gmvAmount,session.currency):result?.kpiSummary?.status==='final'?'Đã chốt':'Chờ dữ liệu'}</b></div>
+          <div class="reconcile-overview-card"><span>GMV đã giao thành công</span><b>${result?.kpiSummary?.usableForKpi?fmtMoney(Number(result.kpiSummary.finalizedGmvAmount||0),session.currency):'Chưa xác minh'}</b><small>Ước tính tạm chốt theo tỷ lệ đơn đã giao</small></div>
+          <div class="reconcile-overview-card"><span>GMV chờ đối soát</span><b>${result?.kpiSummary?.usableForKpi?fmtMoney(Number(result.kpiSummary.pendingGmvAmount||0),session.currency):'Chờ dữ liệu'}</b><small>Đơn chưa giao hoặc hoàn/trả đang xử lý</small></div>
           <div class="reconcile-overview-card cancelled"><span>Đơn hủy từ Livestream</span><b>${fmtMoney(cancelledAmount,session.currency)}</b></div>
           <div class="reconcile-overview-card cancelled"><span>Đơn đã hoàn tiền</span><b>${new Intl.NumberFormat('vi-VN').format(orders.filter(o=>reconcileAfterSaleState(o)==='refunded').length)} đơn</b><small>${fmtMoney(orders.filter(o=>o.status!=='CANCELLED').reduce((sum,o)=>sum+Math.max(0,Number(o.amount||0)-Number(o.netAmount||0)),0),session.currency)}</small></div>
-          <div class="reconcile-overview-card primary"><span>GMV sau khi hoàn hủy</span><b>${result?.kpiSummary?.status==='final'?fmtMoney(result.kpiSummary.gmvAmount,session.currency):'Chưa chốt'}</b></div>
+          <div class="reconcile-overview-card primary"><span>GMV sau khi hoàn hủy</span><b>${['final','partial_final'].includes(result?.kpiSummary?.status)?fmtMoney(result.kpiSummary.finalizedGmvAmount??result.kpiSummary.gmvAmount,session.currency):'Chưa chốt'}</b><small>GMV thực nhận tạm chốt, điều chỉnh khi phát sinh hoàn tiền</small></div>
         </div>
         <div class="reconcile-notice-stack" data-reconcile-notices>
           <div class="notice ok"><strong>Quy tắc Affiliate:</strong> GMV sản phẩm Affiliate vẫn được cộng vào GMV phiên và cơ sở tính KPI.</div>
