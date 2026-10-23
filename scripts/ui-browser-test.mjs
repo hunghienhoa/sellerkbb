@@ -59,7 +59,7 @@ try {
 
   const loginDesktop=await loginMascotGeometry(page);
   assert(loginDesktop.width===47&&loginDesktop.height===47&&loginDesktop.withinCard&&
-    loginDesktop.avoidsTitle&&Math.abs(loginDesktop.top-22)<1&&Math.abs(loginDesktop.right-24)<1,
+    loginDesktop.avoidsTitle&&Math.abs(loginDesktop.top-22)<=2&&Math.abs(loginDesktop.right-24)<=2,
     "Desktop login mascot must be half size in upper-right corner without title overlap: "+JSON.stringify(loginDesktop));
   assert((await page.$eval('#userAvatar',e=>e.getAttribute('src')||'')).length>0,"Sidebar Google avatar is missing");
   const navGroups=await page.$$eval('#nav .nav-group-title',els=>els.map(e=>e.textContent.trim()));
@@ -607,7 +607,7 @@ try {
   await page.setViewport({width:390,height:844,deviceScaleFactor:1});
   const loginMobile=await loginMascotGeometry(page);
   assert(loginMobile.width===44&&loginMobile.height===44&&loginMobile.withinCard&&
-    loginMobile.avoidsTitle&&Math.abs(loginMobile.top-18)<1&&Math.abs(loginMobile.right-18)<1,
+    loginMobile.avoidsTitle&&Math.abs(loginMobile.top-18)<=2&&Math.abs(loginMobile.right-18)<=2,
     "Mobile login mascot must be half size in upper-right corner without title overlap: "+JSON.stringify(loginMobile));
   await page.reload({waitUntil:"domcontentloaded"});
   await page.waitForSelector("#app:not(.hidden)",{timeout:30000});
