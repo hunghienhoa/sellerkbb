@@ -32,6 +32,31 @@ assert(html.includes("version:'" + version + "-preview'"),
 assert(html.includes('id="syncBadge" class="pill">v' + version + '</span>'),
   "Visible app version badge must match VERSION");
 
+// Delivered orders close internally as soon as no return/refund is active.
+// Subsequent confirmed refunds still reduce netAmount on the next reconciliation.
+const normalizeStart=worker.indexOf("function normalizeReconcileOrder(");
+const normalizeEnd=worker.indexOf("\n}",normalizeStart)+2;
+assert(normalizeStart>0&&normalizeEnd>normalizeStart,"Order normalization missing");
+const normalizeOrder=new Function("orderSubtotal","aftersaleState","aftersaleRefundTotal","orderDeliveredTime","orderCurrency",
+  worker.slice(normalizeStart,normalizeEnd)+"\nreturn normalizeReconcileOrder;")(
+  o=>Number(o.subtotal||0),
+  x=>x.return_status==="RETURN_OR_REFUND_REQUEST_PENDING"?"active":x.return_status==="RETURN_OR_REFUND_REQUEST_COMPLETE"?"refunded":"closed",
+  x=>Number(x.refund_total||0),
+  o=>Number(o.delivery_time||0),
+  ()=> "VND"
+);
+const baseDelivered={id:"test-delivered",status:"DELIVERED",subtotal:100000};
+assert(normalizeOrder(baseDelivered,{available:true,records:[]},"VND").finalized===true,
+  "Delivered order without active aftersales must close immediately");
+assert(normalizeOrder(baseDelivered,{available:true,records:[{return_status:"RETURN_OR_REFUND_REQUEST_PENDING"}]},"VND").finalized===false,
+  "Active return/refund must block finalization");
+const afterRefund=normalizeOrder(baseDelivered,{available:true,records:[
+  {return_status:"RETURN_OR_REFUND_REQUEST_COMPLETE",refund_total:25000}]},"VND");
+assert(afterRefund.finalized===true&&afterRefund.netAmount===75000,
+  "Confirmed refund after delivery must lower reconciled GMV");
+assert(html.includes("Đơn đã hoàn tiền")&&html.includes("không chờ 15 ngày"),
+  "Reconciliation UI must show refunds and immediate delivery closing");
+
 const reconcileSourceStart=worker.indexOf("function reconcileCreatorLiveProductOwnership(");
 const reconcileSourceEnd=worker.indexOf("\nasync function fetchVerifiedLiveAffiliateBreakdown",reconcileSourceStart);
 assert(reconcileSourceStart>0&&reconcileSourceEnd>reconcileSourceStart,"Affiliate product classifier missing");
