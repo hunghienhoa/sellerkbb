@@ -731,7 +731,9 @@ async function fetchLiveShopProductBreakdown(env, accessToken, session) {
     };
   }
 
-  const products = Array.isArray(result.payload?.data?.products) ? result.payload.data.products : [];
+  if(!Array.isArray(result.payload?.data?.products))
+    return {shopProductSourceAvailable:false,affiliateError:"seller_shop_products_missing"};
+  const products=result.payload.data.products;
   let shopProductGmvAmount = 0;
   let shopProductItemsSold = 0;
   let shopProductSkuOrders = 0;
@@ -756,35 +758,11 @@ async function fetchLiveShopProductBreakdown(env, accessToken, session) {
     };
   });
 
-  const totalItems = Math.max(0, Number(session?.creatorItemsSold || 0));
-  const totalSkuOrders = Math.max(0, Number(session?.creatorPaidOrders || 0));
-  const affiliateGmvAmount = Math.max(0, totalGmv - Math.max(0, shopProductGmvAmount));
-  const affiliateItemsSold = Math.max(0, totalItems - Math.max(0, shopProductItemsSold));
-  const affiliateSkuOrders = Math.max(0, totalSkuOrders - Math.max(0, shopProductSkuOrders));
-  const sellerGmv = moneyNumber(session?.sellerGmvAmount);
-  // These two TikTok endpoints have different attribution scopes. Only report a
-  // shop/affiliate estimate if the seller product list reconciles to seller LIVE GMV.
-  const sellerMatchesProducts = sellerGmv > 0 && shopProductGmvAmount > 0
-    && Math.abs(sellerGmv - shopProductGmvAmount) <= Math.max(1000, sellerGmv * 0.05);
-  const consistent = sellerMatchesProducts && shopProductGmvAmount <= totalGmv + Math.max(1000, totalGmv * 0.02);
-
-  return {
-    affiliateDataAvailable: consistent,
-    affiliateDataConsistent: consistent,
-    affiliateError: consistent ? "" : "seller_product_gmv_not_reconciled_or_exceeds_creator_gmv",
-    affiliateSource: "creator_live_core_stats_202502_minus_seller_products_202512",
-    affiliateUpdatedAt: new Date().toISOString(),
-    shopProductGmvAmount: Math.max(0, shopProductGmvAmount),
-    affiliateGmvAmount,
-    shopProductItemsSold: Math.max(0, shopProductItemsSold),
-    affiliateItemsSold,
-    shopProductSkuOrders: Math.max(0, shopProductSkuOrders),
-    affiliateSkuOrders,
-    shopProductMainOrders: Math.max(0, shopProductMainOrders),
-    affiliateCommissionAmount: null,
-    affiliateCommissionAvailable: false,
-    affiliateProducts: normalizedProducts.slice(0, 100)
-  };
+  // Seller last-click amounts cannot be subtracted from Creator room GMV.
+  // Return only seller-owned product IDs for same-room product classification.
+  return {shopProductSourceAvailable:true,
+    shopProductGmvAmount:Math.max(0,shopProductGmvAmount),
+    shopProducts:normalizedProducts};
 }
 
 // Diagnostic only: creator-side commission attribution and seller-side last-click
