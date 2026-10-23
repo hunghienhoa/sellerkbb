@@ -90,6 +90,12 @@ assert(html.includes("keepPreviousAffiliate"),"Verified Affiliate snapshots must
 assert(html.includes("Đã đồng bộ LIVE"),"Successful LIVE sync must not be mislabeled as a failed Affiliate sync");
 assert(html.includes('data-tiktok-disclosure="creators"') && html.includes('data-tiktok-disclosure="readiness"'),"TikTok authorization/readiness disclosure missing");
 assert(html.includes('data-tiktok-disclosure="channel-'),"Creator cards need individual disclosures");
+assert(html.includes('panel.open=true;') && html.includes('event.preventDefault();') &&
+  html.includes('function tiktokDisclosureIsOpen(key,defaultOpen=true){'),
+  "TikTok/API sections must always stay expanded");
+assert(html.includes('#section-tiktok .creator-auth-head p{display:block}') &&
+  html.includes('#section-tiktok .creator-channel-name span{display:block}'),
+  "Mobile TikTok authorization descriptions must stay visible");
 assert(html.includes("approved-user-role-compact"),"Compact account roles missing on phone");
 
 assert(html.includes('<title>SellerKBB · Doanh Số KPIs</title>'), "Browser tab title must show Doanh Số KPIs");
