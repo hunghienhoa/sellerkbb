@@ -369,10 +369,10 @@ assert(html.includes('MANUAL_SHARED_OPERATOR_VALUE') && html.includes('HÃ¹ng Hiá
   html.includes("['campaign','mega'].includes(manualKpiType(session))") &&
   html.includes('sharedOperators:members.map('),
   "Campaign/Mega manual KPI must save the optional two-person operation team without double counting");
-const splitStart=html.indexOf("function splitManualOperatorKpi(");
-const splitEnd=html.indexOf("\n    function googleAccountForStaff(",splitStart);
-assert(splitStart>0&&splitEnd>splitStart,"Manual operator GMV/KPI split function missing");
-const splitOperator=new Function(html.slice(splitStart,splitEnd)+"\nreturn splitManualOperatorKpi;")();
+const manualSplitStart=html.indexOf("function splitManualOperatorKpi(");
+const manualSplitEnd=html.indexOf("\n    function googleAccountForStaff(",manualSplitStart);
+assert(manualSplitStart>0&&manualSplitEnd>manualSplitStart,"Manual operator GMV/KPI split function missing");
+const splitOperator=new Function(html.slice(manualSplitStart,manualSplitEnd)+"\nreturn splitManualOperatorKpi;")();
 const splitExample=splitOperator(1234000);
 assert(splitExample[0].gmv===617000&&splitExample[1].gmv===617000&&
   splitExample[0].kpi===617&&splitExample[1].kpi===617,
