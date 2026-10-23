@@ -3072,13 +3072,28 @@ body.account-modal-open{overflow:hidden}
   .topbar-account-popover,.reconcile-modal{animation:none}
 }
 
-/* Brand supplied by KHANG BABY — login focus first, minimal dashboard footprint. */
-.boot-card{max-width:480px}
-.login-brand-logo{display:block;width:min(100%,94px);height:auto;margin:0 auto 16px;object-fit:contain}
-.boot-card>.brand-lockup{font-size:22px}
+/* Taste / Emil Kowalski / Impeccable: the mascot is a quiet top-right brand accent.
+   Halve the original 94px desktop / 88px mobile sizes without transforming the image. */
+.boot-card{max-width:480px;position:relative}
+.boot-card>.login-brand-logo{
+  display:block;
+  position:absolute;
+  top:22px;
+  right:24px;
+  width:47px;
+  height:47px;
+  margin:0;
+  object-fit:contain;
+  pointer-events:none;
+}
+.boot-card>.brand-lockup{font-size:22px;padding-right:70px}
 .sidebar-brand-logo{display:block;width:min(100%,68px);height:auto;margin:0 auto;object-fit:contain}
 .sidebar-brand-caption{display:block;text-align:center;margin:3px 0 0;font-size:11px;line-height:1.45;letter-spacing:.025em;color:var(--muted);font-weight:700}
-@media(max-width:480px){.boot-card{padding:24px}.login-brand-logo{width:min(100%,88px);margin-bottom:14px}}
+@media(max-width:480px){
+  .boot-card{padding:24px}
+  .boot-card>.login-brand-logo{top:18px;right:18px;width:44px;height:44px}
+  .boot-card>.brand-lockup{padding-right:60px}
+}
 /* Impeccable / Taste / Emil: compact disclosure, generous hit targets, and hierarchy. */
 #section-tiktok details.api-disclosure{display:block}
 #section-tiktok summary.auth-summary{list-style:none;cursor:pointer;user-select:none}
