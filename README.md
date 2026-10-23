@@ -4,7 +4,7 @@
 
 ### Báo cáo TikTok LIVE · KPI nhân sự · Tự đồng bộ 24/24
 
-**Phiên bản hiện tại: v1.49.29**
+**Phiên bản hiện tại: v1.49.30**
 
 [![GitHub Release](https://img.shields.io/github/v/release/hunghienhoa/sellerkbb?label=Release)](https://github.com/hunghienhoa/sellerkbb/releases)
 [![GitHub Actions](https://img.shields.io/github/actions/workflow/status/hunghienhoa/sellerkbb/deploy.yml?branch=main&label=Ki%E1%BB%83m%20tra%20%26%20Backup)](https://github.com/hunghienhoa/sellerkbb/actions)
@@ -17,7 +17,12 @@
 
 ---
 
-## 🆕 Cập nhật mới nhất — v1.49.29
+## 🆕 Cập nhật mới nhất — v1.49.30
+
+- **Không bỏ sót phiên LIVE thiếu `shopCipher`:** danh sách tồn đọng Affiliate 120 ngày giờ bao gồm cả phiên chưa gắn mã shop. Các phiên này vẫn được tính trong `affiliatePending` và được đưa vào hàng đợi đối soát; nếu Seller API chưa cung cấp mã shop thì ghi nhận rõ nhóm lỗi `missing_shop_binding`, không báo hoàn thành nhầm.
+- **Bảo vệ số liệu:** không tự suy diễn Affiliate GMV và không ghi đè kết quả đã xác minh. Cần xác minh lại nguồn Seller để bổ sung `shopCipher` cho phiên thiếu; bản sửa này chủ yếu khắc phục bỏ sót trong thống kê và hàng đợi.
+
+### v1.49.29 — Xác minh GMV Affiliate theo mã sản phẩm
 
 - **Thay phương pháp xác minh GMV Affiliate theo phòng LIVE:** dùng Creator API `/analytics/202502/live_rooms/{live_room_id}/product_stats` lấy các mã sản phẩm, GMV và số lượng thực tế trong đúng phòng LIVE của kênh `shopkhangbaby` hoặc `mekhangsua`. So sánh tổng GMV sản phẩm với Creator `core_stats` cùng phòng LIVE và cùng loại tiền; tách các mã sản phẩm shop đã xác định từ Seller `/analytics/202512/shop/{live_id}/products_performance` (chỉ dùng ID sản phẩm thuộc shop, **không** trừ GMV từ hai cơ chế ghi nhận khác nhau). Các mã sản phẩm Creator không khớp shop đã xác định mới được phân loại sang nhóm Affiliate khi đủ điều kiện xác minh; không gán số khi thiếu dữ liệu hoặc không định danh được sản phẩm của shop.
 - **Ngăn sai số lặp lại:** các bản ghi cũ dùng công thức `Creator GMV - Seller products GMV` được giữ lại để audit nhưng đánh dấu cần đối soát lại; không còn được coi là Affiliate đã xác minh trước khi kiểm tra mã sản phẩm. Sau khi xác minh thành công, hệ thống xóa trạng thái chờ và ghi rõ nguồn `creator_room_product_stats_202502_by_seller_shop_product_ids_202512`.
