@@ -530,7 +530,7 @@ assert(html.includes("data-refresh-creator")&&html.includes("Refresh Token hết
 assert(readme.includes("Refresh Token")&&readme.includes("v1.49.1"), "README Creator Refresh Token documentation missing");
 assert(html.includes("function downloadBusinessBackup()")&&html.includes('id="downloadBusinessBackup"'), "Business backup JSON UI missing");
 assert(wranglerV146.includes("keep_vars = true"), "Cloudflare keep_vars safety missing");
-assert(workflow.includes("Warn when Cloudflare deploy is not configured")&&workflow.includes("Warn when Firebase deploy is not configured"), "Skipped-deploy warnings missing");
+assert(workflow.includes("Require Cloudflare and Firestore deployment credentials")&&workflow.includes("::error::Missing deployment credential")&&!workflow.includes("Warn when Cloudflare deploy is not configured")&&!workflow.includes("Warn when Firebase deploy is not configured"), "Cloudflare and Firebase must fail closed when deployment secrets are missing");
 assert(readme.includes("Bảng hướng dẫn cài đặt để đưa SellerKBB vào chạy thật"), "README production setup checklist missing");
 assert(readme.includes("Đồng bộ ngay 30 ngày")&&readme.includes("Tải backup JSON"), "README pre-production operation guide missing");
 assert(html.includes("startAfter")&&html.includes("loadRecentLiveSessions"), "Firestore pagination loader missing");
