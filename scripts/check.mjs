@@ -266,6 +266,14 @@ assert(worker.includes("storageLimitBytes: 1000000000"), "Cloudflare 1 GB storag
 const workflow = read(".github/workflows/deploy.yml");
 const readme = read("README.md");
 assert(workflow.includes("release-backup:"), "Automatic Release backup job missing");
+assert(workflow.includes("safety-preflight:") && workflow.includes("needs: safety-preflight") &&
+  workflow.includes("needs: [safety-preflight, deploy-firestore]"),
+  "Both Firestore and Cloudflare must wait for tests before deployment");
+assert(workflow.includes('::error::Missing deployment credential') &&
+  workflow.includes('node scripts/deployment-safety.mjs'),
+  "Deploy must fail closed when credentials or storage safety contract are missing");
+assert(fs.existsSync(new URL("scripts/deployment-safety.mjs", root)),
+  "Read-only data safety verification script is missing");
 assert(workflow.includes("git archive --format=zip"), "Release source ZIP step missing");
 assert(workflow.includes("Keep only newest 5 Releases"), "Release retention step missing");
 assert(workflow.includes('gh release delete "$TAG" --cleanup-tag -y'), "Old Release cleanup missing");
