@@ -47,6 +47,18 @@ const loginMascotGeometry = page => page.evaluate(() => {
 
 try {
   const page = await browser.newPage();
+  // Preview fixtures are dated October 2026. Freeze only the browser's wall
+  // clock so seven-day/monthly dashboards remain testable after that month.
+  // Native timers and performance.now() still advance normally.
+  await page.evaluateOnNewDocument(() => {
+    const RealDate=Date;
+    const fixtureNow=new RealDate('2026-10-23T12:00:00+07:00').getTime();
+    class PreviewDate extends RealDate {
+      constructor(...args){if(args.length)super(...args);else super(fixtureNow);}
+      static now(){return fixtureNow;}
+    }
+    window.Date=PreviewDate;
+  });
   await page.setViewport({width:1440,height:1000,deviceScaleFactor:1});
   const previewUrl=process.env.UI_TEST_ORIGIN?new URL('/preview',process.env.UI_TEST_ORIGIN).href:'http://127.0.0.1:4173/preview';
   await page.goto(previewUrl,{waitUntil:"domcontentloaded"});
