@@ -55,6 +55,9 @@ jobs:
       contents: read
     steps:
       - uses: actions/checkout@v6
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
       - name: Authenticate Google Cloud
         uses: google-github-actions/auth@v3
         with:
