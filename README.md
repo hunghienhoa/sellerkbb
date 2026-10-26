@@ -4,7 +4,7 @@
 
 ### Báo cáo TikTok LIVE · KPI nhân sự · Tự đồng bộ 24/24
 
-**Phiên bản hiện tại: v1.49.36**
+**Phiên bản hiện tại: v1.49.37**
 
 [![GitHub Release](https://img.shields.io/github/v/release/hunghienhoa/sellerkbb?label=Release)](https://github.com/hunghienhoa/sellerkbb/releases)
 [![GitHub Actions](https://img.shields.io/github/actions/workflow/status/hunghienhoa/sellerkbb/deploy.yml?branch=main&label=Ki%E1%BB%83m%20tra%20%26%20Backup)](https://github.com/hunghienhoa/sellerkbb/actions)
@@ -17,7 +17,16 @@
 
 ---
 
-## 🆕 Cập nhật mới nhất — v1.49.36
+## 🆕 Cập nhật mới nhất — v1.49.37
+
+- **Chặn deploy trước khi kiểm thử xong:** GitHub Actions thêm job `safety-preflight` kiểm tra toàn bộ mã nguồn, công thức GMV/KPI, giao diện PC/mobile, accessibility, phiên bản và Worker build **trước khi có thay đổi lên Firestore hoặc Cloudflare**. Nếu kiểm thử thất bại, cả hai bên đều không triển khai.
+- **Không báo thành công giả khi thiếu Secrets:** nếu thiếu khóa Cloudflare hoặc tài khoản Firebase, Actions trả lỗi rõ ràng và dừng; không tiếp tục bỏ qua deploy nhưng vẫn tạo Release.
+- **Triển khai có thứ tự:** sau khi qua preflight, chỉ deploy **Firestore rules/indexes** (không xóa hoặc ghi đè dữ liệu nghiệp vụ), rồi mới deploy **Cloudflare Worker** và xác minh bản đang chạy. Không coi đây là giao dịch nguyên tử giữa hai nền tảng; nếu Worker deploy lỗi sau khi cập nhật rules, cần sửa hoặc khôi phục tương thích rules.
+- **Khóa các liên kết dữ liệu nhạy cảm:** bước kiểm tra `scripts/deployment-safety.mjs` bảo vệ tên Worker `sellerkbb`, cấu hình `keep_vars = true`, namespace `TIKTOK_KV` đang sử dụng và allowlist đúng hai Creator `shopkhangbaby`, `mekhangsua`; ngăn vô tình thay namespace làm mất khả năng đọc token/snapshot.
+- **Sao lưu thực tế là một công đoạn riêng:** GitHub Releases chỉ chứa **mã nguồn**, không chứa dữ liệu Firestore/KV. Trước bản cập nhật làm thay đổi cấu trúc dữ liệu hoặc quy tắc KPI, cần tải **Backup dữ liệu nghiệp vụ JSON** trong mục Lưu trữ và có bản xuất Firestore/KV an toàn, lưu ngoài GitHub. Bước preflight không tự tạo backup dữ liệu production.
+- **Không đổi nghiệp vụ:** chưa thay công thức KPI, GMV Affiliate, đối soát hoàn/hủy, quyền TikTok hay dữ liệu người dùng. Chỉ gia cố quy trình triển khai trước các tính năng mới.
+
+### v1.49.36 — Vận hành ghép đôi Campaign/Mega Live
 
 - **Thêm lựa chọn Vận hành ghép đôi cho Ngày Campaign / Mega Live:** trong **Công cụ → KPI thủ công**, dropdown **Nhân viên vận hành Livestream** có thêm **Hùng Hiền Hòa + Hùng Bắc Giang · chia đôi**, bên cạnh hai lựa chọn riêng lẻ hiện có. Chỉ xuất hiện trong màn hình nhập KPI thủ công, không thay đổi Vận hành của phiên LIVE/KPI tự động.
 - **Chia đều GMV Host, tổng KPI Vận hành vẫn là 0,1%:** ví dụ Host có GMV sau hoàn/hủy **10.000.000đ** → mỗi Vận hành nhận **5.000.000đ GMV**, **5.000đ KPI**; tổng KPI Vận hành vẫn **10.000đ**, tuyệt đối không tính 0,1% cho cả hai trên toàn GMV. Nếu tiền lẻ, phân bổ làm tròn sao cho tổng hai người đúng tổng GMV và tổng KPI. **KPI Host 0,3% không đổi**.
