@@ -1,0 +1,21 @@
+import fs from "node:fs";
+import assert from "node:assert/strict";
+const read = path => fs.readFileSync(new URL("../"+path, import.meta.url),"utf8");
+const worker=read("worker/api-template.js");
+const build=read("scripts/build-worker.mjs");
+const style=read("public/new-ui-preview.css");
+const html=read("public/index.html");
+assert.ok(worker.includes('if (url.pathname === "/preview")'),"Preview route missing");
+assert.ok(worker.includes('return html(APP_HTML);'),"Production route changed");
+assert.ok(worker.indexOf('if (url.pathname === "/preview")') < worker.lastIndexOf('return html(APP_HTML);'),"Production route must stay default");
+assert.ok(worker.includes('const NEW_UI_PREVIEW_CSS = __NEW_UI_PREVIEW_CSS__;'),"CSS placeholder missing");
+assert.ok(build.includes('JSON.stringify(newUiPreviewCss)'),"CSS missing in build");
+assert.ok(style.includes('#app:not(.hidden)') && style.includes('@media(max-width:700px)'),"Mobile/desktop adapter missing");
+assert.ok(style.includes('prefers-reduced-motion'),"Motion accessibility guard missing");
+assert.ok(html.includes('const PREVIEW = location.pathname'),"Existing preview separation lost");
+assert.ok(!style.includes('localStorage') && !style.includes('fetch('),"Adapter must be CSS only");
+const productionHtml = '<!doctype html><head></head><body><div id="app"></div></body>';
+const after=productionHtml.replace("</head>",'<style id="new-ui-preview-style">'+style+"</style></head>")
+  .replace("</body>",'<div id="newUiPreviewLabel">GIAO DIỆN MỚI · PREVIEW</div></body>');
+assert.ok(after.includes('new-ui-preview-style') && !productionHtml.includes('new-ui-preview-style'));
+console.log("Preview design regression OK: safe /preview route, isolated CSS, unchanged production HTML, mobile and reduced-motion support");
