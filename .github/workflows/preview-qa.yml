@@ -1,0 +1,45 @@
+name: New UI Preview QA
+
+on:
+  pull_request:
+    paths:
+      - 'public/new-ui-preview.css'
+      - 'worker/api-template.js'
+      - 'scripts/build-worker.mjs'
+      - 'scripts/verify-new-ui-preview.mjs'
+      - '.github/workflows/preview-qa.yml'
+      - 'docs/NEW-UI-PREVIEW.md'
+      - 'public/index.html'
+      - 'README.md'
+      - 'VERSION'
+      - 'package.json'
+      - 'wrangler.toml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify-preview:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Existing business logic regression checks
+        run: npm run check
+      - name: Production storage/auth deployment safety
+        run: node scripts/deployment-safety.mjs
+      - name: Build Cloudflare Worker with isolated preview adapter
+        run: npm run build
+      - name: Verify / remains unchanged and /preview adapts only presentation
+        run: node scripts/verify-new-ui-preview.mjs
+      - name: Install browser test harness
+        run: npm install --no-save puppeteer-core
+      - name: Chromium smoke test for 320, 390, 768, 1024 and 1440 widths
+        env:
+          RUN_PREVIEW_BROWSER_TEST: '1'
+          CHROME_BIN: /usr/bin/google-chrome
+        run: node scripts/verify-new-ui-preview.mjs
