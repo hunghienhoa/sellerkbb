@@ -144,3 +144,9 @@ input:focus-visible,select:focus-visible,textarea:focus-visible{outline-offset:1
   *,*::before,*::after{animation-duration:.01ms!important;
     transition-duration:.01ms!important;scroll-behavior:auto!important}
 }
+
+/* Counteract legacy mobile overrides without changing business-state rules. */
+@media(max-width:700px){
+  #app:not(.hidden) .content .card{border-radius:15px}
+  #app:not(.hidden) .content .stats .card{border-radius:15px}
+}
