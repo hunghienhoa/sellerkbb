@@ -4,7 +4,7 @@
 
 ### Báo cáo TikTok LIVE · KPI nhân sự · Tự đồng bộ 24/24
 
-**Phiên bản hiện tại: v1.49.38**
+**Phiên bản hiện tại: v1.49.39**
 
 [![GitHub Release](https://img.shields.io/github/v/release/hunghienhoa/sellerkbb?label=Release)](https://github.com/hunghienhoa/sellerkbb/releases)
 [![GitHub Actions](https://img.shields.io/github/actions/workflow/status/hunghienhoa/sellerkbb/deploy.yml?branch=main&label=Ki%E1%BB%83m%20tra%20%26%20Backup)](https://github.com/hunghienhoa/sellerkbb/actions)
@@ -17,7 +17,15 @@
 
 ---
 
-## 🆕 Cập nhật mới nhất — v1.49.38
+## 🆕 Cập nhật mới nhất — v1.49.39
+
+- **Sửa xác minh phát hành giao diện mới:** quy trình trước đây so sánh HTML `/preview` với `/` theo byte, mặc dù `/preview` được thiết kế thêm CSS giao diện mới. Điều chỉnh `scripts/verify-deployment.mjs` để so sánh trang chính với HTML gốc, và `/preview` với đúng HTML gốc cộng CSS adapter và nhãn Preview.
+- **Giữ nguyên nghiệp vụ và quyền:** không thay đổi Cloudflare KV, TikTok API/Creator authorization, đối soát GMV Affiliate, dữ liệu Firestore hoặc tính KPI; kiểm tra Worker thực tế vẫn xác nhận đúng commit + `APP_VERSION`.
+- **Giao diện mới vẫn chỉ ở /preview**, trang chính chưa đổi thiết kế; Chrome PC/mobile, kiểm thử KPI và các cổng an toàn trước deploy tiếp tục bắt buộc.
+
+---
+
+### v1.49.38 — Giao diện mới tương thích trên /preview
 
 - **Giao diện mới trên /preview:** áp dụng phong cách ZIP (nền hồng #FFF7FA, màu nhấn #EC4899, Be Vietnam Pro, sidebar/topbar trắng, thẻ KPI bo góc, bố cục PC/mobile). Tích hợp bằng CSS adapter theo đúng cấu trúc và engine SellerKBB đang chạy.
 - **Giữ nguyên website chính và dữ liệu:** / không nạp CSS mới, /preview vẫn dùng dữ liệu mẫu tách biệt. Không đưa đăng nhập giả, localStorage KPI, số liệu demo, token hay code TikTok mô phỏng của ZIP lên production. Giữ nguyên đối soát, Affiliate, 0,3% Host / 0,1% Vận hành và chia đôi doanh số Camp/Mega khi chủ động chọn cặp Vận hành.
@@ -544,6 +552,7 @@ README giữ lại phần này để nhân sự có thể biết **vì sao giao 
 
 | Phiên bản | Thay đổi chính |
 |---|---|
+| **v1.49.39** | Sửa kiểm chứng triển khai /preview với HTML + CSS mới, không thay đổi backend, KPI hay trang chính. |
 | **v1.49.38** | Chế độ /preview dùng giao diện mới theo ZIP, giữ nguyên engine SellerKBB và thêm kiểm thử Chromium PC/mobile bảo vệ website chính. |
 | **v1.49.37** | Pre-deploy safety gate, xác minh Worker và bảo vệ token/KV. |
 | **v1.49.29** | Chuyển Affiliate từ phép trừ GMV Creator/Seller sang đối chiếu mã sản phẩm cùng phòng LIVE theo Creator product_stats + Seller product IDs; đánh dấu số cũ cần xác minh lại; kiểm thử các tình huống thiếu dữ liệu. |

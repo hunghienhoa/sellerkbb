@@ -4,6 +4,11 @@ import assert from 'node:assert/strict';
 
 const version=fs.readFileSync(new URL('../VERSION',import.meta.url),'utf8').trim();
 const source=fs.readFileSync(new URL('../public/index.html',import.meta.url),'utf8').replace(/\r\n/g,'\n');
+const newUiCss=fs.readFileSync(new URL('../public/new-ui-preview.css',import.meta.url),'utf8').replace(/\r\n/g,'\n');
+const previewSource=source
+  .replace('</head>', '<style id="new-ui-preview-style">' + newUiCss + '</style></head>')
+  .replace('</body>', '<div id="newUiPreviewLabel" aria-label="Đang ở bản giao diện mới, dữ liệu thử nghiệm">GIAO DIỆN MỚI · PREVIEW</div></body>');
+
 const origin='https://sellerkbb.doanhsokpis.workers.dev';
 const sleep=ms=>new Promise(resolve=>setTimeout(resolve,ms));
 
@@ -33,7 +38,8 @@ await fetchUntil('/api/health',health=>{
 console.log(`Verified /api/health: v${version}`);
 
 for(const path of ['/','/preview']) {
-  await fetchUntil(path,body=>assert.equal(body,source,`${path}: served source differs from tested source`));
+  const expected=path==='/preview'?previewSource:source;
+  await fetchUntil(path,body=>assert.equal(body,expected,`${path}: served source differs from tested source`));
   console.log(`Verified ${path}: v${version}`);
 }
 
