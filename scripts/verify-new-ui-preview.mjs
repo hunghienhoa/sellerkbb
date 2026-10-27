@@ -75,14 +75,14 @@ try {
     await page.waitForSelector('#app:not(.hidden)',{timeout:15000});
     const result = await page.evaluate(() => {
       const app = document.querySelector('#app'), panel=document.querySelector('#section-dashboard');
-      const activeCard = panel.querySelector('.card');
+      const activeCard = panel.querySelector('.metric-card');
       const title = document.querySelector('.page-title');
       const nav = [...document.querySelectorAll('#nav button')];
       return {
         bg:getComputedStyle(document.body).backgroundColor,
         backgroundToken:getComputedStyle(document.documentElement).getPropertyValue('--bg').trim(),
         cardRadius:activeCard ? parseFloat(getComputedStyle(activeCard).borderTopLeftRadius) : null,
-        cardCount:panel.querySelectorAll('.card').length,
+        cardCount:panel.querySelectorAll('.metric-card').length,
         navCount:nav.length,
         markerVisible:!!document.querySelector('#newUiPreviewLabel'),
         viewportWidth:innerWidth,
@@ -93,7 +93,7 @@ try {
       };
     });
     assert.equal(result.backgroundToken.toUpperCase(),'#FFF7FA', 'Wrong new UI background at '+width);
-    assert.ok(result.cardCount > 0 && result.navCount >= 5 && result.appVisible,
+    assert.ok(result.cardCount >= 4 && result.navCount >= 5 && result.appVisible,
       'Preview dashboard is empty at '+width);
     assert.ok(result.cardRadius >= 12, 'Card radius must match ZIP on '+width+': '+JSON.stringify(result));
     assert.ok(result.markerVisible, 'Preview marker missing at '+width);
