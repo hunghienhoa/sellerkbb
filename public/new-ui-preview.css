@@ -150,3 +150,27 @@ input:focus-visible,select:focus-visible,textarea:focus-visible{outline-offset:1
   #app:not(.hidden) .content .card{border-radius:15px}
   #app:not(.hidden) .content .stats .card{border-radius:15px}
 }
+
+/* SellerKBB's actual KPI markup is .metrics-grid/.metric-card.
+   The ZIP's .kpis/.kpi vocabulary is visual inspiration, not the DOM contract. */
+.metrics-grid{gap:12px}
+.metric-card{padding:15px 16px;min-height:105px;background:#fff;
+  border:1px solid #FAEEF3;border-radius:18px;box-shadow:var(--shadow-sm)}
+.metric-card:first-child{background:linear-gradient(180deg,#fff 0%,#FFF1F7 100%);
+  border-color:#F7C6DC}
+.metric-icon{width:36px;height:36px;background:#FCE7F3;color:#DB2777;
+  border-radius:11px}
+.metric-copy>span{color:#7A5266;font-size:12px;font-weight:650}
+.metric-copy>strong{font-size:clamp(18px,1.4vw,22px);font-weight:800;
+  color:#2A1220;font-variant-numeric:tabular-nums;line-height:1.22}
+.metric-copy>small{color:#7A5266}
+.dashboard-final-gmv{border-radius:16px;border-color:#C5EDCF;
+  box-shadow:var(--shadow-sm);background:linear-gradient(180deg,#fff,#F1FCF5)}
+.dashboard-final-gmv-icon{background:#DCFCE7;color:#14532D;border-radius:12px}
+.dashboard-final-gmv-copy>span{color:#166534}
+.dashboard-final-gmv-copy>strong{color:#14532D;font-weight:800}
+@media(max-width:700px){
+  #app:not(.hidden) .metrics-grid{gap:8px}
+  #app:not(.hidden) .metrics-grid .metric-card{border-radius:15px;min-height:97px;padding:11px 12px}
+  #app:not(.hidden) .metric-icon{border-radius:10px}
+}
