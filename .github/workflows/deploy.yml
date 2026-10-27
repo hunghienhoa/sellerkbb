@@ -47,6 +47,11 @@ jobs:
           AXE_PATH=node_modules/axe-core/axe.min.js node scripts/ui-audit.mjs
       - name: Build Worker before changing production resources
         run: npm run build
+      - name: Regression check new /preview skin and unchanged live page
+        env:
+          RUN_PREVIEW_BROWSER_TEST: '1'
+          CHROME_BIN: /usr/bin/google-chrome
+        run: node scripts/verify-new-ui-preview.mjs
 
   deploy-firestore:
     needs: safety-preflight

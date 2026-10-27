@@ -4,7 +4,7 @@
 
 ### Báo cáo TikTok LIVE · KPI nhân sự · Tự đồng bộ 24/24
 
-**Phiên bản hiện tại: v1.49.37**
+**Phiên bản hiện tại: v1.49.38**
 
 [![GitHub Release](https://img.shields.io/github/v/release/hunghienhoa/sellerkbb?label=Release)](https://github.com/hunghienhoa/sellerkbb/releases)
 [![GitHub Actions](https://img.shields.io/github/actions/workflow/status/hunghienhoa/sellerkbb/deploy.yml?branch=main&label=Ki%E1%BB%83m%20tra%20%26%20Backup)](https://github.com/hunghienhoa/sellerkbb/actions)
@@ -17,7 +17,17 @@
 
 ---
 
-## 🆕 Cập nhật mới nhất — v1.49.37
+## 🆕 Cập nhật mới nhất — v1.49.38
+
+- **Giao diện mới trên /preview:** áp dụng phong cách ZIP (nền hồng #FFF7FA, màu nhấn #EC4899, Be Vietnam Pro, sidebar/topbar trắng, thẻ KPI bo góc, bố cục PC/mobile). Tích hợp bằng CSS adapter theo đúng cấu trúc và engine SellerKBB đang chạy.
+- **Giữ nguyên website chính và dữ liệu:** / không nạp CSS mới, /preview vẫn dùng dữ liệu mẫu tách biệt. Không đưa đăng nhập giả, localStorage KPI, số liệu demo, token hay code TikTok mô phỏng của ZIP lên production. Giữ nguyên đối soát, Affiliate, 0,3% Host / 0,1% Vận hành và chia đôi doanh số Camp/Mega khi chủ động chọn cặp Vận hành.
+- **Sửa tương thích thẻ KPI:** ánh xạ .metric-card và .metrics-grid của SellerKBB sang token giao diện mới; không thay đổi định nghĩa, phép tính hoặc trường lưu trữ.
+- **Đã bổ sung kiểm thử:** npm run check, build Worker, bảo vệ Firestore/KV, kiểm tra / vẫn trả HTML gốc, /preview dùng CSS mới, Chromium 320/390/768/1024/1440px không tràn ngang và điều hướng hoạt động.
+- **Giới hạn:** đây là phiên bản tích hợp tương thích theo phong cách mới, chưa phải chuyển đổi giống 100% bố cục HTML trong ZIP. Chỉ có /preview thay đổi phong cách; bản chính vẫn chờ đánh giá giao diện.
+
+---
+
+### v1.49.37 — Gia cố quy trình triển khai an toàn
 
 - **Chặn deploy trước khi kiểm thử xong:** GitHub Actions thêm job `safety-preflight` kiểm tra toàn bộ mã nguồn, công thức GMV/KPI, giao diện PC/mobile, accessibility, phiên bản và Worker build **trước khi có thay đổi lên Firestore hoặc Cloudflare**. Nếu kiểm thử thất bại, cả hai bên đều không triển khai.
 - **Không báo thành công giả khi thiếu Secrets:** nếu thiếu khóa Cloudflare hoặc tài khoản Firebase, Actions trả lỗi rõ ràng và dừng; không tiếp tục bỏ qua deploy nhưng vẫn tạo Release.
@@ -312,6 +322,9 @@ Khi yêu cầu AI làm giao diện SellerKBB, agent cần đọc `AGENTS.md`, `P
 
 ### 1. Mở website
 
+**Thử giao diện mới trước khi áp dụng:** mở https://sellerkbb.doanhsokpis.workers.dev/preview. Chế độ /preview dùng dữ liệu mẫu riêng và không ghi Firestore/KV sản xuất. Trên trang chính /, giao diện và chức năng vẫn như trước. Đánh giá giao diện PC và điện thoại trong Preview trước khi chấp nhận áp dụng diện rộng.
+
+
 **Giao diện quản lý:** trên mobile, Quản lý tài khoản dùng hàng gọn để xem được nhiều người hơn; chọn biểu tượng sửa để kiểm tra đầy đủ quyền. Trong TikTok / API, chạm tiêu đề các khối ủy quyền hoặc tên kênh để xem chi tiết. Dữ liệu GMV Affiliate chỉ là **đã xác minh** khi nguồn TikTok đối chiếu thành công; chênh lệch Creator/Seller được ghi rõ **tham khảo** và không tự cộng vào KPI.
 
 Vào website SellerKBB. Mặc định hệ thống luôn chọn **Hôm nay**.
@@ -531,6 +544,8 @@ README giữ lại phần này để nhân sự có thể biết **vì sao giao 
 
 | Phiên bản | Thay đổi chính |
 |---|---|
+| **v1.49.38** | Chế độ /preview dùng giao diện mới theo ZIP, giữ nguyên engine SellerKBB và thêm kiểm thử Chromium PC/mobile bảo vệ website chính. |
+| **v1.49.37** | Pre-deploy safety gate, xác minh Worker và bảo vệ token/KV. |
 | **v1.49.29** | Chuyển Affiliate từ phép trừ GMV Creator/Seller sang đối chiếu mã sản phẩm cùng phòng LIVE theo Creator product_stats + Seller product IDs; đánh dấu số cũ cần xác minh lại; kiểm thử các tình huống thiếu dữ liệu. |
 | **v1.49.28** | Cho phép thử lại GMV Affiliate còn thiếu từ cả các job cũ đã được ghi nhận thành công chưa đầy đủ. |
 | **v1.49.27** | Sửa hàng đợi Affiliate ổn định theo LIVE ID, tăng độ bền checkpoint, báo trạng thái thiếu và cho phép chỉ thử lại các phiên chưa xác minh. |
