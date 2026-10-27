@@ -95,7 +95,7 @@ try {
     assert.equal(result.backgroundToken.toUpperCase(),'#FFF7FA', 'Wrong new UI background at '+width);
     assert.ok(result.cardCount > 0 && result.navCount >= 5 && result.appVisible,
       'Preview dashboard is empty at '+width);
-    assert.ok(result.cardRadius >= 12, 'Original dashboard cards still in use at '+width);
+    assert.ok(result.cardRadius >= 12, 'Card radius must match ZIP on '+width+': '+JSON.stringify(result));
     assert.ok(result.markerVisible, 'Preview marker missing at '+width);
     assert.ok(result.scrollWidth<=width+2,
       'Horizontal page overflow at '+width+': '+JSON.stringify(result));
