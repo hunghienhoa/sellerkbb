@@ -75,14 +75,14 @@ try {
     await page.waitForSelector('#app:not(.hidden)',{timeout:15000});
     const result = await page.evaluate(() => {
       const app = document.querySelector('#app'), panel=document.querySelector('#section-dashboard');
-      const activeCard = panel.querySelector('.stats .card');
+      const activeCard = panel.querySelector('.metric-card');
       const title = document.querySelector('.page-title');
       const nav = [...document.querySelectorAll('#nav button')];
       return {
         bg:getComputedStyle(document.body).backgroundColor,
         backgroundToken:getComputedStyle(document.documentElement).getPropertyValue('--bg').trim(),
         cardRadius:activeCard ? parseFloat(getComputedStyle(activeCard).borderTopLeftRadius) : null,
-        cardCount:panel.querySelectorAll('.stats .card').length,
+        cardCount:panel.querySelectorAll('.metric-card').length,
         navCount:nav.length,
         markerVisible:!!document.querySelector('#newUiPreviewLabel'),
         viewportWidth:innerWidth,
