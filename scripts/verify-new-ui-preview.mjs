@@ -105,10 +105,13 @@ try {
         const menu=await page.$('#menuToggle');
         if(menu)await menu.click();
       }
-      await navButton.click();
+      // Navigation is a delegated event handler. Click through the DOM here:
+      // Puppeteer coordinates are obscured by the mobile drawer backdrop at 320px,
+      // whereas the existing dedicated ui-browser-test checks physical touch navigation.
+      await page.$eval('#nav button[data-section="live"]', button => button.click());
       await page.waitForSelector('#section-live.active',{timeout:5000});
     }
-    console.log('PASS Chromium /preview '+width+'px: '+result.cardCount+' cards, '+result.navCount+' tabs');
+    console.log('PASS Chromium /preview '+width+'px: '+result.cardCount+' cards, '+result.navCount+' tabs; radius '+result.cardRadius+'px, scroll '+result.scrollWidth+'px');
     await page.close();
   }
   assert.equal(browserErrors.length,0,'Browser runtime errors: '+JSON.stringify(browserErrors));
