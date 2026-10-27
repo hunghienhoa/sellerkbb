@@ -1,5 +1,6 @@
 const APP_HTML = __APP_HTML__;
 const BRAND_MASCOT_B64 = __BRAND_MASCOT_B64__;
+const NEW_UI_PREVIEW_CSS = __NEW_UI_PREVIEW_CSS__;
 
 const JSON_HEADERS = { "content-type": "application/json; charset=utf-8" };
 const TIKTOK_API_HOST = "https://open-api.tiktokglobalshop.com";
@@ -2290,6 +2291,15 @@ export default {
       if (url.pathname === "/pwa-icon.svg") return new Response('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 180 180"><image x="0" y="0" width="180" height="180" href="data:image/png;base64,' + BRAND_MASCOT_B64 + '"/></svg>',{headers:{"content-type":"image/svg+xml; charset=utf-8","cache-control":"no-cache"}});
       if (url.pathname === "/sw.js") return new Response('self.addEventListener("install",()=>self.skipWaiting());self.addEventListener("activate",e=>e.waitUntil(self.clients.claim()));self.addEventListener("fetch",()=>{});',{headers:{"content-type":"application/javascript; charset=utf-8","cache-control":"no-cache","service-worker-allowed":"/"}});
       if (url.pathname === "/favicon.ico" || url.pathname === "/khangbaby-favicon-16.png") return new Response(Uint8Array.from(atob(BRAND_MASCOT_B64), c => c.charCodeAt(0)), {headers:{"content-type":"image/png","cache-control":"public,max-age=86400"}});
+      // Only /preview receives the new visual adapter. The production HTML and
+      // all TikTok, Creator Authorization, Firebase, reconciliation, and KPI
+      // data flows stay exactly as they were before this release.
+      if (url.pathname === "/preview") {
+        const previewHtml = APP_HTML
+          .replace("</head>", '<style id="new-ui-preview-style">' + NEW_UI_PREVIEW_CSS + "</style></head>")
+          .replace("</body>", '<div id="newUiPreviewLabel" aria-label="Đang ở bản giao diện mới, dữ liệu thử nghiệm">GIAO DIỆN MỚI · PREVIEW</div></body>');
+        return html(previewHtml);
+      }
       return html(APP_HTML);
     } catch (e) {
       if (e instanceof Response) return e;
