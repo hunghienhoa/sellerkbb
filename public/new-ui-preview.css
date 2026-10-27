@@ -174,3 +174,27 @@ input:focus-visible,select:focus-visible,textarea:focus-visible{outline-offset:1
   #app:not(.hidden) .metrics-grid .metric-card{border-radius:15px;min-height:97px;padding:11px 12px}
   #app:not(.hidden) .metric-icon{border-radius:10px}
 }
+
+/* Actual SellerKBB dashboard metric components (not .stats placeholder). */
+.metrics-grid{grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+.metric-card{background:#fff;border:1px solid #FAEEF3;border-radius:18px;box-shadow:var(--shadow-sm);min-height:106px;padding:15px 16px}
+.metric-card:first-child{background:linear-gradient(180deg,#fff,#FFF1F7);border-color:#F7C6DC}
+.metric-icon{background:#FCE7F3;color:#DB2777;border-radius:11px}
+.metric-copy>span{color:#7A5266;font-size:12px;font-weight:600}
+.metric-copy>strong{color:#2A1220;font-size:clamp(18px,1.4vw,22px);font-weight:800;font-variant-numeric:tabular-nums}
+.metric-copy>small{color:#7A5266}
+.dashboard-final-gmv{border-radius:18px;box-shadow:var(--shadow-sm)}
+.dashboard-live-card{border-radius:18px}
+@media(max-width:1024px){.metrics-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:700px){
+ .metrics-grid{gap:8px}
+ .metric-card{border-radius:15px;min-height:98px;padding:11px 12px;gap:8px}
+ .metric-icon{width:32px;height:32px;flex-basis:32px}
+ .metric-copy>strong{font-size:clamp(16px,4.4vw,20px)}
+ .dashboard-final-gmv{border-radius:15px}
+}
+@media(max-width:350px){
+ .metric-card{padding:9px;gap:6px}
+ .metric-copy>span{font-size:10.5px}
+ .metric-copy>strong{font-size:15.5px}
+}
